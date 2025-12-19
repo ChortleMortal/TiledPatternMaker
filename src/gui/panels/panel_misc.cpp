@@ -132,7 +132,7 @@ void AQTableWidget::selectRow(int row)
 {
     if (row < rowCount())
     {
-        qDebug() << "select row" << row;
+        //qDebug() << "select row" << row;
         QTableWidget::selectRow(row);
     }
 }
@@ -256,4 +256,18 @@ AQCheckBox::AQCheckBox(QString string) : QCheckBox(string)
         setStyleSheet("QCheckBox{padding-left:21px;} QCheckBox::indicator:unchecked{border: 2px solid #909090;}");
     else
         setStyleSheet("padding-left:21px;");
+}
+
+Separator::Separator()
+{
+    frame = new QFrame;
+    frame->setFrameShape(QFrame::VLine);
+    frame->setFrameShadow(QFrame::Sunken);
+    frame->setLineWidth(1);
+    if (!Sys::isDarkTheme)
+        frame->setStyleSheet("QFrame {background-color: LightGray;}");
+
+    addStretch();
+    addWidget(frame);
+    addStretch();
 }

@@ -77,7 +77,7 @@ Placements FillRegion::getPlacements(eRepeatType mode)
 QTransform FillRegion::calcTransform(int h, int v)
 {
     //qDebug() << "FillRegion::calcTransform:"  << h << v;
-    QPointF pt   = (tiling->getData().getTrans1() * static_cast<qreal>(h)) + (tiling->getData().getTrans2() * static_cast<qreal>(v));
+    QPointF pt   = (tiling->hdr().getTrans1() * static_cast<qreal>(h)) + (tiling->hdr().getTrans2() * static_cast<qreal>(v));
     QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
     return T;
 }

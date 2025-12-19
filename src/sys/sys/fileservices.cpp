@@ -21,21 +21,27 @@ VersionFileList FileServices::getFiles(eFileType type)
     switch (type)
     {
     case FILE_MOSAIC:
-        return getFiles(Sys::rootMosaicDir,"*.xml");
+        return _getFiles(Sys::rootMosaicDir,"*.xml");
 
     case FILE_TILING:
-        return getFiles(Sys::rootTileDir,"*.xml");
+        return _getFiles(Sys::rootTileDir,"*.xml");
 
     case FILE_MAP:
-        return getFiles(Sys::mapsDir,"*.xml");
+        return _getFiles(Sys::mapsDir,"*.xml");
 
     case FILE_GIRIH:
-        return getFiles(Sys::config->rootMediaDir + "girih_shapes","*.xml");
+        return _getFiles(Sys::config->rootMediaDir + "girih_shapes","*.xml");
 
     case FILE_TEMPLATE:
     {
-        VersionFileList xfiles = getFiles(Sys::templateDir,"*.dat");
-        xfiles += getFiles(QDir::currentPath(),"*.dat");
+        VersionFileList xfiles = _getFiles(Sys::templateDir,"*.dat");
+        xfiles += _getFiles(QDir::currentPath(),"*.dat");
+        return xfiles;
+    }
+    case FILE_TEMPLATE2:
+    {
+        VersionFileList xfiles = _getFiles(Sys::templateDir,"*.xml");
+        xfiles += _getFiles(QDir::currentPath(),"*.xml");
         return xfiles;
     }
     }
@@ -49,22 +55,29 @@ VersionedFile FileServices::getFile(const VersionedName & vname, eFileType type)
     switch (type)
     {
     case FILE_MOSAIC:
-        return getFile(Sys::rootMosaicDir,"*.xml",vname);
+        return _getFile(Sys::rootMosaicDir,"*.xml",vname);
 
     case FILE_TILING:
-        return getFile(Sys::rootTileDir,"*.xml",vname);
+        return _getFile(Sys::rootTileDir,"*.xml",vname);
 
     case FILE_MAP:
-        return getFile(Sys::mapsDir,"*.xml",vname);
+        return _getFile(Sys::mapsDir,"*.xml",vname);
 
     case FILE_GIRIH:
-        return getFile(Sys::config->rootMediaDir + "girih_shapes","*.xml",vname);
+        return _getFile(Sys::config->rootMediaDir + "girih_shapes","*.xml",vname);
 
     case FILE_TEMPLATE:
     {
-        VersionedFile xfile = getFile(Sys::templateDir,"*.dat",vname);
+        VersionedFile xfile = _getFile(Sys::templateDir,"*.dat",vname);
         if (xfile.isEmpty())
-            xfile = getFile(QDir::currentPath(),"*.dat",vname);
+            xfile = _getFile(QDir::currentPath(),"*.dat",vname);
+        return xfile;
+    }
+    case FILE_TEMPLATE2:
+    {
+        VersionedFile xfile = _getFile(Sys::templateDir,"*.xml",vname);
+        if (xfile.isEmpty())
+            xfile = _getFile(QDir::currentPath(),"*.xml",vname);
         return xfile;
     }
     }
@@ -73,7 +86,7 @@ VersionedFile FileServices::getFile(const VersionedName & vname, eFileType type)
     return compilerBug;
 }
 
-VersionFileList FileServices::getFiles(QString path, QString ext)
+VersionFileList FileServices::_getFiles(QString path, QString ext)
 {
     VersionFileList files;
 
@@ -82,7 +95,7 @@ VersionFileList FileServices::getFiles(QString path, QString ext)
     {
         VersionedFile xfile;
         xfile.setFromFullPathname(it.next());
-        files << xfile;
+        files.add(xfile);
     }
 
     files.sort();
@@ -90,7 +103,7 @@ VersionFileList FileServices::getFiles(QString path, QString ext)
     return files;
 }
 
-VersionedFile FileServices::getFile(QString path, QString ext, const VersionedName & vname)
+VersionedFile FileServices::_getFile(QString path, QString ext, const VersionedName & vname)
 {
     QString ext2 = ext;
     ext2.remove('*');
@@ -120,27 +133,44 @@ VersionList FileServices::getMosaicNames(eLoadType loadType)
     switch (loadType)
     {
     case ALL_MOSAICS:
-        names += getPathVersions(Sys::originalMosaicDir);
-        names += getPathVersions(Sys::newMosaicDir);
-        names += getPathVersions(Sys::testMosiacDir);
+        names += _getPathVersions(Sys::originalMosaicDir);
+        names += _getPathVersions(Sys::newMosaicDir);
+        names += _getPathVersions(Sys::testMosiacDir);
         break;
 
     case WORKLIST:
         names = config->worklist.get();
         break;
 
+    case ALL_MOS_EXCEPT_WL:
+    {
+        names += _getPathVersions(Sys::originalMosaicDir);
+        names += _getPathVersions(Sys::newMosaicDir);
+        names += _getPathVersions(Sys::testMosiacDir);
+        auto names2 = config->worklist.get();
+        for (auto & name : names2)
+        {
+            names.remove(name);
+        }
+    }   break;
+
     case SELECTED_MOSAICS:
         if (config->mosaicOrigCheck)
         {
-            names += getPathVersions(Sys::originalMosaicDir);
+            names += _getPathVersions(Sys::originalMosaicDir);
         }
         if (config->mosaicNewCheck)
         {
-            names += getPathVersions(Sys::newMosaicDir);
+            names += _getPathVersions(Sys::newMosaicDir);
         }
         if (config->mosaicTestCheck)
         {
-            names += getPathVersions(Sys::testMosiacDir);
+            names += _getPathVersions(Sys::testMosiacDir);
+        }
+        if (config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
+        {
+            QString afilter = config->mosaicFilter;
+            names =  names.filter(afilter,true);
         }
         break;
 
@@ -149,15 +179,10 @@ VersionList FileServices::getMosaicNames(eLoadType loadType)
         break;
 
     case ALL_TILINGS:
+    case ALL_TIL_EXCEPT_WL:
     case SELECTED_TILINGS:
         qCritical("Tilings - should be mosaic");
         break;
-    }
-
-    if (loadType != ALL_MOSAICS && config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
-    {
-        QString afilter = config->mosaicFilter;
-        names =  names.filter(afilter,true);
     }
 
     names.sort();
@@ -174,49 +199,77 @@ VersionFileList FileServices::getMosaicFiles(eLoadType loadType)
     switch (loadType)
     {
     case ALL_MOSAICS:
-        files += getFiles(Sys::originalMosaicDir,"*.xml");
-        files += getFiles(Sys::newMosaicDir,"*.xml");
-        files += getFiles(Sys::testMosiacDir,"*.xml");
+        files += _getFiles(Sys::originalMosaicDir,"*.xml");
+        files += _getFiles(Sys::newMosaicDir,"*.xml");
+        files += _getFiles(Sys::testMosiacDir,"*.xml");
         break;
 
     case WORKLIST:
-        for (auto & vname : config->worklist.get())
+    {
+        // get a copy because deletions happen to real worklist
+        auto wlist = config->worklist.get();
+        for (auto & vname : wlist)
         {
-            files += getFile(vname, FILE_MOSAIC);
+            VersionedFile vf =  getFile(vname, FILE_MOSAIC);
+            if (!vf.isEmpty())
+            {
+                files.add(vf);
+            }
         }
-        break;
+    }   break;
 
     case SELECTED_MOSAICS:
         if (config->mosaicOrigCheck)
         {
-            files += getFiles(Sys::originalMosaicDir,"*.xml");
+            files += _getFiles(Sys::originalMosaicDir,"*.xml");
         }
         if (config->mosaicNewCheck)
         {
-            files += getFiles(Sys::newMosaicDir,"*.xml");
+            files += _getFiles(Sys::newMosaicDir,"*.xml");
         }
         if (config->mosaicTestCheck)
         {
-            files += getFiles(Sys::testMosiacDir,"*.xml");
+            files += _getFiles(Sys::testMosiacDir,"*.xml");
         }
+        if (config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
+        {
+            QString afilter = config->mosaicFilter;
+            files =  files.filter(afilter,true);
+        }
+
         break;
+
+    case ALL_MOS_EXCEPT_WL:
+    {
+        files += _getFiles(Sys::originalMosaicDir,"*.xml");
+        files += _getFiles(Sys::newMosaicDir,"*.xml");
+        files += _getFiles(Sys::testMosiacDir,"*.xml");
+        auto wlist = config->worklist.get();
+        VersionFileList files2;
+        for (auto & vname : wlist)
+        {
+            VersionedFile vf =  getFile(vname, FILE_MOSAIC);
+            if (!vf.isEmpty())
+            {
+                files2.add(vf);
+            }
+        }
+        for (auto & file : files2)
+        {
+            files.remove(file);
+        }
+    }   break;
 
     case SINGLE_MOSAIC:
         qCritical("SINGLE_MOSAIC should not be called");
         break;
 
     case ALL_TILINGS:
+    case ALL_TIL_EXCEPT_WL:
     case SELECTED_TILINGS:
         qCritical("Tilings - should be mosaic");
         break;
     }
-
-    if (loadType != ALL_MOSAICS && config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
-    {
-        QString afilter = config->mosaicFilter;
-        files =  files.filter(afilter,true);
-    }
-
     return files;
 }
 
@@ -233,7 +286,7 @@ QStringList FileServices::getMosaicRootNames(eLoadType loadType)
     return mosaicNames;
 }
 
-VersionList FileServices::getPathVersions(QString path)
+VersionList FileServices::_getPathVersions(QString path)
 {
     VersionList vl;
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
@@ -255,7 +308,7 @@ VersionList FileServices::getTilingNames(eLoadType loadType)
     switch (loadType)
     {
     case ALL_TILINGS:
-        names = getPathVersions(Sys::rootTileDir);
+        names = _getPathVersions(Sys::rootTileDir);
         break;
 
     case WORKLIST:
@@ -268,23 +321,36 @@ VersionList FileServices::getTilingNames(eLoadType loadType)
     case SELECTED_TILINGS:
         if (config->tilingOrigCheck)
         {
-            names += getPathVersions(Sys::originalTileDir);
+            names += _getPathVersions(Sys::originalTileDir);
         }
         if (config->tilingNewCheck)
         {
-            names += getPathVersions(Sys::newTileDir);
+            names += _getPathVersions(Sys::newTileDir);
         }
         if (config->tilingTestCheck)
         {
-            names += getPathVersions(Sys::testTileDir);
+            names += _getPathVersions(Sys::testTileDir);
         }
         break;
+
+
+    case ALL_TIL_EXCEPT_WL:
+    {
+        names = _getPathVersions(Sys::rootTileDir);
+        auto names2 = config->worklist.get();
+        for (auto & vname : names2)
+        {
+            names.remove(vname.get());
+        }
+    }   break;
 
     case SINGLE_MOSAIC:
         qWarning() << "SINGLE_MOSAIC not supported";
         break;
 
+
     case ALL_MOSAICS:
+    case ALL_MOS_EXCEPT_WL:
     case SELECTED_MOSAICS:
         qCritical("Selecting mosaics - should be tiling");
     }
@@ -308,7 +374,7 @@ VersionFileList FileServices::getTilingFiles(eLoadType loadType)
     switch (loadType)
     {
     case ALL_TILINGS:
-        files = getFiles(Sys::rootTileDir,"*,xml");
+        files = _getFiles(Sys::rootTileDir,"*.xml");
         break;
 
     case WORKLIST:
@@ -316,7 +382,7 @@ VersionFileList FileServices::getTilingFiles(eLoadType loadType)
         {
             for (auto & vname : config->worklist.get())
             {
-                files += getFile(vname, FILE_TILING);
+                files.add(getFile(vname, FILE_TILING));
             }
         }
         break;
@@ -324,20 +390,28 @@ VersionFileList FileServices::getTilingFiles(eLoadType loadType)
     case SELECTED_TILINGS:
         if (config->tilingOrigCheck)
         {
-            files += getFiles(Sys::originalTileDir,"*.xml");
+            files += _getFiles(Sys::originalTileDir,"*.xml");
         }
         if (config->tilingNewCheck)
         {
-            files += getFiles(Sys::newTileDir, "*.xml");
+            files += _getFiles(Sys::newTileDir, "*.xml");
         }
         if (config->tilingTestCheck)
         {
-            files += getFiles(Sys::testTileDir,"*.xml");
+            files += _getFiles(Sys::testTileDir,"*.xml");
         }
+        break;
+
+    case ALL_MOS_EXCEPT_WL:
+        qWarning() << "ALL_MOS_EXCEPT_WL not supported";
         break;
 
     case SINGLE_MOSAIC:
         qWarning() << "SINGLE_MOSAIC not supported";
+        break;
+
+    case ALL_TIL_EXCEPT_WL:
+        qWarning() << "ALL_MOS_EXCEPT_WL not supported";
         break;
 
     case ALL_MOSAICS:
@@ -385,6 +459,7 @@ VersionedName FileServices::getNextVersion(eFileType type, VersionedName name)
         break;
     case FILE_GIRIH:
     case FILE_TEMPLATE:
+    case FILE_TEMPLATE2:
         qCritical("Not Supported");
     }
 
@@ -437,6 +512,9 @@ bool FileServices::reformatXML(VersionedFile file)
         qWarning().noquote() << result.description();
         return false;
     }
+
+    QFile afile(file.getPathedName());
+    afile. setPermissions(QFile::ReadOther | QFile::WriteOther);
 
     // Timestamp
     QDate cd = QDate::currentDate();
@@ -508,7 +586,7 @@ VersionFileList FileServices::whereTilingUsed(VersionedName tiling)
         if (rv)
         {
             qDebug() <<  tiling.get() << " found in "  << mosaic.getVersionedName().get();
-            results  << mosaic;
+            results.add(mosaic);
         }
     }
     return results;
@@ -550,8 +628,39 @@ VersionedFile FileServices::getTileFileFromMosaicFile(VersionedFile mosaicFile)
     return fname;
 }
 
+QString FileServices::getBackgroundFilenameFromMosaicFile(VersionedFile mosaicFile)
+{
+    QFile afile(mosaicFile.getPathedName());
+    bool rv = afile.open(QFile::ReadOnly);
+    if (!rv) return QString();
+
+    QTextStream str(&afile);
+    QString aline;
+    do
+    {
+        aline = str.readLine();
+        if (aline.contains("<BackgroundImage"))
+        {
+            aline.remove("<BackgroundImage name=");
+            aline.remove('"');
+            aline.remove('>');
+            aline = aline.trimmed();
+            aline.remove(".jpg",Qt::CaseInsensitive);
+            aline.remove(".jpeg",Qt::CaseInsensitive);
+            aline.remove(".png",Qt::CaseInsensitive);
+            aline.remove(".bmp",Qt::CaseInsensitive);
+            aline.remove(".svg",Qt::CaseInsensitive);
+            return aline;
+        }
+    } while (!aline.isNull());
+
+    return QString();
+}
+
 QDate FileServices::getDateFromXMLFile(VersionedFile file)
 {
+    if (file.isEmpty()) return QDate();
+
     QFile afile(file.getPathedName());
     bool rv = afile.open(QFile::ReadOnly);
     if (!rv) return QDate();
@@ -617,4 +726,49 @@ VersionList FileServices::getDirBMPFiles(QString path)
     }
     vl.sort();
     return vl;
+}
+
+bool FileServices::relocateTemplateFiles()
+{
+    // move template files if necessary
+    QString oldLoc = Sys::rootMosaicDir + "/templates";
+    QString newLoc = Sys::templateDir;
+
+    QDir newDir(newLoc);
+    if (!newDir.exists())
+    {
+        bool rv = QDir().mkdir(newLoc);
+        if (!rv)
+        {
+            qWarning() << "Could not create directory:" << newLoc;
+            return false;
+        }
+    }
+
+    QDir oldDir(oldLoc);
+    if (oldDir.exists() && !oldDir.isEmpty())
+    {
+        QFileInfoList infos = oldDir.entryInfoList(QDir::Files);
+        for (QFileInfo & info : infos)
+        {
+            QString name    = info.fileName();
+            QString newname = newLoc + "/" + name;
+            QFile afile(info.canonicalFilePath());
+            bool rv = afile.rename(newname);
+            if (!rv)
+            {
+                qWarning().noquote() << "could not move" << info.canonicalFilePath() << "to" << newname;
+                return false;
+            }
+        }
+        bool rv = oldDir.removeRecursively();
+        if (!rv)
+        {
+            qWarning().noquote() << "could not delete directory:" << oldLoc;
+            return false;
+        }
+        qInfo().noquote() << "moved template files from" << oldLoc << "to:" << newLoc;
+        return true;
+    }
+    return true;
 }

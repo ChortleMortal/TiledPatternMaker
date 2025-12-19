@@ -49,6 +49,7 @@ public:
     int  getColorIndex(int faceIndex);
     void setColorIndex(int faceIndex,int colorIndex);
     int  numColorIndices() { return faceColorIndices.size(); }
+    void removeColorIndex(int faceIndex);
 
     void            setPaletteIndices(QVector<int> & indices) { faceColorIndices = indices; }
     QVector<int> &  getPaletteIndices()                       { return faceColorIndices; }

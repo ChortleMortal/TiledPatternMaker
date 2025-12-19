@@ -1,26 +1,20 @@
 #include <QMessageBox>
 
-#include "model/tilings/tiling_writer.h"
-#include "sys/geometry/edge.h"
-#include "sys/geometry/transform.h"
-#include "model/makers/tiling_maker.h"
-#include "sys/sys/fileservices.h"
-#include "sys/sys.h"
-#include "model/mosaics/mosaic_writer.h"
 #include "gui/top/controlpanel.h"
-#include "model/settings/configuration.h"
+#include "model/makers/tiling_maker.h"
+#include "model/mosaics/mosaic_writer.h"
 #include "model/tilings/backgroundimage.h"
 #include "model/tilings/placed_tile.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
+#include "model/tilings/tiling_writer.h"
+#include "sys/geometry/edge.h"
+#include "sys/geometry/transform.h"
+#include "sys/sys.h"
+#include "sys/sys/fileservices.h"
 #include "sys/tiledpatternmaker.h"
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
 using Qt::endl;
-#else
-#define endl Qt::endl
-#endif
-
 using namespace pugi;
 using std::string;
 
@@ -32,100 +26,39 @@ extern class TiledPatternMaker * theApp;
 //const int currentTilingXMLVersion = 6;  // 14NOV20 <Placement> becomes <Transform>
 //const int currentTilingXMLVersion = 7;  // 10JUN23 <Feature> becomes <Tile>
 //const int currentTilingXMLVersion = 8;  // 28FEB24 Tile Colors have colors in mosaic not in XML
-// const int currentTilingXMLVersion = 9;  // 29MAR24 ConcaveArcs have different arc center
-   const int currentTilingXMLVersion = 10; // 15APR24 Tilings have translate origins
+//const int currentTilingXMLVersion = 9;  // 29MAR24 ConcaveArcs have different arc center
+//const int currentTilingXMLVersion = 10; // 15APR24 Tilings have translate origins
+//const int currentTilingXMLVersion = 11; // 19OCT25 Restore saving of tile colors for legacy usage
+//const int currentTilingXMLVersion = 12; // 19OCT25 No model centers and conversion of legacy XML
+  const int currentTilingXMLVersion = 13; // 30OCT25 alignment of backgrounds and coversion of legacy XMKL
 
 
-bool TilingWriter::writeTilingXML(TilingPtr tiling)
+// called by TilingManager::saveTiling
+bool TilingWriter::writeTilingXML(VersionedFile vfile, TilingPtr tiling)
 {
     this->tiling = tiling;
 
-    VersionedFile xfile = FileServices::getFile(tiling->getName(),FILE_TILING);
-    if (!xfile.isEmpty())
-    {
-        // file already exists
-        bool isOriginal  = xfile.getPathOnly().contains("original");
-        bool isNewTiling = xfile.getPathOnly().contains("new_tilings");
-
-        QMessageBox msgBox(Sys::controlPanel);
-        msgBox.setText(QString("The tiling %1 already exists").arg(tiling->getName().get()));
-        msgBox.setInformativeText("Do you want to bump version (Bump) or overwrite (Save)?");
-        QPushButton * bump   = msgBox.addButton("Bump",QMessageBox::ApplyRole);
-        QPushButton * save   = msgBox.addButton(QMessageBox::Save);
-        QPushButton * cancel = msgBox.addButton(QMessageBox::Cancel);
-        msgBox.setDefaultButton(bump);
-        msgBox.exec();
-
-        if (msgBox.clickedButton() == cancel)
-        {
-            return false;
-        }
-        else if (msgBox.clickedButton() == bump)
-        {
-            // appends a version
-            VersionedName vname = FileServices::getNextVersion(FILE_TILING,tiling->getName());
-            tiling->setName(vname);
-            if (isOriginal)
-            {
-                xfile.setFromFullPathname(Sys::originalTileDir + vname.get() + ".xml");
-            }
-            else if (isNewTiling)
-            {
-                xfile.setFromFullPathname(Sys::newTileDir + vname.get() + ".xml");
-            }
-            else
-            {
-                xfile.setFromFullPathname(Sys::testTileDir + vname.get() + ".xml");
-            }
-        }
-        // save drops thru
-        Q_UNUSED(save)
-    }
-    else
-    {
-        // new file
-        if (Sys::config->saveTilingTest)
-        {
-            xfile.setFromFullPathname(Sys::testTileDir + tiling->getName().get() + ".xml");
-        }
-        else
-        {
-            xfile.setFromFullPathname(Sys::newTileDir + tiling->getName().get() + ".xml");
-        }
-    }
-
-    QFile data(xfile.getPathedName());
+    QFile data(vfile.getPathedName());
     if (data.open(QFile::WriteOnly))
     {
         qDebug() << "Writing:"  << data.fileName();
         QTextStream str(&data);
         str.setRealNumberPrecision(16);
-        writeTilingXML(str);
+        writeXML(str);
         data.close();
 
-        bool rv = FileServices::reformatXML(xfile);
+        bool rv = FileServices::reformatXML(vfile);
         if (rv)
         {
-            QMessageBox box(Sys::controlPanel);
-            box.setIcon(QMessageBox::Information);
-            box.setText(QString("Saved: %1 - OK").arg(data.fileName()));
-            box.exec();
-
-            emit Sys::tilingMaker->sig_tilingWritten();
             return true;
         }
     }
 
     qWarning() << "Could not write tile file:"  << data.fileName();
-    QMessageBox box(Sys::controlPanel);
-    box.setIcon(QMessageBox::Critical);
-    box.setText(QString("Error saving: %1 - FAILED").arg(data.fileName()));
-    box.exec();
     return false;
-
 }
 
-void TilingWriter::writeTilingXML(QTextStream & out)
+void TilingWriter::writeXML(QTextStream & out)
 {
     refId    = 0;
     vertex_ids.clear();
@@ -135,12 +68,12 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     out << qs << endl;
 
     // write file name into the tiling XML
-    out << "<Name>" << tiling->getName().get() << "</Name>" << endl;
+    out << "<Name>" << tiling->getVName().get() << "</Name>" << endl;
 
     // fill paratmeters not part of original taprats
     int minX,minY,maxX,maxY;
     bool singleton;
-    tiling->getCanvasSettings().getFillData().get(singleton,minX,maxX,minY,maxY);
+    tiling->hdr().getCanvasSettings().getFillData().get(singleton,minX,maxX,minY,maxY);
     if (!singleton)
     {
         out << "<Fill singleton = \"f\">" << minX << "," << maxX << "," << minY << "," << maxY << "</Fill>" << endl;
@@ -149,9 +82,9 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     {
         out << "<Fill singleton = \"t\">0,0,0,0</Fill>";
     }
-    QPointF t1 = tiling->getData().getTrans1();
-    QPointF t2 = tiling->getData().getTrans2();
-    QPointF origin = tiling->getTranslateOrigin();
+    QPointF t1 = tiling->hdr().getTrans1();
+    QPointF t2 = tiling->hdr().getTrans2();
+    QPointF origin = tiling->hdr().getTranslateOrigin();
     out << "<T0>" <<  origin.x() << "," << origin.y() << "</T0>" << endl;
     out << "<T1>" <<  t1.x() << "," << t1.y() << "</T1>" << endl;
     out << "<T2>" <<  t2.x() << "," << t2.y() << "</T2>" << endl;
@@ -159,14 +92,16 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     writeViewSettings(out);
 
     // Regroup tiles by their translation so that we write each tile only once.
-    TilingUnit & group = tiling->getTilingUnit();
-
+    TilingUnit tunit(tiling->unit());
+    tunit.removeExcludeds();
+    const QVector<UnitPlacedTiles> &  group = tunit.getUnitPlacedTiles();
     //structure is tile then placements. so tile is not duplicated. I dont know if this adds any value
+    int index = 0;
     for (auto & apair : group)
     {
-        TilePtr tile                = apair.first;
-        TilingPlacements placemnets = apair.second;
-        PlacedTilePtr placedTile    = placemnets.first();
+        TilePtr tile              = apair.first;
+        PlacedTiles placemnets = apair.second;
+        PlacedTilePtr placedTile  = placemnets.first();
 
         if (placedTile->isGirihShape())    // TODO verify this code works
         {
@@ -182,14 +117,36 @@ void TilingWriter::writeTilingXML(QTextStream & out)
         {
             // edge polys have rotation, numSides can be calculated
             out << "<Tile type=\"edgepoly\" rotation=\"" << tile->getRotation() << "\" scale=\"" << tile->getScale() << "\">" << endl;
-            const EdgePoly epoly = tile->getBase();       // bugfx 20AUG23
-            setEdgePoly(out,epoly);
+            const EdgeSet & eset = tile->getBase();       // bugfx 20AUG23
+            setEdgeSet(out,eset);
+        }
+
+        // legacy storage of background colors
+        ColorGroup & cg = tiling->legacyTileColors();
+        if (cg.size() > index)
+        {
+            ColorSet * tileColors  = & cg[index++];
+            int sz = tileColors->size();
+            if (sz)
+            {
+                QString s = "<BkgdColors>";
+                for (int i = 0; i < (sz-1); i++)
+                {
+                    QColor color = tileColors->getQColor(i);
+                    s += color.name();
+                    s += ",";
+                }
+                QColor color = tileColors->getQColor(sz-1);
+                s += color.name();
+                s += "</BkgdColors>";
+                out << s << endl;
+            }
         }
 
         for(auto it= placemnets .begin(); it != placemnets .end(); it++ )
         {
             PlacedTilePtr & pf = *it;
-            QTransform t = pf->getTransform();
+            QTransform t = pf->getPlacement();
             out << "<Placement>";
             out << "<scale>" << Transform::scalex(t) << "</scale>";
             out << "<rot>"   << qRadiansToDegrees(Transform::rotation(t)) << "</rot>";
@@ -204,58 +161,65 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     out << "<Desc>" << tiling->getDescription() << "</Desc>" << endl;
     out << "<Auth>" << tiling->getAuthor() << "</Auth>" << endl;
 
-    writeBackgroundImage(out);
+    auto bip = tiling->getBkgdImage();
+    if (bip)
+    {
+        writeBackgroundImage(out,bip);
+    }
 
     out << "</Tiling>" << endl;
 }
 
-void TilingWriter::writeBackgroundImage(QTextStream & out)
+void TilingWriter::writeBackgroundImage(QTextStream & out, BkgdImagePtr bip)
 {
-    auto bkgd  = Sys::backgroundImageView->getImage();
-    if (bkgd && bkgd->isLoaded())
+    QString astring = QString("<BackgroundImage name=\"%1\">").arg(bip->getTitle());
+    out << astring << endl;
+
+    const Xform & xform = bip->getModelXform();
+    out << "<Scale>" << xform.getScale()           << "</Scale>" << endl;
+    out << "<Rot>"   << xform.getRotateRadians()   << "</Rot>"  << endl;
+    out << "<X>"     << xform.getTranslateX()      << "</X>" << endl;
+    out << "<Y>"     << xform.getTranslateY()      << "</Y>" << endl;
+
+    if (bip->useAdjusted())
     {
-        QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->getTitle());
-        out << astring << endl;
-        
-        const Xform & xform = Sys::backgroundImageView->getModelXform();
-        out << "<Scale>" << xform.getScale()           << "</Scale>" << endl;
-        out << "<Rot>"   << xform.getRotateRadians()   << "</Rot>"  << endl;
-        out << "<X>"     << xform.getTranslateX()      << "</X>" << endl;
-        out << "<Y>"     << xform.getTranslateY()      << "</Y>" << endl;
-        QPointF center = xform.getModelCenter();
-        out << "<Center>" << center.x() << "," << center.y() << "</Center>"<< endl;
-
-        if (bkgd->useAdjusted())
-        {
-            out << "<Perspective>";
-            out << Transform::writeInfo(bkgd->getAdjustedTransform());
-            out << "</Perspective>" << endl;
-        }
-
-        out << "</BackgroundImage>" << endl;
+        out << "<Perspective>";
+        out << Transform::writeInfo(bip->getAdjustedTransform());
+        out << "</Perspective>" << endl;
     }
+
+    out << "</BackgroundImage>" << endl;
 }
 
 void TilingWriter::writeViewSettings(QTextStream & out)
 {
     out << "<ViewSettings>" <<  endl;
 
-    QSize size = tiling->getData().getCanvasSettings().getViewSize();
+    QSize size = tiling->hdr().getCanvasSettings().getViewSize();
     out << "<width>"  << size.width()  << "</width>" << endl;
     out << "<height>" << size.height() << "</height>" << endl;
     
-    QSize zsize = tiling->getData().getCanvasSettings().getCanvasSize();
+    QSize zsize = tiling->hdr().getCanvasSettings().getCanvasSize();
     out << "<zwidth>"  << zsize.width()  << "</zwidth>" << endl;
     out << "<zheight>" << zsize.height() << "</zheight>" << endl;
     
-    MosaicWriter::procesToolkitGeoLayer(out,tiling->getModelXform(),0);
+    procesToolkitGeoLayer(out,tiling->getModelXform(),0);
 
     out << "</ViewSettings>" <<  endl;
 }
 
-void TilingWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
+void TilingWriter::procesToolkitGeoLayer(QTextStream & ts, const Xform & xf, int zlevel)
 {
-    for (auto it = epoly.begin(); it != epoly.end(); it++)
+    ts << "<left__delta>"  << xf.getTranslateX()      << "</left__delta>"  << endl;
+    ts << "<top__delta>"   << xf.getTranslateY()      << "</top__delta>"   << endl;
+    ts << "<width__delta>" << xf.getScale()           << "</width__delta>" << endl;
+    ts << "<theta__delta>" << xf.getRotateRadians()   << "</theta__delta>" << endl;
+    ts << "<Z>"            << zlevel                  << "</Z>"        << endl;
+}
+
+void TilingWriter::setEdgeSet(QTextStream & ts, const EdgeSet & eset)
+{
+    for (auto it = eset.begin(); it != eset.end(); it++)
     {
         EdgePtr ep = *it;
         VertexPtr v1 = ep->v1;
@@ -271,23 +235,13 @@ void TilingWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
         }
         else if (ep->getType() == EDGETYPE_CURVE)
         {
-            QString str = QString("<Curve convex=\"%1\">").arg(ep->isConvex() ? "t" : "f");
+            QString str = QString("<Curve convex=\"%1\">").arg((ep->getCurveType() == CURVE_CONVEX) ? "t" : "f");
             ts << str << endl;
             QPointF p3 = ep->getArcCenter();
             setVertex(ts,v1,"Point");
             setVertex(ts,v2,"Point");
             setPoint(ts,p3,"Center");
             ts << "</Curve>" << endl;
-        }
-        else if (ep->getType() == EDGETYPE_CHORD)
-        {
-            QString str = QString("<Chord convex=\"%1\">").arg(ep->isConvex() ? "t" : "f");
-            ts << str << endl;
-            QPointF p3 = ep->getArcCenter();
-            setVertex(ts,v1,"Point");
-            setVertex(ts,v2,"Point");
-            setPoint(ts,p3,"Center");
-            ts << "</Chord>" << endl;
         }
     }
 }

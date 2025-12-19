@@ -1,8 +1,8 @@
+#include <QMessageBox>
 #include "sys/engine/stepping_engine.h"
 #include "sys/engine/image_engine.h"
 #include "sys/sys.h"
 #include "gui/top/controlpanel.h"
-#include "model/settings/configuration.h"
 
 int  SteppingEngine::runCount = 0;
 bool SteppingEngine::paused   = false;
@@ -19,6 +19,7 @@ SteppingEngine::SteppingEngine(ImageEngine * parent)
 
     connect(parent, &ImageEngine::sig_tick, this,  [this]() { tick(); });
     connect(parent, &ImageEngine::sig_next, this,  [this]() { next(); });
+    connect(parent, &ImageEngine::sig_prev, this,  [this]() { prev(); });
     connect(parent, &ImageEngine::sig_end,  this,  [this]() { end(); });
     connect(parent, &ImageEngine::sig_pause,this,  []()     { pause(); });
 }

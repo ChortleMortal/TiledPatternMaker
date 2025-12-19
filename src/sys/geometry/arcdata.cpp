@@ -1,178 +1,207 @@
+#include <QTransform>
 #include "sys/geometry/arcdata.h"
-#include "sys/geometry/edge.h"
 #include "sys/geometry/geo.h"
-#include "sys/geometry/vertex.h"
 
 ArcData::ArcData()
 {
-    _arcType    = AT_UNDEFINED;
-    start       = 0;
-    end         = 0;
-    magnitude   = 1.0;
-    trace       = 0;
-    setSpan(0);
+    _start       = 0;
+    _end         = 0;
+    _span       = 0;
+    _magnitude  = 1.0;
+    _curveType  = CURVE_UNDEFINED;
 }
 
+ArcData::ArcData(QLineF line, QPointF center, eCurveType ctype)
+{
+    _line       = line;
+    _curveType = ctype;
+    create(center);
+
+}
 ArcData & ArcData::operator=(const ArcData & other)
 {
-    _arcType        = other._arcType;
+    _line           = other._line;
+    _curveType      = other._curveType;
     _convexCenter   = other._convexCenter;
     _concaveCenter  = other._concaveCenter;
-    _span           = other._span;
-    start           = other.start;
-    end             = other.end;
-    magnitude       = other.magnitude;
-    rect            = other.rect;
+    _magnitude      = other._magnitude;
+
+    create();
+
     return *this;
 }
 
-void ArcData::create(QPointF p1, QPointF p2, QPointF center, bool convex)
+void ArcData::create(QLineF line, QPointF center, eCurveType ctype)
 {
-    setConvex(convex,p1,p1);
+    _line       = line;
+    _curveType = ctype;
+    create(center);
+}
 
-    if (convex)
-        _convexCenter = center;
+void ArcData::create(QPointF center)
+{
+    if (_curveType == CURVE_CONVEX)
+    {
+        _convexCenter  = center;
+        _concaveCenter =  Geo::reflectPoint(center,_line);
+        setConvex();
+    }
     else
+    {
         _concaveCenter = center;
-
-    calcSpan(p1,p2);
+        _convexCenter  =  Geo::reflectPoint(center,_line);
+        setConcave();
+    }
+    calcMagnitude();
 }
 
-void  ArcData::setConvex(bool convex, QPointF p1, QPointF p2)
+void ArcData::create()
 {
-    eArcType at = (convex) ? AT_CONVEX : AT_CONCAVE;
-    if (_arcType == at)
+    if (_curveType == CURVE_CONVEX)
+    {
+        setConvex();
+    }
+    else
+    {
+        setConcave();
+    }
+    calcMagnitude();
+}
+
+ArcData ArcData::transform(QTransform t)
+{
+    QLineF line    = t.map(_line);
+    QPointF center = t.map(getCenter());
+    return ArcData(line,center,_curveType);
+}
+
+void ArcData::changeCurveType(eCurveType newType)
+{
+    Q_ASSERT(_curveType != CURVE_UNDEFINED);
+
+    if (_curveType == newType)
     {
         return;
     }
 
-    if (_arcType == AT_UNDEFINED)
-    {
-        _arcType = at;
-        return;
-    }
+    _curveType = newType;
 
-    if (at == AT_CONVEX)
+    if (newType == CURVE_CONVEX)
     {
-        // flip center for concave
-        _convexCenter =  Geo::reflectPoint(getCenter(),QLineF(p1,p2));
+        setConvex();
     }
     else
     {
-        // flip center for concave
-        _concaveCenter =  Geo::reflectPoint(getCenter(),QLineF(p1,p2));
+        setConcave();
     }
-
-    _arcType = at;
+    calcMagnitude();
 }
 
-QPointF ArcData::getCenter() const
+void ArcData::setConvex()
 {
-    if (convex())
-        return _convexCenter;
-    else
-        return _concaveCenter;
-}
+    //qDebug()  << "_setConvex -BEGIN" << _line << _convexCenter;
 
-void ArcData::setCenter(QPointF mpt)
-{
-    if (convex())
-        _convexCenter = mpt;
-    else
-        _concaveCenter = mpt;
-}
+    qreal r = radius();
+    _rect    = QRectF(_convexCenter.x() - r, _convexCenter.y() - r, r*2, r*2);
+    _start   = Geo::getAngleDegrees(_convexCenter,_line.p1());
+    _end     = Geo::getAngleDegrees(_convexCenter,_line.p2());
+    _span   = _end - _start;         // should be a -ve span  (meaning CCW)
 
-void ArcData::calcSpan(QPointF p1, QPointF p2)
-{
+    //qDebug() << "convex start" << _start << "end" << _end << "span" << _span;
 
-    if (convex())
+    if (_span > 0)
     {
-        calcConvexSpan(p1,p2);
+        _span = -(_start + (360 - _end));
     }
-    else
+    if (_span < -180.0)
     {
-        calcConcaveSpan(p1,p2);
+        _span = -(360 + _span); // not tested
     }
+
+    //dump();
+
+    Q_ASSERT(_span <= 0);
+
+    //qDebug()  << "_setConvex -END" << _span;
 }
 
-void ArcData::calcSpan(Edge * edge)
-{
-    QPointF p1 = edge->v1->pt;
-    QPointF p2 = edge->v2->pt;
-
-    Q_ASSERT(_arcType != AT_UNDEFINED);
-    calcSpan(p1,p2);
-}
-
-void ArcData::calcConvexSpan(QPointF p1, QPointF p2)
-{
-    QPointF center = getCenter();
-
-    if (trace >=3) qDebug()  << "calcConvex " << p1 << p2 << center;
-
-    qreal radius = QLineF(p1,center).length();
-    rect         = QRectF(center.x() - radius, center.y() - radius, radius*2, radius*2);
-    start        = Geo::getAngleDegrees(center,p1);
-    end          = Geo::getAngleDegrees(center,p2);
-
-    qreal span   = end-start;         // should be a -ve span  (meaning CCW)
-
-    if (trace >= 2) qDebug() << "convex start" << start << "end" << end << "span" << span;
-
-    if (span > 0)
-    {
-        span = -(start + (360-end));
-    }
-    if (span < -180.0)
-    {
-        span = -(360 + span); // not tested
-    }
-
-    if (trace >= 1) dump();
-
-    Q_ASSERT(span <= 0);
-
-    setSpan(span);
-
-    //qInfo() << "convex span" << getSpan();
-}
-
-void ArcData::calcConcaveSpan(QPointF p1, QPointF p2)
+void ArcData::setConcave()
 {
     // for concave we need the center reflection accross p1p2
     // and the direction must be CCW - meaning a positsive span
 
-    QPointF center = getCenter();
+    //qDebug() << "_setConcave" << _line << _concaveCenter;
 
-    if (trace >=3) qDebug() << "calcConcave" << p1 << p2 << center;
+    qreal r = radius();
+    _rect    = QRectF(_concaveCenter.x() - r, _concaveCenter.y() - r, r*2, r*2);
+    _start   = Geo::getAngleDegrees(_concaveCenter,_line.p1());
+    _end     = Geo::getAngleDegrees(_concaveCenter,_line.p2());
+    _span    = _end - _start; // should be a +ve span (meaning CW)
 
-    //arcCenter = Geo::reflectPoint(arcCenter,QLineF(p1,p2));   // flip center for concave
+    //qDebug() << "concave start" << _start << "end" << _end << "span" << _span;
 
-    qreal radius = QLineF(p1,center).length();
-    rect    = QRectF(center.x() - radius, center.y() - radius, radius*2, radius*2);
-    start   = Geo::getAngleDegrees(center,p1);
-    end     = Geo::getAngleDegrees(center,p2);
-
-    qreal span = end-start; // should be a +ve span (meaning CW)
-
-    if (trace >= 2) qDebug() << "concave start" << start << "end" << end << "span" << span;
-
-    if (span < 0)
+    if (_span < 0)
     {
-        span += 360;
+        _span += 360;
     }
 
-    if (span > 180.0)
+    if (_span > 180.0)
     {
-        span  = 360.0 - span;   // fixes FirstCurve.v4 and petal
+        _span  = 360.0 - _span;   // fixes FirstCurve.v4 and petal
     }
 
-    if (trace >= 1) dump();
-    Q_ASSERT(span >= 0);
+    //dump();
+    Q_ASSERT(_span >= 0);
 
-    setSpan(span);
+    //qDebug()  << "_setConcave -END" << _span;
+}
 
-    //qInfo() << "concave span" << getSpan();
+void ArcData::calcMagnitude()
+{
+    // calcs magnitude from arcCenter
+    qreal dist  = Geo::signedDistToLine(getCenter(), _line);
+    if (dist < 0 || Loose::zero(dist))
+        _magnitude = 0;
+    else
+        _magnitude  = (dist/_line.length());
+
+    //qDebug() << "dist"  << dist << "magnitude=" << _magnitude;
+}
+
+void ArcData::setArcMagnitude(qreal magnitude)
+{
+    // calcs arcCenter from magntiude
+    //qDebug() << "setting  mag" << magnitude;
+
+    QPointF mid = _line.center();
+    QPointF pt;
+    if (_curveType == CURVE_CONVEX)
+    {
+        pt = mid + QPointF(-_line.dy(), _line.dx());
+    }
+    else
+    {
+        pt = mid - QPointF(_line.dy(), -_line.dx());
+    }
+
+    QLineF perp(mid,pt);
+
+    qreal arcCenterLen = magnitude * _line.length();
+    perp.setLength(arcCenterLen);
+
+    if (_curveType == CURVE_CONVEX)
+    {
+        _convexCenter = perp.p2();
+        setConvex();
+    }
+    else
+    {
+        _concaveCenter = perp.p2();
+        setConcave();
+    }
+    calcMagnitude();
+    if (!Loose::equals(magnitude,_magnitude))
+        qInfo() << "throttled";
 }
 
 QString ArcData::info()
@@ -180,7 +209,7 @@ QString ArcData::info()
     QString astring;
     QDebug  deb(&astring);
 
-    deb << "ArcData" << ((convex()) ? "convex" :  "concave") << rect << "start=" << start << "end=" << end  << "span=" << span();
+    deb << "ArcData" << sCurveType[_curveType] << _rect << "start=" << _start << "end=" << _end  << "span=" << _span;
 
     return astring;
 }
@@ -190,32 +219,25 @@ void ArcData::dump()
     qDebug().noquote() << info();
 }
 
-QPointF ArcData::reflectCentreOverEdge(QPointF p1, QPointF p2, QPointF arcCenter)
-{
-    QLineF l(p1,p2);
-    QPointF c3= Geo::reflectPoint(arcCenter,l);
-    return c3;
-}
-
 bool ArcData::pointWithinArc(QPointF pt)
 {
     qreal angle =  Geo::getAngleDegrees(getCenter(),pt);
 
-    if (Loose::equals(angle,start))
+    if (Loose::equals(angle,_start))
         return true;
-    if (Loose::equals(angle,end))
+    if (Loose::equals(angle,_end))
         return true;
 
     //qInfo() << "raw" << start << end << angle << (isConvex() ? "convex" : "concave");
 
     // polys are clockwise - angle increments anti-clockwise
-    if (convex())
+    if (_curveType == CURVE_CONVEX)
     {
         Q_ASSERT(_span <= 0);
         // start should be greater than end
-        if (start > end)
+        if (_start > _end)
         {
-            if (angle > end && angle < start)
+            if (angle > _end && angle < _start)
             {
                 //qWarning() << " convex hit" << start << end << angle;
                 return true;
@@ -224,12 +246,12 @@ bool ArcData::pointWithinArc(QPointF pt)
         else
         {
             // wraparound condition
-            if (angle < start && angle >=0)
+            if (angle < _start && angle >=0)
             {
                 //qInfo() << "convex wraparound HIT" << start << end << angle;
                 return true;
             }
-            else if (angle <= 360 && angle > end)
+            else if (angle <= 360 && angle > _end)
             {
                 //qInfo() << "convex wraparound HIT" << start << end << angle;
                 return true;
@@ -244,10 +266,11 @@ bool ArcData::pointWithinArc(QPointF pt)
     else
     {
         // concave - start should be less than end
+        Q_ASSERT(_curveType == CURVE_CONCAVE);
         Q_ASSERT(_span >=0);
-        if (start < end)
+        if (_start < _end)
         {
-            if (angle < end && angle > start)
+            if (angle < _end && angle > _start)
             {
                 //qWarning() << " concave hit 1" << start << end << angle;
                 return true;
@@ -256,12 +279,12 @@ bool ArcData::pointWithinArc(QPointF pt)
         else
         {
             // wraparound condition
-            if (angle > start && angle <= 300)
+            if (angle > _start && angle <= 300)
             {
                 //qInfo() << "concave wraparound HIT 2" << start << end << angle;
                 return true;
             }
-            else if (angle >= 0 && angle < end)
+            else if (angle >= 0 && angle < _end)
             {
                 //qInfo() << "concave wraparound HIT 3" << start << end << angle;
                 return true;
@@ -275,4 +298,21 @@ bool ArcData::pointWithinArc(QPointF pt)
     }
     //qDebug() << "miss";
     return false;
+}
+
+QPointF ArcData::computeNewPoint(QPointF orig, QPointF c, qreal span, bool moveA)
+{
+    // Compute original angle relative to center
+    qreal thetaOrig = atan2(orig.y() - c.y(), orig.x() - c.x());
+
+    // Adjust angle based on span
+    qreal thetaNew = moveA ? (thetaOrig - span * (M_PI / 180.0)) : (thetaOrig + span * (M_PI / 180.0));
+
+    // Compute new coordinates
+    qreal r = sqrt(pow(orig.x() - c.x(), 2) + pow(orig.y() - c.y(), 2));
+
+    QPointF newPt;
+    newPt.setX(c.x() + r * cos(thetaNew));
+    newPt.setY(c.y() + r * sin(thetaNew));
+    return newPt;
 }

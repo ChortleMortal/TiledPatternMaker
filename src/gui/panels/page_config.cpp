@@ -12,45 +12,94 @@
 
 #include "gui/panels/page_config.h"
 #include "gui/top/controlpanel.h"
-#include "model/settings/configuration.h"
-#include "sys/tiledpatternmaker.h"
+#include "gui/top/splash_screen.h"
+#include "gui/top/system_view.h"
 #include "gui/widgets/dlg_textedit.h"
+#include "model/settings/configuration.h"
 #include "sys/qt/qtapplog.h"
 #include "sys/sys.h"
-#include "gui/top/view.h"
+#include "sys/sys/debugflags.h"
+#include "sys/tiledpatternmaker.h"
 
-page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_CONFIG,"Configuration")
+page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_CONFIG,"Settings")
 {
     log = qtAppLog::getInstance();
 
-    auto appGroup  = createAppConfig();
-    auto pathGroup = createMediaPaths();
+    auto appGroup     = createAppSetup();
+    auto pathGroup    = createMediaPaths();
+    auto controlGroup = createAppControl();
+    auto infoGroup    = createAppInfo();
 
-    QPushButton * restartBtn = new QPushButton("Restart Tiled Pattern Maker");
-    QPushButton * pbAbout    = new QPushButton("About Tiled Pattern Maker");
-    QPushButton * btnPrimary = new QPushButton("Move to Primary Screen");
-
-    QHBoxLayout * hbox = new QHBoxLayout();
-    hbox->addWidget(restartBtn);
+    auto hbox = new QHBoxLayout();
+    hbox->addWidget(appGroup);
     hbox->addStretch();
-    hbox->addWidget(btnPrimary);
+    hbox->addWidget(controlGroup);
     hbox->addStretch();
-    hbox->addWidget(pbAbout);
 
-    // put it all together
-    vbox->addWidget(appGroup);
-    vbox->addSpacing(7);
-    vbox->addWidget(pathGroup);
-    vbox->addSpacing(7);
+    auto hbox2 = new QHBoxLayout();
+    hbox2->addStretch(1);
+    hbox2->addWidget(infoGroup);
+    hbox2->addStretch(2);
+
     vbox->addLayout(hbox);
     vbox->addStretch();
-
-    connect(btnPrimary,     &QPushButton::clicked,   theApp, &TiledPatternMaker::slot_bringToPrimaryScreen);
-    connect(pbAbout,        &QPushButton::clicked,   this,   &page_config::slot_about);
-    connect(restartBtn,     &QPushButton::clicked,   this,   &page_config::restartApp);
+    vbox->addWidget(pathGroup);
+    vbox->addStretch();
+    vbox->addLayout(hbox2);
+    vbox->addStretch();
 }
 
-QGroupBox * page_config::createAppConfig()
+QGroupBox * page_config::createAppControl()
+{
+    QPushButton * pbFirst        = new QPushButton("First Birthday");
+    QPushButton * pbEraseHistory = new QPushButton("Eraase Debug History");
+    QPushButton * restartBtn     = new QPushButton("Restart Tiled Pattern Maker");
+    QPushButton * btnPrimary     = new QPushButton("Move to Primary Screen");
+
+
+    auto vbox = new QVBoxLayout();
+    vbox->addWidget(restartBtn);
+    vbox->addWidget(btnPrimary);
+    vbox->addWidget(pbEraseHistory);
+    vbox->addWidget(pbFirst);
+
+    QGroupBox * actions = new QGroupBox("App Control");
+    actions->setLayout(vbox);
+
+    connect(pbFirst,        &QPushButton::clicked,   this,  &page_config::slot_firstBirthday);
+    connect(pbEraseHistory, &QPushButton::clicked,   this,  &page_config::slot_eraseDebugFlagHistory);
+    connect(btnPrimary,     &QPushButton::clicked,   theApp,&TiledPatternMaker::slot_bringToPrimaryScreen);
+    connect(restartBtn,     &QPushButton::clicked,   this,  &page_config::restartApp);
+
+    return  actions;
+}
+
+QGroupBox * page_config::createAppInfo()
+{
+
+    QPushButton * pbAbout    = new QPushButton("About Tiled Pattern Maker");
+    QPushButton * pbStartup  = new QPushButton("Startup options");
+    QPushButton * btnSupport = new QPushButton("Support");
+    QPushButton * btnKbdd    = new QPushButton("Keyboard and Shortcuts");
+
+    QGridLayout * grid = new QGridLayout();
+    grid->addWidget(btnKbdd,0,0);
+    grid->addWidget(pbStartup,0,1);
+    grid->addWidget(pbAbout,1,0);
+    grid->addWidget(btnSupport,1,1);
+
+    QGroupBox * info = new QGroupBox("App Information");
+    info->setLayout(grid);
+
+    connect(pbAbout,        &QPushButton::clicked,   this,   &page_config::slot_about);
+    connect(pbStartup,      &QPushButton::clicked,   this,   &page_config::slot_start_options);
+    connect(btnSupport,     &QPushButton::clicked,   this,   &page_config::slot_showSupport);
+    connect(btnKbdd,        &QPushButton::clicked,   this,   &page_config::slot_showShortcuts);
+
+    return info;
+}
+
+QGroupBox * page_config::createAppSetup()
 {
     QRadioButton * designerMode = new QRadioButton("Designer Mode (recommended)");
     QRadioButton * insightMode  = new QRadioButton("Insight Mode");
@@ -73,8 +122,16 @@ QGroupBox * page_config::createAppConfig()
     QCheckBox   * chkBigScreen  = new QCheckBox("Large Screen Mode (e.g. UHD-3840x2160)");
     chkSplit->setChecked(config->splitScreen);
     chkBigScreen->setChecked(config->bigScreen);
+
     QCheckBox   * chkLimitView  = new QCheckBox("Limit View Size to available Screen Size");
     chkLimitView->setChecked(config->limitViewSize);
+
+    QCheckBox   * chkSplash = new QCheckBox("Disable splash screens");
+    chkSplash->setChecked(config->disableSplash);
+
+    QCheckBox   * chkResize = new QCheckBox("Disable resize notifications");
+    chkResize->setChecked(config->disableResizeNotify);
+
 
     QHBoxLayout *hbox = new QHBoxLayout;
     hbox->addWidget(designerMode);
@@ -96,25 +153,32 @@ QGroupBox * page_config::createAppConfig()
     hbox5->addWidget(chkLimitView);
     hbox5->addStretch();
 
+    QHBoxLayout * hbox6 = new QHBoxLayout();
+    hbox6->addWidget(chkSplash);
+    hbox6->addStretch();
+
+    QHBoxLayout * hbox7 = new QHBoxLayout();
+    hbox7->addWidget(chkResize);
+    hbox7->addStretch();
+
     QVBoxLayout * vbox2 = new QVBoxLayout;
     vbox2->addLayout(hbox);
     vbox2->addLayout(hbox3);
     vbox2->addLayout(hbox4);
     vbox2->addLayout(hbox5);
+    vbox2->addLayout(hbox6);
+    vbox2->addLayout(hbox7);
 
-    QGroupBox * appGroup = new QGroupBox("Application");
+    QGroupBox * appGroup = new QGroupBox("App Settings");
     appGroup->setLayout(vbox2);
 
     connect(chkSplit,       &QCheckBox::clicked, this, [this](bool checked) { config->splitScreen = checked; restartApp(); });
     connect(chkLimitView,   &QCheckBox::clicked, this, [this](bool checked) { config->limitViewSize = checked; emit sig_reconstructView(); });
-    connect(chkBigScreen,   &QCheckBox::clicked, this,    &page_config::slot_bigScreen);
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    connect(btnGroup,      SIGNAL(buttonClicked(int)), this, SLOT(slot_mode(int)));
-    connect(btnGroup2,      SIGNAL(buttonClicked(int)), this, SLOT(slot_darkThemeChanged(int)));
-#else
-    connect(btnGroup,      &QButtonGroup::idClicked,  this,  &page_config::slot_mode);
-    connect(btnGroup2,     &QButtonGroup::idClicked,  this,  &page_config::slot_darkThemeChanged);
-#endif
+    connect(chkSplash,      &QCheckBox::clicked, this, [this](bool checked) { config->disableSplash = checked; Sys::splash->disable(checked); });
+    connect(chkResize,      &QCheckBox::clicked, this, [this](bool checked) { config->disableResizeNotify = checked; });
+    connect(chkBigScreen,   &QCheckBox::clicked,        this, &page_config::slot_bigScreen);
+    connect(btnGroup,       &QButtonGroup::idClicked,   this, &page_config::slot_mode);
+    connect(btnGroup2,      &QButtonGroup::idClicked,   this, &page_config::slot_darkThemeChanged);
 
     return appGroup;
 }
@@ -183,7 +247,7 @@ QGroupBox * page_config::createMediaPaths()
     configGrid->addWidget(logLabel,row,0);
     configGrid->addWidget(le_logName,row,1);
 
-    QGroupBox * pathGroup = new QGroupBox("File Paths");
+    QGroupBox * pathGroup = new QGroupBox("App Path Settings");
     pathGroup->setLayout(configGrid);
 
     updatePaths();
@@ -307,8 +371,6 @@ void page_config::slot_darkThemeChanged(int id)
 {
     config->colorTheme = eColorTheme(id);
     restartApp();
-
-
 }
 
 void page_config::slot_reconfigurePaths()
@@ -367,16 +429,68 @@ void page_config::slot_bigScreen(bool enb)
     }
 }
 
-void page_config::slot_about()
-{
-    DlgAbout dlg;
-    dlg.exec();
-}
-
 void page_config::slot_logToAppDir(bool checked)
 {
     config->logToAppDir = checked;
     log->logToAppDir(checked);
     log->init();
     updatePaths();
+}
+
+void page_config::slot_firstBirthday()
+{
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Critical);
+    box.setWindowTitle("First Birthday TiledPatternMaker");
+    box.setText("This is VERY DRASTIC - it erases all registry settings\nand sets them back to defaults.\nThere is no coming back from this.\nOK to  Proceed?");
+    box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    box.setDefaultButton(QMessageBox::Cancel);
+    auto rv = box.exec();
+    if (rv == QMessageBox::Cancel)
+        return;
+
+    QSettings settings;
+    settings.remove("");
+
+    Sys::config->firstBirthday = true;  // prevents persistence on exit
+
+    restartApp();
+}
+
+void page_config::slot_eraseDebugFlagHistory()
+{
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Critical);
+    box.setText("This will erase all previous debug flag settings.\nOK to  Proceed?");
+    box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    box.setDefaultButton(QMessageBox::Cancel);
+    auto rv = box.exec();
+    if (rv == QMessageBox::Cancel)
+        return;
+
+    Sys::flags->eraseHistory();
+}
+
+void page_config::slot_about()
+{
+    DlgAbout dlg(this);
+    dlg.exec();
+}
+
+void page_config::slot_start_options()
+{
+    DlgStartOptions dlg(this);
+    dlg.exec();
+}
+
+void page_config::slot_showSupport()
+{
+    DlgSupport dlg(this);
+    dlg.exec();
+}
+
+void page_config::slot_showShortcuts()
+{
+    DlgKbdOpts dlg(this);
+    dlg.exec();
 }

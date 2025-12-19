@@ -8,6 +8,7 @@
 
 class ProtoMakerData;
 class MotifMakerWidget;
+class SMXWidget;
 
 typedef std::shared_ptr<class Prototype>     ProtoPtr;
 typedef std::shared_ptr<class Tile>          TilePtr;
@@ -22,14 +23,15 @@ public:
 
     void	onRefresh(void) override;
     void    onEnter()       override;
-    void    onExit()        override {}
-    QString getPageStatus() override;
+    void    onExit()        override;
 
 public slots:
 
 private slots:
     void    replicateClicked(bool state);
-    void    multiClicked(bool state);
+    void    enlargedClicked();
+    void    selectedClicked();
+    void    tiledClicked();
     void    slot_combine();
     void    slot_duplicateCurrent();
     void    slot_deleteCurrent();
@@ -38,16 +40,17 @@ private slots:
     void    slot_rebuildMotif();
     void    slot_prototypeSelected(int row);
     void    slot_widthChanged(int val);
-    void    slot_enlarge(bool checked);
 
 protected:
     void    loadProtoCombo();
+    void    setPageStatusString();
 
 private:
     MotifMakerWidget* motifMakerWidget;
     QCheckBox       * replicate;
     QComboBox       * prototypeCombo;
     QLabel          * protoLabel;
+    SMXWidget       * smxWidget;
 };
 
 #endif

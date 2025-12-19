@@ -3,7 +3,8 @@
 #include "sys/sys.h"
 #include "gui/top/controlpanel.h"
 #include "sys/tiledpatternmaker.h"
-#include "gui/top/view_controller.h"
+#include "gui/top/system_view_controller.h"
+
 
 panel_page::panel_page(ControlPanel * parent, ePanelPage page,  QString name) : QWidget()
 {
@@ -28,16 +29,16 @@ panel_page::panel_page(ControlPanel * parent, ePanelPage page,  QString name) : 
     //setFixedWidth(PANEL_RHS_WIDTH);
     setLayout (vbox);
 
-    connect(this,   &panel_page::sig_render,          theApp,     &TiledPatternMaker::slot_render,      Qt::QueuedConnection);
-    connect(this,   &panel_page::sig_reconstructView, viewControl,&ViewController::slot_reconstructView,Qt::QueuedConnection);
-    connect(this,   &panel_page::sig_attachMe,        parent,     &ControlPanel::slot_reattachPage,     Qt::QueuedConnection);
-    connect(this,   &panel_page::sig_updateView,      Sys::view,  &View::slot_update);
+    connect(this,   &panel_page::sig_reconstructView, viewControl, &SystemViewController::slot_reconstructView,Qt::QueuedConnection);
+    connect(this,   &panel_page::sig_updateView,      viewControl, &SystemViewController::slot_updateView);
+    connect(this,   &panel_page::sig_attachMe,        parent,      &ControlPanel::slot_reattachPage,     Qt::QueuedConnection);
+    connect(panel,  &ControlPanel::sig_raiseDetached, this,        &panel_page::slot_raiseDetached);
 }
 
 // pressing 'x' to close detached/floating page is used to re-attach
 void panel_page::closeEvent(QCloseEvent *event)
 {
-    qInfo() << __FUNCTION__ << pageName;
+    qInfo() << "panel_page::closeEvent" << pageName;
 
     if (closed)
     {
@@ -45,27 +46,29 @@ void panel_page::closeEvent(QCloseEvent *event)
         return;
     }
 
-    closePage(floating);
+    closePage();
 
     floating = false;
 
-    event->setAccepted(false);
+    event->setAccepted(false);  // dont close
 
     // re-attach to stack
     emit sig_attachMe(this);
 }
 
 // called when closing the application
-void panel_page::closePage(bool detached)
+void panel_page::closePage()
 {
-    //qInfo() << __FUNCTION__ << pageName;
+    //qInfo() << "panel_page::closePage" << pageName;
 
     QSettings s;
-    QString name = QString("panel2/%1/floated").arg(pageName);
-    if (detached)
-    {
-        s.setValue(name,true);
+    QString name = QString("panel2/%1/pageState").arg(pageName);
+    s.setValue(name,sPageState[pageState]);
 
+    switch (pageState)
+    {
+    case PAGE_DETACHED:
+    {
         name = QString("panel2/%1/pagePos").arg(pageName);
         QPoint pt = pos();
         qDebug() << pageName << pt;
@@ -75,25 +78,39 @@ void panel_page::closePage(bool detached)
         QSize sz = size();
         qDebug() << pageName << sz;
         s.setValue(name,sz);
+
+    }    break;
+
+    case PAGE_SUB_ATTACHED:
+    case PAGE_ATTACHED:
+        break;
     }
-    else
-    {
-        s.setValue(name,false);
-    }
+
     closed = true;
 }
 
 bool panel_page::wasFloated()
 {
     QSettings s;
-
-    QString name = QString("panel2/%1/floated").arg(pageName);
-    bool wasFloated = s.value(name,false).toBool();
-    return wasFloated;
+    QString name       = QString("panel2/%1/pageState").arg(pageName);
+    QString wasFloated = s.value(name,false).toString();
+    return (wasFloated == "PAGE_DETACHED");
 }
 
-void panel_page::floatMe()
+bool panel_page::wasSubAttached()
 {
+    QSettings s;
+    QString name       = QString("panel2/%1/pageState").arg(pageName);
+    QString wasFloated = s.value(name,false).toString();
+    return (wasFloated == "PAGE_SUB_ATTACHED");
+}
+
+void panel_page::detach(QString tname)
+{
+    setParent(nullptr);     // this detaches
+
+    setWindowTitle(tname);
+
     closed   = false;
     floating = true;
 
@@ -104,6 +121,12 @@ void panel_page::floatMe()
     if (!pt.isNull())
     {
         qDebug() << "panel_page::floatMe()" << pageName << pt;
+        QScreen *screenAtOrigin = QGuiApplication::screenAt(pt);
+        QScreen *currentScreen = screen();
+        if (screenAtOrigin != currentScreen)
+        {
+            pt = QCursor::pos();
+        }
     }
     else
     {
@@ -119,6 +142,19 @@ void panel_page::floatMe()
         qDebug() << "resizing to" << sz;
         resize(sz);
     }
+    else
+    {
+        adjustSize();
+    }
+    show();
+}
+
+void panel_page::slot_raiseDetached()
+{
+    if (isFloating())
+    {
+        raise();
+    }
 }
 
 QString panel_page::addr(void * address)
@@ -131,19 +167,11 @@ QString panel_page::addr(const void * address)
     return QString::number(reinterpret_cast<uint64_t>(address),16);
 }
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
 void panel_page::enterEvent(QEnterEvent *event)
 {
     Q_UNUSED(event)
     mouseEnter();
 }
-#else
-void panel_page::enterEvent(QEvent *event)
-{
-    Q_UNUSED(event)
-    mouseEnter();
-}
-#endif
 
 void panel_page::leaveEvent(QEvent *event)
 {
@@ -164,7 +192,17 @@ void  panel_page::blockPage(bool block)
     }
 }
 
-bool  panel_page::pageBlocked()
+bool panel_page::pageBlocked()
 {
     return (blockCount != 0);
+}
+
+void panel_page::setPageStatus()
+{
+    panel->setPageStatus(pageType,pageStatusString);
+}
+
+void panel_page::clearPageStatus()
+{
+    panel->clearPageStatus(pageType);
 }

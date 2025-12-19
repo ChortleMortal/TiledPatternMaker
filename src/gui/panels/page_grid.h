@@ -5,6 +5,7 @@
 #include "gui/panels/panel_page.h"
 
 class ClickableLabel;
+class SMXWidget;
 
 class page_grid : public panel_page
 {
@@ -31,25 +32,25 @@ private slots:
     void    slot_gridAngleChanged(qreal angle);
     void    slot_zValueChanged(int value);
 
-    void    slot_gridLayerCenterChanged(bool checked);
     void    slot_drawModelCenterChanged(bool checked);
     void    slot_drawViewCenterChanged(bool checked);
-    void    slot_lockToViewChanged(bool enb);
 
     void    slot_pickColorTiling();
     void    slot_pickColorModel();
     void    slot_pickColorScreen();
 
-    void    slot_resetPos();
-    void    slot_reAlign();
 //  void    slot_showCenterChanged(int state);
 
 protected:
 
 private:
-    QGroupBox    * groupBox;
+    QGroupBox    * viewBox;
+    QGroupBox    * centerBox;
+
     QButtonGroup * gridUnitGroup;
     QButtonGroup * gridTypeGroup;
+
+    SMXWidget    * smxWidget;
 
     ClickableLabel * labelT;
     ClickableLabel * labelM;

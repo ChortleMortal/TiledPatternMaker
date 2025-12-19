@@ -18,6 +18,7 @@ public:
     const QString &         getName()   { return listname; }
 
     void                    add(VersionedName version);
+    void                    remove(VersionedName version);
     void                    clear();
     void                    removeDuplicates() { vlist.removeDuplicates(); }
 

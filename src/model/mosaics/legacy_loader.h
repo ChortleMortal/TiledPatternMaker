@@ -11,7 +11,6 @@
 using std::shared_ptr;
 using std::weak_ptr;
 using std::make_shared;
-using std::enable_shared_from_this;
 
 typedef shared_ptr<class Mosaic>        MosaicPtr;
 typedef shared_ptr<class Prototype>     ProtoPtr;
@@ -134,6 +133,7 @@ private:
 
     QString                 _fileName;
     bool                    _loaded;
+    bool                    _debug;
 
     int vOrigCnt;
     int vRefrCnt;

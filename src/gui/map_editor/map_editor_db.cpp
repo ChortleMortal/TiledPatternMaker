@@ -4,6 +4,7 @@
 #include "model/settings/configuration.h"
 #include "sys/geometry/crop.h"
 #include "sys/geometry/map.h"
+#include "sys/geometry/map_cleanser.h"
 #include "sys/tiledpatternmaker.h"
 
 MapEditorDb::MapEditorDb()
@@ -143,7 +144,8 @@ void MapEditorDb::createComposite()
         qDebug() << compositeMap->summary();
     }
 
-    compositeMap->deDuplicateVertices(tolerance);
+    MapCleanser mc(compositeMap);
+    mc.deDuplicateVertices(tolerance);
 
     if (del)
         getLayer(COMPOSITE).set(compositeMap,MAPED_TYPE_COMPOSITE_MOTIF,del);

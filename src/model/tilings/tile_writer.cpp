@@ -6,12 +6,12 @@
 
 TileWriter::TileWriter()
 {
-    refId    = 0;
+    twbase.refId    = 0;
 }
 
 void TileWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
 {
-    for (auto & ep : std::as_const(epoly))
+    for (auto & ep : epoly.get())
     {
         VertexPtr v1 = ep->v1;
         VertexPtr v2 = ep->v2;
@@ -26,23 +26,13 @@ void TileWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
         }
         else if (ep->getType() == EDGETYPE_CURVE)
         {
-            QString str = QString("<Curve convex=\"%1\">").arg(ep->isConvex() ? "t" : "f");
+            QString str = QString("<Curve convex=\"%1\">").arg((ep->getCurveType() == CURVE_CONVEX) ? "t" : "f");
             ts << str << endl;
             QPointF p3 = ep->getArcCenter();
             setVertex(ts,v1,"Point");
             setVertex(ts,v2,"Point");
             setPoint(ts,p3,"Center");
             ts << "</Curve>" << endl;
-        }
-        else if (ep->getType() == EDGETYPE_CHORD)
-        {
-            QString str = QString("<Chord convex=\"%1\">").arg(ep->isConvex() ? "t" : "f");
-            ts << str << endl;
-            QPointF p3 = ep->getArcCenter();
-            setVertex(ts,v1,"Point");
-            setVertex(ts,v2,"Point");
-            setPoint(ts,p3,"Center");
-            ts << "</Chord>" << endl;
         }
     }
 }
@@ -61,15 +51,15 @@ void TileWriter::setTransform(QTextStream & ts, QTransform T)
 void TileWriter::setVertex(QTextStream & ts,VertexPtr v, QString name)
 {
     QString qsid;
-    if (hasReference(v))
+    if (twbase.hasReference(v))
     {
-        qsid = getVertexReference(v);
+        qsid = twbase.getVertexReference(v);
         ts << "<" << name << qsid << "/>" << endl;
         return;
     }
 
-    qsid = nextId();
-    setVertexReference(getRef(),v);
+    qsid = twbase.nextId();
+    twbase.setVertexReference(twbase.getRef(),v);
 
     QPointF pt = v->pt;
 

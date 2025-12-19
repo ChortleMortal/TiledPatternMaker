@@ -14,7 +14,6 @@ public:
     MouseModeWidget();
     ~MouseModeWidget();
 
-    void    setSetCenterMode(bool checked);
     void    setTranslateMode(bool checked);
     void    setRotateMode(bool checked);
     void    setScaleMode(bool checked);
@@ -22,7 +21,6 @@ public:
     void display();
 
 protected:
-    QCheckBox * chkCenter;
     QCheckBox * chkPan;
     QCheckBox * chkRot;
     QCheckBox * chkZoom;

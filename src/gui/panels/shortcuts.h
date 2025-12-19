@@ -4,11 +4,15 @@
 
 #include <QString>
 
+class QWidget;
+
+#include "sys/enums/eviewtype.h"
+
 class Shortcuts
 {
 public:
+    static void  popup(eViewType view);
 
-public:
     static QString getMosaicShortcuts();
     static QString getDesignShortcuts();
     static QString getTilingMakerShortcuts();

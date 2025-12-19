@@ -7,6 +7,7 @@
 
 class AQComboBox;
 class ClickableLabel;
+class SMXWidget;
 
 typedef std::shared_ptr<class Border>  BorderPtr;
 typedef std::shared_ptr<class Crop>    CropPtr;
@@ -81,8 +82,7 @@ public:
 
     void onRefresh()        override;
     void onEnter()          override {}
-    void onExit()           override {}
-    QString getPageStatus() override;
+    void onExit()           override;
 
 public slots:
     void slot_removeBorder();
@@ -143,6 +143,8 @@ private:
     LayoutQPointF   * centre;
 
     QCheckBox       * chkUseViewSize;
+
+    SMXWidget       * smxWidget;
 };
 
 #endif

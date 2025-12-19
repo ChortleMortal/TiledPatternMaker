@@ -53,7 +53,7 @@ PlacedTileSelector::PlacedTileSelector(QPointF pt)
 PlacedTileSelector::PlacedTileSelector(PlacedTilePtr pfp)
 {
     this->pfp  = pfp;
-    pt = pfp->getTransform().map(pfp->getTile()->getCenter()); // TODO is this  right
+    pt = pfp->getPlacement().map(pfp->getTile()->getCenter()); // FIXME is this  right
 }
 
 PlacedTileSelector::PlacedTileSelector(PlacedTilePtr pfp, QPointF pt)
@@ -83,17 +83,17 @@ QLineF PlacedTileSelector::getModelLine()
 
 QLineF PlacedTileSelector::getPlacedLine()
 {
-    return pfp->getTransform().map(edge->getLine());
+    return pfp->getPlacement().map(edge->getLine());
 }
 
 EdgePtr PlacedTileSelector::getPlacedEdge()
 {
-    return std::make_shared<Edge>(edge,pfp->getTransform());
+    return std::make_shared<Edge>(edge,pfp->getPlacement());
 }
 
 QPointF PlacedTileSelector::getPlacedPoint()
 {
-    return pfp->getTransform().map(pt);
+    return pfp->getPlacement().map(pt);
 }
 
 QPolygonF PlacedTileSelector::getPlacedPolygon()
@@ -103,7 +103,10 @@ QPolygonF PlacedTileSelector::getPlacedPolygon()
 
 QPolygonF PlacedTileSelector::getModelPolygon()
 {
-    return pfp->getTilePoints();
+    TilePtr tile = pfp->getTile();
+    if (!tile)
+        return QPolygonF();
+    return tile->getPoints();
 }
 
 bool PlacedTileSelector::isPoint()

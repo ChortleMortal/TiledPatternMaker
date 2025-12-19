@@ -87,11 +87,7 @@ void Sketch::draw(GeoGraphics * gg)
             }
             else if (edge->getType() == EDGETYPE_CURVE)
             {
-                edge2 = make_shared<Edge>(v1,v2, edge->getArcCenter(), edge->isConvex(),false);
-            }
-            else if (edge->getType() == EDGETYPE_CHORD)
-            {
-                edge2 = make_shared<Edge>(v1,v2, edge->getArcCenter(), edge->isConvex(),true);
+                edge2 = make_shared<Edge>(v1,v2, edge->getArcCenter(), edge->getCurveType());
             }
             gg->drawEdge(edge2,pen);
         }

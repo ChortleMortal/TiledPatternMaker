@@ -4,10 +4,9 @@
 
 #include <QObject>
 #include <QMap>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 #include "sys/enums/edesign.h"
+
+class LoadUnit;
 
 typedef std::shared_ptr<class Design> DesignPtr;
 
@@ -45,6 +44,9 @@ public:
     void setStep(int step);
     bool step(int delta);       // from keyboard
 
+    LoadUnit * getLoadUnit() { return loadUnit; }
+    void reload();
+
 signals:
     void sig_loadedDesign(eDesign design);
     void sig_updateView();
@@ -62,8 +64,9 @@ public slots:
 private slots:
 
 private:
-    class  ViewController * viewControl;
-    class  Configuration  * config;
+    class  SystemViewController * viewControl;
+    class  Configuration        * config;
+    class  LoadUnit             * loadUnit;
 
     QMap<eDesign,DesignPtr>     availableDesigns;
     QVector<DesignPtr>          activeDesigns;

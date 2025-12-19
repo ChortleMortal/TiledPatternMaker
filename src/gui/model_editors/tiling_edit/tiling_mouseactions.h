@@ -37,14 +37,13 @@ public:
     virtual void draw(GeoGraphics * g2d );
     virtual void endDragging( QPointF spt );
 
-    QString            desc;
+    QString                 desc;
 
 protected:
-    QPointF            wLastDrag;   // screen point
-    PlacedTileSelectorPtr    selection;
-    QColor             drag_color;
+    QPointF                 wLastDrag;   // screen point
+    PlacedTileSelectorPtr   selection;
+    QColor                  drag_color;
 
-    TilingMakerView   * tilingMakerView;
     TilingMaker       * tilingMaker;
 
 private:
@@ -157,8 +156,6 @@ public:
 private:
     void addVertex(QPointF wpt);
     QPointF underneath;
-
-    class GridView * gridView;
 };
 
 class Measure : public TilingMouseAction
@@ -190,17 +187,21 @@ private:
 };
 
 
-
-class EditTile : public TilingMouseAction
+class EditTilePoint : public TilingMouseAction
 {
 public:
-    EditTile(PlacedTileSelectorPtr sel, PlacedTilePtr pfp, QPointF spt );
+    EditTilePoint(PlacedTileSelectorPtr sel, PlacedTilePtr pfp, QPointF spt );
     void updateDragging( QPointF spt ) override;
     void endDragging(QPointF spt) override;
+
+protected:
+    QPointF       snapTo(QPointF spt);
 
 private:
     PlacedTilePtr pfp;
     int           vertexIndex;
+    bool          snapped;
+    QPointF       sSnapped;
 };
 
 class EditEdge : public TilingMouseAction

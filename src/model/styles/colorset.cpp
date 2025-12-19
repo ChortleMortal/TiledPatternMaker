@@ -75,6 +75,11 @@ TPColor ColorSet::getFirstTPColor()
     return getNextTPColor();
 }
 
+TPColor ColorSet::getLastTPColor()
+{
+    return last();
+}
+
 TPColor ColorSet::getNextTPColor()
 {
     if (size() == 0)

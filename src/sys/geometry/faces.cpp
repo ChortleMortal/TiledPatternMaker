@@ -57,7 +57,7 @@ Face::Face()
     refs++;
 }
 
-Face::Face(EdgePoly & ep) : EdgePoly(ep)
+Face::Face(EdgePoly & ep) : EdgeSet(ep.get())
 {
     state    = FACE_UNDONE;
     outer    = false;
@@ -68,7 +68,12 @@ Face::Face(EdgePoly & ep) : EdgePoly(ep)
 
 QPolygonF Face::getPolygon()
 {
-    return getPoly();
+    QPolygonF pts;
+    for (auto & edge : *this)
+    {
+        pts << edge->v1->pt;
+    }
+    return pts;
 }
 
 QPointF Face::center()
@@ -84,11 +89,10 @@ QPointF Face::center()
 void Face::dump()
 {
     qDebug() << "=== FACE";
-    EdgePoly & ep = *this;
-    ep.dump();
+    //EdgePoly & ep = *this;
+    //ep.dump();
     qDebug() << "=== END FACE";
 }
-
 
 bool lessThanPoint(const QPointF &p1, const QPointF & p2)
 {
@@ -103,10 +107,10 @@ bool  Face::overlaps(FacePtr other)
 
     return thisP.intersects(otherP);
 #else
-    for (auto & ep1: std::as_const(*this))
+    for (EdgePtr & ep1 : *this)
     {
         QLineF l1 = ep1->getLine();
-        for (auto & ep2 : std::as_const(*other))
+        for (EdgePtr & ep2 : *other)
         {
             QLineF l2   = ep2->getLine();
             QPointF intersect;

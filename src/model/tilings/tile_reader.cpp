@@ -1,24 +1,20 @@
+#include <QTransform>
 #include "model/tilings/tile_reader.h"
 #include "sys/geometry/xform.h"
+#include "sys/geometry/geo.h"
 #include "sys/geometry/edge.h"
-#include "model/mosaics/mosaic_reader_base.h"
-#include <QTransform>
+#include "model/mosaics/reader_base.h"
 
 using std::make_shared;
 
-TileReader::TileReader()
+TileReader::TileReader(ReaderBase * base)
 {
-    base = std::make_shared<MosaicReaderBase>();
+    mrbase = base;
 }
 
-TileReader::TileReader(MRBasePtr base)
+EdgeSet TileReader::getEdgeSet(xml_node & node, bool legacyFlipConcave)
 {
-    this->base = base;
-}
-
-EdgePoly TileReader::getEdgePoly(xml_node & node, bool legacyFlip)
-{
-    EdgePoly ep;
+    EdgeSet vec;
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string name = n.name();
@@ -28,7 +24,7 @@ EdgePoly TileReader::getEdgePoly(xml_node & node, bool legacyFlip)
             xml_node n3  = n2.next_sibling("Point");
             VertexPtr v1 = getVertex(n2);
             VertexPtr v2 = getVertex(n3);
-            ep.push_back(make_shared<Edge>(v1,v2));
+            vec.push_back(make_shared<Edge>(v1,v2));
         }
         else if (name == "Curve")
         {
@@ -38,45 +34,28 @@ EdgePoly TileReader::getEdgePoly(xml_node & node, bool legacyFlip)
             VertexPtr v1   = getVertex(n2);
             VertexPtr v2   = getVertex(n3);
             QPointF center = getPoint(n4);
-            bool convex = true; // default
+            eCurveType ctype = CURVE_CONVEX; // default
             xml_attribute conv = n.attribute("convex");
             if (conv)
             {
                 QString val = conv.value();
-                convex = (val == "t") ? true : false;
+                ctype = (val == "t") ? CURVE_CONVEX : CURVE_CONCAVE;
             }
-            if (legacyFlip && !convex)
+            if (legacyFlipConcave && ctype == CURVE_CONCAVE)
             {
-                center = ArcData::reflectCentreOverEdge(v1->pt,v2->pt,center);
+                center = Geo::reflectPoint(center,QLineF(v1->pt,v2->pt));
             }
-            EdgePtr eptr = make_shared<Edge>(v1,v2,center,convex,false);
-            ep.push_back(eptr);
+            EdgePtr eptr = make_shared<Edge>(v1,v2,center,ctype);
+            vec.push_back(eptr);
         }
-        else if (name == "Chord")
-        {
-            xml_node n2    = n.child("Point");
-            xml_node n3    = n2.next_sibling("Point");
-            xml_node n4    = n.child("Center");
-            VertexPtr v1   = getVertex(n2);
-            VertexPtr v2   = getVertex(n3);
-            QPointF center = getPoint(n4);
-            bool convex = true; // default
-            xml_attribute conv = n.attribute("convex");
-            if (conv)
-            {
-                QString val = conv.value();
-                convex = (val == "t") ? true : false;
-            }
-            if (legacyFlip && !convex)
-            {
-                center = ArcData::reflectCentreOverEdge(v1->pt,v2->pt,center);
-            }
-            EdgePtr eptr = make_shared<Edge>(v1,v2,center,convex,true);
-            ep.push_back(eptr);
-        }
-
     }
-    return ep;
+
+    if (vec.last()->v2->pt != vec.first()->v1->pt)
+    {
+        vec.push_back(make_shared<Edge>(vec.last()->v2,vec.first()->v1));
+    }
+
+    return vec;
 }
 
 QTransform  TileReader::getTransform(xml_node & node)
@@ -117,9 +96,9 @@ QTransform  TileReader::getTransform(xml_node & node)
 
 VertexPtr TileReader::getVertex(xml_node & node)
 {
-    if (base->hasReference(node))
+    if (mrbase->hasReference(node))
     {
-        return base->getVertexReferencedPtr(node);
+        return mrbase->getVertexReferencedPtr(node);
     }
 
     // pos
@@ -131,7 +110,7 @@ VertexPtr TileReader::getVertex(xml_node & node)
     qreal y = qsl[1].toDouble();
 
     VertexPtr v = make_shared<Vertex>(QPointF(x,y));
-    base->setVertexReference(node,v);
+    mrbase->setVertexReference(node,v);
 
     return v;
 }

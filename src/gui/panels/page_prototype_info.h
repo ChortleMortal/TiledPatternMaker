@@ -37,8 +37,7 @@ public:
 
     void onRefresh()        override;
     void onEnter()          override;
-    void onExit()           override {}
-    QString getPageStatus() override;
+    void onExit()           override;
 
 public slots:
 
@@ -73,7 +72,6 @@ private:
     AQTableWidget       * protoTable;
     QGridLayout         * showSettings;
     PrototypeMaker      * protoMaker;
-    PrototypeView       * protoView;
 };
 
 #endif

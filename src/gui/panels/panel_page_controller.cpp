@@ -6,6 +6,7 @@
 #include "gui/panels/page_grid.h"
 #include "gui/panels/page_image_tools.h"
 #include "gui/panels/page_layers.h"
+#include "gui/panels/page_layer_alignmentl.h"
 #include "gui/panels/page_loaders.h"
 #include "gui/panels/page_log.h"
 #include "gui/panels/page_map_editor.h"
@@ -18,8 +19,6 @@
 #include "gui/panels/page_system_info.h"
 #include "gui/panels/page_tiling_maker.h"
 #include "gui/panels/panel_page_controller.h"
-#include "gui/panels/panel_pages_widget.h"
-#include "gui/panels/panel_pages_widget.h"
 #include "gui/panels/panel_pages_widget.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/split_screen.h"
@@ -48,7 +47,7 @@ PanelPageController::~PanelPageController()
 
 void PanelPageController::populatePages()
 {
-    qDebug() << __FUNCTION__;
+    qDebug() << "PanelPageController::populatePages";
 
     panel_page * wp;
 
@@ -88,6 +87,9 @@ void PanelPageController::populatePages()
     pageList->addPage(wp);
 
     wp = new page_grid(panel);
+    pageList->addPage(wp);
+
+    wp = new page_layer_algnment(panel);
     pageList->addPage(wp);
 
     if (config->insightMode)
@@ -142,7 +144,7 @@ void PanelPageController::populatePages()
 
     pageList->establishSize();
 
-    qDebug() << __FUNCTION__ << "- END";
+    qDebug() << "PanelPageController::populatePages" << "- END";
 }
 
 
@@ -166,17 +168,27 @@ void PanelPageController::slot_floatPages()
     }
 
     QStringList names = pageList->wereFloated();
-
     if (!names.isEmpty())
     {
-        // this is harmless here but necessary for page floating to be after view is refreshed
-       //QCoreApplication::processEvents();
-
         for (const auto & pagename : std::as_const(names))
         {
             slot_detachWidget(pagename);
         }
     }
+}
+
+void PanelPageController::slot_subAttachPage()
+{
+    QString pagename = pageList->wasSubAttached();
+    if (!pagename.isEmpty())
+    {
+        slot_detachWidget(pagename);
+    }
+}
+
+panel_page * PanelPageController::getPage(QString name)
+{
+    return pageList->getPage(name);
 }
 
 panel_page * PanelPageController::getCurrentPage()
@@ -199,7 +211,7 @@ void  PanelPageController::setCurrentPage(QString name)
     }
 
     // select new
-    config->panelName = name;
+    config->pageName = name;
     newpage->setNewlySelected(true);
     pages->setCurrentPage(newpage);
     pageList->setCurrentRow(name);
@@ -216,35 +228,35 @@ void PanelPageController::slot_detachWidget(QString name)
 {
     qDebug() << "slot_detachWidget" << name;
 
-    panel_page * newDetachPage = pageList->getPage(name);
-    if (newDetachPage == nullptr)
+    panel_page * page = pageList->getPage(name);
+    if (page == nullptr)
     {
         qWarning("Page not found to detach");
         return;
     }
+
+    page->clearPageStatus();
 
     updateLocked = true;
 
     if (config->splitScreen && config->bigScreen)
     {
         // this sub-attaches in the splitter
-        auto splitter = theApp->getSplitter();
-        Q_ASSERT(splitter);
-        auto oldDetachPage = splitter->getFloater();
+        Q_ASSERT(Sys::splitter);
+        auto oldDetachPage = Sys::splitter->getFloater();
         if (oldDetachPage)
         {
             // replace the old sub_attach
             if (oldDetachPage->canExit())
             {
-                panel->clearStatus();
                 oldDetachPage->onExit();
             }
-            splitter->removeFloater();
+            Sys::splitter->removeFloater();
             reAttachPage(oldDetachPage);
         }
 
-        splitter->addFloater(newDetachPage);
-        newDetachPage->setNewlySelected(true);
+        Sys::splitter->addFloater(page);
+        page->setNewlySelected(true);
         pageList->setState(name,PAGE_SUB_ATTACHED);
     }
     else
@@ -253,15 +265,10 @@ void PanelPageController::slot_detachWidget(QString name)
         pageList->setState(name,PAGE_DETACHED);
 
         // change status
-        newDetachPage->setNewlySelected(true);
+        page->setNewlySelected(true);
 
-        // deal with the page
-        QDialog * dlg = new QDialog(panel);
-        dlg->setAttribute(Qt::WA_DeleteOnClose);
-
-        newDetachPage->setParent(dlg,Qt::Window);
-        newDetachPage->setWindowTitle(name);
-        newDetachPage->floatMe();
+        // float
+        page->detach(name);
     }
 
     updateLocked = false;
@@ -270,7 +277,7 @@ void PanelPageController::slot_detachWidget(QString name)
 void PanelPageController::reAttachPage(panel_page * page)
 {
     QString name = page->getName();
-    qInfo() << __FUNCTION__ << name;
+    qInfo() << "PanelPageController::reAttachPage" << name;
 
     updateLocked = true;
 
@@ -291,7 +298,7 @@ void PanelPageController::slot_selectPanelPage(QListWidgetItem * item)
         return;     // must be a separator
     }
 
-    qInfo() << "PanelPageController::slot_selectPanelPage:" << item->text();
+    //qInfo() << "PanelPageController::slot_selectPanelPage:" << item->text();
 
     // exit previous page
     panel_page * currentPage = pageList->getSelectedPage();
@@ -301,7 +308,6 @@ void PanelPageController::slot_selectPanelPage(QListWidgetItem * item)
         qDebug() << "current page" << currentName;
         if (currentPage->canExit())
         {
-            panel->clearStatus();
             currentPage->onExit();
         }
         else
@@ -326,7 +332,8 @@ void PanelPageController::slot_selectPanelPage(QListWidgetItem * item)
         break;
 
     case PAGE_SUB_ATTACHED:
-        theApp->getSplitter()->removeFloater();
+        Q_ASSERT(Sys::splitter);
+        Sys::splitter->removeFloater();
         reAttachPage(newPage);
         break;
 

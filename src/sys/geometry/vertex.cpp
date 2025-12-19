@@ -28,17 +28,6 @@ Vertex::~Vertex()
     copy.reset();
 }
 
-// Apply a transform.  Recalculate all the angles.  The order
-// doesn't change, although the list might need to get reversed
-// if the transform flips.  CSKFIXME -- make this work.
-// Fortunately, the rigid motions we'll apply in Islamic design
-// won't contain flips.  So we're okay for now.
-// casper: don't need to recalc angle
-void Vertex::transform(QTransform T)
-{
-    pt = T.map(pt);
-}
-
 qreal Vertex::getAngle(const EdgePtr & edge)
 {
     VertexPtr other = edge->getOtherV(pt);
@@ -48,5 +37,8 @@ qreal Vertex::getAngle(const EdgePtr & edge)
     return angle;
 }
 
-
+bool  Vertex::equals(VertexPtr & other)
+{
+    return Loose::equalsPt(pt,other->pt);
+}
 

@@ -3,6 +3,8 @@
 #include "model/motifs/motif.h"
 #include "sys/geometry/map.h"
 #include "sys/geometry/edge.h"
+#include "sys/geometry/map_verifier.h"
+#include "sys/geometry/neighbour_map.h"
 #include "sys/geometry/vertex.h"
 #include "sys/geometry/neighbours.h"
 #include "sys/geometry/geo.h"
@@ -111,7 +113,7 @@ void Extender::extendRayToBoundary(RadialRay & ray)
     }
 
     const QPolygonF & eboundary = eb.getPoly();
-    qDebug() << eboundary;
+    //qDebug() << eboundary;
 
     qreal radius = eb.getScale();
     QGraphicsEllipseItem circle(-radius,-radius,radius * 2.0, radius * 2.0);
@@ -146,7 +148,7 @@ void Extender::extendRayToBoundary(RadialRay & ray)
                 ray.addTip(a);
         }
     }
-    if (_motif.lock()->getDbgVal() & 0x01) ray.debug();
+    if (_motif.lock()->getMotifDebug() & 0x01) ray.debug();
 }
 
 void Extender::extendRayToBoundaryPerp(RadialRay & ray)
@@ -170,7 +172,7 @@ void Extender::extendRayToBoundaryPerp(RadialRay & ray)
 
     QPointF apt;
     qreal dist = 1000;
-    for (const QLineF & line : ep.getLines())
+    for (QLineF & line : ep.getLines())
     {
         QLineF pline = perpLine(line,tip);
         QPointF isect;
@@ -199,7 +201,7 @@ void Extender::extendRayToTilePerp(RadialRay & ray, TilePtr tile)
 
     QPointF apt;
     qreal dist = 1000;
-    for (const EdgePtr & edge : tile->getEdgePoly())
+    for (const EdgePtr & edge : tile->getEdgePoly().get())
     {
         QLineF pline = perpLine(edge->getLine(),tip);
         QPointF isect;
@@ -221,21 +223,18 @@ void Extender::connectRays(uint method, RaySet & set1, RaySet & set2)
     auto motif   = _motif.lock();
     auto radial  = std::dynamic_pointer_cast<RadialMotif>(motif);
 
-    if (motif && motif->getDbgVal() & 0x100)
+    if (motif && motif->getMotifDebug() & 0x100)
     {
-        auto map = motif->getDebugMap();
+        Sys::debugMapCreate->insertDebugMark(set1.ray1.getTip(),"s1r1",Qt::red);
+        Sys::debugMapCreate->insertDebugMark(set1.ray2.getTip(),"s1r2",Qt::red);
+        Sys::debugMapCreate->insertDebugMark(set2.ray1.getTip(),"s2r1",Qt::red);
+        Sys::debugMapCreate->insertDebugMark(set2.ray2.getTip(),"s2r2",Qt::red);
 
-        map->insertDebugMark(set1.ray1.getTip(),"s1r1");
-        map->insertDebugMark(set1.ray2.getTip(),"s1r2");
-        map->insertDebugMark(set2.ray1.getTip(),"s2r1");
-        map->insertDebugMark(set2.ray2.getTip(),"s2r2");
-
-        map->insertDebugLine(set1.ray1.getRay());
-        map->insertDebugLine(set1.ray2.getRay());
-        map->insertDebugLine(set2.ray1.getRay());
-        map->insertDebugLine(set2.ray2.getRay());
+        Sys::debugMapCreate->insertDebugLine(set1.ray1.getRay(),Qt::blue);
+        Sys::debugMapCreate->insertDebugLine(set1.ray2.getRay(),Qt::blue);
+        Sys::debugMapCreate->insertDebugLine(set2.ray1.getRay(),Qt::blue);
+        Sys::debugMapCreate->insertDebugLine(set2.ray2.getRay(),Qt::blue);
     }
-
 
     switch (method)
     {
@@ -283,7 +282,8 @@ void Extender::extendMotifMap(QTransform Tr)
 
     buildExtendedBoundary();
 
-    map->verify();
+    MapVerifier mv(map);
+    mv.verify();
 
     if (_extendRays)   // extend rays
     {
@@ -315,10 +315,9 @@ void Extender::extendMotifMap(QTransform Tr)
         embedTile(map,motif->getTile());
     }
 
-    map->verify();
+    mv.verify();
 }
 
-#if 1
 void Extender::extendMotifRays(MapPtr motifMap)
 {
     Q_ASSERT(_extendRays);
@@ -402,8 +401,7 @@ void Extender::extendMotifRays(MapPtr motifMap)
         }
     }
 }
-#endif
-#if 1
+
 void Extender::extendTipsToBoundary(MapPtr motifMap, QTransform unitRotationTr)
 {
     auto motif = _motif.lock();
@@ -497,8 +495,6 @@ void Extender::connectOuterVertices(MapPtr motifMap)
             }
             // we have v1 and v2
             motifMap->insertEdge(v1,v2);
-            v1.reset();
-            v2.reset();
         }
     }
 }
@@ -511,14 +507,14 @@ void Extender::extendBoundaryMap(MapPtr motifMap, TilePtr tile)
     const ExtendedBoundary & eb = getExtendedBoundary();
     const QVector<QLineF> blines = Geo::polyToLines(eb.getPoly());
 
-    motifMap->createNeighbourMap();
+    NeighbourMap nmap(motifMap);
 
     MapPtr newMap = std::make_shared<Map>("Temp");
 
     const QVector<VertexPtr> & vertices = motifMap->getVertices();
     for (auto & v : vertices)
     {
-        NeighboursPtr np = motifMap->getNeighbours(v);
+        NeighboursPtr np = nmap.getNeighbours(v);
         if (np->numNeighbours() == 1)
         {
             // is a tip - which is on a boundary
@@ -531,7 +527,7 @@ void Extender::extendBoundaryMap(MapPtr motifMap, TilePtr tile)
                     QPointF apt;
                     qreal dist = 1000;
                     QLineF pline = perpLine(bline,v->pt);
-                    for (const EdgePtr & edge : tile->getEdgePoly())
+                    for (const EdgePtr & edge : tile->getEdgePoly().get())
                     {
                         QPointF isect;
                         if (Intersect::getIntersection(edge->getLine(),pline,isect))
@@ -554,7 +550,7 @@ void Extender::extendBoundaryMap(MapPtr motifMap, TilePtr tile)
     }
     motifMap->mergeMap(newMap);
 }
-#endif
+
 void Extender::embedBoundary(MapPtr motifMap)
 {
     Q_ASSERT(_embedBoundary);
@@ -572,7 +568,9 @@ void Extender::embedTile(MapPtr motifMap,TilePtr tile)
 
     for (QLineF & line : tile->getLines())
     {
-        motifMap->insertEdge(line);
+        VertexPtr v1 = motifMap->insertVertex(line.p1());
+        VertexPtr v2 = motifMap->insertVertex(line.p2());
+        motifMap->insertEdge(v1,v2);
     }
 }
 

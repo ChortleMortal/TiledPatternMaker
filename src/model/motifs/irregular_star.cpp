@@ -29,18 +29,19 @@ IrregularStar::IrregularStar(const Motif &other) : IrregularStarBranches(other)
 void IrregularStar::infer()
 {
     int ver = getVersion();
-    qDebug() << "IrregularStar::inferStar version =" << ver;
+    //qDebug() << "IrregularStar::infer" << "version =" << ver;
 
     motifMap = make_shared<Map>("IrregularStar map");
 
     // qreal d  = angle (each integer is the next edge around the star)
     // int s    = number of intersects
     // qreal don = 1/n
-    qDebug() << "n:" << getN() << "d:" << d << "s:" << s;
+    //qDebug() << "n:" << getN() << "d:" << d << "s:" << s;
 
-    debugMap = nullptr;
-    if (dbgVal > 0)
-        debugMap = Sys::debugView->getMap();
+    if (motifDebug)
+    {
+        Sys::debugMapCreate->wipeout();
+    }
 
     if (ver == 3)
     {
@@ -58,7 +59,7 @@ void IrregularStar::infer()
 
 void IrregularStar::inferStarv1()
 {
-    qDebug() << "Infer::inferStar";
+    //qDebug() << "IrregularStar::inferStarv1";
 
     mids  = getTile()->getMids();
 
@@ -71,16 +72,18 @@ void IrregularStar::inferStarv1()
         motifMap->mergeMap( buildStarHalfBranchV1( d, s, side_frac, -1));
     }
     
-    qDebug().noquote() << motifMap->summary();
+    //().noquote() << motifMap->summary();
 }
 
 void IrregularStar::inferStarV2()
 {
+    //qDebug() << "IrregularStar::inferStarV2";
+
     corners = getTile()->getPoints();
     mids    = getTile()->getMids();
     if (corners.size() != getN())
     {
-        qDebug() << "tile sides:" << corners.size() << "motif sides:" << getN();
+        qWarning() << "tile sides:" << corners.size() << "motif sides:" << getN();
         // need to interpolate mids and placed tile
     }
 
@@ -90,16 +93,18 @@ void IrregularStar::inferStarV2()
         motifMap->mergeMap(buildStarHalfBranchV2(d, s, side, -1));
     }
     
-    qDebug().noquote() << motifMap->summary();
+    //qDebug().noquote() << motifMap->summary();
 }
 
 void IrregularStar::inferStarV3()
 {
+    //qDebug() << "IrregularStar::inferStarV3";
+
     corners = getTile()->getPoints();
     mids    = getTile()->getMids();
     if (corners.size() != getN())
     {
-        qDebug() << "tile sides:" << corners.size() << "motif sides:" << getN();
+        qWarning() << "tile sides:" << corners.size() << "motif sides:" << getN();
     }
 
     for (int side = 0; side < getN(); side++)
@@ -109,7 +114,7 @@ void IrregularStar::inferStarV3()
         for (int i = 0; i < s && i < isects.size(); i++)
         {
             VertexPtr nxt = motifMap->insertVertex(isects[i]);
-            motifMap->insertEdge(prv, nxt);
+            motifMap->insertEdge(prv,nxt);
             prv = nxt;
         }
         isects = getBranchIsectsV3(side,-1);
@@ -117,11 +122,11 @@ void IrregularStar::inferStarV3()
         for (int i = 0; i < s && i < isects.size(); i++)
         {
             VertexPtr nxt = motifMap->insertVertex(isects[i]);
-            motifMap->insertEdge(prv, nxt);
+            motifMap->insertEdge(prv,nxt);
             prv = nxt;
         }
     }
-    qDebug() << motifMap->summary();
+    //qDebug() << motifMap->summary();
 }
 
 QVector<QPointF> IrregularStar::getBranchIsectsV3(int side, int sign)
@@ -141,15 +146,14 @@ QVector<QPointF> IrregularStar::getBranchIsectsV3(int side, int sign)
         di++;
     }
 
-    qDebug() << "n:" << getN() << "d:" << d << "s:" << s << "di:" << di <<  "d_is_int:" << d_is_int;
+    //qDebug() << "n:" << getN() << "d:" << d << "s:" << s << "di:" << di <<  "d_is_int:" << d_is_int;
 
     QLineF branchRay = getRay(side,d,sign);
-    if (debugMap)
+    if (motifDebug)
     {
         qreal angle = branchRay.angle();
-        debugMap->insertDebugMark(branchRay.p1(),QString("a%1").arg(side));
-        debugMap->insertDebugMark(branchRay.p2(),QString::number(angle));
-        debugMap->insertDebugLine(branchRay);
+        Sys::debugMapCreate->insertDebugMark(branchRay.p1(),QString("a%1").arg(side),Qt::red);
+        Sys::debugMapCreate->insertDebugMark(branchRay.p2(),QString::number(angle),Qt::red);
     }
 
     for (int nside = 1; nside <= di; ++nside)
@@ -161,19 +165,19 @@ QVector<QPointF> IrregularStar::getBranchIsectsV3(int side, int sign)
             theside = modulo(side-nside,getN());
 
         QLineF otherRay = getRay(theside,d,-sign);
-        if (debugMap)
+        if (motifDebug)
         {
             qreal angle = otherRay.angle();
-            debugMap->insertDebugMark(otherRay.p1(),QString("a%1").arg(theside));
-            debugMap->insertDebugMark(otherRay.p2(),QString::number(angle));
-            debugMap->insertDebugLine(otherRay);
+            Sys::debugMapCreate->insertDebugMark(otherRay.p1(),QString("a%1").arg(theside),Qt::red);
+            Sys::debugMapCreate->insertDebugMark(otherRay.p2(),QString::number(angle),Qt::red);
+            Sys::debugMapCreate->insertDebugLine(otherRay,Qt::blue);
         }
         QPointF isect;
         if (branchRay.intersects(otherRay,&isect) == QLineF::BoundedIntersection)
         {
-            if (debugMap)
+            if (motifDebug)
             {
-                debugMap->insertDebugMark(isect,QString("isect%1").arg(theside));
+                Sys::debugMapCreate->insertDebugMark(isect,QString("isect%1").arg(theside),Qt::red);
             }
             isects.push_back(isect);
         }
@@ -196,9 +200,9 @@ QVector<QPointF> IrregularStar::getBranchIsectsV3(int side, int sign)
         if (d_is_int)
         {
             isects.push_back(midr);
-            if (debugMap)
+            if (motifDebug)
             {
-                debugMap->insertDebugMark(midr,"midr");
+                Sys::debugMapCreate->insertDebugMark(midr,"midr",Qt::red);
             }
         }
         else
@@ -207,20 +211,20 @@ QVector<QPointF> IrregularStar::getBranchIsectsV3(int side, int sign)
             QLineF mc   = getRay(side,d,sign);
             QPointF isect;
             bool rv = Intersect::getIntersection(arbr, mc,isect);
-            if (debugMap)
+            if (motifDebug)
             {
-                debugMap->insertDebugMark(arbr.p1(),"ar");
-                debugMap->insertDebugMark(arbr.p2(),"br");
-                debugMap->insertDebugMark(mc.p2(),"c");
-                debugMap->insertDebugLine(arbr);
-                debugMap->insertDebugLine(mc);
+                Sys::debugMapCreate->insertDebugMark(arbr.p1(),"ar",Qt::red);
+                Sys::debugMapCreate->insertDebugMark(arbr.p2(),"br",Qt::red);
+                Sys::debugMapCreate->insertDebugMark(mc.p2(),"c",Qt::red);
+                Sys::debugMapCreate->insertDebugLine(arbr,Qt::blue);
+                Sys::debugMapCreate->insertDebugLine(mc,Qt::blue);
             }
             if (rv)
             {
                 isects.push_back(isect);
-                if (debugMap)
+                if (motifDebug)
                 {
-                    debugMap->insertDebugMark(isect,"isect");
+                    Sys::debugMapCreate->insertDebugMark(isect,"isect",Qt::red);
                 }
             }
         }

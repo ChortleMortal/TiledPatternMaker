@@ -28,11 +28,14 @@ public:
             void    buildMotifMap()  override final;
     virtual void    infer() = 0;
 
-    virtual void    extendMaps();
+    virtual void    irr_extendMaps();
+    void            irr_scaleAndRotate(MapPtr map);
+    void            irr_buildMotifBoundary();
 
     MapPtr          getMotifMap()     override;
     virtual QString getMotifDesc()    override  { return "IrregularMotif"; }
     QTransform      getMotifTransform() override;
+    QTransform      getDELTransform() override;
 
     bool equals(const MotifPtr other) override;
 
@@ -47,7 +50,7 @@ public:
     bool    progressive;    // intersect
 
 protected:
-    void    completeMap();
+    void    irr_completeMap();
 
 private:
     void    init();

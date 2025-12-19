@@ -1,12 +1,13 @@
 #include <QMessageBox>
 
-#include "model/makers/prototype_maker.h"
-#include "model/makers/mosaic_maker.h"
 #include "gui/model_editors/motif_edit/design_element_button.h"
 #include "gui/model_editors/motif_edit/motif_maker_widget.h"
-#include "model/prototypes/prototype.h"
+#include "gui/panels/page_motif_maker.h"
+#include "gui/top/controlpanel.h"
+#include "gui/top/system_view_controller.h"
+#include "model/makers/mosaic_maker.h"
+#include "model/makers/prototype_maker.h"
 #include "model/makers/tiling_maker.h"
-#include "model/prototypes/design_element.h"
 #include "model/motifs/explicit_map_motif.h"
 #include "model/motifs/girih_motif.h"
 #include "model/motifs/hourglass_motif.h"
@@ -20,15 +21,13 @@
 #include "model/motifs/star.h"
 #include "model/motifs/star2.h"
 #include "model/motifs/tile_motif.h"
-#include "sys/sys.h"
-#include "gui/panels/page_motif_maker.h"
-#include "gui/top/controlpanel.h"
+#include "model/prototypes/design_element.h"
+#include "model/prototypes/prototype.h"
 #include "model/settings/configuration.h"
 #include "model/tilings/placed_tile.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
-#include "sys/tiledpatternmaker.h"
-#include "gui/top/view_controller.h"
+#include "sys/sys.h"
 
 using std::make_shared;
 using std::dynamic_pointer_cast;
@@ -67,13 +66,16 @@ PrototypeMaker::PrototypeMaker()
 
 void PrototypeMaker::init()
 {
-    config          = Sys::config;
-    vcontrol        = Sys::viewController;
-    tilingMaker     = Sys::tilingMaker;
-    mosaicMaker     = Sys::mosaicMaker;
-    propagate       = true;
+    mosaicMaker      = Sys::mosaicMaker;
 
-    connect (this, &PrototypeMaker::sig_updateView, Sys::view, &View::slot_update);
+    motifMakerWidget = nullptr;
+
+    setPropagate(true);
+    setForceWidgetRefresh(false);
+
+    initData(this);
+
+    connect (this, &PrototypeMaker::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
 }
 
 void PrototypeMaker::unload()
@@ -81,29 +83,12 @@ void PrototypeMaker::unload()
     erase();
 }
 
-void PrototypeMaker::setPropagate(bool val)
-{
-    propagate = val;
-    if (val)
-    {
-        sm_resetMaps();
-        sm_buildMaps();
-        mosaicMaker->sm_takeUp(getPrototypes(),MOSM_MOTIF_CHANGED);
-
-        if (vcontrol->isEnabled(VIEW_PROTOTYPE) || vcontrol->isEnabled(VIEW_MAP_EDITOR))
-        {
-            //vcontrol->slot_reconstructView();
-            emit sig_updateView();
-        }
-    }
-}
-
 ProtoPtr PrototypeMaker::createPrototypeFromTililing(const TilingPtr &tiling)
 {
     qDebug().noquote() << "PrototypeMaker::createPrototype" << tiling->getDescription();
     ProtoPtr prototype = make_shared<Prototype>(tiling);
 
-    QVector<TilePtr> uniqueTiles = tiling->getUniqueTiles();
+    QVector<TilePtr> uniqueTiles = tiling->unit().getUniqueTiles();
     qDebug() << "Create new design elements";
     int count = 0;
     for (auto & tile : std::as_const(uniqueTiles))
@@ -123,7 +108,7 @@ void PrototypeMaker::recreatePrototypeFromTiling(const TilingPtr &tiling, ProtoP
     Q_ASSERT(prototype->getTiling() == tiling);
 
     int count = 0;
-    QVector<TilePtr> uniqueTiles = tiling->getUniqueTiles();
+    QVector<TilePtr> uniqueTiles = tiling->unit().getUniqueTiles();
     for (const auto & tile : std::as_const(uniqueTiles))
     {
         if (++count > MAX_UNIQUE_TILE_INDEX)
@@ -170,7 +155,7 @@ void PrototypeMaker::recreatePrototypeFromTiling(const TilingPtr &tiling, ProtoP
 
 void PrototypeMaker::sm_takeDown(QVector<ProtoPtr> & prototypes)
 {
-    qDebug() << "PrototypeMaker::takeDown() Num DELs:" << prototypes.first()->numDesignElements();
+    qDebug() << "PrototypeMaker::sm_takeDown" << "Num DELs:" << prototypes.first()->numDesignElements();
 
     erasePrototypes();
 
@@ -184,7 +169,7 @@ void PrototypeMaker::sm_takeDown(QVector<ProtoPtr> & prototypes)
         tilings.push_back(tiling);
     }
 
-    tilingMaker->sm_takeDown(tilings, TILM_LOAD_FROM_MOSAIC);
+    Sys::tilingMaker->sm_takeDown(tilings, TILM_LOAD_FROM_MOSAIC);
 
     select(MVD_DELEM,prototypes.first(),false);
     select(MVD_PROTO,prototypes.first(),false);
@@ -233,9 +218,49 @@ void PrototypeMaker::sm_replaceTiling(const ProtoPtr &prototype, const TilingPtr
 
     select(MVD_DELEM, prototype,false);
     select(MVD_PROTO, prototype,false);
+    setForceWidgetRefresh(true);
 }
 
-void PrototypeMaker::sm_resetMaps()
+ProtoPtr PrototypeMaker::sm_mergeProtos(const TilingPtr &tiling)
+{
+    // the trouble is the other prototypes may be gone as they were only weak pointers
+
+    QVector<ProtoPtr> protos = getPrototypes();
+    Q_ASSERT(protos.size() > 1);
+    auto proto = protos.first();
+    proto->exactReplaceTiling(tiling);
+    for (int i=1; i < protos.size(); i++)
+    {
+        auto otherProto = protos[i];
+        otherProto->exactReplaceTiling(tiling);
+        auto dels = otherProto->getDesignElements();
+        for (auto & del : dels)
+        {
+            proto->addDesignElement(del);
+        }
+        remove(otherProto);
+    }
+
+    select(MVD_DELEM, proto,false);
+    select(MVD_PROTO, proto,false);
+
+    return proto;
+}
+
+void PrototypeMaker::sm_resetMotifMaps()  // FIXME granularity
+{
+    for (const auto & prototype : getPrototypes())
+    {
+        auto dels = prototype->getDesignElements();
+        for (auto & del : dels)
+        {
+            auto motif = del->getMotif();
+            motif->resetMotifMap();
+        }
+    }
+}
+
+void PrototypeMaker::sm_resetProtoMaps()  // FIXME granularity
 {
     for (const auto & prototype : getPrototypes())
     {
@@ -243,26 +268,34 @@ void PrototypeMaker::sm_resetMaps()
     }
 }
 
+
 void PrototypeMaker::sm_buildMaps()
 {
     for (const auto & prototype : getPrototypes())
     {
-        prototype->getProtoMap(true);       // always called in a take up situayion, not from loader/take down
+        prototype->getProtoMap(true);       // always called in a take up situation, not from loader/take down
     }
 }
 
-void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, const TilePtr tile)
+void PrototypeMaker::sm_takeUp(ProtoEvent &protoEvent)
 {
-    qDebug().noquote() << __FUNCTION__ << "- start state:" << mm_states[sm_getState()] << "event:" << sPROM_Events[event];
-
+    auto event     = protoEvent.event;
+    auto tiling    = protoEvent.tiling;
     eMMState state = sm_getState();
+
+    qDebug().noquote() << "PrototypeMaker::sm_takeUp" << "state:" << mm_states[state] << "event:" << sPROM_Events[event];
+
     switch (event)
     {
     case PROM_LOAD_EMPTY:
     {
         auto proto = createPrototypeFromTililing(tiling);
         sm_eraseAllAdd(proto);
-        mosaicMaker->sm_takeUp(getPrototypes(),MOSM_LOAD_EMPTY);
+
+        MosaicEvent mosaicEvent;
+        mosaicEvent.event     = MOSM_LOAD_PROTO_EMPTY;
+        mosaicEvent.prototype = proto;
+        mosaicMaker->sm_takeUp(mosaicEvent);
     }   break;
 
     case PROM_LOAD_SINGLE:
@@ -270,13 +303,21 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
         {
             auto proto = createPrototypeFromTililing(tiling);
             sm_eraseAllAdd(proto);
-            mosaicMaker->sm_takeUp(getPrototypes(),MOSM_LOAD_SINGLE);
+
+            MosaicEvent mosaicEvent;
+            mosaicEvent.event     = MOSM_LOAD_PROTO_SINGLE;
+            mosaicEvent.prototype = proto;
+            mosaicMaker->sm_takeUp(mosaicEvent);
         }
         else if (state == MM_SINGLE)
         {
             auto proto = createPrototypeFromTililing(tiling);
             sm_eraseAllAdd(proto);
-            mosaicMaker->sm_takeUp(getPrototypes(),MOSM_LOAD_SINGLE);
+
+            MosaicEvent mosaicEvent;
+            mosaicEvent.event     = MOSM_LOAD_PROTO_SINGLE;
+            mosaicEvent.prototype = proto;
+            mosaicMaker->sm_takeUp(mosaicEvent);
         }
         else if (state == MM_MULTI)
         {
@@ -285,13 +326,21 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
             {
                 auto proto = createPrototypeFromTililing(tiling);
                 sm_eraseCurrentAdd(proto);
-                mosaicMaker->sm_takeUp(getPrototypes(),MOSM_LOAD_MULTI);
+
+                MosaicEvent mosaicEvent;
+                mosaicEvent.event     = MOSM_LOAD_PROTO_MULTI;
+                mosaicEvent.prototype = proto;
+                mosaicMaker->sm_takeUp(mosaicEvent);
             }
             else
             {
                 auto proto = getSelectedPrototype();
                 sm_replaceTiling(proto, tiling);
-                mosaicMaker->sm_takeUp(getPrototypes(),MOSM_RELOAD_MULTI);
+
+                MosaicEvent mosaicEvent;
+                mosaicEvent.event     = MOSM_RELOAD_PROTO_MULTI;
+                mosaicEvent.prototype = proto;
+                mosaicMaker->sm_takeUp(mosaicEvent);
             }
         }
         break;
@@ -301,13 +350,21 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
         {
              auto proto = getSelectedPrototype();
              sm_replaceTiling(proto,tiling);
-             mosaicMaker->sm_takeUp(getPrototypes(),MOSM_RELOAD_SINGLE);
+
+             MosaicEvent mosaicEvent;
+             mosaicEvent.event     = MOSM_RELOAD_PROTO_SINGLE;
+             mosaicEvent.prototype = proto;
+             mosaicMaker->sm_takeUp(mosaicEvent);
         }
         else if (state == MM_MULTI)
         {
              auto proto = getSelectedPrototype();
              sm_replaceTiling(proto,tiling);
-             mosaicMaker->sm_takeUp(getPrototypes(),MOSM_RELOAD_SINGLE);
+
+             MosaicEvent mosaicEvent;
+             mosaicEvent.event     = MOSM_RELOAD_PROTO_SINGLE;
+             mosaicEvent.prototype = proto;
+             mosaicMaker->sm_takeUp(mosaicEvent);
         }
         else
         {
@@ -325,14 +382,21 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
         {
             auto proto = createPrototypeFromTililing(tiling);
             sm_Add(proto);
-            mosaicMaker->sm_takeUp(getPrototypes(),MOSM_LOAD_MULTI);
+
+            MosaicEvent mosaicEvent;
+            mosaicEvent.event     = MOSM_LOAD_PROTO_MULTI;
+            mosaicEvent.prototype = proto;
+            mosaicMaker->sm_takeUp(mosaicEvent);
         }
         else if (state == MM_MULTI)
         {
             auto proto = createPrototypeFromTililing(tiling);
             sm_Add(proto);
-            mosaicMaker->sm_takeUp(getPrototypes(),MOSM_LOAD_MULTI);
 
+            MosaicEvent mosaicEvent;
+            mosaicEvent.event     = MOSM_LOAD_PROTO_MULTI;
+            mosaicEvent.prototype = proto;
+            mosaicMaker->sm_takeUp(mosaicEvent);
         }
         break;
 
@@ -345,156 +409,213 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
         {
             auto proto = getSelectedPrototype();
             sm_replaceTiling(proto,tiling);
-            mosaicMaker->sm_takeUp(getPrototypes(),MOSM_RELOAD_MULTI);
+
+            MosaicEvent mosaicEvent;
+            mosaicEvent.event     = MOSM_RELOAD_PROTO_MULTI;
+            mosaicEvent.prototype = proto;
+            mosaicMaker->sm_takeUp(mosaicEvent);
         }
         else if (state == MM_MULTI)
         {
             auto proto = getSelectedPrototype();
             sm_replaceTiling(proto,tiling);
-            mosaicMaker->sm_takeUp(getPrototypes(),MOSM_RELOAD_MULTI);
+
+            MosaicEvent mosaicEvent;
+            mosaicEvent.event     = MOSM_RELOAD_PROTO_MULTI;
+            mosaicEvent.prototype = proto;
+            mosaicMaker->sm_takeUp(mosaicEvent);
         }
         break;
 
-    case PROM_MOTIF_CHANGED:
-        if (propagate)
-        {
-            sm_resetMaps();
-            mosaicMaker->sm_takeUp(getPrototypes(),MOSM_MOTIF_CHANGED);
-        }
-        break;
+    case PROM_REPLACE:
+    {
+        auto proto = getPrototype(protoEvent.oldTilings.first());
+        sm_replaceTiling(proto,tiling);
 
-    case PROM_TILE_ROTATION_CHANGED:
-    case PROM_TILE_SCALE_CHANGED:
-        if (tile)
+        MosaicEvent mosaicEvent;
+        mosaicEvent.event     = MOSM_RELOAD_PROTO_MULTI;
+        mosaicEvent.prototype = proto;
+        mosaicMaker->sm_takeUp(mosaicEvent);
+    }   break;
+
+    case PROM_REPLACE_ALL:
+    {
+        auto proto = sm_mergeProtos(tiling);
+
+        MosaicEvent mosaicEvent;
+        mosaicEvent.event     = MOSM_RELOAD_PROTO_MULTI;  // FIXME is this right
+        mosaicEvent.prototype = proto;
+        mosaicMaker->sm_takeUp(mosaicEvent);
+    }   break;
+
+
+    case PROM_TILING_DELETED:
+    {
+        auto proto = remove(tiling);
+
+        MosaicEvent mosaicEvent;
+        mosaicEvent.event     = MOSM_PROTO_DELETED;
+        mosaicEvent.prototype = proto;
+        mosaicMaker->sm_takeUp(mosaicEvent);
+    }   break;
+
+    case PROM_TILING_CHANGED:
+    case PROM_TILING_MODIFED:
+    {
+        // This means changes to: placements,transform,fill-vectors,repeats
+        // This does not change motifs - but MotifMaker should be refreshed
+        Q_ASSERT(!protoEvent.tile);
+        Q_ASSERT(!protoEvent.ptile);
+        auto proto = getPrototype(tiling);
+        if (proto)
         {
-            auto del = getDesignElement(tile);
-            if (del)
+            select(MVD_DELEM,proto,false);  // this updates the menu buttons,etc.
+            select(MVD_PROTO,proto,false);  // this updates the menu buttons,etc.
+            if (getPropagate())
             {
-                auto motif = del->getMotif();
-                motif->resetMotifMap();
-                if (propagate)
-                {
-                    sm_resetMaps();
-                    mosaicMaker->sm_takeUp(getPrototypes(),MOSM_TILE_CHANGED);
-                }
-                select(MVD_DELEM,del,config->motifMultiView);
+                proto->wipeoutProtoMap();
+
+                MosaicEvent mosaicEvent;
+                mosaicEvent.event     = MOSM_PROTO_CHANGED;
+                mosaicEvent.prototype = proto;
+                mosaicMaker->sm_takeUp(mosaicEvent);
             }
         }
-        break;
+    }   break;
 
-    case PROM_TILE_REGULARITY_CHANGED:
+    case PROM_TILE_UNIQUE_TRANS_CHANGED:
+    case PROM_TILE_UNIQUE_NATURE_CHANGED:
+    {
+        auto tile = protoEvent.tile;
+        Q_ASSERT(tile);
+        auto del = getDesignElement(tile);
+        if (del)
+        {
+            auto motif = del->getMotif();
+            if (motif)
+            {
+                motif->resetMotifMap();
+                if (getPropagate())
+                {
+                    sm_resetProtoMaps();
+                    MosaicEvent mosaicEvent;
+                    mosaicEvent.event     = MOSM_PROTO_CHANGED;
+                    mosaicEvent.prototype = getPrototype(tiling);
+                    mosaicMaker->sm_takeUp(mosaicEvent);
+                }
+                select(MVD_DELEM,del,(Sys::config->motifMakerView == MOTIF_VIEW_SELECTED));
+            }
+        }
+    }   break;
+
+    case PROM_TILE_UNIQUE_REGULARITY_CHANGED:
+    {
         // This means changes to: sides,scale,rot,regularity
         // which in turn impacts the motif
-        if (tile)
+        auto tile = protoEvent.tile;
+        Q_ASSERT(tile);
+        auto proto = getPrototype(tiling);
+        if (proto)
         {
-            auto proto = getSelectedPrototype();
-            Q_ASSERT(tiling == proto->getTiling());
+            //Q_ASSERT(tiling == proto->getTiling());
             auto del = getDesignElement(tile);
             if (del)
             {
                 del->recreateMotifWhenRgularityChanged();
-
-                if (propagate)
+                if (getPropagate())
                 {
-                    mosaicMaker->sm_takeUp(getPrototypes(),MOSM_TILE_CHANGED);
+                    sm_resetProtoMaps();
+                    MosaicEvent mosaicEvent;
+                    mosaicEvent.event     = MOSM_PROTO_CHANGED;
+                    mosaicEvent.prototype = getPrototype(tiling);
+                    mosaicMaker->sm_takeUp(mosaicEvent);
                 }
-
-                select(MVD_DELEM,del,config->motifMultiView);
+                select(MVD_DELEM,del,(Sys::config->motifMakerView == MOTIF_VIEW_SELECTED));
             }
         }
-        break;
+    }   break;
 
-    case PROM_TILE_NUM_SIDES_CHANGED:
-    case PROM_TILE_EDGES_CHANGED:
-        if (tile)
+    case PROM_TILE_PLACED_TRANS_CHANGED:
+    {
+        auto ptile = protoEvent.ptile;
+        Q_ASSERT(ptile);
+        auto proto = getPrototype(tiling);
+        if (proto)
         {
-            auto proto = getSelectedPrototype();
-            Q_ASSERT(tiling == proto->getTiling());
-            auto del = getDesignElement(tile);
+            //Q_ASSERT(tiling == proto->getTiling());
+            Q_ASSERT(proto);
+            auto del = getDesignElement(ptile->getTile());  // turns out it doesn't matter if unique or not
             if (del)
             {
                 del->recreateMotifFromChangedTile();
-
-                if (propagate)
+                if (getPropagate())
                 {
-                    mosaicMaker->sm_takeUp(getPrototypes(),MOSM_TILE_CHANGED);
+                    sm_resetProtoMaps();
+                    MosaicEvent mosaicEvent;
+                    mosaicEvent.event     = MOSM_PROTO_CHANGED;
+                    mosaicEvent.prototype = getPrototype(tiling);
+                    mosaicMaker->sm_takeUp(mosaicEvent);
                 }
-
-                select(MVD_DELEM,del,config->motifMultiView);
+                select(MVD_DELEM,del,(Sys::config->motifMakerView == MOTIF_VIEW_SELECTED));
             }
         }
-        break;
+    }   break;
 
-    case PROM_TILES_ADDED:
-    case PROM_TILES_DELETED:
-        // This means additsions/deletions of tiles
-        // This does not change motifs - but MotifMaker should be refreshed
-        if (state == MM_EMPTY || !getSelectedPrototype()->hasContent() || getSelectedPrototype()->getTiling() != tiling)
+    case PROM_TILING_UNIT_CHANGED:
+        // This means additions/deletions of tiles
+        // This does not change motifs - but MotifMakerWidget should be refreshed
+        Q_ASSERT(!protoEvent.ptile);
+        Q_ASSERT(!protoEvent.tile);
+        if (state == MM_EMPTY)
         {
-            qDebug().noquote() << __FUNCTION__ << "- added1 state:" << mm_states[sm_getState()];
             auto proto = createPrototypeFromTililing(tiling);
             sm_eraseAllAdd(proto);
-            qDebug().noquote() << __FUNCTION__ << "- added2 state:" << mm_states[sm_getState()];
-            mosaicMaker->sm_takeUp(getPrototypes(),MOSM_TILING_CHANGED);
-            qDebug().noquote() << __FUNCTION__ << "- added3 state:" << mm_states[sm_getState()];
+            MosaicEvent mosaicEvent;
+            mosaicEvent.event     = MOSM_PROTO_CHANGED;
+            mosaicEvent.prototype = proto;
+            mosaicMaker->sm_takeUp(mosaicEvent);
         }
         else
         {
-            auto protos = getPrototypes();
-            auto proto  = getSelectedPrototype();
-            proto->wipeoutProtoMap();
-            recreatePrototypeFromTiling(tiling,proto);
-            setPrototypes(protos);          // rebuilds data
-            select(MVD_DELEM,proto,false);  // this updates the menu buttons,etc.
-            select(MVD_PROTO,proto,false);  // this updates the menu buttons,etc.
-            if (propagate)
+            auto proto = getPrototype(tiling);
+            if (proto)
             {
-                mosaicMaker->sm_takeUp(getPrototypes(),MOSM_TILING_CHANGED);
+                proto->wipeoutProtoMap();
+                recreatePrototypeFromTiling(tiling,proto);
+
+                select(MVD_DELEM,proto,false);  // this updates the menu buttons,etc.
+                select(MVD_PROTO,proto,false);  // this updates the menu buttons,etc.
+                if (getPropagate())
+                {
+                    MosaicEvent mosaicEvent;
+                    mosaicEvent.event     = MOSM_PROTO_CHANGED;
+                    mosaicEvent.prototype = proto;
+                    mosaicMaker->sm_takeUp(mosaicEvent);
+                }
             }
         }
         break;
 
-    case PROM_TILING_DELETED:
-    {
-        remove(tiling);
-        mosaicMaker->sm_takeUp(getPrototypes(),MOSM_TILING_DELETED);
-    }   break;
-
-    case PROM_TILING_CHANGED:
-    {
-        // This means changes to: placements,transform,fill-vectors,repeats
-        // This does not change motifs - but MotifMaker should be refreshed
-        Q_ASSERT(!tile);
-        auto proto = getSelectedPrototype();
-        Q_ASSERT(proto);
-        proto->wipeoutProtoMap();
-        select(MVD_DELEM,proto,false);  // this updates the menu buttons,etc.
-        select(MVD_PROTO,proto,false);  // this updates the menu buttons,etc.
-        if (propagate)
+    case PROM_MOTIF_CHANGED:
+        if (getPropagate())
         {
-            mosaicMaker->sm_takeUp(getPrototypes(),MOSM_TILING_CHANGED);
+            sm_resetProtoMaps();
+            MosaicEvent mosaicEvent;
+            mosaicEvent.event     = MOSM_PROTO_CHANGED;
+            mosaicEvent.prototype = getPrototype(tiling);
+            mosaicMaker->sm_takeUp(mosaicEvent);
         }
-    }   break;
-
-    case PROM_RENDER:
-        // ignores propagate flag
-        sm_resetMaps();
-        sm_buildMaps();
-        mosaicMaker->sm_takeUp(getPrototypes(),MOSM_RENDER);
         break;
 
     default:
-        qCritical().noquote() << __FUNCTION__ << "unsuported event" << sPROM_Events[event];
+        qCritical().noquote() << "PrototypeMaker::sm_takeUp" << "unsuported event" << sPROM_Events[event];
         break;
     }
 
-    qDebug().noquote() << __FUNCTION__ << "- end0 state:" << mm_states[sm_getState()];
-    if (vcontrol->isEnabled(VIEW_MOTIF_MAKER))
+    if (Sys::viewController->isEnabled(VIEW_MOTIF_MAKER))
     {
-//        emit sig_updateView();
+        emit sig_updateView();
     }
-
-    qDebug().noquote() << __FUNCTION__ << "- end1 state:" << mm_states[sm_getState()];
 }
 
 void PrototypeMaker::erasePrototypes()
@@ -524,7 +645,7 @@ void PrototypeMaker::selectDesignElement(DesignElementPtr delp)
 {
     auto motifmaker = getWidget();
     auto btn        = motifmaker->getButton(delp);
-    motifmaker->delegate(btn,config->motifMultiView,true);
+    motifmaker->delegate(btn,(Sys::config->motifMakerView == MOTIF_VIEW_SELECTED),true);
 }
 
 // duplication is used to superimpose a second figure in the same tile
@@ -542,13 +663,13 @@ bool PrototypeMaker::duplicateDesignElement()
 
     // find placed tiles in the tiling and duplicate it
     TilingPtr tiling = getSelectedPrototype()->getTiling();
-    const TilingPlacements tilingUnit = tiling->getTilingUnitPlacements();
-    TilingPlacements newPlacedTiles;
+    const PlacedTiles tilingUnit = tiling->unit().getIncluded();
+    PlacedTiles newPlacedTiles;
     for (const auto & placedTile : std::as_const(tilingUnit))
     {
         if (placedTile->getTile() == tile)
         {
-            PlacedTilePtr newPlacedTile = make_shared<PlacedTile>(newTile,placedTile->getTransform());
+            PlacedTilePtr newPlacedTile = make_shared<PlacedTile>(newTile,placedTile->getPlacement());
             newPlacedTiles.push_back(newPlacedTile);
         }
     }
@@ -561,7 +682,7 @@ bool PrototypeMaker::duplicateDesignElement()
     // put new placed tiles intp the tiling
     for (const auto & placedTile : newPlacedTiles)
     {
-        tiling->addPlacedTile(placedTile);
+        tiling->unit().addPlacedTile(placedTile);
     }
 
     // rebuild prototype
@@ -691,6 +812,30 @@ MotifPtr PrototypeMaker::duplicateMotif(MotifPtr motif)
     }
 
     return newMotif;
+}
+
+void PrototypeMaker::slot_propagateChanged(bool val)
+{
+    setPropagate(val);
+    if (val)
+    {
+        sm_resetProtoMaps();
+        sm_buildMaps();
+
+        for (auto & proto : getPrototypes())
+        {
+            MosaicEvent mosaicEvent;
+            mosaicEvent.event     = MOSM_PROTO_CHANGED;
+            mosaicEvent.prototype = proto;
+            mosaicMaker->sm_takeUp(mosaicEvent);
+        }
+
+        if (Sys::viewController->isEnabled(VIEW_PROTOTYPE) || Sys::viewController->isEnabled(VIEW_MAP_EDITOR))
+        {
+            //vcontrol->slot_reconstructView();
+            emit sig_updateView();
+        }
+    }
 }
 
 bool PrototypeMaker::askNewProto()

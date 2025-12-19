@@ -108,12 +108,10 @@ int Star::clamp_s(int s)
 
 void Star::buildUnitMap()
 {
-    dbgVal    = 0x0;
-    debugMap  = nullptr;
-    if (dbgVal > 0)
+    motifDebug    = 0x0;
+    if (motifDebug > 0)
     {
-        debugMap = Sys::debugView->getMap();
-        debugMap->wipeout();
+        Sys::debugMapCreate->wipeout();
     }
 
     raySet1.clear();
@@ -214,10 +212,10 @@ void Star::buildv1()
         raySet1.transform(t);
     }
 
-    if (dbgVal & 0x01) raySet1.debug();
+    if (motifDebug & 0x01) raySet1.debug();
     QTransform t = getDELTransform();
     raySet1.transform(t);
-    if (dbgVal & 0x01) raySet1.debug();
+    if (motifDebug & 0x01) raySet1.debug();
 }
 
 void Star::buildUnitV2()
@@ -295,10 +293,10 @@ void Star::buildUnitV2()
         raySet1.transform(t);
     }
 
-    if (dbgVal & 0x01) raySet1.debug();
+    if (motifDebug & 0x01) raySet1.debug();
     QTransform t = getDELTransform();
     raySet1.transform(t);
-    if (dbgVal & 0x01) raySet1.debug();
+    if (motifDebug & 0x01) raySet1.debug();
 }
 
 QLineF Star::getRay(int side, qreal d, int sign)

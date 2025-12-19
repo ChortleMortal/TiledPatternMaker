@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QMessageBox>
 #include <QElapsedTimer>
 #include <QApplication>
 #include <math.h>
@@ -7,8 +8,8 @@
 #include "sys/geometry/edge.h"
 #include "sys/geometry/vertex.h"
 #include "sys/geometry/neighbours.h"
+#include "sys/qt/utilities.h"
 #include "sys/qt/tpm_io.h"
-
 
 using namespace std;
 
@@ -16,89 +17,70 @@ using namespace std;
 
 int DCEL::refs  = 0;
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-///
-///   DCEL  - doubly connected edge list
-///
-////////////////////////////////////////////////////////////////////////////////////////////////
+#define E2STR(x) #x
 
-DCEL::DCEL(Map * sourcemap) : Map("DCEL")
+const  QString sDCELType[] =
 {
-    qDebug() << "Creating DCEL";
+        E2STR(DCEL_UNDEFINED),
+        E2STR(DCEL_SIMPLE),
+        E2STR(DCEL_FACES),
+        E2STR(DCEL_TIPS),
+};
 
-    QElapsedTimer timer;
-    timer.start();
-
-    this->sourcemap = sourcemap;
-
-    vertices    = sourcemap->vertices;
-    edges       = sourcemap->edges;
-    qDebug().noquote() << "DECL: importing" << sourcemap->info();
-
-    qDebug().noquote() << DCEL::info();
-
-    cleanseEdges();
-    qDebug().noquote() << DCEL::info();
-
-    buildDCEL();
-    qDebug().noquote() << DCEL::info();
-
-    qreal time    = timer.elapsed();
-    double qdelta = time /1000.0;
-    QString sDelta = QString("%1").arg(qdelta, 8, 'f', 3);
-
-    qDebug().noquote() << "DCEL: complete time:" << sDelta << DCEL::info();
-    refs++;
+SimpleDCEL::SimpleDCEL(Map * map) : DCEL(map)
+{
 }
 
-DCEL::~DCEL()
+FilledDCEL::FilledDCEL(Map * map) : DCEL(map)
 {
-#ifdef EXPLICIT_DESTRUCTOR
-    qDebug() << "Deleting DCEL";
-    clean();
-#endif
-    refs--;
 }
 
-void DCEL::cleanseEdges()
+ThickDCEL::ThickDCEL(Map* map) : DCEL(map)
 {
-    qDebug() << __FUNCTION__;
 
-    QVector<EdgePtr> forDeletion;
-    // edges which have an unconnected end or ends make no sense  for building faces
-    for (const EdgePtr & edge : std::as_const(edges))
-    {
-        int n = sourcemap->getNeighbours(edge->v1)->numNeighbours();
-        if (n <2 )
-        {
-            forDeletion.push_back(edge);
-            continue;
-        }
-        n = sourcemap->getNeighbours(edge->v2)->numNeighbours();
-        if (n <2 )
-        {
-            forDeletion.push_back(edge);
-            continue;
-        }
-    }
-
-    if (forDeletion.count())
-    {
-        qInfo() << "DCEL::cleanseEdges - removing" << forDeletion.count() << "edges";
-    }
-
-    for (EdgePtr & edge : forDeletion)
-    {
-        edges.removeOne(edge);
-    }
 }
 
-void DCEL::buildDCEL()
+bool SimpleDCEL::build()
 {
-    qDebug() << __FUNCTION__;
+    qDebug().noquote() << "SimpleDCEL::build" << sDCELType[dtype] << info();
+    dtype = DCEL_SIMPLE;
 
     // fill half edges
-    QVector<EdgePtr> additions(edges.size());
+    EdgeSet additions(edges.size());
+    int i=0;
+    for (const auto & e : std::as_const(edges))
+    {
+        // the map may be used to create many dcels
+        e->dvisited = false;
+        e->twin.reset();
+        e->next.reset();
+        e->incident_face.reset();
+
+        VertexPtr v1 = e->v1;
+        VertexPtr v2 = e->v2;
+        v1->adjacent_vertices.push_back(v2);
+        v2->adjacent_vertices.push_back(v1);
+
+        EdgePtr e2 = e->createTwin();
+        e2->twin   = e;
+        e->twin    = e2;
+
+        additions[i++] = e2;
+    }
+
+    qDebug().noquote() << "DCEL: built OK" << info();
+    return true;
+}
+
+bool FilledDCEL::build()
+{
+    dtype = DCEL_FACES;
+    qDebug().noquote() << "FilledDCEL::build" << sDCELType[dtype] << info();
+
+    cleanseEdges();
+
+    // fill half edges
+    EdgeSet additions(edges.size());
     int i=0;
     for (const auto & e : std::as_const(edges))
     {
@@ -122,21 +104,129 @@ void DCEL::buildDCEL()
 
     edges.append(additions);
 
-   
-    fill_half_edge_table();
+    qDebug().noquote() << info();
+
+    bool rv = fill_half_edge_table();
+    if (!rv)
+    {
+        faces.clear();
+        wipeout();
+        qDebug() << "DCEL: build FAILED";
+        return false;
+    }
 
     fill_half_edge_faces();
 
     fill_face_table_inner_components();
 
-    qDebug() << "DCEL: loaded";
+    qDebug().noquote() << "DCEL: built OK" << info();
+    return true;
 }
 
-void DCEL::fill_half_edge_table()
+bool ThickDCEL::build()
 {
-    qDebug() << __FUNCTION__ << summary();
+    dtype = DCEL_TIPS;
+    qDebug().noquote() << "ThickDCEL::build" << sDCELType[dtype] << info();
 
-    QVector<EdgePtr> deletions;
+    // fill half edges
+    EdgeSet additions(edges.size());
+    int i=0;
+    for (const auto & e : std::as_const(edges))
+    {
+        // the map may be used to createB many dcels
+        e->dvisited = false;
+        e->twin.reset();
+        e->next.reset();
+        e->incident_face.reset();
+
+        VertexPtr v1 = e->v1;
+        VertexPtr v2 = e->v2;
+        v1->adjacent_vertices.push_back(v2);
+        v2->adjacent_vertices.push_back(v1);
+
+        EdgePtr e2 = e->createTwin();
+        e2->twin   = e;
+        e->twin    = e2;
+
+        additions[i++] = e2;
+    }
+
+    edges.append(additions);
+
+    qDebug().noquote() << "DCEL: built OK" << info();
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+///
+///   DCEL  - doubly connected edge list
+///
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+DCEL::DCEL(Map * map) : MapBase()
+{
+    qDebug().noquote() << "Creating DCEL from" << map->info();
+
+    dtype       = DCEL_UNDEFINED;
+    vertices    = map->vertices;
+    edges       = map->edges;
+
+    qDebug().noquote() << "DCEL: created" << DCEL::info();
+    refs++;
+}
+
+DCEL::~DCEL()
+{
+#ifdef EXPLICIT_DESTRUCTOR
+    qDebug() << "Deleting DCEL";
+    faces.clear();
+#endif
+    refs--;
+}
+
+void DCEL::cleanseEdges()
+{
+    qDebug().noquote() << "DCEL::cleanseEdges" << info();
+
+    EdgeSet forDeletion;
+
+    NeighbourMap nmap(this);
+    // edges which have an unconnected end or ends make no sense  for building faces
+    for (const EdgePtr & edge : std::as_const(edges))
+    {
+        int n = nmap.getNeighbours(edge->v1)->numNeighbours();
+        if (n <2 )
+        {
+            forDeletion.push_back(edge);
+            continue;
+        }
+        n = nmap.getNeighbours(edge->v2)->numNeighbours();
+        if (n <2 )
+        {
+            forDeletion.push_back(edge);
+        }
+    }
+
+    if (forDeletion.count())
+    {
+        qInfo() << "DCEL::cleanseEdges - removing" << forDeletion.count() << "edges";
+        for (EdgePtr & edge : forDeletion)
+        {
+            edges.removeOne(edge);
+        }
+        qDebug().noquote() << info();
+    }
+}
+
+bool DCEL::fill_half_edge_table()
+{
+    QElapsedTimer qet;
+    qet.start();
+    qDebug() << "DCEL::fill_half_edge_table" << info();
+
+    NeighbourMap nmap(this);
+
+    EdgeSet deletions;
     for (const auto & edge : std::as_const(edges))
     {
         if (!edge->dvisited)
@@ -144,15 +234,27 @@ void DCEL::fill_half_edge_table()
             edge->dvisited = true;
 
             EdgePtr current = edge;
-            EdgePtr next    = next_half_edge(current);
+            EdgePtr next    = next_half_edge(nmap,current);
             while (next != edge)
             {
+                if (qet.elapsed() > (10 * 1000))
+                {
+                    qWarning() << "DCEL creation timeout";
+                    if (Sys::isGuiThread())
+                    {
+                        QMessageBox box;
+                        box.setIcon(QMessageBox::Critical);
+                        box.setText("DCEL creation failed");
+                        box.exec();
+                    }
+                    return false;
+                }
                 if (next)
                 {
                     next->dvisited  = true;
                     current->next   = next;
                     current         = next;
-                    next            = next_half_edge(current);
+                    next            = next_half_edge(nmap,current);
                 }
                 else
                 {
@@ -164,7 +266,7 @@ void DCEL::fill_half_edge_table()
         }
     }
 
-    qDebug().noquote() << "DCEL:" << summary() << "deletions=" <<  deletions.size();
+    qDebug().noquote() << "DCEL:" << info() << "deletions=" <<  deletions.size();
     for (auto &  edge2 : std::as_const(deletions))
     {
         EdgePtr edget = edge2->twin.lock();
@@ -172,10 +274,11 @@ void DCEL::fill_half_edge_table()
         edges.removeAll(edget);
     }
 
-    qDebug().noquote() << "DCEL:" << summary();
+    qDebug().noquote() << "DCEL:" << info();
+    return true;
 }
 
-EdgePtr DCEL::next_half_edge(const EdgePtr & edge)
+EdgePtr DCEL::next_half_edge(NeighbourMap & nmap, const EdgePtr & edge)
 {
     qreal max_angle = 0.0;
 
@@ -204,7 +307,7 @@ EdgePtr DCEL::next_half_edge(const EdgePtr & edge)
     }
     if (next)
     {
-        return findEdge(v2,next,true);
+        return findEdge(nmap,v2,next,true);
     }
     else
     {
@@ -215,7 +318,7 @@ EdgePtr DCEL::next_half_edge(const EdgePtr & edge)
 
 void DCEL::fill_half_edge_faces()
 {
-    qDebug() << __FUNCTION__;
+    qDebug() << "DCEL::fill_half_edge_faces";
 
     for (const auto & e : std::as_const(edges))
     {
@@ -285,7 +388,7 @@ void DCEL::createFace(const EdgePtr & head)
 
 void DCEL::fill_face_table_inner_components()
 {
-    qDebug() << __FUNCTION__;
+    qDebug() << "DCEL::fill_face_table_inner_components";
 
     for (const auto & hedge : std::as_const(edges))
     {
@@ -566,9 +669,10 @@ VertexPtr DCEL::validAdjacent(const VertexPtr & vert)
     }
 }
 
-EdgePtr DCEL::findEdge(const VertexPtr &start , const VertexPtr&  end, bool expected)
+EdgePtr DCEL::findEdge(NeighbourMap & nmap, const VertexPtr &start , const VertexPtr&  end, bool expected)
 {
-    NeighboursPtr np = getNeighbours(start);
+
+    NeighboursPtr np = nmap.getNeighbours(start);
 
     for (WeakEdgePtr & wep : *np)
     {
@@ -797,7 +901,5 @@ void DCEL::print_edge(const EdgePtr & edge, QDebug & deb)
 
 QString DCEL::info() const
 {
-    return QString("vertices=%1 edges=%2 faces=%3").arg(vertices.size()).arg(edges.size()).arg(faces.size());
+    return QString("%5 addr= %4 vertices=%1 edges=%2 faces=%3").arg(vertices.size()).arg(edges.size()).arg(faces.size()).arg(Utils::addr(this)).arg(sDCELType[dtype]);
 }
-
-

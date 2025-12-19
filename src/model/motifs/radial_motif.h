@@ -26,14 +26,16 @@ public:
     virtual void    resetMotifMap() override;
             void    buildMotifMap() override final;
 
-    virtual MapPtr  getMotifMap()    override;  // Get a complete map from unit.
-    QTransform getMotifTransform()   override   { return QTransform::fromScale(motifScale,motifScale).rotate(motifRotate); };
+    virtual MapPtr  getMotifMap()   override;  // Get a complete map from unit.
 
-    virtual void    buildUnitMap()              { qFatal("Bad code - should be overriden");};
+    QTransform      getMotifTransform() override;
+    QTransform      getDELTransform()   override;
 
-    virtual void    setN(int n)      override;
+    virtual void    buildUnitMap() = 0;
 
-    virtual MapPtr  getUnitMap() const          { return unitMap; }
+    virtual void    setN(int n)     override;
+
+    virtual MapPtr  getUnitMap()  const         { return unitMap; }
     virtual MapPtr  getUnitMap2() const         { return unitMap2; }
     qreal           get_don()                   { return don; }
     QTransform      getUnitRotationTransform()  {return radialRotationTr;}

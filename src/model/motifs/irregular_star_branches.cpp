@@ -37,7 +37,7 @@ MapPtr IrregularStarBranches::buildStarHalfBranchV1(qreal d, int s, qreal side_f
     for (int idx = 1; idx < points.size(); ++idx)
     {
         VertexPtr next = map->insertVertex(points[idx]);
-        map->insertEdge(prev, next);
+        map->insertEdge(prev,next);
         prev = next;
     }
 
@@ -56,7 +56,7 @@ MapPtr IrregularStarBranches::buildStarHalfBranchV1(qreal d, int s, qreal side_f
         if ( d_frac == 0.0 )
         {
             VertexPtr v4 = map->insertVertex(midr);
-            map->insertEdge(prev, v4);
+            map->insertEdge(prev,v4);
         }
         else
         {
@@ -68,8 +68,8 @@ MapPtr IrregularStarBranches::buildStarHalfBranchV1(qreal d, int s, qreal side_f
             {
                 VertexPtr v4    = map->insertVertex(midr);
                 VertexPtr vcent = map->insertVertex(cent);
-                map->insertEdge(prev, vcent);
-                map->insertEdge(vcent, v4);
+                map->insertEdge(prev,vcent);
+                map->insertEdge(vcent,v4);
             }
         }
     }
@@ -137,7 +137,7 @@ MapPtr IrregularStarBranches::buildStarHalfBranchV2(qreal d, int s, int side, in
     for( int idx = 1; idx < points.size(); ++idx )
     {
         VertexPtr next = map->insertVertex(points[idx] );
-        map->insertEdge( prev, next );
+        map->insertEdge(prev,next);
         prev = next;
     }
     if (points.size() == 0)
@@ -168,7 +168,7 @@ MapPtr IrregularStarBranches::buildStarHalfBranchV2(qreal d, int s, int side, in
         if ( dfrac == 0.0 )
         {
             VertexPtr endv = map->insertVertex(endpt);
-            map->insertEdge(prev, endv);
+            map->insertEdge(prev,endv);
         }
         else
         {
@@ -199,16 +199,16 @@ QVector<QPointF> IrregularStarBranches::buildStarBranchPointsV2(qreal d, int s, 
     int d_i = static_cast<int>(floor(clamp_d + 0.01));
 
     s = min( s, d_i );
-    int outer_s = min( s, d_i - 1 );
+    //int outer_s = min( s, d_i - 1 );
 
     QLineF branchRay = getRay(side,clamp_d,sign);
     qDebug() << branchRay.p1()  << branchRay.p2();
-    if (debugMap)
+    if (motifDebug)
     {
         qreal angle = branchRay.angle();
-        debugMap->insertDebugMark(branchRay.p1(),QString("a%1").arg(side));
-        debugMap->insertDebugMark(branchRay.p2(),QString::number(angle));
-        debugMap->insertDebugLine(branchRay);
+        Sys::debugMapCreate->insertDebugMark(branchRay.p1(),QString("a%1").arg(side),Qt::red);
+        Sys::debugMapCreate->insertDebugMark(branchRay.p2(),QString::number(angle),Qt::red);
+        Sys::debugMapCreate->insertDebugLine(branchRay,Qt::blue);
     }
     QVector<QPointF> points;
     //points << mids[side];
@@ -224,12 +224,12 @@ QVector<QPointF> IrregularStarBranches::buildStarBranchPointsV2(qreal d, int s, 
             theside = modulo(side-nside,getN());
 
         QLineF otherRay = getRay(theside,d,-sign);
-        if (debugMap)
+        if (motifDebug)
         {
             qreal angle = otherRay.angle();
-            debugMap->insertDebugMark(otherRay.p1(),QString("a%1").arg(side));
-            debugMap->insertDebugMark(otherRay.p2(),QString::number(angle));
-            debugMap->insertDebugLine(otherRay);
+            Sys::debugMapCreate->insertDebugMark(otherRay.p1(),QString("a%1").arg(side),Qt::red);
+            Sys::debugMapCreate->insertDebugMark(otherRay.p2(),QString::number(angle),Qt::red);
+            Sys::debugMapCreate->insertDebugLine(otherRay,Qt::blue);
         }
         // FIXMECSK: we should handle the concave case by extending the intersection.
         //        (After all, two lines will intersect if not parallel and two
@@ -238,9 +238,9 @@ QVector<QPointF> IrregularStarBranches::buildStarBranchPointsV2(qreal d, int s, 
         if (Intersect::getIntersection(branchRay, otherRay, isect))
         {
             points << isect;
-            if (debugMap)
+            if (motifDebug)
             {
-                debugMap->insertDebugMark(isect,QString("isect%1").arg(side));
+                Sys::debugMapCreate->insertDebugMark(isect,QString("isect%1").arg(side),Qt::red);
             }
         }
     }

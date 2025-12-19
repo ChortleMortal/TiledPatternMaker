@@ -3,7 +3,7 @@
 #define E2STR(x) #x
 
 const QString sViewerType[] = {
-    E2STR(VIEW_DESIGN),
+    E2STR(VIEW_LEGACY),
     E2STR(VIEW_MOSAIC),
     E2STR(VIEW_PROTOTYPE),
     E2STR(VIEW_MOTIF_MAKER),
@@ -12,11 +12,9 @@ const QString sViewerType[] = {
     E2STR(VIEW_MAP_EDITOR),
     E2STR(VIEW_BKGD_IMG),
     E2STR(VIEW_GRID),
-    E2STR(VIEW_BORDER),
     E2STR(VIEW_CROP),
-    E2STR(VIEW_MEASURE),
-    E2STR(VIEW_CENTER),
-    E2STR(VIEW_IMAGE),
+    E2STR(VIEW_DEBUG),
+    E2STR(VIEW_BMP_IMAGE),
 };
 
 const QString s2ViewerType[] = {
@@ -29,9 +27,7 @@ const QString s2ViewerType[] = {
     "Map Editor View",
     "Background Image View",
     "Grid View",
-    "Border View",
     "Crop View",
-    "Measure View",
-    "Centre View",
-    "Image View"
+    "Debug View",
+    "BMP Image View"
 };

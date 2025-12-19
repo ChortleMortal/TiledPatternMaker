@@ -1,7 +1,9 @@
 #pragma once
-#include "model/tilings/tiling_data.h"
 #ifndef TILING_MAKER_H
 #define TILING_MAKER_H
+
+#include "sys/enums/edgetype.h"
+#include "model/tilings/tiling_header.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -15,12 +17,12 @@
 #include <QString>
 #include "gui/viewers/tiling_maker_view.h"
 #include "model/tilings/tiling.h"
-#include "sys/enums/etilingmakermousemode.h"
 #include "sys/enums/estatemachineevent.h"
+#include "sys/enums/etilingmaker.h"
 #include "sys/qt/unique_qvector.h"
 
 class QKeyEvent;
-class TilingData;
+class TilingHeader;
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Prototype>        ProtoPtr;
@@ -36,35 +38,23 @@ enum eTMState
     TM_MULTI
 };
 
-enum eVectorState
-{
-    VEC_READY,
-    VEC_SETTING_T1,
-    VEC_SETTING_T2
-};
-
-static QString tm_states[]
-{
-    E2STR(TM_EMPTY),
-    E2STR(TM_SINGLE),
-    E2STR(TM_MULTI)
-};
+class LoadUnit;
 
 class TMStack
 {
 public:
     TMStack() { stackIndex  = -1; }
 
-    void         clear()               { stack.clear(); stackIndex = -1; }
-    bool         add(TilingData & td);
-    bool         pop(TilingData & td);
-    bool         redo(TilingData & td);
+    void    clear()               { stack.clear(); stackIndex = -1; }
+    bool    add(TilingUnit & td);
+    bool    pop(TilingUnit & td);
+    bool    redo(TilingUnit & td);
 
-    QString     getStackStatus()      { return QString("size=%1 index=%2").arg(stack.size()).arg(stackIndex); }
+    QString getStackStatus()      { return QString("Stack=%1 index=%2").arg(stack.size()).arg(stackIndex); }
 
 private:
     int                   stackIndex;
-    QVector<TilingData>   stack;
+    QVector<TilingUnit>   stack;
 };
 
 class TilingMaker : public QObject
@@ -79,36 +69,30 @@ public:
     void        unload();
 
     TilingPtr   loadTiling(VersionedFile vfile, eTILM_Event event);
-    void        saveTiling(TilingPtr tiling);
+    void        saveTiling(TilingPtr tiling, bool forceOverwrite);
 
-    void        sm_takeUp(TilingPtr tiling, eTILM_Event event);
+    void        sm_takeUp(const TilingEvent & tilingEvent);
     void        sm_takeDown(QVector<TilingPtr> &proto_tilings, eTILM_Event event);
+    bool        getPropagate()         { return _tm_propagate; }
+    void        reload();
 
     QString     getStatus();
-    bool        tilingChanged();
+    LoadUnit  * getLoadUnit() { return loadUnit; }
 
-    void        setPropagate(bool enb) { propagate = enb; }
-    bool        getPropagate()         { return propagate; }
+    bool        procKeyEvent(QKeyEvent * k);
 
     // Tiling related
     const QVector<TilingPtr> & getTilings() { return tilings; }
 
-    void        select(TilingPtr tiling, bool force = false);
+    void        select(TilingPtr tiling);
     TilingPtr   getSelected() { return selectedTiling; }
     int         numTilings() { return tilings.size(); }
     void        removeTiling(TilingPtr tp);
-    void        setupMaker(TilingPtr tp);   // caution = generally use select()
 
-    void        eraseTilings();
     TilingPtr   findTilingByName(QString name);
     bool        isLoaded(QString name);
-    bool        isValidTiling(TilingPtr tiling);
     bool        verifyTiling();
 
-    void        pushTilingToPrototypeMaker(ePROM_Event event);
-    void        pushTileToPrototypeMaker(ePROM_Event event, TilePtr tile);
-
-    void        clearMakerData();
     void        removeExcludeds();
     void        updateVectors();
     void        updateReps();
@@ -117,48 +101,49 @@ public:
     void        addRegularPolygon();
 
     // PlacedTile related
-    TilingPlacements getTilingUnitPlacements() const;
+    void        addPlacedTile(PlacedTilePtr placedTile);
+    void        deletePlacedTile(PlacedTilePtr ptp);
 
-    void        addPlacedTile(PlacedTilePtr pf);
-    void        addNewPlacedTile(PlacedTilePtr placedTile);
-    void        removePlacedTile(PlacedTilePtr pf);
     void        replaceTilingUnit(TilingUnit & tilingUnit);
-    void        deletePlacedTile(PlacedTilePtr pf);
 
     void        unifyTile(PlacedTilePtr pf);
-
-    // Tile related
-    PlacedTileSelectorPtr  getCurrentSelection() { return tmView->tileSelector(); }
+    void        uniquifyTile(PlacedTilePtr pf);
+    void        decomposeTile(PlacedTilePtr pf);
+    void        editTile(PlacedTilePtr pf);
 
     void        flipTileRegularity(TilePtr tile);
 
-    eTilingMakerMouseMode getTilingMakerMouseMode();
-    int        getPolygonSides() { return poly_side_count; }
+    eTilingMakerMouseMode getTilingMakerMouseMode() { return _tilingMakerMouseMode; }
+    int         getPolygonSides() { return poly_side_count; }
 
     // Tile management.
-
     PlacedTileSelectorPtr addTileSelectionPointer(PlacedTileSelectorPtr sel );
     void        deleteTile(PlacedTileSelectorPtr sel);
     void        addToTranslate(QLineF mLine, QPointF origin);
     void        duplicateSelectedTiling();
-
-    void        selectTile(PlacedTilePtr pfp);
-    void        deselectTile() { _selectedTile.reset();  emit sig_current_tile(_selectedTile); }
-    inline PlacedTilePtr selectedTile() { return _selectedTile; }
+    void        mergeTilings();
 
     void        toggleInclusion(PlacedTileSelectorPtr sel);
-    bool        procKeyEvent(QKeyEvent * k);
+    void        clearConstructionLines() { Sys::tilingMakerView->clearConstructionLines(); }
 
-    void        clearConstructionLines() { tmView->clearConstructionLines(); }
+    // selected tile
+    inline PlacedTilePtr selectedTile()       { return _selectedTile; }
+    void        selectTile(PlacedTilePtr ptp) { _selectedTile = ptp;  emit sig_tileSelected(ptp); }
+    void        deselectTile()                { _selectedTile.reset(); }
 
+    // tile selctor
     inline PlacedTileSelectorPtr clickedSelector()              { return _clickedSelector; }
     void        setClickedSelector(PlacedTileSelectorPtr tsp)   { _clickedSelector = tsp; }
     void        resetClickedSelector()                          { _clickedSelector.reset(); }
+
     void        setClickedPoint(QPointF pt)                     { clickedSpt      = pt; }
 
     TMStack &   getStack() { return tmStack; }
 
-    // global modifications to features
+    // global modifications to features    // editing edge polys
+    void              setEdgePolyEditor(DlgEdgePolyEdit* dlg)  { _epolyEdit = dlg; }
+    DlgEdgePolyEdit * getEdgePolyEditor()                      { return  _epolyEdit; }
+
     void tilingDeltaX(qreal delta);
     void tilingDeltaY(qreal delta);
     void tilingDeltaScale(int delta);
@@ -166,19 +151,21 @@ public:
 
     void placedTileDeltaX(qreal delta);
     void placedTileDeltaY(qreal delta);
-    void placedTileSetTranslate(qreal x, qreal y);
-
     void placedTileDeltaScale(int delta);
-    void placedTileDeltaScale(qreal scale);
-    void placedTileSetScale(qreal scale);
-
     void placedTileDeltaRotate(int delta);
+
+    void placedTileDeltaScale(qreal scale);
     void placedTileDeltaRotate(qreal rotate);
+
+    void placedTileSetTranslate(qreal x, qreal y);
+    void placedTileSetScale(qreal scale);
     void placedTileSetRotate(qreal rotate);
 
+    // tiles dont't have x,y position - only scale and rotate;
     void uniqueTileDeltaScale(int delta);
-    void uniqueTileDeltaScale(qreal scale);
     void uniqueTileDeltaRotate(int delta);
+
+    void uniqueTileDeltaScale(qreal scale);
     void uniqueTileDeltaRotate(qreal rotate);
 
     // Possible user actions.
@@ -187,18 +174,23 @@ public:
     void mirrorPolygonY(PlacedTileSelectorPtr sel);
     bool reflectPolygon(PlacedTileSelectorPtr sel);
 
+    void moveTileTo(QPointF pt);
+
+    void forceRedraw();
+
 signals:
     void sig_close();
+    void sig_close_editor();
     void sig_tilingLoaded(VersionedFile name);
     void sig_tilingWritten();
 
-    void sig_buildMenu();
-    void sig_refreshMenu();
+    void sig_menuRefresh(eTileMenuRefresh scope);
     void sig_raiseMenu();
-    void sig_current_tile(PlacedTilePtr pfp);
 
     void sig_updateView();
     void sig_reconstructView();
+
+    void sig_tileSelected(PlacedTilePtr ptp);
 
 public slots:
     void updatePolygonSides(int number);
@@ -206,19 +198,21 @@ public slots:
     void setTilingMakerMouseMode(eTilingMakerMouseMode mode);
     void clearTranslationVectors();
 
+    void slot_propagate_changed(bool val);
     void slot_deleteTile();
     void slot_hideTile();
     void slot_showTile();
     void slot_includeTile();
     void slot_excludeTile();
-    void slot_editTile();
+    void slot_view_menu_editTile();
     void slot_copyMoveTile();
     void slot_copyJoinPoint();
     void slot_copyJoinMidPoint();
     void slot_copyJoinEdge();
     void slot_uniquifyTile();
     void slot_convertTile();
-    void slot_createCurve();
+    void slot_createConvex();
+    void slot_createConcave();
     void slot_flatenCurve();
     void slot_makeConvex();
     void slot_makeConcave();
@@ -229,51 +223,47 @@ public slots:
     void slot_stack_undo();
     void slot_stack_redo();
 
-    void slot_debugCompose();
-    void slot_debugDecompose();
-
 protected:
-    void     useLoadedTiling(TilingPtr tiling, VersionedFile &vfile, eTILM_Event event);
-
     // state machine
     void     sm_resetAllAndAdd(TilingPtr tiling);
-    void     sm_resetCurrentAndAdd(TilingPtr tiling);
+    void     sm_replaceCurrent(TilingPtr tiling);
+    void     sm_replace(TilingPtr tiling, TilingPtr old);
     void     sm_add(TilingPtr tiling);
     eTMState sm_getState();
     bool     sm_askAdd();
 
-    void     forceRedraw();
+    void     createCurveFromEdge(eCurveType ctype);
 
 private:
-    TilingMakerView *           tmView;
+    void setPropagate(bool enb) { _tm_propagate = enb; }
 
-    bool                        propagate;
+    LoadUnit *                  loadUnit;
 
     UniqueQVector<TilingPtr>    tilings;
+
     TilingPtr                   selectedTiling;
 
-    PlacedTilePtr               _selectedTile;  // current menu row selection too
+    PlacedTilePtr               _selectedTile;      // current menu column selection too
     PlacedTilePtr               unifyBase;
 
-    eTilingMakerMouseMode       tilingMakerMouseMode;     // set by tiling designer menu
+    TilingPtr                   decomposedTiling;   // contents decompsed from another tiling
+
     eVectorState                vectorState;
 
     PlacedTileSelectorPtr       _clickedSelector;
     QPointF                     clickedSpt;
 
-    int                         poly_side_count;            // number of selected vertices when drawing polygons.
-    qreal                       poly_rotation;              // regular polygon tile rotation
+    int                         poly_side_count;    // number of selected vertices when drawing polygons.
+    qreal                       poly_rotation;      // regular polygon tile rotation
 
     TMStack                     tmStack;
 
-    TilingData                  _lastSelectedData;  // use only to detect changes
-    bool                        _hasChanged;
+    eTilingMakerMouseMode       _tilingMakerMouseMode;
+    bool                        _tm_propagate;
 
-    class ViewController      * viewControl;
+    DlgEdgePolyEdit *           _epolyEdit;
+
     class PrototypeMaker      * prototypeMaker;
-    class MapEditor           * maped;
-    class ControlPanel        * controlPanel;
-    class Configuration       * config;
 };
 
 #endif

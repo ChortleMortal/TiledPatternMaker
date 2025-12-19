@@ -3,24 +3,24 @@
 #define XMLWRITER_H
 
 #include <string>
+#include "model/mosaics/writer_base.h"
+#include "model/motifs/extender.h"
+#include "model/styles/colorset.h"
 #include "sys/enums/efilltype.h"
 #include "sys/enums/emotiftype.h"
 #include "sys/enums/estyletype.h"
-#include "sys/geometry/edgepoly.h"
+#include "sys/geometry/edge_poly.h"
 #include "sys/geometry/polygon.h"
 #include "sys/geometry/xform.h"
-#include "model/styles/colorset.h"
 #include "sys/sys/pugixml.hpp"
 #include "sys/sys/versioning.h"
-#include "model/mosaics/mosaic_writer_base.h"
-#include "model/motifs/extender.h"
 
 using std::string;
 using std::shared_ptr;
 using std::weak_ptr;
 using namespace pugi;
 
-class ViewController;
+class SystemViewController;
 class Configuration;
 
 typedef shared_ptr<class Border>           BorderPtr;
@@ -37,7 +37,7 @@ typedef shared_ptr<class Star>             StarPtr;
 typedef shared_ptr<class Star2>            Star2Ptr;
 typedef shared_ptr<class Style>            StylePtr;
 
-class MosaicWriter : public MosaicWriterBase
+class MosaicWriter
 {
     friend class TilingWriter;
 
@@ -48,6 +48,8 @@ public:
     bool    writeXML(VersionedFile xfile, MosaicPtr design);
     QString getFailMsg() { return _failMsg; }
 
+    static int currentXMLVersion;
+
 protected:
     bool    generateVector(QTextStream & ts);
     bool    processVector(QTextStream & ts);
@@ -57,7 +59,7 @@ protected:
     void    procSize(QTextStream &ts, QSize viewSize, QSize canvasSize);
 
     void    procBackground(QTextStream &ts, QColor color);
-    void    procBorder(QTextStream &ts, BorderPtr border);
+    void    procBorder(QTextStream &ts, StylePtr style);
     void    procCrop(QTextStream &ts, CropPtr crop, QString name);
 
     void    procColor(QTextStream & ts, QColor color);
@@ -75,7 +77,7 @@ protected:
     bool    processTileColors(QTextStream &ts, StylePtr style);
 
     // styles
-    static void procesToolkitGeoLayer(QTextStream &ts, const Xform &xf, int zlevel);
+    void    procesToolkitGeoLayer(QTextStream &ts, const Xform &xf, int zlevel);
     void    processsStyleThick(QTextStream &ts, eDrawOutline draw_outline, qreal width, qreal outlineWidth, QColor outlineColor, Qt::PenJoinStyle join_style, Qt::PenCapStyle cap_style);
     void    processsStyleInterlace(QTextStream &ts, qreal gap, qreal shadow, bool includeSVerts, bool startUnder);
     void    processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, eFillType algorithm);
@@ -101,12 +103,12 @@ protected:
     void    setPrototype(QTextStream & ts, ProtoPtr pp);
     bool    setMap(QTextStream & ts, MapPtr map);
     void    setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices);
-    void    setEdges(QTextStream & ts, const QVector<EdgePtr> & edges );
+    void    setEdges(QTextStream & ts, const EdgeSet & edges );
 
-    void    setEdgePoly(QTextStream & ts, const EdgePoly & epoly);
+    void    setEdgePoly(QTextStream & ts, const EdgeSet & epoly);
     void    setVertexEP(QTextStream & ts,VertexPtr v, QString name);
     void    setVertex(QTextStream & ts, VertexPtr v, QString name = "Vertex");
-    void    setEdges(QTextStream & ts, QVector<EdgePtr> &qvec);
+    void    setEdges(QTextStream & ts, EdgeSet &qvec);
     void    setEdge(QTextStream & ts, EdgePtr e);
 
     void    procRect(QTextStream &ts, QRectF & rect);
@@ -159,11 +161,12 @@ protected:
     QString getRosetteReference(RosettePtr ptr);
     QString getRosette2Reference(Rosette2Ptr ptr);
 
-    int     currentXMLVersion;
-    QString _failMsg;
+    QString             _failMsg;
+    WriterBase    mwbase;
 
 private:
     [[noreturn]] void fail(QString a, QString b);
+
 
     QMap<ProtoPtr,int>      proto_ids;
     QMap<PolyPtr,int>       poly_ids;
@@ -178,6 +181,8 @@ private:
     QMap<Rosette2Ptr,int>   rosette2_ids;
 
     MosaicPtr               _mosaic;
+
+    bool                    debug;
 };
 
 #endif

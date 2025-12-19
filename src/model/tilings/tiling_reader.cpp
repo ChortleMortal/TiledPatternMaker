@@ -1,22 +1,20 @@
 #include <QFile>
 
-#include "model/tilings/tiling.h"
-#include "model/tilings/tiling_reader.h"
-#include "model/tilings/tile_reader.h"
-#include "sys/sys.h"
-#include "model/mosaics/mosaic_reader.h"
 #include "model/makers/tiling_maker.h"
+#include "model/mosaics/mosaic_reader.h"
+#include "model/tilings/backgroundimage.h"
 #include "model/tilings/placed_tile.h"
 #include "model/tilings/tile.h"
-#include "model/tilings/backgroundimage.h"
-
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <QDebug>
-#endif
+#include "model/tilings/tile_reader.h"
+#include "model/tilings/tiling.h"
+#include "model/tilings/tiling_reader.h"
+#include "sys/sys.h"
 
 using namespace pugi;
 using std::string;
 using std::make_shared;
+
+bool TilingReader::debug = false;
 
 // Tiling I/O.
 //
@@ -71,8 +69,8 @@ TilingPtr TilingReader::readTiling(QTextStream & st)
 
     // create the tiling
     tiling = make_shared<Tiling>();
-    tiling->setName(vname);
-    tiling->setTranslationVectors(QPointF(x1,y1),QPointF(x2,y2),QPointF());
+    tiling->setVName(vname);
+    tiling->hdr().setTranslationVectors(QPointF(x1,y1),QPointF(x2,y2),QPointF());
 
     for( int idx = 0; idx < nf; ++idx )
     {
@@ -92,7 +90,7 @@ TilingPtr TilingReader::readTiling(QTextStream & st)
 
         if (reg)
         {
-            bf = make_shared<Tile>(num_sides,0);
+            bf = make_shared<Tile>(num_sides,0,1.0);
         }
         else
         {
@@ -104,7 +102,7 @@ TilingPtr TilingReader::readTiling(QTextStream & st)
                 pts << QPointF(x1, y1);
             }
             EdgePoly ep(pts);
-            bf = make_shared<Tile>(ep,0);
+            bf = make_shared<Tile>(ep);
         }
 
         for( int jdx = 0; jdx < num_xforms; ++jdx )
@@ -120,7 +118,7 @@ TilingPtr TilingReader::readTiling(QTextStream & st)
                          b,e,
                          c,f);
             PlacedTilePtr pfp = make_shared<PlacedTile>(bf,t);
-            tiling->addPlacedTile(pfp);
+            tiling->unit().addPlacedTile(pfp);
         }
     }
 
@@ -133,15 +131,11 @@ TilingPtr TilingReader::readTiling(QTextStream & st)
     return tiling;
 }
 
-TilingPtr TilingReader::readTilingXML(VersionedFile & xfile)
+TilingPtr TilingReader::readTilingXML(VersionedFile & xfile, ReaderBase *mrbase)
 {
-    MRBasePtr base = std::make_shared<MosaicReaderBase>();
-    return readTilingXML(xfile,base);
-}
+    _xfile = xfile;
 
-TilingPtr TilingReader::readTilingXML(VersionedFile & xfile, MRBasePtr base)
-{
-    qDebug().noquote() << "TilingLoader::readTilingXML" << xfile.getVersionedName().get();
+    qDebug().noquote() << "TilingReader::readTilingXML" << xfile.getVersionedName().get();
 
     xml_document doc;
     xml_parse_result result = doc.load_file(xfile.getPathedName().toStdString().c_str());
@@ -153,15 +147,24 @@ TilingPtr TilingReader::readTilingXML(VersionedFile & xfile, MRBasePtr base)
 
     xml_node tiling_node = doc.first_child();
 
-    TilingPtr tp = readTilingXML(tiling_node,base);
+    TilingPtr tp = readTilingXML(tiling_node,mrbase);
+
+    QVector<TilePtr> vec  = tp->unit().getUniqueTiles();
+    for (auto & tile : vec)
+    {
+        if (!tile->isCorrect())
+        {
+            qWarning("inocrrect tile");
+        }
+    }
 
     if (tp->hasIntrinsicOverlaps())
-        qInfo() << tiling->getName().get() << "HAS OVERLAPS";
+        qInfo() << tiling->getVName().get() << "HAS OVERLAPS";
 
     return tp;
 }
 
-TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
+TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, ReaderBase * mrbase)
 {
     string str = tiling_node.name();
     if (str != "Tiling")
@@ -171,15 +174,15 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
         return nullptr;
     }
 
-    int version = 0;
+    _tilingVersion = 0;
     xml_attribute vatt = tiling_node.attribute("version");
     if (vatt)
     {
         QString ver = vatt.value();
-        version = ver.toInt();
+        _tilingVersion = ver.toInt();
     }
 
-    bool legacyFlipCurve =  (version < 9) ? true : false;
+    bool legacyFlipCurve =  (_tilingVersion < 9) ? true : false;
 
     // name
     xml_node node;
@@ -219,16 +222,18 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
 
     // create the tiling
     tiling = make_shared<Tiling>();
-    tiling->setName(vname);
-    tiling->setVersion(version);
-    tiling->setTranslationVectors(ptt1, ptt2, origin);
+    tiling->setViewController(_vc);
+    tiling->setVName(vname);
+    tiling->setVersion(_tilingVersion);
+    tiling->hdr().setTranslationVectors(ptt1, ptt2, origin);
 
 	xml_node view = tiling_node.child("View");
     if (view)
     {
-        Xform xf = getXform(view);
-        tiling->setModelXform(xf,false);
-        qDebug().noquote() << "tiling canvas xform" << xf.info();
+        // only in version 2 tiling
+        Xform xf = getOldView(view);
+        tiling->setModelXform(xf,false,Sys::nextSigid());
+        if (debug) qDebug().noquote() << "tiling canvas xform" << xf.info();
     }
 
     // view settings
@@ -268,15 +273,15 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
         }
         QString strt0 = t0.child_value();
         FillData fd = getFill(strt0,isSingle);
-        CanvasSettings cs = tiling->getCanvasSettings();
+        CanvasSettings cs = tiling->hdr().getCanvasSettings();
         cs.setFillData(fd);
-        tiling->setCanvasSettings(cs);
+        tiling->hdr().setCanvasSettings(cs);
     }
 
-    TileReader tr(base);   // must be located here to bw used for all tiles
+    TileReader treader(mrbase);   // must be located here to bw used for all tiles
 
     std::string tileName;
-    if (version < 7)
+    if (_tilingVersion < 7)
         tileName = "Feature";
     else
         tileName = "Tile";
@@ -293,6 +298,7 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
         }
 
         QString strtype = fatt.as_string();
+        if (debug) qDebug() << "tile is" << strtype;
 
         if (strtype == "girih")
         {
@@ -352,7 +358,7 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
         }
         else if (strtype == "edgepoly")
         {
-            EdgePoly ep = tr.getEdgePoly(tile_node,legacyFlipCurve);
+            EdgeSet eset = treader.getEdgeSet(tile_node,legacyFlipCurve);
 
             qreal rotation = 0.0;
             xml_attribute rotatt = tile_node.attribute("rotation");
@@ -368,25 +374,31 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
                 scale = scaleatt.as_double();
             }
 
-            tile = make_shared<Tile>(ep,rotation,scale);
+            tile = make_shared<Tile>(eset);
+            tile->setRotate(rotation);
+            tile->setScale(scale);
+            tile->compose();
         }
+
+        Q_ASSERT(tile);
+        Q_ASSERT(tile->isCorrect());
 
         for (xml_node plnode = tile_node.child("Placement"); plnode; plnode = plnode.next_sibling("Placement"))
         {
             QTransform T;
-            if (version <= 5)
+            if (_tilingVersion <= 5)
             {
                 QString txt = plnode.child_value();
                 T = getAffineTransform(txt);
             }
             else
             {
-                Q_ASSERT(version >= 6);
+                Q_ASSERT(_tilingVersion >= 6);
                 T = getAffineTransform(plnode);
             }
 
             PlacedTilePtr pfp = make_shared<PlacedTile>(tile,T);
-            tiling->addPlacedTile(pfp);
+            tiling->unit().addPlacedTile(pfp);
         }
 
         xml_node bcolor = tile_node.child("BkgdColors");
@@ -401,8 +413,10 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
                 cset.addColor(TPColor(acolor,false));
 
             }
-            tileColors.addColorSet(cset);
+            tiling->legacyTileColors().addColorSet(cset);
         }
+
+        if (debug) tile->dumpPts();
     }
 
     xml_node bkImage = tiling_node.child("BackgroundImage");
@@ -411,11 +425,16 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
         bip = getBackgroundImage(bkImage);
         if (bip)
         {
+            if (_tilingVersion < 13)
+            {
+                tiling->correctBackgroundAlignment(bip);
+            }
             tiling->setBkgdImage(bip);
         }
     }
 
-    // tiling->dump();
+    tiling->setLegacyModelConverted(legacyCenterConverted);
+
     return tiling;
 }
 
@@ -458,6 +477,7 @@ BkgdImagePtr TilingReader::getBackgroundImage(xml_node & node)
             xf.setTranslateY(str.toDouble());
         }
 
+        QPointF legacyCenter;
         n = node.child("Center");
         if (n)
         {
@@ -465,11 +485,18 @@ BkgdImagePtr TilingReader::getBackgroundImage(xml_node & node)
             QStringList qsl = str.split(",");
             qreal x = qsl[0].toDouble();
             qreal y = qsl[1].toDouble();
-            xf.setModelCenter(QPointF(x,y));
+            legacyCenter = QPointF(x,y);
+        }
+
+        bip->setModelXform(xf,false,Sys::nextSigid());
+
+        if (_tilingVersion < 13)
+        {
+            if (bip->correctLegacyLayer(legacyCenter))
+                legacyCenterConverted = true;
         }
         
-        bip->setImageXform(xf);
-        qDebug().noquote() << "background image xform:" << xf.info();
+        if (debug) qDebug().noquote() << "background image xform:" << xf.info();
 
         n= node.child("Perspective");
         bool usePerspective = false;
@@ -487,17 +514,11 @@ BkgdImagePtr TilingReader::getBackgroundImage(xml_node & node)
         }
         bip->setUseAdjusted(usePerspective);
         bip->createPixmap();
-        return bip;
     }
-    else
-    {
-        // not loaded
-        bip.reset();
-        return bip;
-    }
+    return bip;
 }
 
-Xform  TilingReader::getXform(xml_node & node)
+Xform  TilingReader::getOldView(xml_node & node)
 {
     Xform xf;
     QString str;
@@ -514,8 +535,8 @@ Xform  TilingReader::getXform(xml_node & node)
     str = node.child_value("Y");
     xf.setTranslateY(str.toDouble());
 
-    str = node.child_value("Center");
-    xf.setModelCenter(getPoint(str));
+    //str = node.child_value("Center");
+    //QPointF legacyCenter = getPoint(str);
 
     return  xf;
 }
@@ -648,11 +669,11 @@ void TilingReader::getViewSettings(xml_node & node)
         height = str.toInt();
     }
     
-    CanvasSettings cs = tiling->getCanvasSettings();
+    CanvasSettings cs = tiling->hdr().getCanvasSettings();
 
     QSize size(width,height);
     cs.setViewSize(size);
-    qDebug() << "tiling size:" << size;
+    if (debug) qDebug() << "tiling size:" << size;
 
     int zwidth  = width;
     int zheight = height;
@@ -672,9 +693,9 @@ void TilingReader::getViewSettings(xml_node & node)
 
     QSize zsize(zwidth,zheight);
     cs.setCanvasSize(zsize);
-    qDebug() << "tiling zoom size:" << zsize;
+    if (debug) qDebug() << "tiling zoom size:" << zsize;
 
-    tiling->setCanvasSettings(cs);
+    tiling->hdr().setCanvasSettings(cs);
 
     Xform xf;
     QString val;
@@ -712,6 +733,7 @@ void TilingReader::getViewSettings(xml_node & node)
         xf.setRotateRadians(fval);
     }
 
+    QPointF legacyCenter;
     n = view.child("center");
     if (n)
     {
@@ -719,10 +741,22 @@ void TilingReader::getViewSettings(xml_node & node)
         QStringList qsl = val.split(",");
         qreal x = qsl[0].toDouble();
         qreal y = qsl[1].toDouble();
-        xf.setModelCenter(QPointF(x,y));
+        legacyCenter = QPointF(x,y);
     }
     
-    tiling->setModelXform(xf,false);
-    qDebug().noquote() << "tiling model xform:" << xf.info();
+    tiling->setModelXform(xf,false,Sys::nextSigid());
+
+    if (_tilingVersion < 13)
+    {
+        qInfo() << "legacy correction for tiling" << _xfile.getVersionedName().get() << legacyCenter;
+        if (tiling->correctLegacyLayer(legacyCenter))
+            legacyCenterConverted = true;
+    }
+
+    if (debug) qDebug().noquote() << "tiling model xform:" << xf.info();
 }
 
+ColorGroup & TilingReader::getTileColors()
+{
+    return tiling->legacyTileColors();
+}

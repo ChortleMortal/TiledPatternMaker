@@ -17,12 +17,11 @@ typedef std::shared_ptr<class Prototype>     ProtoPtr;
 // A DesignElement is the core of the process of building a finished design.
 // It's a Tile together with a Motif.  The tile comes from the
 // tile library and will be used to determine where to place copies of the
-// MOtif, which is designed by the user.
+// Motif, which is designed by the user.
 
 class DesignElement
 {
 public:
-
     DesignElement();
     DesignElement(const TilePtr & tile, const MotifPtr & motif);
     DesignElement(const TilePtr & tile);
@@ -30,14 +29,9 @@ public:
     DesignElement(const DesignElement & other);
     ~DesignElement();
 
-    DesignElement& operator=(const DesignElement& rhs) {
-        tile     = rhs.tile;
-        motif    = rhs.motif;
-        refs++;
-        return *this;}
-
     TilePtr     getTile() const;
     void        replaceTile(const TilePtr & tile);
+    void        exactReplaceTile(const TilePtr & tile);
 
     MotifPtr    getMotif() const;
     void        setMotif(const MotifPtr & motif);

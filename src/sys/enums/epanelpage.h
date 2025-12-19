@@ -1,6 +1,8 @@
 #ifndef EPANELPAGE_H
 #define EPANELPAGE_H
 
+#include <QString>
+
 enum ePanelPage
 {
 PAGE_LOAD,
@@ -21,7 +23,17 @@ PAGE_SYSTEM_INFO,
 PAGE_CONFIG,
 PAGE_IMAGE_TOOLS,
 PAGE_DEBUG_TOOLS,
-PAGE_LOG
+PAGE_LOG,
+PAGE_LAYER_STATUS
 };
+
+enum ePageState
+{
+    PAGE_ATTACHED,
+    PAGE_SUB_ATTACHED,
+    PAGE_DETACHED
+};
+
+extern const QString sPageState[];
 
 #endif // EPANELPAGE_H

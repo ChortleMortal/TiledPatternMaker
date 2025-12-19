@@ -3,9 +3,6 @@
 #define DLG_MAGNITUDE_H
 
 #include <QDialog>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 
 typedef std::shared_ptr<class PlacedTileSelector>   PlacedTileSelectorPtr;
 typedef std::shared_ptr<class Edge>           EdgePtr;

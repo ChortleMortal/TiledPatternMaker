@@ -4,8 +4,9 @@
 
 #include "gui/panels/panel_page.h"
 #include "gui/widgets/versioned_list_widget.h"
-#include "sys/enums/estatemachineevent.h"
 #include "sys/enums/edesign.h"
+#include "sys/enums/ekeyboardmode.h"
+#include "sys/enums/estatemachineevent.h"
 #include "sys/sys/versioning.h"
 
 class page_loaders : public panel_page
@@ -23,12 +24,13 @@ public:
 signals:
     void    sig_loadDesign(eDesign id);
     void    sig_buildDesign(eDesign id);
-    void    sig_sortMosaics(bool,bool,bool);
-    void    sig_sortTilings(bool,bool,bool);
+    void    sig_sortMosaics();
+    void    sig_sortTilings();
+    void    sig_setTilingUses();
 
 public slots:
-   void     slot_newTile();
-   void     slot_newXML();
+   void     slot_newTiling();
+   void     slot_newMosaic();
 
    void     slot_mosaicLoaded(VersionedFile file);
    void     slot_tilingLoaded(VersionedFile file);
@@ -42,18 +44,24 @@ public slots:
    void     refillMosaicsCombo();
 
 private slots:
-    void    designSelected(QListWidgetItem * item, QListWidgetItem* oldItem);
-    void    tilingSelected(QListWidgetItem * item, QListWidgetItem* oldItem);
     void    mosaicSelected(QListWidgetItem *item, QListWidgetItem *oldItem);
-    void    designClicked(QListWidgetItem * item);
-    void    tilingClicked(QListWidgetItem * item);
     void    mosaicClicked(QListWidgetItem *item);
+    void    slot_mosaicActivated(QListWidgetItem * item);
+    void    slot_mosaicTextChanged(const QString & currentText);
+
+    void    tilingSelected(QListWidgetItem * item, QListWidgetItem* oldItem);
+    void    tilingClicked(QListWidgetItem * item);
+    void    slot_tilingActivated(QListWidgetItem * item);
+    void    slot_tilingTextChanged(const QString & currentText);
+
+    void    designSelected(QListWidgetItem * item, QListWidgetItem* oldItem);
+    void    designClicked(QListWidgetItem * item);
 
     void    slot_mosaicItemEnteredToolTip(QListWidgetItem * item);
 
     void    loadShapes();
     void    slot_loadTiling();
-    void    slot_loadTilingModify();
+    void    slot_loadTilingReplace();
     void    slot_loadTilingMulti();
 
     void    openXML();
@@ -67,13 +75,19 @@ private slots:
     void    deleteMosaic();
     void    reformatMosaic();
     void    addToWorklist();
+    void    removeFromWorklist();
+
     void    showTilings();
+    void    genMosaicBMP();
+
 
     void    openTiling();
     void    rebaseTiling();
     void    renameTiling();
     void    deleteTiling();
     void    reformatTiling();
+    void    addTilingToWorklist();
+    void    removeTilingFromWorklist();
 
     void    slot_whereTilingUsed();
     void    slot_mosaicFilter(const QString & filter);
@@ -81,6 +95,8 @@ private slots:
     void    slot_mosaicCheck(bool check);
     void    slot_mosaicWorklistCheck(bool check);
     void    slot_tilingWorklistCheck(bool check);
+    void    slot_mosaicWorklistXCheck(bool check);
+    void    slot_tilingWorklistXCheck(bool check);
     void    slot_mosOrigCheck(bool check);
     void    slot_mosNewCheck(bool check);
     void    slot_mosTestCheck(bool check);
@@ -92,9 +108,10 @@ private slots:
     void    slot_tilingTestCheck(bool check);
     void    slot_tilingCheck(bool check);
 
-    void    autoLoadStylesClicked(bool enb);
-    void    autoLoadTilingClicked(bool enb);
-    void    autoLoadDesignsClicked(bool enb);
+    void    autoLoadLastClicked(bool enb);
+
+    void    slot_kbdModeChanged(int row);
+    void    slot_kbdMode(eLegacyMode mode);
 
     void    loadTiling2();
 
@@ -107,6 +124,7 @@ protected:
     void    loadMosaicsCombo();
     void    loadDesignCombo();
 
+    QGroupBox * createGeneralColumn();
     QGroupBox * createLegacyColumn();
     QGroupBox * createMosaicColumn();
     QGroupBox * createTilingColumn();
@@ -115,6 +133,8 @@ protected:
 
     void    putNewTilingNameIntoMosaic(VersionFileList & designs, VersionedName newTilingName);
     bool    putNewTilingNameIntoTiling(VersionedFile tiling, VersionedName newTilingName);
+
+    void    setupKbdModeCombo();
 
 private:
     VersionedListWidget * tileListWidget;
@@ -127,7 +147,7 @@ private:
 	QPushButton * pbLoadTiling;
     QPushButton * pbLoadXML;
     QPushButton * pbTilingLoadMulti;
-    QPushButton * pbTilingLoadModify;
+    QPushButton * pbTilingLoadReplace;
 
     QCheckBox   * tilingFilterCheck;
     QLineEdit   * tilingFilter;
@@ -136,9 +156,11 @@ private:
     QCheckBox   * tilingNewChk;
     QCheckBox   * tilingTestChk;
     QCheckBox   * tilingWorklistCheck;
+    QCheckBox   * tilingWorklistXCheck;
 
     QCheckBox   * mosaicFilterCheck;
     QCheckBox   * mosaicWorklistCheck;
+    QCheckBox   * mosaicWorklistXCheck;
     QLineEdit   * mosaicFilter;
 
     QCheckBox   * mosaicOrigChk;
@@ -151,9 +173,10 @@ private:
     VersionedFile selectedMosaicFile;
     VersionedFile selectedTilingFile;
 
-    QCheckBox   * cbAutoLoadMosaics;
-    QCheckBox   * cbAutoLoadTiling;
-    QCheckBox   * cbAutoLoadDesigns;
+    QCheckBox   * cbAutoLoadLast;
+
+    QComboBox   * kbdModeCombo;
+
 };
 
 #endif

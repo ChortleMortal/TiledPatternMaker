@@ -49,7 +49,7 @@ StarEditor::StarEditor(QString name, DesignElementPtr del, bool doEmit) : NamedM
     connect(s_slider,       &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
     connect(chk_inscribe,   &QCheckBox::clicked,            this, [this]() { editorToMotif(true);});
     connect(chk_on_point,   &QCheckBox::clicked,            this, [this]() { editorToMotif(true);});
-    connect(version_combo,  QOverload<int>::of(&QComboBox::currentIndexChanged), this,[this]() { editorToMotif(true);});
+    connect(version_combo,  &QComboBox::currentIndexChanged,this,[this]()  { editorToMotif(true);});
 
     wDel = del;
     if (!del || !del->getMotif())
@@ -345,8 +345,8 @@ Rosette2Editor::Rosette2Editor(QString name, DesignElementPtr del, bool doEmit) 
 {
     connectScale = nullptr;
 
-    kx_slider = new DoubleSliderSet("Rosette2 KneeX height", 0.25, 0, 1.0, 100 );
-    ky_slider = new DoubleSliderSet("Rosette2 KneeY width ", 0.25, 0, 1.0, 100 );
+    kx_slider = new DoubleSliderSet("Rosette2 KneeX Height", 0.25, 0, 1.0, 100 );
+    ky_slider = new DoubleSliderSet("Rosette2 KneeY Width ", 0.25, 0, 1.0, 100 );
     k_slider  = new DoubleSliderSet("Rosette2 K (Knee Angle)", 0.0, -90.0, 90.0, 10);
     s_slider  = new SliderSet(      "Rosette2 S Intersections", 1, 1, 5);
 

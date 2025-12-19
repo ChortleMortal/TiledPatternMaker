@@ -56,14 +56,16 @@ void IrregularRosette::infer()
 
     motifMap = std::make_shared<Map>("IrregularRosette Map");
 
+    TilePtr tile = getTile();
+
     corners = getTile()->getPoints();
     mids    = getTile()->getMids();
     center  = Geo::center(mids);
 
-
-    debugMap = nullptr;
-    if (dbgVal > 0)
-        debugMap = Sys::debugView->getMap();
+    if (motifDebug)
+    {
+        Sys::debugMapCreate->wipeout();
+    }
 
     switch (getVersion())
     {
@@ -83,7 +85,7 @@ void IrregularRosette::infer()
 
 void IrregularRosette::buildv1()
 {
-    if (_debug) qDebug() << "IrregularRosette::buildV1  sides = " << getTile()->numSides();
+    if (_debug) qDebug() << "IrregularRosette::buildV1  sides = " << getTile()->numEdges();
 
     debugSide = 0;
 
@@ -103,33 +105,38 @@ void IrregularRosette::buildv1()
 
     if (_debug) qDebug() << "num branches=" << branches.size();
 
-    for (auto & branch : std::as_const(branches))
+    for (auto & branch : branches)
     {
         // update map
-        motifMap->insertEdge(branch.tipPoint,branch.qePoint);
+        VertexPtr v1 = motifMap->insertVertex(branch.tipPoint);
+        VertexPtr v2 = motifMap->insertVertex(branch.qePoint);
+        motifMap->insertEdge(v1,v2);
+
         QPolygonF intersections = buildRosetteIntersections(branch);
         int iCount = intersections.size();
         if (iCount)
         {
             if (_debug) qDebug() << "num intersections" << intersections.size();
-            QPointF p1 = branch.qePoint;
+            QPointF p1    = branch.qePoint;
+            VertexPtr vp1 = motifMap->insertVertex(p1);
             for (int is = 0; is < s && is < intersections.size(); ++is)
             {
-                QPointF p2 = intersections[is];
-                motifMap->insertEdge(p1,p2);
+                QPointF p2    = intersections[is];
+                VertexPtr vp2 = motifMap->insertVertex(p2);
+                motifMap->insertEdge(vp1,vp2);
                 p1 = p2;
             }
         }
 
-        if (debugMap && branch.side == 0)
+        if (motifDebug && branch.side == 0)
         {
             QString ssign = (branch.isign > 0) ? "+" : "-";
-            debugMap->insertDebugMark(branch.tipPoint,QString("tipPt%1").arg(ssign));
-            debugMap->insertDebugMark(branch.qePoint,QString("qePt%1").arg(ssign));
-            debugMap->insertDebugMark(branch.fPoint,QString("fPt%1").arg(ssign));
+            Sys::debugMapCreate->insertDebugMark(branch.tipPoint,QString("tipPt%1").arg(ssign),Qt::red);
+            Sys::debugMapCreate->insertDebugMark(branch.qePoint,QString("qePt%1").arg(ssign),Qt::red);
+            Sys::debugMapCreate->insertDebugMark(branch.fPoint,QString("fPt%1").arg(ssign),Qt::red);
             for (int i=0; i < intersections.size(); i++)
             {
-                debugMap->insertDebugMark(intersections[i],QString("isect%1").arg(i));
+                Sys::debugMapCreate->insertDebugMark(intersections[i],QString("isect%1").arg(i),Qt::red);
             }
         }
     }
@@ -172,21 +179,21 @@ Branch IrregularRosette::buildRosetteBranchPointsV1(int side, int isign)
     if (!Intersect::getIntersection(up_outer, bisector, tip, QPointF(0,0), ad))
         ad = QPointF(0,0);
 
-    if (debugMap && side == debugSide)
+    if (motifDebug && side == debugSide)
     {
         QString ssign = (isign > 0) ? "+" : "-";
 
-        debugMap->insertDebugLine(up_outer+center, bisector+center);
-        debugMap->insertDebugLine(tip+center, rtip+center);
-        debugMap->insertDebugLine(tip+center, QPointF()+center);
+        Sys::debugMapCreate->insertDebugLine(up_outer+center, bisector+center,Qt::green);
+        Sys::debugMapCreate->insertDebugLine(tip+center, rtip+center,Qt::green);
+        Sys::debugMapCreate->insertDebugLine(tip+center, QPointF()+center,Qt::green);
 
-        debugMap->insertDebugMark(e,QString("e%1").arg(ssign));
-        debugMap->insertDebugMark(ad,QString("ad%1").arg(ssign));
-        debugMap->insertDebugMark(up_outer + center,QString("up_outer%1").arg(ssign));
-        debugMap->insertDebugMark(down_outer+center,QString("down_outer%1").arg(ssign));
-        debugMap->insertDebugMark(bisector + center,QString("bisector%1").arg(ssign));
-        debugMap->insertDebugMark(tip  + center,QString("tip%1").arg(ssign));
-        debugMap->insertDebugMark(rtip + center,QString("rtip%1").arg(ssign));
+        Sys::debugMapCreate->insertDebugMark(e,QString("e%1").arg(ssign),Qt::red);
+        Sys::debugMapCreate->insertDebugMark(ad,QString("ad%1").arg(ssign),Qt::red);
+        Sys::debugMapCreate->insertDebugMark(up_outer + center,QString("up_outer%1").arg(ssign),Qt::red);
+        Sys::debugMapCreate->insertDebugMark(down_outer+center,QString("down_outer%1").arg(ssign),Qt::red);
+        Sys::debugMapCreate->insertDebugMark(bisector + center,QString("bisector%1").arg(ssign),Qt::red);
+        Sys::debugMapCreate->insertDebugMark(tip  + center,QString("tip%1").arg(ssign),Qt::red);
+        Sys::debugMapCreate->insertDebugMark(rtip + center,QString("rtip%1").arg(ssign),Qt::red);
     }
     //QPointF qe = q_clamp >= 0  ? Point::convexSum(e, up_outer, q ) : Point::convexSum(e, ad, -q );
     QPointF qe;
@@ -215,14 +222,14 @@ Branch IrregularRosette::buildRosetteBranchPointsV1(int side, int isign)
 
 void IrregularRosette::buildV2()
 {
-    qDebug() << "IrregularRosette::buildV2  sides = " << getTile()->numSides();
+    qDebug() << "IrregularRosette::buildV2  sides = " << getTile()->numEdges();
 
     if (Loose::zero(q))
         q = 0.01;
     if (Loose::zero(r))
         r = 0.01 ;
 
-    auto edges        = getTile()->getLines();
+    QVector<QLineF> edges = getTile()->getLines();
 
     qreal avgEdgeWidth = 0;
     for (int i=0; i < edges.size(); i++)
@@ -243,33 +250,38 @@ void IrregularRosette::buildV2()
     }
     if (_debug) qDebug() << "num branches=" << branches.size();
 
-    for (const auto & branch : std::as_const(branches))
+    for (auto & branch : branches)
     {
         // update map
-        motifMap->insertEdge(branch.tipPoint,branch.qePoint);
+        VertexPtr v1 = motifMap->insertVertex(branch.tipPoint);
+        VertexPtr v2 = motifMap->insertVertex(branch.qePoint);
+        motifMap->insertEdge(v1,v2);
+
         QPolygonF intersections = buildRosetteIntersections(branch);
         int iCount = intersections.size();
         if (iCount)
         {
             if (_debug) qDebug() << "num intersections" << intersections.size();
-            QPointF p1 = branch.qePoint;
+            QPointF p1     = branch.qePoint;
+            VertexPtr vp1 = motifMap->insertVertex(p1);
             for (int is = 0; is < s && is < intersections.size(); ++is)
             {
                 QPointF p2 = intersections[is];
-                motifMap->insertEdge(p1,p2);
+                VertexPtr vp2 = motifMap->insertVertex(p2);
+                motifMap->insertEdge(vp1,vp2);
                 p1 = p2;
             }
         }
 
-        if (debugMap && branch.side == 0)
+        if (motifDebug && branch.side == 0)
         {
             QString ssign = (branch.isign > 0) ? "+" : "-";
-            debugMap->insertDebugMark(branch.tipPoint,QString("tipPt%1").arg(ssign));
-            debugMap->insertDebugMark(branch.qePoint,QString("qePt%1").arg(ssign));
-            debugMap->insertDebugMark(branch.fPoint,QString("fPt%1").arg(ssign));
+            Sys::debugMapCreate->insertDebugMark(branch.tipPoint,QString("tipPt%1").arg(ssign),Qt::red);
+            Sys::debugMapCreate->insertDebugMark(branch.qePoint,QString("qePt%1").arg(ssign),Qt::red);
+            Sys::debugMapCreate->insertDebugMark(branch.fPoint,QString("fPt%1").arg(ssign),Qt::red);
             for (int i=0; i < intersections.size(); i++)
             {
-                debugMap->insertDebugMark(intersections[i],QString("isect%1").arg(i));
+                Sys::debugMapCreate->insertDebugMark(intersections[i],QString("isect%1").arg(i),Qt::red);
             }
         }
     }
@@ -292,8 +304,8 @@ Branch IrregularRosette::buildRosetteBranchPointsV2(int side, int isign, qreal s
     perp.setLength(h);
     QPointF base = perp.p2();
 
-    if (debugMap && side==0)
-        debugMap->insertDebugMark(base,"BASE");
+    if (motifDebug && side==0)
+        Sys::debugMapCreate->insertDebugMark(base,"BASE",Qt::red);
 
     // create baseline
     QLineF bline;
@@ -313,8 +325,8 @@ Branch IrregularRosette::buildRosetteBranchPointsV2(int side, int isign, qreal s
     QLineF pLine(pPt,qe);
     pLine.setLength(maxLen);
     pLine.setP1(qe);
-    if (debugMap && side==0)
-        debugMap->insertDebugLine(pLine);
+    if (motifDebug && side==0)
+        Sys::debugMapCreate->insertDebugLine(pLine,Qt::green);
     QPointF f = pLine.p2();
 
     Branch branch;
@@ -330,7 +342,7 @@ Branch IrregularRosette::buildRosetteBranchPointsV2(int side, int isign, qreal s
 // Build a regular star and connect it to outer points
 void IrregularRosette::buildV3()
 {
-    qDebug() << "IrregularRosette::buildV3  sides = " << getTile()->numSides() << "d=" << d;
+    qDebug() << "IrregularRosette::buildV3  sides = " << getTile()->numEdges() << "d=" << d;
 
     // create center Irregular star
     IrregularStar innerStar;
@@ -358,7 +370,7 @@ void IrregularRosette::buildV3()
     if (Loose::zero(r))
         r = 0.01 ;
 
-    auto edges        = getTile()->getLines();
+    QVector<QLineF> edges = getTile()->getLines();
 
     qreal avgEdgeWidth = 0;
     for (int i=0; i < edges.size(); i++)
@@ -379,21 +391,25 @@ void IrregularRosette::buildV3()
     }
     if (_debug) qDebug() << "num branches=" << branches.size();
 
-    for (const auto & branch : std::as_const(branches))
+    for (auto & branch : branches)
     {
         // update map
-        motifMap->insertEdge(branch.tipPoint,branch.qePoint);
+        VertexPtr v1 = motifMap->insertVertex(branch.tipPoint);
+        VertexPtr v2 = motifMap->insertVertex(branch.qePoint);
+        motifMap->insertEdge(v1,v2);
 
         QPolygonF intersections = buildRosetteIntersections(branch);
         int iCount = intersections.size();
         if (iCount)
         {
             if (_debug) qDebug() << "num intersections" << intersections.size();
-            QPointF p1 = branch.qePoint;
+            QPointF p1     = branch.qePoint;
+            VertexPtr vp1  = motifMap->insertVertex(p1);
             for (int is = 0; is < s && is < intersections.size(); ++is)
             {
-                QPointF p2 = intersections[is];
-                motifMap->insertEdge(p1,p2);
+                QPointF p2    = intersections[is];
+                VertexPtr vp2 = motifMap->insertVertex(p2);
+                motifMap->insertEdge(vp1,vp2);
                 p1 = p2;
             }
         }
@@ -466,15 +482,7 @@ Points IrregularRosette::buildRosetteIntersections(const Branch &branch)
     }
 
     QVector<QPointF> intersections;
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
     intersections = sortMap.values();
-#else
-    QList<QPointF> list = sortMap.values();
-    for (auto & pt : std::as_const(list))
-    {
-        intersections << pt;
-    }
-#endif
     return Points(intersections);
 }
 

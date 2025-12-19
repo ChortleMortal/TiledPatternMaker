@@ -4,9 +4,6 @@
 #include <QSettings>
 
 #include "gui/widgets/transparent_widget.h"
-#include "sys/tiledpatternmaker.h"
-
-extern class TiledPatternMaker * theApp;
 
 /////////////////////////////////////////////
 ///
@@ -14,7 +11,7 @@ extern class TiledPatternMaker * theApp;
 ///
 /////////////////////////////////////////////
 
-TransparentImageWidget::TransparentImageWidget(QString name)
+TransparentImageWidget::TransparentImageWidget(QString name) :  ImageWidget()
 {
     title    = name;
     dragging = false;
@@ -28,9 +25,15 @@ TransparentImageWidget::TransparentImageWidget(QString name)
     setFrameStyle(QFrame::Box | QFrame::Plain);
     setLineWidth(40);
     setStyleSheet("color: rgba(255,0,0,64);");
+}
 
-    // also
-    setAttribute(Qt::WA_DeleteOnClose);
+void TransparentImageWidget::setContentSize(QSize sz)
+{
+    int w = lineWidth();
+    int frameWidth  = frameGeometry().width()  - geometry().width()  + (w * 2);
+    int frameHeight = frameGeometry().height() - geometry().height() + (w * 2);
+    resize(sz.width() + frameWidth, sz.height() + frameHeight);
+    update();
 }
 
 void TransparentImageWidget::paintEvent(QPaintEvent * event)
@@ -47,11 +50,7 @@ void TransparentImageWidget::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
     {
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-        oldPos = event->globalPos();
-#else
         oldPos = event->globalPosition().toPoint();
-#endif
         dragging = true;
     }
     else if (event->button() == Qt::RightButton)
@@ -74,15 +73,9 @@ void TransparentImageWidget::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-    QPoint delta = event->globalPos() - oldPos;
-    move(x() + delta.x(), y() + delta.y());
-    oldPos = event->globalPos();
-#else
     QPoint delta = event->globalPosition().toPoint() - oldPos;
     move(x() + delta.x(), y() + delta.y());
     oldPos = event->globalPosition().toPoint();
-#endif
 
     ImageWidget::mouseMoveEvent(event);
 }

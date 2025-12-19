@@ -25,9 +25,7 @@
 // casper 20FEB19 - removed the original fill algorithm
 
 #include <QTransform>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
+
 #include "sys/qt/unique_qvector.h"
 #include "model/settings/filldata.h"
 #include "sys/enums/efillmode.h"

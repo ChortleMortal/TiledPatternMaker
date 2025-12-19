@@ -42,40 +42,49 @@ enum eColor
     C_BLACK = 1
 };
 
+enum eDCELType
+{
+    DCEL_UNDEFINED,
+    DCEL_SIMPLE,
+    DCEL_FACES,
+    DCEL_TIPS
+};
+
 //////////////////////////////////////////////////////////////////////////////
 ///
 ///  DCEL
 ///
 //////////////////////////////////////////////////////////////////////////////
 
-class DCEL : public Map
+class DCEL : public MapBase
 {
     friend class ColorMaker;
     friend class FaceSet;
 
 public:
-    DCEL(Map * sourcemap);
+    DCEL(Map * map);
     virtual ~DCEL();
 
+    virtual bool build() = 0;
     void    displayDCEL(int val);
 
     FaceSet                  & getFaceSet()  { return faces; }
     const QVector<VertexPtr> & getVertices() { return vertices; }
-    const QVector<EdgePtr>   & getEdges()    { return edges; }
+    const EdgeSet   & getEdges()    { return edges; }
 
-    virtual QString info() const override;
+    virtual   QString info() const override;
+    eDCELType getType() { return dtype; }
 
     static int refs;
 
 protected:
-    void    buildDCEL();
     void    cleanseEdges();
-    void    fill_half_edge_table();
+    bool    fill_half_edge_table();
     void    fill_face_table_inner_components();
     void    fill_half_edge_faces();
 
-    EdgePtr next_half_edge(const EdgePtr & edge);
-    EdgePtr findEdge(const VertexPtr & start, const VertexPtr &end, bool expected = true);
+    EdgePtr next_half_edge(NeighbourMap &nmap, const EdgePtr & edge);
+    EdgePtr findEdge(NeighbourMap & nmap, const VertexPtr & start, const VertexPtr &end, bool expected = true);
 
     void    createFace(const EdgePtr & head);
     FacePtr findOuterFace();
@@ -107,9 +116,30 @@ protected:
 protected:
     int     faceIndex(const FacePtr & face) { return faces.indexOf(face); }
 
-private:
     FaceSet faces;
-    Map *   sourcemap;
+    eDCELType  dtype;
+};
+
+
+class SimpleDCEL : public DCEL
+{
+public:
+    SimpleDCEL(Map * map);
+    virtual bool build() override;
+};
+
+class FilledDCEL : public DCEL
+{
+public:
+    FilledDCEL(Map * map);
+    virtual bool build() override;
+};
+
+class ThickDCEL : public DCEL
+{
+public:
+    ThickDCEL(Map * map);
+    virtual bool build() override;
 };
 
 

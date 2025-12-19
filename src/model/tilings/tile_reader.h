@@ -3,12 +3,12 @@
 #define TILE_READER_H
 
 #include <string>
-#include "sys/sys/pugixml.hpp"
+#include "model/mosaics/reader_base.h"
+#include "sys/geometry/edge_poly.h"
 #include "sys/geometry/vertex.h"
-#include "sys/geometry/edgepoly.h"
-#include "model/mosaics/mosaic_reader_base.h"
+#include "sys/sys/pugixml.hpp"
 
-typedef std::shared_ptr<MosaicReaderBase> MRBasePtr;
+class ReaderBase;
 
 using std::string;
 using namespace pugi;
@@ -16,17 +16,16 @@ using namespace pugi;
 class TileReader
 {
 public:
-    TileReader();
-    TileReader(MRBasePtr base);
+    TileReader(ReaderBase * mrbase);
 
-    EdgePoly    getEdgePoly(xml_node & node, bool legacyFlip = true);
+    EdgeSet     getEdgeSet(xml_node & node, bool legacyFlipConcave = true);
     QTransform  getTransform(xml_node & node);
 
 protected:
     VertexPtr   getVertex(xml_node & node);
     QPointF     getPoint(xml_node & node);
 
-    MRBasePtr   base;
+    ReaderBase *   mrbase;
 };
 
 #endif // FEATUREREADER_H

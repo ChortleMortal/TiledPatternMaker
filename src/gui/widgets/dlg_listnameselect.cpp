@@ -1,7 +1,7 @@
 #include <QLabel>
-#include <QHBoxLayout>
-#include <QPushButton>
+#include <QBoxLayout>
 #include <QLineEdit>
+#include <QPushButton>
 
 #include "gui/widgets/dlg_listnameselect.h"
 
@@ -46,7 +46,8 @@ DlgListNameSelect::DlgListNameSelect(VersionFileList &files, int version)
 
     for (VersionedFile & file : files)
     {
-        QListWidgetItem * item = new QListWidgetItem(file.getVersionedName().get());
+        QString txt = file.getVersionedName().get() + "   ::   " + file.getPathDir();
+        QListWidgetItem * item = new QListWidgetItem(txt);
         list->addItem(item);
     }
     list->setMinimumWidth(list->sizeHintForColumn(0) + 10);
@@ -65,5 +66,8 @@ void DlgListNameSelect::slot_currentRow(int row)
     }
 
     QListWidgetItem * item = list->item(row);
-    newEdit->setText(item->text());
+    QString txt = item->text();
+    QStringList qsl = txt.split("::");
+    QString name = qsl[0].trimmed();
+    newEdit->setText(name);
 }

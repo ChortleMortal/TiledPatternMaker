@@ -24,11 +24,8 @@ public:
     void                init(MapEditorDb * maped_db, MapEditorSelection * selector);
 
     void                paint(QPainter * painter) override;
+
     void                draw(QPainter * painter);
-
-    virtual const Xform &   getModelXform() override;
-    virtual void            setModelXform(const Xform & xf, bool update) override;
-
     void                drawMap(QPainter * painter, eMapedLayer layer, QColor color);
     void                drawDCEL(QPainter * painter);
     void                drawTile(QPainter * painter, DesignElementPtr del);
@@ -37,7 +34,7 @@ public:
     void                drawConstructionLines(QPainter * painter);
     void                drawConstructionCircles(QPainter * painter);
 
-    void                startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton);
+    void                startMouseInteraction(QPointF spt, Qt::MouseButton mouseButton);
 
     QTransform          getPlacement(TilePtr tile);
 
@@ -49,24 +46,13 @@ public:
     qreal               selectionWidth;
 
 public slots:
-    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    void slot_mousePressed(QPointF spt, Qt::MouseButton btn) override;
     void slot_mouseDragged(QPointF spt)       override;
-    void slot_mouseTranslate(QPointF pt)      override;
     void slot_mouseMoved(QPointF spt)         override;
     void slot_mouseReleased(QPointF spt)      override;
     void slot_mouseDoublePressed(QPointF spt) override;
-    void slot_setCenter(QPointF spt) override;
 
-    void slot_wheel_scale(qreal delta)  override;
-    void slot_wheel_rotate(qreal delta) override;
-
-    void slot_scale(int amount)  override;
-    void slot_rotate(int amount) override;
-    void slot_moveX(qreal amount)  override;
-    void slot_moveY(qreal amount)  override;
-
-    eViewType iamaLayer() override { return VIEW_MAP_EDITOR; }
-    void       iamaLayerController() override {}
+    void iamaLayerController() override {}
 
     void    setMousePos(QPointF pt);
     QPointF getMousePos() { return mousePos; }

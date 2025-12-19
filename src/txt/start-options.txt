@@ -1,0 +1,22 @@
+To start the application simply click on the icon on the desktop
+
+The startup behavior can be modified by holding down keyboard keys as follows:
+
+SHIFT     - Moves all windows to the primary screen and turns off auto-load
+SHIFT/ALT - Resets configuration  to defaults.  This is very drastic  and 
+            should only be done as a way of rescuing the application 
+            if it fails to start normally 
+ 
+ 
+Alternatively the application can be started from a console window by entering:
+        .\TiledPatternMaker
+ 
+When using the console window there are four additional optional parameters:
+	.\TiledPatternMaker  --no-autoload  --map-verify  --load mosaicname --primary-display
+ 
+--load name       : loads the  named mosaic (e.g. --load 12-6-trigon.v2 )
+--no-autoload     : turns the auto-load configuration option off.
+--map-verify      : turns the verify-map configuration option to on.
+--primary-display : forces the control panel and the design viewer onto the primary display
+--first-birthday  : resets all settings to defaults (drastic - use with care)
+

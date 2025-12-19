@@ -1,12 +1,11 @@
 #include <QHeaderView>
-#include <QCheckBox>
-#include <QDebug>
+
 #include "gui/widgets/dlg_colorSet.h"
 #include "model/styles/colorset.h"
 
 DlgColorSet::DlgColorSet(ColorSet *cset, QWidget * parent) :  QDialog(parent)
 {
-    qInfo() << "DlgColorSet constctor";
+    qDebug() << "DlgColorSet::DlgColorSet";
 
     colorSet   = cset;
     currentRow = 0;

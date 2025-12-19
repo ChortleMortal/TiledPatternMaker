@@ -1,4 +1,6 @@
 #include <QHeaderView>
+#include <QMessageBox>
+
 #include "gui/model_editors/style_edit/style_color_fill_face.h"
 #include "gui/model_editors/style_edit/style_editors.h"
 #include "gui/panels/panel_misc.h"
@@ -10,34 +12,37 @@ StyleColorFillFace::StyleColorFillFace(FilledEditor * parent, FilledPtr style, Q
     this->parent        = parent;
     iPaletteSelection   = -1;
 
-    QPushButton * reset = new QPushButton("Reset color assignments");
-    reset->setMinimumHeight(31);
-    reset->setMinimumWidth(231);
+    QPushButton * addC    = new QPushButton("Add color");
+    QPushButton * modifyC = new QPushButton("Modify color");
+    QPushButton * deleteC = new QPushButton("Delete color");
+    QPushButton * resetC  = new QPushButton("Reset colors");
+
+
     QWidget * widget    = new QWidget();
     QHBoxLayout * hbox  = new QHBoxLayout();
     hbox->addStretch();
-    hbox->addWidget(reset);
+    hbox->addWidget(addC);
+    hbox->addWidget(modifyC);
+    hbox->addWidget(deleteC);
+    hbox->addWidget(resetC);
     hbox->addStretch();
     widget->setLayout(hbox);
 
     table = new QTableWidget();
     table->verticalHeader()->setVisible(false);
     table->setRowCount(filled->getWhiteColorSet()->size());
-    table->setColumnCount(3);
-    table->setColumnWidth(COL_STATUS,131);
-    table->setColumnWidth(COL_COLOR,210);
-    table->setColumnWidth(COL_EDIT,120);
-
-    table->setSelectionMode(QAbstractItemView::NoSelection);
-    table->setMinimumHeight(501);
-
+    table->setColumnCount(2);
+    table->setMinimumHeight(301);
     QStringList qslH;
-    qslH << "Selection" <<  "Color" << "Edit";
+    qslH << "Selection" <<  "Color";
     table->setHorizontalHeaderLabels(qslH);
 
-    connect(table,  &QTableWidget::cellClicked,          this, &StyleColorFillFace::slot_cellClicked);
-    connect(reset,  &QPushButton::clicked,               this, &StyleColorFillFace::slot_reset);
-    connect(this,   &StyleColorFillFace::sig_updateView, Sys::view, &View::slot_update);
+    connect(table,      &QTableWidget::cellClicked, this, &StyleColorFillFace::slot_cellClicked);
+    connect(addC,       &QPushButton::clicked,      this, &StyleColorFillFace::slot_add);
+    connect(modifyC,    &QPushButton::clicked,      this, &StyleColorFillFace::slot_modify);
+    connect(deleteC,    &QPushButton::clicked,      this, &StyleColorFillFace::slot_delete);
+    connect(resetC,     &QPushButton::clicked,      this, &StyleColorFillFace::slot_reset);
+    connect(this,       &StyleColorFillFace::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
 
     vbox->addWidget(widget);
     vbox->addWidget(table);
@@ -46,7 +51,8 @@ StyleColorFillFace::StyleColorFillFace(FilledEditor * parent, FilledPtr style, Q
 void StyleColorFillFace::display()
 {
     ColorSet * colorPalette = filled->getWhiteColorSet();
-
+    table->clearContents();
+    table->setRowCount(colorPalette->size());
     for (int row =0 ; row < colorPalette->size(); row++)
     {
         QTableWidgetItem * item = new QTableWidgetItem("Not selected");
@@ -59,13 +65,10 @@ void StyleColorFillFace::display()
         label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
         table->setCellWidget(row,1,label);
 
-        QPushButton * btnW = new QPushButton("Edit");
-        table->setCellWidget(row,2,btnW);
-
-        connect(btnW,  &QPushButton::clicked,    this, &StyleColorFillFace::editPalette);
-        connect(label, &ClickableLabel::clicked, this, [this,row] {iPaletteSelection = row;});
+        connect(label, &ClickableLabel::clicked, this, [this,row] {iPaletteSelection = row; table->selectRow(row);} );
     }
-    table->adjustSize();
+    table->updateGeometry();
+    parent->updateGeometry();
 }
 
 void StyleColorFillFace::onRefresh()
@@ -91,6 +94,7 @@ void StyleColorFillFace::slot_cellClicked(int row,int col)
 {
     Q_UNUSED(col);
 
+    table->selectRow(row);
     iPaletteSelection = row;
 }
 
@@ -102,9 +106,83 @@ void StyleColorFillFace::slot_reset()
     emit sig_updateView();
 }
 
+void StyleColorFillFace::slot_add()
+{
+    AQColorDialog dlg(table);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted) return;
+
+    QColor newColor = dlg.selectedColor();
+    if (newColor.isValid())
+    {
+        ColorSet * cset = filled->getWhiteColorSet();
+        cset->addColor(newColor);
+        display();
+    }
+}
+
+void StyleColorFillFace::slot_modify()
+{
+    ColorSet * cset = filled->getWhiteColorSet();
+    auto row = table->currentRow();
+    if (row < 0 || row >= cset->size())
+    {
+        QMessageBox box(parent);
+        box.setText("Please seect a palette color first");
+        box.exec();
+        return;
+    }
+
+    TPColor tpcolor = cset->getTPColor(row);
+
+    AQColorDialog dlg(tpcolor.color,table);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted) return;
+
+    QColor color = dlg.selectedColor();
+    if (color.isValid())
+    {
+        tpcolor.color = color;
+        cset->setColor(row, tpcolor);
+
+        display();
+        filled->resetStyleRepresentation();
+        filled->createStyleRepresentation();
+        emit sig_updateView();
+    }
+}
+void StyleColorFillFace::slot_delete()
+{
+
+    ColorSet * cset = filled->getWhiteColorSet();
+    int row = table->currentRow();
+    if (row < 0 || row >= cset->size())
+    {
+        QMessageBox box(parent);
+        box.setText("Please seect a palette color first");
+        box.exec();
+        return;
+    }
+
+    QMessageBox box(parent);
+    box.setText("Delete color:  Are you sure?");
+    box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    auto rv = box.exec();
+    if (rv == QMessageBox::Cancel)
+        return;
+
+    cset->removeTPColor(row);
+    filled->removeColorIndex(row);
+
+    display();
+    filled->resetStyleRepresentation();
+    filled->createStyleRepresentation();
+    emit sig_updateView();
+}
+
 void StyleColorFillFace::select(QPointF mpt,Qt::MouseButton btn)
 {
-    DCELPtr dcel    = filled->getPrototype()->getDCEL();
+    FilledDCELPtr dcel    = filled->getPrototype()->getFilledDCEL();
     if (!dcel) return;
 
     FaceSet & faces = dcel->getFaceSet();
@@ -127,13 +205,4 @@ void StyleColorFillFace::select(QPointF mpt,Qt::MouseButton btn)
         }
         faceIndex++;
     }
-}
-
-void StyleColorFillFace::editPalette()
-{
-    DlgColorSet dlg(filled->getWhiteColorSet());
-
-    connect(&dlg, &DlgColorSet::sig_dlg_colorsChanged, parent, &FilledEditor::slot_colorsChanged, Qt::QueuedConnection);
-
-    dlg.exec();
 }

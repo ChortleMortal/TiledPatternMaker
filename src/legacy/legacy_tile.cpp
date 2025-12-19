@@ -4,7 +4,7 @@
 
 int LegacyTile::refs = 0;
 
-LegacyTile::LegacyTile(int Row, int Col) : Layer("Master Tile",true)
+LegacyTile::LegacyTile(int Row, int Col) : Layer(VIEW_LEGACY,PRIMARY,"Master Tile")
 {
     row = Row;
     col = Col;
@@ -49,20 +49,5 @@ void LegacyTile::tile_rotate(int amount)
 {
     Xform xf = getModelXform();
     xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-    setModelXform(xf,true);
-}
-
-void LegacyTile::setModelXform(const Xform & xf, bool update)
-{
-    Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
-    xf_model = xf;
-    forceLayerRecalc(update);
-}
-
-const Xform & LegacyTile::getModelXform()
-{
-    Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.info() << (isUnique() ? "unique" : "common");
-    return xf_model;
+    setModelXform(xf,true,0);
 }

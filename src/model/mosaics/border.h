@@ -1,5 +1,4 @@
 #pragma once
-
 #ifndef BORDER_H
 #define BORDER_H
 
@@ -17,10 +16,12 @@ class Border : public Style, public Crop
 
 public:
     virtual void createStyleRepresentation() override  = 0;
-    virtual void resetStyleRepresentation()  override  = 0; // Called when the map is changed to clear any internal map representation.
+    virtual void resetStyleRepresentation()  override { created = false; }
     virtual void paint(QPainter *painter)    override;
 
     virtual void draw(GeoGraphics * gg)      override  = 0 ;
+
+    virtual void setModelXform(const Xform & xf, bool update, uint sigid) override;
 
     virtual QString     getStyleDesc() const override { return "Border"; }
     virtual eStyleType  getStyleType() const override { return STYLE_BORDER; }
@@ -31,9 +32,9 @@ public:
     QString      getCropTypeString()   { return sCropType[_cropType]; }
     bool         getUseViewSize()      { return _useViewSize; }
 
-    void    setWidth(qreal width)       { borderWidth = width; setRequiresConstruction(true); }
-    void    setColor(QColor color)      { this->color = color; setRequiresConstruction(true); }
-    void    setColor2(QColor color)     { color2 = color;      setRequiresConstruction(true); }
+    void    setWidth(qreal width)       { borderWidth = width; resetStyleRepresentation(); }
+    void    setColor(QColor color)      { this->color = color; resetStyleRepresentation(); }
+    void    setColor2(QColor color)     { color2 = color;      resetStyleRepresentation(); }
     void    setUseViewSize(bool use);
 
     qreal   getWidth()  { return borderWidth; }
@@ -45,12 +46,8 @@ public:
     void    setRequiresConversion(bool enb)   { _requiresConversion = enb; }
     bool    getRequiresConversion()           { return _requiresConversion; }
 
-    void    setRequiresConstruction(bool enb) { _requiresConstruction = enb; }
-    bool    getRequiresConstruction()         { return _requiresConstruction; }
-
-    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    void slot_mousePressed(QPointF spt, Qt::MouseButton btn) override;
     void slot_mouseDragged(QPointF spt)       override;
-    void slot_mouseTranslate(QPointF pt)      override;
     void slot_mouseMoved(QPointF spt)         override;
     void slot_mouseReleased(QPointF spt)      override;
 
@@ -62,15 +59,15 @@ public slots:
     virtual void viewMoved();
 
 protected:
-    Border(ProtoPtr proto);
-    Border(ProtoPtr proto, const Crop & crop);
+    Border(Mosaic * parent);
+    Border(Mosaic * parent, const Crop & crop);
 
     void                  setMouseInteraction(BorderMouseActionPtr action) { mouse_interaction = action; }
     void                  resetMouseInteraction() { mouse_interaction.reset(); }
     BorderMouseActionPtr  getMouseInteraction() { return mouse_interaction; }
 
-    void            convertCropToModelUnits();
-    void            setBorderSize(QSize viewSize);
+    void                  convertCropToModelUnits();
+    void                  setBorderSize(QSize viewSize);
 
     eBorderType     borderType;
 
@@ -79,9 +76,10 @@ protected:
     QColor          color2;
     bool            _useViewSize;
 
+    Mosaic *        parent;
+
 private:
     bool            _requiresConversion;
-    bool            _requiresConstruction;
     QPointF         mousePos;             // used by menu
     bool            debugMouse;
 
@@ -91,14 +89,13 @@ private:
 class BorderPlain : public Border
 {
 public:
-    BorderPlain(ProtoPtr proto, const Crop &crop, qreal width, QColor color);
-    BorderPlain(ProtoPtr proto, Circle c,         qreal width, QColor color);
-    BorderPlain(ProtoPtr proto, QRectF rect,      qreal width, QColor color);
-    BorderPlain(ProtoPtr proto, QPolygonF poly,   qreal width, QColor color);
-    BorderPlain(ProtoPtr proto, QSizeF sz,        qreal width, QColor color);
+    BorderPlain(Mosaic * parent, const Crop &crop, qreal width, QColor color);
+    BorderPlain(Mosaic * parent, Circle c,         qreal width, QColor color);
+    BorderPlain(Mosaic * parent, QRectF rect,      qreal width, QColor color);
+    BorderPlain(Mosaic * parent, QPolygonF poly,   qreal width, QColor color);
+    BorderPlain(Mosaic * parent, QSizeF sz,        qreal width, QColor color);
 
     virtual void createStyleRepresentation() override;
-    virtual void resetStyleRepresentation() override {}
     virtual void draw(GeoGraphics * gg) override;
 
     void get(qreal & width, QColor & color);
@@ -111,15 +108,14 @@ public:
 class BorderTwoColor : public Border
 {
 public:
-    BorderTwoColor(ProtoPtr proto, QSizeF sz,   QColor color1, QColor color2, qreal width, qreal len);
-    BorderTwoColor(ProtoPtr proto, QRectF rect, QColor color1, QColor color2, qreal width, qreal len);
+    BorderTwoColor(Mosaic * parent, QSizeF sz,   QColor color1, QColor color2, qreal width, qreal len);
+    BorderTwoColor(Mosaic * parent, QRectF rect, QColor color1, QColor color2, qreal width, qreal len);
 
     virtual void createStyleRepresentation() override;
-    virtual void resetStyleRepresentation() override {}
     virtual void draw(GeoGraphics * gg) override;
 
     qreal   getLength()             { return segmentLen; }
-    void    setLength(qreal length) { segmentLen = length;  createStyleRepresentation(); }
+    void    setLength(qreal length) { segmentLen = length;  resetStyleRepresentation(); }
 
     void    get(QColor & color1, QColor & color2, qreal & width, qreal &length);
 
@@ -138,16 +134,15 @@ private:
 class BorderBlocks : public Border
 {
 public:
-    BorderBlocks(ProtoPtr proto, QSizeF sz,   QColor color, int rows, int cols, qreal width);
-    BorderBlocks(ProtoPtr proto, QRectF rect, QColor color, int rows, int cols, qreal width);
+    BorderBlocks(Mosaic * parent, QSizeF sz,   QColor color, int rows, int cols, qreal width);
+    BorderBlocks(Mosaic * parent, QRectF rect, QColor color, int rows, int cols, qreal width);
 
     virtual void createStyleRepresentation() override;
-    virtual void resetStyleRepresentation() override {}
     virtual void draw(GeoGraphics * gg) override;
 
     void    get(QColor & color1, int & rows, int & cols, qreal & width);
-    void    setRows(int rows)   { this->rows = rows; createStyleRepresentation(); }
-    void    setCols(int cols)   { this->cols = cols; createStyleRepresentation(); }
+    void    setRows(int rows)   { this->rows = rows; resetStyleRepresentation(); }
+    void    setCols(int cols)   { this->cols = cols; resetStyleRepresentation(); }
 
     void    legacy_convertToModelUnits() override;
 

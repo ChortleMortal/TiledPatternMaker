@@ -95,15 +95,14 @@ bool Rosette2::pointOnLineLessThan(QPointF p1, QPointF p2)
 // kneey is the %age of half the edge width, so scaaling is depends on n (sides)
 void Rosette2::buildUnitMap()
 {
-  //dbgVal = 0x15
-  //dbgVal = 0x04
-  //dbgVal = 0x05;
-    dbgVal = 0x00;
+  //motifDebug = 0x15
+  //motifDebug = 0x04
+  //motifDebug = 0x05;
+    motifDebug = 0x00;
 
-    if (dbgVal > 0)
+    if (motifDebug > 0)
     {
-        debugMap = Sys::debugView->getMap();
-        debugMap->wipeout();
+        Sys::debugMapCreate->wipeout();
     }
 
     qDebug().noquote() << "Rosette2::buildUnit n:" << getN() << "x:" << kneeX << "y:" << kneeY << "s:" << s << "k" << k
@@ -137,11 +136,11 @@ void Rosette2::buildUnitMap()
 
     QPointF outerTip(1.0, 0.0);         // standard tip
 
-    if (dbgVal & 0x01)
+    if (motifDebug & 0x01)
     {
-        debugMap->insertDebugMark(kneePt,"kneePt");
-        debugMap->insertDebugLine(ray);
-        debugMap->insertDebugLine(rayMirror);
+        Sys::debugMapCreate->insertDebugMark(kneePt,"kneePt",Qt::red);
+        Sys::debugMapCreate->insertDebugLine(ray,Qt::red);
+        Sys::debugMapCreate->insertDebugLine(rayMirror,Qt::blue);
     }
 
     UniqueQVector<QPointF> epoints;
@@ -166,13 +165,13 @@ void Rosette2::buildUnitMap()
         epoints.resize(s+1);
     }
 
-    if (dbgVal & 0x04)
+    if (motifDebug & 0x04)
     {
         qDebug() << "epoints" << epoints;
         int idx = 0;
         for (auto & ept :  std::as_const(epoints))
         {
-            debugMap->insertDebugMark(ept,QString("pt%1").arg(idx++));
+            Sys::debugMapCreate->insertDebugMark(ept,QString("pt%1").arg(idx++),Qt::red);
         }
     }
 
@@ -235,10 +234,10 @@ void  Rosette2::buildRay(RaySet &  set, QPointF tip, const QVector<QPointF> & ep
         set.ray2.addTail(QPointF(pt.x(), -pt.y()));
     }
 
-    if (dbgVal & 0x01) set.debug();
+    if (motifDebug & 0x01) set.debug();
     QTransform t = getDELTransform();
     set.transform(t);
-    if (dbgVal & 0x01) set.debug();
+    if (motifDebug & 0x01) set.debug();
 }
 
 void Rosette2::calcConstraintLine()
@@ -252,11 +251,11 @@ void Rosette2::calcConstraintLine()
 
     constraint  = QLineF(bisector, up_outer);
 
-    if (dbgVal > 0x10)
+    if (motifDebug > 0x10)
     {
-        debugMap->insertDebugLine(constraint);
-        debugMap->insertDebugMark(up_outer,"up_outer");
-        debugMap->insertDebugMark(bisector,"bisector");
+        Sys::debugMapCreate->insertDebugLine(constraint,Qt::blue);
+        Sys::debugMapCreate->insertDebugMark(up_outer,"up_outer",Qt::red);
+        Sys::debugMapCreate->insertDebugMark(bisector,"bisector",Qt::red);
     }
 }
 

@@ -4,24 +4,27 @@
 #include <QButtonGroup>
 #include <QMessageBox>
 
+#include "gui/map_editor/map_editor.h"
 #include "gui/panels/page_borders.h"
+#include "gui/top/controlpanel.h"
+#include "gui/top/system_view_controller.h"
+#include "gui/widgets/layout_sliderset.h"
+#include "gui/widgets/smx_widget.h"
+#include "model/makers/mosaic_maker.h"
+#include "model/mosaics/border.h"
+#include "model/mosaics/mosaic.h"
+#include "model/motifs/tile_color_defs.h"
+#include "model/styles/style.h"
 #include "sys/enums/eborder.h"
 #include "sys/geometry/crop.h"
-#include "model/makers/mosaic_maker.h"
-#include "gui/map_editor/map_editor.h"
-#include "model/mosaics/border.h"
-#include "model/motifs/tile_color_defs.h"
-#include "model/mosaics/mosaic.h"
-#include "gui/top/controlpanel.h"
-#include "model/styles/style.h"
-#include "gui/top/view_controller.h"
-#include "gui/widgets/layout_sliderset.h"
 
 using std::string;
 using std::make_shared;
 
 page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORDER_MAKER,"Border Maker")
 {
+    pageStatusString = "Left-click inside crop to display and move";
+
     // create button
     QPushButton * pbLoadCrop = new QPushButton("Load from Crop");
     QPushButton * pbRemove  =  new QPushButton("Remove Border");
@@ -38,7 +41,7 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORD
 
     // border selection
     QLabel * label2 = new QLabel("Border Shape");
-    chkUseViewSize  = new QCheckBox("Use view size");
+    chkUseViewSize  = new QCheckBox("Lock to view size");
 
     connect(chkUseViewSize,   &QCheckBox::clicked, this, &page_borders::slot_useViewSzChanged);
 
@@ -48,6 +51,7 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORD
     cropTypes->addItem("Rectangle", CROP_RECTANGLE);
     cropTypes->addItem("Circle",    CROP_CIRCLE);
     cropTypes->addItem("Polygon",   CROP_POLYGON);
+
 
     QHBoxLayout * hbox2 = new QHBoxLayout;
     hbox2->addWidget(label2);
@@ -71,7 +75,7 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORD
     w = createCircleShapeWidget();
     cropTypeStack->addWidget(w);
 
-    connect(cropTypes, QOverload<int>::of(&QComboBox::currentIndexChanged), cropTypeStack,  &QStackedLayout::setCurrentIndex);
+    connect(cropTypes, &QComboBox::currentIndexChanged, cropTypeStack,  &QStackedLayout::setCurrentIndex);
 
     // border box
     cropTypeBox = new QGroupBox("Border Shape Settings");
@@ -87,10 +91,13 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORD
     borderTypes->addItem("Two color", BORDER_TWO_COLOR);
     borderTypes->addItem("Block",     BORDER_BLOCKS);
 
+    smxWidget = new SMXWidget(nullptr,false,true);
+
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(label);
     hbox->addWidget(borderTypes);
     hbox->addStretch();
+    hbox->addWidget(smxWidget);
 
     // stacked layout
     borderTypeStack = new QStackedLayout;
@@ -123,8 +130,8 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORD
     vbox->addStretch();
     adjustSize();
 
-    connect(borderTypes, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_borders::slot_borderTypeChanged);
-    connect(cropTypes,   QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_borders::slot_cropTypeChanged);
+    connect(borderTypes, &QComboBox::currentIndexChanged, this, &page_borders::slot_borderTypeChanged);
+    connect(cropTypes,   &QComboBox::currentIndexChanged, this, &page_borders::slot_cropTypeChanged);
 }
 
 QWidget * page_borders::createBorderTypeNone()
@@ -301,7 +308,7 @@ QWidget * page_borders::createRectShapeWidget()
     rectBoundaryLayout = new LayoutQRectF("Model Units:");
 
     // initial value
-    QSize sz = Sys::view->size();
+    QSize sz = Sys::viewController->viewSize();
     QRectF rect(QPointF(0,0),sz);
     rectBoundaryLayout->set(rect);
 
@@ -351,15 +358,15 @@ QWidget * page_borders::createPolyShapeWidget()
 ///
 ////////////////////////////////
 
-QString page_borders::getPageStatus()
+void page_borders::onExit()
 {
-    return("Left-click inside crop to display and move");
+    clearPageStatus();
 }
 
 // refresh updates the page from the mosaic
 void  page_borders::onRefresh()
 {
-    auto border = getMosaicBorder();
+    BorderPtr border = getMosaicBorder();
 
     blockPage(true);
     if (border)
@@ -367,6 +374,9 @@ void  page_borders::onRefresh()
         chkUseViewSize->setChecked(border->getUseViewSize());
         refreshBorderType(border);
         refreshBorderCrop(border);
+        smxWidget->setLayer(border.get());
+        smxWidget->refresh();
+        smxWidget->show();
     }
     else
     {
@@ -375,6 +385,7 @@ void  page_borders::onRefresh()
         borderTypes->select(BORDER_NONE);
         borderTypeStack->setCurrentIndex(BORDER_NONE);
         chkUseViewSize->setChecked(false);
+        smxWidget->hide();
     }
     blockPage(false);
 
@@ -546,7 +557,7 @@ void page_borders::slot_loadFromCrop()
         break;
     }
 
-    border->setRequiresConstruction(true);
+    border->resetStyleRepresentation();
 
     emit sig_reconstructView();
 
@@ -561,11 +572,11 @@ void page_borders::createBorder()
 {
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     Q_ASSERT(mosaic);
-    ProtoPtr  proto  = mosaic->getPrototypes().first();
 
     eBorderType  btype = static_cast<eBorderType>(borderTypes->currentData().toInt());
     eCropType ctype    = static_cast<eCropType>(cropTypes->currentData().toInt());
 
+    BorderPtr bp;
     switch (btype)
     {
     case BORDER_PLAIN:
@@ -578,11 +589,8 @@ void page_borders::createBorder()
             QColor color(controlPlain->borderColor->text());
             QRectF rect  = rectBoundaryLayout->get();
 
-            auto bp = make_shared<BorderPlain>(proto,rect,width,color);
-            bp->createStyleRepresentation();
-            mosaic->setBorder(bp);
-        }
-            break;
+            bp = make_shared<BorderPlain>(mosaic.get(),rect,width,color);
+        }   break;
 
         case CROP_CIRCLE:
         {
@@ -592,11 +600,9 @@ void page_borders::createBorder()
             qreal   r    = radius->value();
             Circle c(pt,r);
 
-            auto bp = make_shared<BorderPlain>(proto,c,width,color);
-            bp->createStyleRepresentation();
-            mosaic->setBorder(bp);
-        }
-            break;
+            bp = make_shared<BorderPlain>(mosaic.get(),c,width,color);
+        } break;
+
         case CROP_POLYGON:      // for now
             break;
         case CROP_UNDEFINED:
@@ -612,9 +618,7 @@ void page_borders::createBorder()
         QColor color1(controlTwoColors->borderColor->text());
         QColor color2(controlTwoColors->borderColor2->text());
 
-        auto bp = make_shared<BorderTwoColor>(proto,rect,color1,color2,width,length);
-        bp->setRequiresConstruction(true);
-        mosaic->setBorder(bp);
+        bp = make_shared<BorderTwoColor>(mosaic.get(),rect,color1,color2,width,length);
     }   break;
 
     case BORDER_BLOCKS:
@@ -625,28 +629,36 @@ void page_borders::createBorder()
         int cols    = controlBlocks->borderColumns->value();
         qreal width = controlBlocks->borderWidth->value();
 
-        auto bp = make_shared<BorderBlocks>(proto,rect,color1,rows,cols,width);
-        bp->setRequiresConstruction(true);
-        mosaic->setBorder(bp);
+        bp = make_shared<BorderBlocks>(mosaic.get(),rect,color1,rows,cols,width);
     }
     case BORDER_NONE:
         break;
     }
 
-    emit sig_reconstructView();
-    emit sig_updateView();
+    if (bp)
+    {
+        bp->setModelXform(Sys::viewController->getSystemModelXform(),true,Sys::nextSigid());
+        bp->createStyleRepresentation();
+        mosaic->setBorder(bp);
+
+        emit sig_reconstructView();
+        emit sig_updateView();
+    }
 }
 
 void page_borders::slot_removeBorder()
 {
     if (pageBlocked()) return;
 
-    BorderPtr bp;
     auto mosaic = mosaicMaker->getMosaic();
     if (mosaic)
     {
-        mosaic->setBorder(bp);
-        emit sig_reconstructView();
+        BorderPtr bp = mosaic->getBorder();
+        if (bp)
+        {
+            mosaic->deleteStyle(bp);
+            emit sig_reconstructView();
+        }
     }
 }
 
@@ -671,7 +683,7 @@ void page_borders::slot_borderTypeChanged(int row)
             Q_ASSERT(mosaic);
             auto style = mosaic->getFirstStyle();
             Q_ASSERT(style);
-            QRectF rect(Sys::view->rect());
+            QRectF rect(Sys::viewController->viewRect());
             rect = style->screenToModel(rect);
             rectBoundaryLayout->blockSignals(true);
             rectBoundaryLayout->set(rect);
@@ -837,7 +849,7 @@ void page_borders::slot_rectBoundaryChanged()
     QRectF rect = rectBoundaryLayout->get();
     bp->setRect(rect);
 
-    bp->setRequiresConstruction(true);
+    bp->resetStyleRepresentation();
     emit sig_updateView();
 }
 
@@ -866,7 +878,7 @@ void page_borders::slot_centreChanged()
     QPointF p = centre->get();
     c.setCenter(p);
 
-    bp->setRequiresConstruction(true);
+    bp->resetStyleRepresentation();
     emit sig_updateView();
 }
 
@@ -881,6 +893,6 @@ void page_borders::slot_radiusChanged(qreal r)
     Circle & c = bp->getCircle();
     c.setRadius(r);
 
-    bp->setRequiresConstruction(true);
+    bp->resetStyleRepresentation();
     emit sig_updateView();
 }

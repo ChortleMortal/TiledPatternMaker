@@ -23,7 +23,6 @@ const bool debugSelection = false;
 MapEditorSelection::MapEditorSelection(MapEditorDb * db)
 {
     this->db = db;
-    meView   = Sys::mapEditorView;
     config   = Sys::config;
 }
 
@@ -249,7 +248,7 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
     MotifPtr  motif = delp->getMotif();
     TilePtr tile = delp->getTile();
 
-    QTransform placement  = meView->getPlacement(tile);
+    QTransform placement  = Sys::mapEditorView->getPlacement(tile);
 
     for (ExtenderPtr ep : motif->getExtenders())
     {
@@ -361,7 +360,7 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
 
             const EdgePoly & edges0 = tile->getEdgePoly();
             EdgePoly edges          = edges0.map(placement);
-            for (auto & edge : std::as_const(edges))
+            for (auto & edge : edges.get())
             {
                 // add lines from tile edges
                 QLineF line = edge->getLine();
@@ -403,7 +402,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
             continue;
 
         QPointF    apt = pi.pt;
-        QPointF      a = meView->viewT.map(apt);
+        QPointF      a = Sys::mapEditorView->viewT.map(apt);
         if (Geo::isNear(spt,a))
         {
             if (debugSelection) qDebug() << "FOUND point" << apt << pi.desc;
@@ -423,7 +422,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
             continue;
 
         QLineF     line  = linfo.line;
-        QLineF wline     = meView->viewT.map(line);
+        QLineF wline     = Sys::mapEditorView->viewT.map(line);
         if (Geo::dist2ToLine(spt, wline.p1(), wline.p2()) < 49.0)
         {
             if (debugSelection) qDebug() << "FOUND line" << line << linfo.desc;
@@ -450,11 +449,11 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
                 if (eb.isCircle())
                 {
                     qreal bscale    = eb.getScale();
-                    qreal scale     = Transform::scalex(meView->viewT) * bscale;
+                    qreal scale     = Transform::scalex(Sys::mapEditorView->viewT) * bscale;
                     qreal radius    = 1.0 * scale;
                     QPointF center  = QPointF(0.0,0.0);
-                    QPointF scenter = meView->modelToScreen(center);    // TODO - verify this
-                    scenter         = meView->viewT.map(scenter);
+                    QPointF scenter = Sys::mapEditorView->modelToScreen(center);    // TODO - verify this
+                    scenter         = Sys::mapEditorView->viewT.map(scenter);
 
                     QPointF a;
                     QPointF b;
@@ -467,7 +466,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
                         // there should be only one point
                         if (Geo::isNear(a,spt))
                         {
-                            QPointF aa = meView->viewTinv.map(a);
+                            QPointF aa = Sys::mapEditorView->viewTinv.map(a);
                             if (debugSelection) qDebug() << "FOUND point on circle" << aa;
                             set.push_back(make_shared<MapSelection>(c,aa));
                         }
@@ -476,13 +475,13 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
                     {
                         if (Geo::isNear(spt,a))
                         {
-                            QPointF aa = meView->viewTinv.map(a);
+                            QPointF aa = Sys::mapEditorView->viewTinv.map(a);
                             if (debugSelection) qDebug() << "FOUND 2-pt circle intersect a" << aa;
                             set.push_back(make_shared<MapSelection>(c, aa));
                         }
                         if (Geo::isNear(spt,b))
                         {
-                            QPointF bb = meView->viewTinv.map(b);
+                            QPointF bb = Sys::mapEditorView->viewTinv.map(b);
                             if (debugSelection) qDebug() << "FOUND 2-pt circle intersect b" << bb;
                             set.push_back(make_shared<MapSelection>(c, bb));
                         }
@@ -559,8 +558,8 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
         {
             continue;
         }
-        QPointF pt   = meView->modelToScreen(vp->pt);    // TODO - verify
-        QPointF a    = meView->viewT.map(pt);
+        QPointF pt   = Sys::mapEditorView->modelToScreen(vp->pt);    // TODO - verify
+        QPointF a    = Sys::mapEditorView->viewT.map(pt);
         //QPointF sa   = worldToScreen(a);
         if (Geo::isNear(spt,a))
         {
@@ -583,8 +582,8 @@ void MapEditorSelection::findEdges(MapPtr map, QPointF spt, const QVector<EdgePt
         {
             continue;
         }
-        QPointF a = meView->viewT.map(e->v1->pt);
-        QPointF b = meView->viewT.map(e->v2->pt);
+        QPointF a = Sys::mapEditorView->viewT.map(e->v1->pt);
+        QPointF b = Sys::mapEditorView->viewT.map(e->v2->pt);
         
         if (Geo::distToLine(spt, a , b) < 7.0)
         {
@@ -619,8 +618,8 @@ SelectionSet MapEditorSelection::findEdges(QPointF spt, const NeighboursPtr excl
         {
             continue;
         }
-        QPointF a = meView->viewT.map(e->v1->pt);
-        QPointF b = meView->viewT.map(e->v2->pt);
+        QPointF a = Sys::mapEditorView->viewT.map(e->v1->pt);
+        QPointF b = Sys::mapEditorView->viewT.map(e->v2->pt);
         
         if (Geo::distToLine(spt, a , b) < 7.0)
         {
@@ -710,8 +709,8 @@ MapSelectionPtr MapEditorSelection::findConstructionCircle(const QPointF & spt)
     QVector<CirclePtr> selected;
     for (const CirclePtr & c2 : std::as_const(db->constructionCircles))
     {
-        QPointF center = meView->viewT.map(c2->centre);
-        qreal radius   = Transform::scalex(meView->viewT) * c2->radius;
+        QPointF center = Sys::mapEditorView->viewT.map(c2->centre);
+        qreal radius   = Transform::scalex(Sys::mapEditorView->viewT) * c2->radius;
         QGraphicsEllipseItem gcircle(center.x()-radius,center.y()-radius, radius * 2.0, radius * 2.0);
         if (gcircle.contains(spt))
         {
@@ -737,7 +736,7 @@ MapSelectionPtr MapEditorSelection::findConstructionCircle(const QPointF & spt)
     qreal closestDist = 1000000.0;
     for (auto & c4 : selected)
     {
-        QPointF center = meView->viewT.map(c4->centre);
+        QPointF center = Sys::mapEditorView->viewT.map(c4->centre);
         c4->tmpDist2   = Geo::dist2(spt,center);
         if (c4->tmpDist2 < closestDist)
         {

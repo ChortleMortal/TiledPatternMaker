@@ -1,3 +1,5 @@
+Warning:  When building it is best right now to stick right with using Qt 6.7.1  Qt 6.7.2 has a bug in reparenting QWidgets which stops some QCombBoxes from operating.  Qt 6.7.3 throws an ASSERT in QDate::toSttring in debug mode and so should also be avoided.  This second problem is also present in Qt 6.8.0 so far, prior to release. 
+
 This application is a work-in-progress, an exploration of geometric art.  It started by my being inspired by the stunningly beautiful creations to be seen in Andalucia.  This artform is often described as Islamic Art and it is true that its primary exemplars are to be found in locations where Islam is dominant in the culture.  However it seems to me that this art emerged in a culture where Islam, Judaism, and Christianity co-existed.
 
 
@@ -9,9 +11,8 @@ In porting the software from taprats I have really dissected it for my own edifi
 
 In terms of copyright, this software is freely given without warranty.  In keeping with what Craig Kaplan did, it is marked with being under the terms of GNU GPL.  
 
-Download pre-built win11 executable [here](https://github.com/ChortleMortal/TiledPatternMaker/releases)
+Download pre-built win10 executable [here](https://github.com/ChortleMortal/TiledPatternMaker/releases)
 
-Build notes: This application is currently being build qti Qt 6.8.1.  Qt 5.15.2 is also supported plus all the versions of Qt 6 except the versions of Qt 6.7.x which have bugs that impact the use of this app.
 
 
 

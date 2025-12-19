@@ -21,7 +21,6 @@ class page_layers : public panel_page
         LAYER_VISIBILITY,
         LAYER_Z,
         LAYER_ALIGN,
-        LAYER_ALIGN_CENTER,
         CANVAS_SCALE,
         CANVAS_ROT,
         CANVAS_X,
@@ -31,8 +30,6 @@ class page_layers : public panel_page
         MODEL_ROT,
         MODEL_X,
         MODEL_Y,
-        MODEL_CENTER_X,
-        MODEL_CENTER_Y,
         LAYER_CENTER,
         LAYER_SCALE,
         LAYER_ROT,
@@ -46,9 +43,8 @@ public:
     page_layers(ControlPanel * cpanel);
 
     void onEnter()          override;
-    void onExit()           override {}
+    void onExit()           override;
     void onRefresh()        override;
-    QString getPageStatus() override;
 
 private slots:
     void slot_selectLayer();
@@ -65,16 +61,15 @@ protected:
     void visibilityChanged(int col);
     void zChanged(AQDoubleSpinBox *dsp, int col);
     void alignPressed(int col);
-    void alignCenterPressed(int col);
     void slot_set_deltas(int col);
-    void slot_set_center(int col);
     void clear_deltas(int col);
 
 private:
-    AQTableWidget * layerTable;
-    QLabel        * refreshLabel;
     QVector<Layer *> wlayers;
+    AQTableWidget    * layerTable;
+    QCheckBox        * refreshChk;
     QTableWidgetItem * selectedItem;
+    bool               refreshDisabled;
 };
 
 #endif

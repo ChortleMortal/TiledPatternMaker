@@ -4,19 +4,17 @@
 
 #include <QVector>
 #include <QPointF>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 #include "sys/geometry/circle.h"
+#include "gui/map_editor/map_selection.h" // needed
 
-class LineInfo;
-class PointInfo;
 class Configuration;
 class MapEditorDb;
 class MapEditorView;
 
 typedef std::shared_ptr<class MapSelection>     MapSelectionPtr;
 typedef QVector<MapSelectionPtr>                SelectionSet;
+typedef QVector<EdgePtr>                        EdgeSet;
+
 typedef std::shared_ptr<class Vertex>           VertexPtr;
 typedef std::shared_ptr<class Circle>           CirclePtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
@@ -28,6 +26,7 @@ class MapEditorSelection
 {
 public:
     MapEditorSelection(MapEditorDb *db);
+    ~MapEditorSelection() {}
 
     void            buildEditorDB();
 
@@ -43,7 +42,7 @@ public:
     MapSelectionPtr findVertex(QPointF spt, VertexPtr exclude);
 
     // lines
-    void            findEdges(MapPtr map, QPointF spt, const QVector<EdgePtr> &excludes, SelectionSet & set);
+    void            findEdges(MapPtr map, QPointF spt, const EdgeSet &excludes, SelectionSet & set);
     SelectionSet    findEdges(QPointF spt, const NeighboursPtr excludes);
 
     // circles
@@ -61,7 +60,6 @@ private:
 
     Configuration * config;
     MapEditorDb   * db;
-    MapEditorView * meView;
 };
 
 #endif // MAPEDITORSELCTION_H

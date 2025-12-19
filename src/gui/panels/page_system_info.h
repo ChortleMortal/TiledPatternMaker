@@ -3,8 +3,8 @@
 #define PAGE_SYSTEM_INFO_H
 
 #include "gui/panels/panel_page.h"
-#include "model/prototypes/prototype_data.h"
-#include "sys/geometry/edgepoly.h"
+#include "model/makers/prototype_maker_data.h"
+#include "sys/geometry/edge_poly.h"
 
 typedef std::shared_ptr<class Mosaic>           MosaicPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
@@ -14,6 +14,7 @@ typedef std::shared_ptr<class Prototype>        ProtoPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Layer>            LayerPtr;
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
 
 class page_system_info : public panel_page
 {
@@ -29,55 +30,48 @@ public:
 private slots:
     void populateTree();
     void dumpTree();
-    void expandTree();
     void slot_itemClicked(QTreeWidgetItem * item, int col);
 
 protected:
     void populateAll();
     void populateMakers();
 
+    void doTilingMaker(bool summary);
+    void doProtoypeMaker(eMVDType type, QString name, bool summary);
+
     void doMosaicMaker();
     void doMosaicMakerSummary();
-    void doProtoypeMaker(eMVDType type, QString name);
-    void doProtoypeMakerSummary(eMVDType type, QString name);
-    void doTilingMaker();
-    void doTilingMakerSummary();
-
 
     void doBackgroundImage();
     void doViews();
     void doMapEditor();
     void doCropMaker();
+    void doImageViewer();
+
+    void populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QString name, bool summary, bool terse);
+    void populatePrototype(QTreeWidgetItem * parent, ProtoPtr pp, QString name, QString state, bool summary);
+    void populateDEL(QTreeWidgetItem * parent, DesignElementPtr del, QString name, QString state, bool summary);
 
     void populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic);
     void populateStylesSummary(QTreeWidgetItem * parent, MosaicPtr mosaic);
-    void populatePrototype(QTreeWidgetItem * parent, ProtoPtr pp, QString name, QString state);
-    void populatePrototypeSummary(QTreeWidgetItem * parent, ProtoPtr pp, QString name, QString state);
-    void populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QString name);
-    void populateTilingSummary(QTreeWidgetItem * parent, TilingPtr tp, QString name);
-    void populateDEL(QTreeWidgetItem * parent, DesignElementPtr de, QString name, QString state);
-    void populateDELSummary(QTreeWidgetItem * parent, DesignElementPtr de, QString name, QString state);
 
+    void populateBackgroundImage(QTreeWidgetItem * parent, BkgdImagePtr bip);
     void populateBorder(QTreeWidgetItem * parent, MosaicPtr mosaic);
     void populateCrop(QTreeWidgetItem * parent, CropPtr crop);
     void populateLayer(QTreeWidgetItem * parent, Layer * layer);
     void populateMap(QTreeWidgetItem *parent, MapPtr mp, QString name);
     void populateViews(QTreeWidgetItem * parent);
-    void populateEdgePoly(QTreeWidgetItem * parent, const EdgePoly &ep);
+    void populateEdgePoly(QTreeWidgetItem * parent, const EdgePoly &ep, QTreeWidgetItem * item);
     void dumpWalkTree(QTextStream &ts, QTreeWidgetItem *item );
 
 private:
     QTreeWidget     * tree;
-    QTreeWidgetItem * item;
-    QTreeWidgetItem * item2;
-    QPushButton     * pbPopulate;
-    QCheckBox       * lockCheck;
 
-    QRadioButton    * rMakers;
-    QRadioButton    * rAll;
+    QCheckBox       * chkExpand;
+    QCheckBox       * chkLock;
+    QCheckBox       * chkShowEpoly;
 
     CropPtr         crop;
-
 };
 
 #endif

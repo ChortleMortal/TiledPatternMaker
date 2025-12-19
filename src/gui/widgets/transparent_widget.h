@@ -2,18 +2,17 @@
 #ifndef TRANSPARENT_WIDGET_H
 #define TRANSPARENT_WIDGET_H
 
-#include <QLabel>
-#include <QMouseEvent>
 #include "gui/widgets/image_widget.h"
-
-typedef std::shared_ptr<class Map>  MapPtr;
-
 
 class TransparentImageWidget : public ImageWidget
 {
 public:
     TransparentImageWidget(QString name);
     virtual ~TransparentImageWidget(){}
+
+    virtual void setContentSize(QSize sz) override;
+
+    virtual QString gettypename() override { return "transp"; }
 
 protected:
     void paintEvent(QPaintEvent * event) override;
@@ -25,9 +24,9 @@ protected:
 
 private:
     QPoint  oldPos;
-    bool    onTop;
     QString title;
     bool    dragging;
+    bool    onTop;
 };
 
 #endif // TRANSPARENTWIDGET_H

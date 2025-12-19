@@ -15,8 +15,10 @@
 #include "sys/geometry/arcdata.h"
 #include "sys/sys.h"
 
-typedef std::shared_ptr<class Vertex>       VertexPtr;
 typedef std::shared_ptr<class Edge>         EdgePtr;
+typedef QVector<EdgePtr>                    EdgeSet;
+
+typedef std::shared_ptr<class Vertex>       VertexPtr;
 typedef std::shared_ptr<class Thread>       ThreadPtr;
 typedef std::shared_ptr<class ArcData>      ArcDataPtr;
 typedef std::shared_ptr<class Face>         FacePtr;
@@ -32,17 +34,21 @@ public:
     Edge();
     Edge(const VertexPtr & V1);
     Edge(const VertexPtr & V1, const VertexPtr & V2 );
-    Edge(const VertexPtr & V1, const VertexPtr & V2, const QPointF & arcCenter, bool convex, bool chord);
+    Edge(const VertexPtr & V1, const VertexPtr & V2, const QPointF & arcCenter, eCurveType ctype);
     Edge(const EdgePtr & other);
     Edge(const EdgePtr & other, QTransform T);
     Edge(const Edge & other);
     ~Edge();
 
-    eEdgeType getType()      { return type; }
-    bool      isLine()       { return (type == EDGETYPE_LINE); }
-    bool      isCurve()      { return (type == EDGETYPE_CURVE) || type == EDGETYPE_CHORD; }
+    eEdgeType getType();
+    bool      isLine();
+    bool      isCurve();
 
+    bool      isTwin(EdgePtr e) { return ((e->v1 == v2) && (e->v2 == v1)); }
     EdgePtr   createTwin();
+
+    eSide     side(VertexPtr v);
+    eSide     side(QPointF p);
 
     double    angle() const;
 
@@ -57,19 +63,19 @@ public:
     void      setV1(const VertexPtr & v);
     void      setV2(const VertexPtr & v);
 
+    void      convertToCurve(eCurveType ctype);
+
+    void      chgangeToCurvedEdge(QPointF arcCenter, eCurveType ctype);
+    void      changeCurveType(eCurveType ctype);
     void      resetCurveToLine();
-    void      convertToConvexCurve();
 
-    void      setCurvedEdge(QPointF arcCenter, bool convex, bool chord);
-    void      setConvex(bool convex);
-    void      setArcMagnitude(qreal magnitude);
-    void      calcMagnitude();
-
-    inline ArcData & getArcData()             { return arcData; }
-    inline bool      isConvex()         const { return arcData.convex(); }
-    inline QPointF   getArcCenter()     const { return arcData.getCenter(); }
-    inline qreal     getArcMagnitude()  const { return arcData.magnitude; }
-    inline qreal     getArcSpan()       const { return arcData.span(); }
+    inline ArcData  & getArcData()             { return arcData; }
+    inline eCurveType getCurveType()     const { return arcData.getCurveType(); }
+    inline QPointF    getArcCenter()     const { return arcData.getCenter(); }
+    inline qreal      getArcMagnitude()  const { return arcData.magnitude(); }
+    inline qreal      getArcSpan()       const { return arcData.span(); }
+    inline bool       isConvex()         const { return arcData.getCurveType() == CURVE_CONVEX; }
+    inline bool       isConcave()        const { return arcData.getCurveType() == CURVE_CONCAVE; }
 
     qreal     getRadius();
     bool      pointWithinArc(QPointF pt)  { return arcData.pointWithinArc(pt); }
@@ -79,6 +85,8 @@ public:
     bool      isColinear(const EdgePtr & e, qreal tolerance = Sys::NEAR_TOL);
 
     bool      contains(const VertexPtr & v);
+    bool      contains(const QPointF & p);
+
     bool      sameAs(const EdgePtr & other);
     bool      sameAs(const VertexPtr & ov1, const VertexPtr & ov2);
     bool      sameAs(const QPointF & op1, const QPointF & op2);
@@ -100,20 +108,22 @@ public:
 public:
     VertexPtr       v1;
     VertexPtr       v2;
+
     WeakEdgePtr     twin;
     WeakEdgePtr     next;
     WeakFacePtr     incident_face;
+
     bool            dvisited;       // used by dcel
-    bool            visited;        // used by interlace and interlace threads
-    bool            v1_under;       // used by interlace
-    WeakThreadPtr   thread;         // used by interlace
 
     static int      refs;
 
+    uint            casingIndex;    // for debug
+    static bool     curvesAsLines;  // for debug
+
 protected:
-    eEdgeType       type;
 
 private:
+    eEdgeType       _type;
     ArcData         arcData;
 };
 

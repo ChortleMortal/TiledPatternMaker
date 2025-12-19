@@ -2,17 +2,18 @@
 #include <QComboBox>
 #include <QCheckBox>
 
-#include "sys/engine/image_engine.h"
 #include "gui/model_editors/style_edit/style_color_fill_face.h"
-#include "gui/model_editors/style_edit/style_color_fill_set.h"
 #include "gui/model_editors/style_edit/style_color_fill_group.h"
 #include "gui/model_editors/style_edit/style_color_fill_original.h"
+#include "gui/model_editors/style_edit/style_color_fill_set.h"
 #include "gui/model_editors/style_edit/style_editors.h"
-#include "model/prototypes/prototype.h"
-#include "sys/qt/utilities.h"
-#include "sys/sys.h"
-#include "gui/top/controlpanel.h"
 #include "gui/panels/panel_misc.h"
+#include "gui/top/controlpanel.h"
+#include "gui/top/system_view.h"
+#include "gui/viewers/motif_maker_view.h"
+#include "gui/widgets/dlg_colorSet.h"
+#include "gui/widgets/layout_sliderset.h"
+#include "model/prototypes/prototype.h"
 #include "model/styles/colored.h"
 #include "model/styles/emboss.h"
 #include "model/styles/filled.h"
@@ -20,10 +21,9 @@
 #include "model/styles/tile_colors.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
-#include "gui/viewers/motif_view.h"
-#include "gui/top/view_controller.h"
-#include "gui/widgets/dlg_colorSet.h"
-#include "gui/widgets/layout_sliderset.h"
+#include "sys/engine/image_engine.h"
+#include "sys/qt/utilities.h"
+#include "sys/sys.h"
 
 #define ROW_HEIGHT 39
 
@@ -31,10 +31,12 @@ StyleEditor::StyleEditor() : QWidget()
 {
     setable = nullptr;
 
-    ViewController * vcontrol = Sys::viewController;
+    setContentsMargins(0,0,0,0);
+
+    SystemViewController * vcontrol = Sys::viewController;
     
-    connect(this, &StyleEditor::sig_reconstructView, vcontrol,  &ViewController::slot_reconstructView);
-    connect(this, &StyleEditor::sig_updateView,      Sys::view, &View::slot_update);
+    connect(this, &StyleEditor::sig_reconstructView, vcontrol,  &SystemViewController::slot_reconstructView);
+    connect(this, &StyleEditor::sig_updateView,      Sys::viewController, &SystemViewController::slot_updateView);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -106,12 +108,14 @@ void ColoredEditor::slot_opacityChanged(qreal val)
 
     ColorSet * cset = colored->getColorSet();
     cset->setOpacity(val);
+    colored->resetStyleRepresentation();
+    colored->createStyleRepresentation();
 
     colorwidget = cset->createWidget();
     setable->setCellWidget(rows,1,colorwidget);
 
     emit sig_colorsChanged();
-    emit sig_reconstructView();
+    emit sig_updateView();
 }
 
 void ColoredEditor::slot_pickColor()
@@ -134,8 +138,9 @@ void ColoredEditor::slot_colorsChanged()
     colorwidget = colored->getColorSet()->createWidget();
     setable->setCellWidget(0,1,colorwidget);
     colored->resetStyleRepresentation();
+    colored->createStyleRepresentation();
     emit sig_colorsChanged();
-    emit sig_reconstructView();
+    emit sig_updateView();
 }
 
 ///////////////////////////////////////////////////////////////
@@ -155,7 +160,7 @@ ThickEditor::ThickEditor(StylePtr style) : ColoredEditor(style)
         setLayout(vbox);
     }
 
-    setable->setRowCount(rows + 5);
+    setable->setRowCount(rows + 6);
 
     // width
     QTableWidgetItem * item;
@@ -248,8 +253,8 @@ ThickEditor::ThickEditor(StylePtr style) : ColoredEditor(style)
     connect(width_slider,         &SliderSet::valueChanged, this, &ThickEditor::slot_widthChanged);
     connect(outline_width_slider, &SliderSet::valueChanged, this, &ThickEditor::slot_outlineWidthChanged);
     connect(outline_color_button, &QPushButton::clicked,    this, &ThickEditor::slot_outlineColor);
-    connect(join_style,           QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ThickEditor::slot_joinStyle);
-    connect(cap_style,            QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ThickEditor::slot_capStyle);
+    connect(join_style,           &QComboBox::currentIndexChanged, this, &ThickEditor::slot_joinStyle);
+    connect(cap_style,            &QComboBox::currentIndexChanged, this, &ThickEditor::slot_capStyle);
 
     setable->resizeColumnsToContents();
     setable->adjustTableSize();
@@ -263,7 +268,9 @@ void ThickEditor::slot_joinStyle(int index)
     if (!thick) return;
 
     thick->setJoinStyle(static_cast<Qt::PenJoinStyle>(join_style->currentData().toInt()));
-    emit sig_reconstructView();
+    thick->resetStyleRepresentation();
+    thick->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 void ThickEditor::slot_capStyle(int index)
@@ -274,7 +281,9 @@ void ThickEditor::slot_capStyle(int index)
     if (!thick) return;
 
     thick->setCapStyle(static_cast<Qt::PenCapStyle>(cap_style->currentData().toInt()));
-    emit sig_reconstructView();
+    thick->resetStyleRepresentation();
+    thick->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 void  ThickEditor::slot_widthChanged(int width)
@@ -285,7 +294,8 @@ void  ThickEditor::slot_widthChanged(int width)
     qreal val = width/100.0;
     thick->setLineWidth(val);
     thick->resetStyleRepresentation();
-    emit sig_reconstructView();
+    thick->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 void  ThickEditor::slot_outlineChanged(bool checked)
@@ -295,7 +305,9 @@ void  ThickEditor::slot_outlineChanged(bool checked)
 
     eDrawOutline outline = (checked) ? OUTLINE_SET : OUTLINE_NONE;
     thick->setDrawOutline(outline);
-    emit sig_reconstructView();
+    thick->resetStyleRepresentation();
+    thick->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 void ThickEditor::slot_outlineWidthChanged(int width)
@@ -311,7 +323,9 @@ void ThickEditor::slot_outlineWidthChanged(int width)
         thick->setDrawOutline(OUTLINE_SET);
     }
 
-    emit sig_reconstructView();
+    thick->resetStyleRepresentation();
+    thick->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 void ThickEditor::slot_outlineColor()
@@ -334,7 +348,9 @@ void ThickEditor::slot_outlineColor()
 
     outline_color->setBackground(color);  // menu
 
-    emit sig_reconstructView();
+    thick->resetStyleRepresentation();
+    thick->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -353,7 +369,7 @@ FilledEditor::FilledEditor(StylePtr style) : StyleEditor()
     panel        = Sys::controlPanel;
 
     auto proto = filled->getPrototype();
-    if (!proto->getDCEL())
+    if (!proto->getFilledDCEL())
     {
         filled->createStyleRepresentation();   // builds and  cleans the  dcel
     }
@@ -377,7 +393,7 @@ FilledEditor::FilledEditor(StylePtr style) : StyleEditor()
     int index       = algoBox->findData(algo);
     algoBox->setCurrentIndex(index);
 
-    connect(algoBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index){ slot_algo(index);} );
+    connect(algoBox, &QComboBox::currentIndexChanged, this, [this](int index){ slot_algo(index);} );
 
     hbox->addStretch();
     hbox->addWidget(label);
@@ -401,13 +417,11 @@ FilledEditor::~FilledEditor()
     if (fillFaces)
         delete fillFaces;
 
-    panel->clearStatus();
+    panel->restorePageStatus();
 }
 
 void FilledEditor::displayParms()
 {
-    eraseLayout(dynamic_cast<QLayout*>(vbox));
-
     if (fillSet)
     {
         delete fillSet;
@@ -415,6 +429,7 @@ void FilledEditor::displayParms()
     }
     if (fillGroup)
     {
+        crow = fillGroup->getCurrentRow();
         delete fillGroup;
         fillGroup = nullptr;
     }
@@ -429,6 +444,8 @@ void FilledEditor::displayParms()
         fillOriginal = nullptr;
     }
 
+    eraseLayout(dynamic_cast<QLayout*>(vbox));
+
     auto filled = wfilled.lock();
     if (!filled) return;
 
@@ -440,19 +457,19 @@ void FilledEditor::displayParms()
     {
     case FILL_ORIGINAL:
     case FILL_TWO_FACE:
-        panel->clearStatus();
+        panel->restorePageStatus();
         displayParms1();
         break;
     case FILL_MULTI_FACE:
-        panel->clearStatus();
+        panel->restorePageStatus();
         displayParms2();
         break;
     case FILL_MULTI_FACE_MULTI_COLORS:
-        panel->clearStatus();
-        displayParms3();
+        panel->overridePagelStatus("Click on face in image to select row in table. Double-click to edit directly");
+        displayParms3(crow);
         break;
     case FILL_DIRECT_FACE:
-        panel->setStatus("Click palette color in table, then lef-click mosaic faces (right-click to erase)");
+        panel->overridePagelStatus("Click palette color in table, then lef-click mosaic faces (right-click to erase)");
         displayParmsPalette();
         break;
     }
@@ -479,14 +496,14 @@ void FilledEditor::displayParms2()
     fillSet->display();
 }
 
-void FilledEditor::displayParms3()
+void FilledEditor::displayParms3(int crow)
 {
     auto filled = wfilled.lock();
     if (!filled) return;
 
     fillGroup = new StyleColorFillGroup(filled,vbox);
     connect(fillGroup, &StyleColorFillGroup::sig_colorsChanged,  this, &FilledEditor::slot_colorsChanged,     Qt::UniqueConnection);
-    fillGroup->display();
+    fillGroup->display(crow);
 }
 
 void FilledEditor::displayParmsPalette()
@@ -507,7 +524,7 @@ void FilledEditor::slot_algo(int index)
     filled->resetStyleRepresentation();
     filled->createStyleRepresentation();
     displayParms();
-    emit sig_reconstructView();
+    emit sig_updateView();
 }
 
 void FilledEditor::slot_editB()
@@ -545,19 +562,24 @@ void FilledEditor::slot_editW()
 void FilledEditor::slot_colorsChanged()
 {
     displayParms();
+    auto filled = wfilled.lock();
+    if (filled)
+    {
+        filled->resetStyleRepresentation();
+    }
     emit sig_updateView();     // that's all
 }
 
 void FilledEditor::onEnter()
 {
-    connect(Sys::view,        &View::sig_mousePressed,     this, &FilledEditor::slot_mousePressed);
-    connect(Sys::imageEngine, &ImageEngine::sig_colorPick, this, &FilledEditor::slot_colorPick, Qt::QueuedConnection);
+    connect(Sys::sysview,     &SystemView::sig_mousePressed,   this, &FilledEditor::slot_mousePressed);
+    connect(Sys::imageEngine, &ImageEngine::sig_colorPick,     this, &FilledEditor::slot_colorPick, Qt::QueuedConnection);
 }
 
 void FilledEditor::onExit()
 {
-    disconnect(Sys::view,        &View::sig_mousePressed,     this, &FilledEditor::slot_mousePressed);
-    disconnect(Sys::imageEngine, &ImageEngine::sig_colorPick, this, &FilledEditor::slot_colorPick);
+    disconnect(Sys::sysview,     &SystemView::sig_mousePressed, this, &FilledEditor::slot_mousePressed);
+    disconnect(Sys::imageEngine, &ImageEngine::sig_colorPick,   this, &FilledEditor::slot_colorPick);
 }
 
 void FilledEditor::onRefresh()
@@ -615,6 +637,14 @@ void FilledEditor::slot_colorPick(QColor color)
         fillGroup->setColor(color);
         break;
     }
+
+    auto filled = wfilled.lock();
+    if (filled)
+    {
+        filled->resetStyleRepresentation();
+        filled->createStyleRepresentation();
+    }
+    emit sig_updateView();
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -666,7 +696,9 @@ void EmbossEditor::slot_anlgeChanged(int angle)
 
     qDebug() << "angle=" << angle;
     emboss->setAngle( angle * M_PI / 180.0 );
-    emit sig_reconstructView();
+    emboss->resetStyleRepresentation();
+    emboss->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 void EmbossEditor::slot_colorsChanged()
@@ -675,6 +707,7 @@ void EmbossEditor::slot_colorsChanged()
     if (!emboss) return;
 
     emboss->resetStyleRepresentation();
+    emit sig_reconstructView();
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -761,7 +794,8 @@ void InterlaceEditor::slot_gapChanged(qreal gap)
 
     interlace->setGap(gap);
     interlace->resetStyleRepresentation();
-    emit sig_reconstructView();
+    interlace->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 void InterlaceEditor::slot_shadowChanged(qreal shadow)
@@ -771,7 +805,8 @@ void InterlaceEditor::slot_shadowChanged(qreal shadow)
 
     interlace->setShadow(shadow);
     interlace->resetStyleRepresentation();
-    emit sig_reconstructView();
+    interlace->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 void InterlaceEditor::slot_startUnderChanged(bool checked)
@@ -781,7 +816,8 @@ void InterlaceEditor::slot_startUnderChanged(bool checked)
 
     interlace->setInitialStartUnder(checked);
     interlace->resetStyleRepresentation();
-    emit sig_reconstructView();
+    interlace->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 void InterlaceEditor::slot_includeTipVerticesChanged(bool checked)
@@ -791,7 +827,8 @@ void InterlaceEditor::slot_includeTipVerticesChanged(bool checked)
 
     interlace->setIncludeTipVertices(checked);
     interlace->resetStyleRepresentation();
-    emit sig_reconstructView();
+    interlace->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 void InterlaceEditor::slot_colorsChanged()
@@ -800,6 +837,8 @@ void InterlaceEditor::slot_colorsChanged()
     if (!interlace) return;
 
     interlace->resetStyleRepresentation();
+    interlace->createStyleRepresentation();
+    emit sig_updateView();
 }
 
 ///////////////////////////////////////////////////////////////
@@ -853,7 +892,7 @@ void TileColorsEditor::buildTable()
     auto tiling = wtiling.lock();
     if (tiling)
     {
-        tiles = tiling->getUniqueTiles();
+        tiles = tiling->unit().getUniqueTiles();
         for (auto & tile : std::as_const(tiles))
         {
             uniqueTiles.push_back(tile);
@@ -897,7 +936,7 @@ void TileColorsEditor::buildTable()
         QTableWidgetItem * twi = new QTableWidgetItem(Utils::addr(tile.get()));
         setable->setItem(row,TILE_COLORS_ADDR,twi);
 
-        QString str = QString("%1 %2 num=%3").arg(tile->numPoints()).arg((tile->isRegular()) ? "Regular" : "Not-regular").arg(tiling->numPlacements(tile));
+        QString str = QString("%1 %2 num=%3").arg(tile->numPoints()).arg((tile->isRegular()) ? "Regular" : "Not-regular").arg(tiling->unit().numPlacements(tile));
         twi = new QTableWidgetItem(str);
         setable->setItem(row,TILE_COLORS_SIDES,twi);
 
@@ -923,7 +962,6 @@ void TileColorsEditor::slot_edit()
     if (!tileColors) return;
 
     int row = setable->currentRow();
-    qInfo() << "current row" << row;
     row--;  // first row is outline
 
     if (row < 0 || row >= (uniqueTiles.size() ))
@@ -946,7 +984,7 @@ void TileColorsEditor::slot_edit()
 
 void  TileColorsEditor::slot_colors_changed()
 {
-    emit panel->sig_render();
+    Sys::render(RENDER_RESET_STYLES);
     buildTable();
 }
 
@@ -961,6 +999,7 @@ void TileColorsEditor::slot_outlineChanged(bool checked)
      tileColors->getOutline(color,width);
      tileColors->setOutline(checked,color,width);
 
+     tileColors->resetStyleRepresentation();
      emit sig_reconstructView();
 }
 
@@ -986,6 +1025,7 @@ void  TileColorsEditor::slot_outline_color()
 
     colorItem->setBackground(color);
 
+    tileColors->resetStyleRepresentation();
     emit sig_reconstructView();
 
 }
@@ -1000,5 +1040,6 @@ void TileColorsEditor::slot_widthChanged(int val)
     bool outlineEnb = tileColors->getOutline(color,width);
     tileColors->setOutline(outlineEnb,color,val);
 
+    tileColors->resetStyleRepresentation();
     emit sig_reconstructView();
 }

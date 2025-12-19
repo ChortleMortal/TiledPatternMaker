@@ -1,12 +1,12 @@
-﻿#include "model/mosaics/legacy_loader.h"
+#include "model/mosaics/legacy_loader.h"
 #include <QColor>
 #include <QMessageBox>
 
 #include "model/mosaics/mosaic_reader.h"
-#include "model/mosaics/mosaic_reader_base.h"
+#include "model/mosaics/reader_base.h"
 #include "model/prototypes/design_element.h"
 #include "model/mosaics/mosaic.h"
-#include "model/mosaics/mosaic_reader_base.h"
+#include "model/mosaics/reader_base.h"
 #include "model/mosaics/legacy_loader.h"
 #include "model/prototypes/prototype.h"
 #include "model/motifs/explicit_map_motif.h"
@@ -14,7 +14,6 @@
 #include "model/motifs/extender.h"
 #include "model/motifs/inferred_motif.h"
 #include "model/motifs/motif.h"
-#include "model/motifs/motif_connector.h"
 #include "model/motifs/rosette.h"
 #include "model/motifs/star.h"
 #include "sys/geometry/map.h"
@@ -32,7 +31,7 @@
 #include "model/tilings/tiling.h"
 #include "model/tilings/tiling_reader.h"
 #include "model/tilings/tiling_manager.h"
-#include "gui/top/view_controller.h"
+#include "gui/top/system_view_controller.h"
 
 #undef  DEBUG_REFERENCES
 #define SUPPORT_BUGS
@@ -48,6 +47,7 @@ LegacyLoader::LegacyLoader()
 {
     qDebug() << "Constructing LegacyLoader";
     _loaded     = false;
+    _debug      = false;
 
     vOrigCnt = 0;
     vRefrCnt = 0;
@@ -69,7 +69,7 @@ void LegacyLoader::processTapratsVector(xml_node & node, MosaicPtr mosaic)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        //qDebug() << str.c_str();
+        if (_debug) qDebug() << str.c_str();
         if (str == "csk.taprats.style.Thick")
             processThick(n);
         else if (str == "csk.taprats.style.Filled")
@@ -88,7 +88,7 @@ void LegacyLoader::processTapratsVector(xml_node & node, MosaicPtr mosaic)
             qCritical() << "Unexpected" << str.c_str();
 
     }
-    qDebug() << "end vector";
+    if (_debug) qDebug() << "end vector";
     
     CanvasSettings ms = _mosaic->getCanvasSettings();
     ms.setBackgroundColor(QColor(Qt::white));
@@ -98,13 +98,13 @@ void LegacyLoader::processTapratsVector(xml_node & node, MosaicPtr mosaic)
     // Canvas Settings fill data defaults to FillData defaults, loader can  override these
     if (_tilings.size() > 0)
     {
-        qDebug() << "Using Tiling FiilData";
-        FillData fd =  _tilings.first()->getCanvasSettings().getFillData();
+        if (_debug) qDebug() << "Using Tiling FiilData";
+        FillData fd =  _tilings.first()->hdr().getCanvasSettings().getFillData();
         ms.setFillData(fd);
     }
     else
     {
-        qDebug() << "Using Default FiilData";
+        if (_debug) qDebug() << "Using Default FiilData";
         FillData fd;    // default
         ms.setFillData(fd);
     }
@@ -124,7 +124,7 @@ void LegacyLoader::processThick(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug() << str.c_str();
 
         if (str == "csk.taprats.toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
@@ -138,17 +138,17 @@ void LegacyLoader::processThick(xml_node & node)
             qCritical() << "Unexpected" << n.name();
     }
 
-    qDebug() << "Constructing Thick from prototype and poly";
+    if (_debug) qDebug() << "Constructing Thick from prototype and poly";
     Thick * thick = new Thick(proto);
-    thick->setModelXform(xf,false);
+    thick->setModelXform(xf,false,Sys::nextSigid());
     thick->setColor(color);
     thick->setDrawOutline(draw_outline);
     thick->setLineWidth(width);
 
-    qDebug().noquote() << "XmlServices created Style(Thick)" << thick->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(Thick)" << thick->getInfo();
     _mosaic->addStyle(StylePtr(thick));
 
-    qDebug() << "end thick";
+    if (_debug) qDebug() << "end thick";
 }
 
 void LegacyLoader::processInterlace(xml_node & node)
@@ -165,7 +165,7 @@ void LegacyLoader::processInterlace(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        //qDebug() << str.c_str();
+        if (_debug) qDebug() << str.c_str();
 
         if (str == "csk.taprats.toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
@@ -181,18 +181,18 @@ void LegacyLoader::processInterlace(xml_node & node)
             qCritical() << "Unexpected" << n.name();
     }
 
-    qDebug() << "Constructing Interlace (DAC) from prototype and poly";
+    if (_debug) qDebug() << "Constructing Interlace (DAC) from prototype and poly";
     Interlace * interlace = new Interlace(proto);
-    interlace->setModelXform(xf,false);
+    interlace->setModelXform(xf,false,Sys::nextSigid());
     interlace->setColor(color);
     interlace->setDrawOutline(draw_outline);
     interlace->setLineWidth(width);
     interlace->setGap(gap);
     interlace->setShadow(shadow);
-    qDebug().noquote() << "XmlServices created Style(Interlace)" << interlace->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(Interlace)" << interlace->getInfo();
     _mosaic->addStyle(StylePtr(interlace));
 
-    qDebug() << "end interlace";
+    if (_debug) qDebug() << "end interlace";
 }
 
 void LegacyLoader::processOutline(xml_node & node)
@@ -207,7 +207,7 @@ void LegacyLoader::processOutline(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        //qDebug() << str.c_str();
+        if (_debug) qDebug() << str.c_str();
 
         if (str == "csk.taprats.toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
@@ -221,18 +221,18 @@ void LegacyLoader::processOutline(xml_node & node)
             qCritical() << "Unexpected" << n.name();
     }
 
-    qDebug() << "Constructing Outline from prototype and poly";
+    if (_debug) qDebug() << "Constructing Outline from prototype and poly";
     Outline * outline = new Outline(proto);
-    qDebug().noquote() << xf.info();
-    outline->setModelXform(xf,false);
+    if (_debug) qDebug().noquote() << xf.info();
+    outline->setModelXform(xf,false,Sys::nextSigid());
     outline->setColor(color);
     outline->setDrawOutline(draw_outline);
     outline->setLineWidth(width);
 
-    qDebug().noquote() << "XmlServices created Style(Outline)" << outline->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(Outline)" << outline->getInfo();
     _mosaic->addStyle(StylePtr(outline));
 
-    qDebug() << "end outline";
+    if (_debug) qDebug() << "end outline";
 }
 
 void LegacyLoader::processFilled(xml_node & node)
@@ -247,7 +247,7 @@ void LegacyLoader::processFilled(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        //qDebug() << str.c_str();
+        if (_debug) qDebug() << str.c_str();
 
         if (str == "csk.taprats.toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
@@ -262,11 +262,11 @@ void LegacyLoader::processFilled(xml_node & node)
     }
 
     Filled * filled = new Filled(proto,FILL_ORIGINAL);
-    filled->setModelXform(xf,false);
+    filled->setModelXform(xf,false,Sys::nextSigid());
     //filled->setColor(color);
     filled->setDrawInsideBlacks(draw_inside);
     filled->setDrawOutsideWhites(draw_outside);
-    qDebug().noquote() << "XmlServices created Style(Filled)" << filled->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(Filled)" << filled->getInfo();
 
     ColorSet * csetW = filled->getWhiteColorSet();
     csetW->addColor(color);
@@ -276,41 +276,10 @@ void LegacyLoader::processFilled(xml_node & node)
 
     _mosaic->addStyle(StylePtr(filled));
 
-    qDebug() << "end filled";
+    if (_debug) qDebug() << "end filled";
 }
 
 void LegacyLoader::processPlain(xml_node & node)
-{
-    QColor  color;
-    ProtoPtr proto;
-    Xform   xf;
-    int     zlevel        = 0;
-
-    for (xml_node n = node.first_child(); n; n = n.next_sibling())
-    {
-        string str = n.name();
-        //qDebug() << str.c_str();
-
-        if (str == "csk.taprats.toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,xf,zlevel);
-        else if (str == "csk.taprats.style.Style")
-            processStyleStyle(n,proto);
-        else if (str == "csk.taprats.style.Colored")
-            color = processStyleColored(n);
-        else
-            qCritical() << "Unexpected" << n.name();
-    }
-
-    Plain * plain = new Plain(proto);
-    plain->setModelXform(xf,false);
-    plain->setColor(color);
-    qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
-    _mosaic->addStyle(StylePtr(plain));
-
-    qDebug() << "end plain";
-}
-
-void LegacyLoader::processSketch(xml_node & node)
 {
     QColor  color;
     ProtoPtr proto;
@@ -332,13 +301,44 @@ void LegacyLoader::processSketch(xml_node & node)
             qCritical() << "Unexpected" << n.name();
     }
 
+    Plain * plain = new Plain(proto);
+    plain->setModelXform(xf,false,Sys::nextSigid());
+    plain->setColor(color);
+    if (_debug) qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
+    _mosaic->addStyle(StylePtr(plain));
+
+    if (_debug) qDebug() << "end plain";
+}
+
+void LegacyLoader::processSketch(xml_node & node)
+{
+    QColor  color;
+    ProtoPtr proto;
+    Xform   xf;
+    int     zlevel        = 0;
+
+    for (xml_node n = node.first_child(); n; n = n.next_sibling())
+    {
+        string str = n.name();
+        if (_debug) qDebug() << str.c_str();
+
+        if (str == "csk.taprats.toolkit.GeoLayer")
+            procesToolkitGeoLayer(n,xf,zlevel);
+        else if (str == "csk.taprats.style.Style")
+            processStyleStyle(n,proto);
+        else if (str == "csk.taprats.style.Colored")
+            color = processStyleColored(n);
+        else
+            qCritical() << "Unexpected" << n.name();
+    }
+
     Sketch * sketch = new Sketch(proto);
-    sketch->setModelXform(xf,false);
+    sketch->setModelXform(xf,false,Sys::nextSigid());
     sketch->setColor(color);
-    qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
     _mosaic->addStyle(StylePtr(sketch));
 
-    qDebug() << "end sketch";
+    if (_debug) qDebug() << "end sketch";
 }
 
 void LegacyLoader::processEmboss(xml_node & node)
@@ -354,7 +354,7 @@ void LegacyLoader::processEmboss(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        //qDebug() << str.c_str();
+        if (_debug) qDebug() << str.c_str();
 
         if (str == "csk.taprats.toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
@@ -370,9 +370,9 @@ void LegacyLoader::processEmboss(xml_node & node)
             qCritical() << "Unexpected" << n.name();
     }
 
-    qDebug() << "Constructing Emboss from prototype and poly";
+    if (_debug) qDebug() << "Constructing Emboss from prototype and poly";
     Emboss * emboss = new Emboss(proto);
-    emboss->setModelXform(xf,false);
+    emboss->setModelXform(xf,false,Sys::nextSigid());
     ColorSet cs;
     cs.addColor(color);
     emboss->setColorSet(cs);
@@ -380,10 +380,10 @@ void LegacyLoader::processEmboss(xml_node & node)
     emboss->setLineWidth(width);
     emboss->setAngle(angle);
 
-    qDebug().noquote() << "XmlServices created Style(Emboss)" << emboss->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(Emboss)" << emboss->getInfo();
     _mosaic->addStyle(StylePtr(emboss));
 
-    qDebug() << "end emboss";
+    if (_debug) qDebug() << "end emboss";
 }
 
 void LegacyLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf, int & zlevel)
@@ -432,15 +432,8 @@ void LegacyLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf, int & zlev
         xf.setRotateRadians(fval);
     }
 
-    n = def.child("center");
-    if (n)
-    {
-        val             = n.child_value();
-        QStringList qsl = val.split(",");
-        qreal x         = qsl[0].toDouble();
-        qreal y         = qsl[1].toDouble();
-        xf.setModelCenter(QPointF(x,y));
-    }
+    // 06OCT25 removed support for node "center" which was never used
+
     n = def.child("Z");
     if (n)
     {
@@ -453,13 +446,13 @@ void LegacyLoader::processStyleStyle(xml_node & node, ProtoPtr & proto)
 {
     xml_node def = node.child("default");
     xml_node n   = def.child("boundary");
-    qDebug() << n.name();
+    if (_debug) qDebug() << n.name();
     //poly = getBoundary(n);
 
     n = def.child("prototype");
-    qDebug() << n.name();
+    if (_debug) qDebug() << n.name();
     proto = getPrototype(n);
-    qDebug().noquote() << proto->info();
+    if (_debug) qDebug().noquote() << proto->info();
 }
 
 QColor LegacyLoader::processStyleColored(xml_node & node)
@@ -589,8 +582,9 @@ ProtoPtr LegacyLoader::getPrototype(xml_node & node)
 #else
             VersionedName vn(tilingName);
             VersionedFile filename = FileServices::getFile(vn,FILE_TILING);
-            TilingReader tm;
-            tp  = tm.readTilingXML(filename);
+            TilingReader tm(Sys::viewController);
+            ReaderBase mrbase;
+            tp  = tm.readTilingXML(filename,&mrbase);
 #endif
                 if (tp)
             {
@@ -626,7 +620,7 @@ ProtoPtr LegacyLoader::getPrototype(xml_node & node)
         name = xmlfeature.name();
         if ( name == "csk.taprats.tile.Feature")
         {
-            qDebug() << "adding Feature";
+            if (_debug) qDebug() << "adding Feature";
             feature = getFeature(xmlfeature);
         }
         else
@@ -638,25 +632,25 @@ ProtoPtr LegacyLoader::getPrototype(xml_node & node)
         name = xmlfigure.name();
         if (name == "csk.taprats.app.ExplicitFigure")
         {
-            qDebug() << "adding ExplicitFigure";
+            if (_debug) qDebug() << "adding ExplicitFigure";
             figure = getExplicitFigure(xmlfigure,feature);
             dc_found = true;
         }
         else if (name == "csk.taprats.app.Star")
         {
-            qDebug() << "adding Star Figure";
+            if (_debug) qDebug() << "adding Star Figure";
             figure =  getStarFigure(xmlfigure);
             dc_found = true;
         }
         else if (name == "csk.taprats.app.Rosette")
         {
-            qDebug() << "adding Rosette Figure";
+            if (_debug) qDebug() << "adding Rosette Figure";
             figure =  getRosetteFigure(xmlfigure);
             dc_found = true;
         }
         else if (name == "csk.taprats.app.ConnectFigure")
         {
-            qDebug() << "adding Connect Figure";
+            if (_debug) qDebug() << "adding Connect Figure";
             figure =  getConnectFigure(xmlfigure);
             dc_found = true;
         }
@@ -670,22 +664,22 @@ ProtoPtr LegacyLoader::getPrototype(xml_node & node)
             // if the found feature is identical to the one in the known tiling
             // then use that
             // DAC 27MAY17 - imprtant that this code not removed or Design View will fail
-            const TilingPlacements tilingUnit = tp->getTilingUnitPlacements();
+            const PlacedTiles tilingUnit = tp->unit().getIncluded();
             for (const auto & pf : std::as_const(tilingUnit))
             {
-                if (pf->getTile()->equals(feature))
+                if (*pf->getTile().get() == *feature.get())
                 {
                     feature = pf->getTile();
                 }
             }
-            qDebug() << "adding to Proto" << figure->getMotifDesc();
+            if (_debug) qDebug() << "adding to Proto" << figure->getMotifDesc();
             DesignElementPtr  dep = make_shared<DesignElement>(feature, figure);
             p->addDesignElement(dep);
         }
         //p->walk();
     }
 
-    qDebug() << "Proto created";
+    if (_debug) qDebug() << "Proto created";
     return p;
 }
 
@@ -739,7 +733,7 @@ StarPtr LegacyLoader::getStarFigure(xml_node & node)
 
     static int count = 0;
     MapPtr map = getMap(node);
-    qDebug() << "XML Input - verifying Map" << count++;
+    if (_debug) qDebug() << "XML Input - verifying Map" << count++;
     //map->verify("XML Star figure",false);
 
     QString str;
@@ -814,7 +808,7 @@ RosettePtr LegacyLoader::getConnectFigure(xml_node & node)
     if (child)
     {
         xml_attribute class1 = child.attribute("class");
-        qDebug() << class1.value();
+        if (_debug) qDebug() << class1.value();
         if (QString(class1.value()) == "csk.taprats.app.Rosette")
         {
             rose = getRosetteFigure(child);
@@ -822,14 +816,14 @@ RosettePtr LegacyLoader::getConnectFigure(xml_node & node)
             //Q_ASSERT(qFuzzyCompare(r->get_dn(),dn));
             //Q_ASSERT(qFuzzyCompare(r->get_don(),don));
             //Q_ASSERT(r->getS() == s);
-            qDebug() << "connect s:" <<  rose->getS() << s;
+            if (_debug) qDebug() << "connect s:" <<  rose->getS() << s;
         }
         else
         {
             qFatal("Connect figure not based on Rosette");
         }
         rose->addRadialConnector();
-        qDebug() << rose->getMotifDesc();
+        if (_debug) qDebug() << rose->getMotifDesc();
     }
     else
     {
@@ -1357,9 +1351,9 @@ MapPtr LegacyLoader::getMapReferencedPtr(xml_node & node)\
 
 TilingPtr LegacyLoader::findTiling(QString name)
 {
-    for (const auto & tiling : _tilings)
+    for (auto & tiling : _tilings)
     {
-        if (tiling->getName().get() == name)
+        if (tiling->getVName().get() == name)
         {
             return tiling;
         }

@@ -27,7 +27,7 @@ public:
     QPolygonF       getTileMidPoly()        { QPolygonF p = midPoints; p << p[0]; return p;}
 
     Points          getTransformedPoints()  { return placedTile->getPlacedPoints(); }
-    QTransform      getTransform()          { return placedTile->getTransform(); }
+    QTransform      getTransform()          { return placedTile->getPlacement(); }
     TilePtr         getTile()               { return placedTile->getTile(); }
     PlacedTilePtr   getPlacedTile()         { return placedTile; }
     EdgePoly &      getEdgePoly()           { return ep; }

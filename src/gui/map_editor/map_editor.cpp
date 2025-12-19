@@ -1,10 +1,5 @@
-#include <QMessageBox>
-#include <QKeyEvent>
-#include <QApplication>
-
 #include "gui/map_editor/map_editor.h"
 #include "gui/map_editor/map_editor_db.h"
-#include "gui/map_editor/map_selection.h"
 #include "gui/map_editor/map_editor_selection.h"
 #include "model/motifs/explicit_map_motif.h"
 #include "gui/viewers/map_editor_view.h"
@@ -14,7 +9,6 @@
 #include "model/motifs/motif.h"
 #include "model/motifs/irregular_motif.h"
 #include "sys/geometry/dcel.h"
-#include "sys/geometry/edge.h"
 #include "sys/geometry/map.h"
 #include "sys/geometry/transform.h"
 #include "gui/panels/shortcuts.h"
@@ -27,7 +21,7 @@
 #include "model/styles/style.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/placed_tile.h"
-#include "gui/top/view_controller.h"
+#include "gui/top/system_view_controller.h"
 
 using std::make_shared;
 
@@ -39,10 +33,10 @@ MapEditor::MapEditor()
 void MapEditor::init()
 {
     db              = new MapEditorDb();
-    meView          = Sys::mapEditorView;
     selector        = new MapEditorSelection(db);
 
-    meView->init(db,selector);
+    Sys::mapEditorView->init(db,selector);
+
     config          = Sys::config;
     mosaicMaker     = Sys::mosaicMaker;
     prototypeMaker  = Sys::prototypeMaker;
@@ -52,14 +46,14 @@ void MapEditor::init()
 
     unload();
 
-    connect(this, &MapEditor::sig_updateView, Sys::view, &View::slot_update);
-    connect(this, &MapEditor::sig_raiseMenu,  Sys::controlPanel, &ControlPanel::slot_raisePanel);
+    connect(this, &MapEditor::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
+    connect(this, &MapEditor::sig_raiseMenu,  Sys::controlPanel,   &ControlPanel::slot_raisePanel);
 }
 
 MapEditor::~MapEditor()
 {
-    unload();
     delete selector;
+    db->reset();
     delete db;
 }
 
@@ -69,7 +63,7 @@ void MapEditor::unload()
     setMapedMouseMode(MAPED_MOUSE_NONE);
 }
 
-bool MapEditor::loadMosaicPrototype()
+bool MapEditor::loadMosaicPrototype(int style)
 {
     qDebug() << "MapEditor::loadFromMosaic()";
 
@@ -83,8 +77,18 @@ bool MapEditor::loadMosaicPrototype()
         return false;
     }
 
-    MapPtr map = mosaic->getFirstExistingPrototypeMap();
-    if (!map)
+    if (style >= mosaic->numStyles())
+    {
+        QMessageBox box(Sys::controlPanel);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Invalid Style Number");
+        box.exec();
+        return false;
+    }
+
+    StylePtr sp =mosaic->getStyleSet()[style];
+    MapPtr map = sp->getStyleMap();
+    if (!map || map->isEmpty())
     {
         QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Warning);
@@ -182,7 +186,7 @@ bool  MapEditor::loadSelectedMotifs()
         {
             MapPtr map  = motif->getMotifMap();
             auto tile = del->getTile();
-            QTransform placement = meView->getPlacement(tile);
+            QTransform placement = Sys::mapEditorView->getPlacement(tile);
             MapPtr tmap = map->getTransformed(placement);
 
             auto type = db->insertLayer(tmap,MAPED_LOADED_FROM_MOTIF);
@@ -278,7 +282,7 @@ void  MapEditor::loadFromMap(MapPtr map, eMapEditorMapType mtype)
                 createLocalDCEL(map);
         }
     }
-    emit meView->sig_reconstructView(); // because it can load a background
+    emit Sys::mapEditorView->sig_reconstructView(); // because it can load a background
 }
 
 bool MapEditor::useExistingDCEL(MapPtr map)
@@ -301,15 +305,78 @@ bool MapEditor::createLocalDCEL(MapPtr map)
     if (!map)
         return false;
 
-    auto dcel = make_shared<DCEL>(map.get());
-    db->setLocalDCEL(dcel);
-    map->setDerivedDCEL(dcel);
+    auto dcel = make_shared<SimpleDCEL>(map.get());
+    if (dcel->build())
+    {
+        db->setLocalDCEL(dcel);
+        map->setDerivedDCEL(dcel);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+ProtoPtr MapEditor::createPrototypeFromMap(MapPtr map)
+{
+    // the mosaic needs to be fed a map in to prototype which it can style
+    // we could use passing a prototype which has a map but no tiling
+    // but lets fake it out by creating an explicit motif from the tile
+    // the real issue is having a prototype disconnected from a tiling !
+
+    EdgePoly ep(map->getEdges());
+    auto tile = make_shared<Tile>(ep);
+    auto motif  = make_shared<ExplicitMapMotif>(map);
+    motif->setN(tile->numEdges());
+    auto del = make_shared<DesignElement>(tile,motif);
+
+    auto proto = make_shared<Prototype>(map);
+    proto->addDesignElement(del);
+
+    return proto;
+}
+
+bool MapEditor::createMosiacFromPrototypes(QVector<ProtoPtr> &protos)
+{
+    if (protos.isEmpty())
+        return false;
+
+    VersionedName oldname = mosaicMaker->getMosaic()->getName();
+
+    // This makes a new mosaic which is a representation of the new map
+    // which in turn was derived from old
+    bool first = true;
+    for (auto & proto : protos)
+    {
+        MosaicEvent mevent;
+        mevent.prototype = proto;
+        if (first)
+        {
+            mevent.event = MOSM_LOAD_PROTO_SINGLE;
+            first = false;
+        }
+        else
+        {
+            mevent.event = MOSM_LOAD_PROTO_MULTI;
+        }
+        mosaicMaker->sm_takeUp(mevent);
+    }
+
+    mosaicMaker->getMosaic()->setName(oldname);
+
+    emit Sys::mapEditorView->sig_reconstructView(); // triggers createSyleRepresentation
+
+    // does not switch view to mosaic
+    qDebug().noquote() << "MapEditor::pushToMosaic - end" << Transform::info(Sys::mapEditorView->getLayerTransform());
     return true;
+
 }
 
 bool MapEditor::pushToMosaic(MapEditorLayer & layer)
 {
-    qDebug().noquote() << "MapEditor::pushToMosaic" << Transform::info(meView->getLayerTransform());
+    qDebug().noquote() << "MapEditor::pushToMosaic" << Transform::info(Sys::mapEditorView->getLayerTransform());
+
     QVector<ProtoPtr> protos;
 
     if (layer.getLayerMapType() == MAPED_LOADED_FROM_MOTIF_PROTOTYPE)
@@ -319,86 +386,71 @@ bool MapEditor::pushToMosaic(MapEditorLayer & layer)
         {
             protos.push_back(proto);
         }
+        return createMosiacFromPrototypes(protos);
+    }
+
+    // is there an existing mosaic?
+    MosaicPtr mosaic  = mosaicMaker->getMosaic();
+    if (!mosaic)
+    {
+        MapPtr map = layer.getMapedLayerMap();
+        auto proto = createPrototypeFromMap(map);
+        protos.push_back(proto);
+        return createMosiacFromPrototypes(protos);
+    }
+
+    MapPtr mosaic_map  = mosaic->getFirstExistingPrototypeMap();
+    if (!mosaic_map)
+    {
+        // this proably means there was no prototype, so make a prototype from the map
+        MapPtr map = layer.getMapedLayerMap();
+        auto proto = createPrototypeFromMap(map);
+        protos.push_back(proto);
+        return createMosiacFromPrototypes(protos);
+    }
+
+    // put map into existting prototype
+    MapPtr map = layer.getMapedLayerMap();
+    auto olddcel = mosaic_map->getDerivedDCEL();
+
+    if (mosaic_map != map)
+    {
+        mosaic_map = map;    // this sets map into prototype
+    }
+
+    if (config->mapEditorMode == MAPED_MODE_DCEL)
+    {
+        if (!useExistingDCEL(mosaic_map))
+        {
+            createLocalDCEL(mosaic_map);
+        }
     }
     else
     {
-        // is there an existing prototype?
-        auto editor_map = layer.getMapedLayerMap();
-
-        auto mosaic = mosaicMaker->getMosaic();
-        if (mosaic)
+        if (olddcel)
         {
-            auto mosaic_map  = mosaic->getFirstExistingPrototypeMap();
-            auto olddcel     = mosaic_map->getDerivedDCEL();
-            if (mosaic_map != editor_map)
+            auto dcel = std::make_shared<SimpleDCEL>(mosaic_map.get());
+            if (dcel->build())
             {
-                mosaic_map = editor_map;
-            }
-
-            if (config->mapEditorMode == MAPED_MODE_DCEL)
-            {
-                if (!useExistingDCEL(mosaic_map))
-                    createLocalDCEL(mosaic_map);
+                mosaic_map->setDerivedDCEL(dcel);
             }
             else
             {
-                if (olddcel)
-                {
-                    auto dcel = std::make_shared<DCEL>(editor_map.get());
-                    mosaic_map->setDerivedDCEL(dcel);
-                }
+                DCELPtr nulldcel;
+                mosaic_map->setDerivedDCEL(nulldcel);
             }
-
-            const StyleSet & sset = mosaic->getStyleSet();
-            for (auto & style : std::as_const(sset))
-            {
-                style->resetStyleRepresentation();
-            }
-
-            emit meView->sig_reconstructView(); // triggers createSyleRepresentation
-
-            return true;     // done
         }
-
-        // the mosaic needs to be fed a map in to prototype which it can style
-        // we could use passing a prototype which has a map but no tiling
-        // but lets fake it out by creating an explicit motif from the tile
-        // the real issue is having a prototype disconnected from a tiling !
-
-        EdgePoly ep(editor_map->getEdges());
-        auto tile = make_shared<Tile>(ep);
-        auto motif  = make_shared<ExplicitMapMotif>(editor_map);
-        motif->setN(tile->numSides());
-        auto del = make_shared<DesignElement>(tile,motif);
-
-        auto proto = make_shared<Prototype>(editor_map);
-        proto->addDesignElement(del);
-        protos.push_back(proto);
     }
 
-    if (protos.size())
-    {
-        VersionedName oldname = mosaicMaker->getMosaic()->getName();
+    //Sys::render(RENDER_RESET_STYLES);
+    emit sig_styleMapUpdated(map);
 
-        // This makes a new mosaic which is a representation of the new map
-        // which in turn was derived from old mosaic
-        mosaicMaker->sm_takeUp(protos, MOSM_LOAD_SINGLE);
-
-        mosaicMaker->getMosaic()->setName(oldname);
-
-        emit meView->sig_reconstructView(); // triggers createSyleRepresentation
-
-        // does not switch view to mosaic
-        qDebug().noquote() << "MapEditor::pushToMosaic - end" << Transform::info(meView->getLayerTransform());
-        return true;
-    }
-
-    return false;
+    return true;
 }
 
 bool MapEditor::pushToMotif(MapPtr map)
 {
-    qDebug().noquote() << "MapEditor::convertToMotif" << Transform::info(meView->getLayerTransform());
+    qDebug().noquote() << "MapEditor::convertToMotif" << Transform::info(Sys::mapEditorView->getLayerTransform());
 
     eMapEditorMapType mtype = db->getMapType(map);
     if (!db->isMotif(mtype) && mtype != MAPED_TYPE_CREATED)
@@ -408,7 +460,7 @@ bool MapEditor::pushToMotif(MapPtr map)
     if (!del)
         return false;
 
-    auto transform = meView->getPlacement(del->getTile()).inverted();
+    auto transform = Sys::mapEditorView->getPlacement(del->getTile()).inverted();
     auto map2      = map->getTransformed(transform);
 
     auto motif = make_shared<ExplicitMapMotif>(map2);
@@ -418,16 +470,20 @@ bool MapEditor::pushToMotif(MapPtr map)
     prototypeMaker->selectDesignElement(del);
 
     auto proto =  prototypeMaker->getSelectedPrototype();
-    prototypeMaker->sm_takeUp(proto->getTiling(),PROM_MOTIF_CHANGED,del->getTile());
 
-    qDebug().noquote() << "MapEditor::convertToMotif - end" << Transform::info(meView->getLayerTransform());
+    ProtoEvent pevent;
+    pevent.event = PROM_MOTIF_CHANGED;
+    pevent.tiling = proto->getTiling();
+    prototypeMaker->sm_takeUp(pevent);
+
+    qDebug().noquote() << "MapEditor::convertToMotif - end" << Transform::info(Sys::mapEditorView->getLayerTransform());
     return true;
 }
 
 // Replaces the complete set of tiles in the tiling unit
 bool MapEditor::pushToTiling(MapPtr map, bool outer)
 {
-    qDebug().noquote() << __FUNCTION__ << Transform::info(meView->getLayerTransform());
+    qDebug().noquote() << "MapEditor::pushToTiling" << Transform::info(Sys::mapEditorView->getLayerTransform());
 
     // converts the map to DCELs so that tiles can be made
     createLocalDCEL(map);
@@ -435,8 +491,14 @@ bool MapEditor::pushToTiling(MapPtr map, bool outer)
 
     const FaceSet & faces = dcel->getFaceSet();
     qDebug() << "num new faces =" << faces.size();
+    if (faces.size() == 0)
+    {
+        qWarning() << "No faces: cannot create a tiling";
+        return false;
+    }
 
-    TilingUnit tilingUnit;
+    TilingPtr tp = tilingMaker->getSelected();
+    TilingUnit tilingUnit(tp.get());
     for (auto & face : std::as_const(faces))
     {
         if (  (!outer && !face->outer)
@@ -445,18 +507,19 @@ bool MapEditor::pushToTiling(MapPtr map, bool outer)
             EdgePoly ep     = *face;
             TilePtr fp      = make_shared<Tile>(ep);
             auto placedTile = make_shared<PlacedTile>(fp,QTransform());
-            tilingUnit.add(placedTile);
+            tilingUnit.addPlacedTile(placedTile);
         }
     }
 
     tilingMaker->replaceTilingUnit(tilingUnit);
 
-    // aligns the tiling maker to the map editor
-    const Xform & xf = meView->getModelXform();
-    Sys::viewController->getCanvas().setModelAlignment(M_ALIGN_TILING);
-    Sys::tilingMakerView->setModelXform(xf,true);
+    // aligns the tiling maker to the map editor too
+    Sys::viewController->setSelectedPrimaryLayer(tp);
 
-    qDebug().noquote() << __FUNCTION__ << "- end" << Transform::info(meView->getLayerTransform());
+    const Xform & xf = Sys::mapEditorView->getModelXform();
+    Sys::tilingMakerView->setModelXform(xf,true,Sys::nextSigid());
+
+    qDebug().noquote() << "MapEditor::pushToTiling" << "- end" << Transform::info(Sys::mapEditorView->getLayerTransform());
     return true;
 }
 
@@ -473,34 +536,33 @@ void MapEditor::setMapedMouseMode(eMapEditorMouseMode mode)
     case MAPED_MOUSE_DRAW_LINE:
     case MAPED_MOUSE_DELETE:
     case MAPED_MOUSE_SPLIT_LINE:
+        Sys::controlPanel->restorePageStatus();
+        break;
+
     case MAPED_MOUSE_EXTEND_LINE_P1:
     case MAPED_MOUSE_EXTEND_LINE_P2:
+        Sys::controlPanel->overridePagelStatus("Click on edge and drag to extend. Press F to flip direction of extension");
+        break;
+
     case MAPED_MOUSE_CREATE_LINE:
+        Sys::controlPanel->overridePagelStatus("Click on map edge to  draw two lines at center");
         break;
 
     case MAPED_MOUSE_CONSTRUCTION_LINES:
+        db->showConstructionLines = true;
+        Sys::controlPanel->restorePageStatus();
+        break;
+
     case MAPED_MOUSE_CONSTRUCTION_CIRCLES:
+        Sys::controlPanel->overridePagelStatus("Right-click: create circle | Left-click-inside: drag to move circle  | Left-click-edge: resize circle");
         db->showConstructionLines = true;
         break;
     }
 }
 
-eMapEditorMouseMode MapEditor::getMouseMode()
+eMapEditorMouseMode MapEditor::getMapedMouseMode()
 {
     return db->getMouseMode();
-}
-
-void MapEditor::flipLineExtension()
-{
-    MapMouseActionPtr mma  = db->getMouseInteraction();
-    if (mma)
-    {
-        ExtendLine * el = dynamic_cast<ExtendLine*>(mma.get());
-        if (el)
-        {
-            el->flipDirection();
-        }
-    }
 }
 
 QString MapEditor::getStatus()
@@ -591,7 +653,7 @@ bool MapEditor::initStashFrom(VersionedName mosaicname)
 
 void MapEditor::forceRedraw()
 {
-    if (Sys::view->isActiveLayer(VIEW_MAP_EDITOR))
+    if (Sys::viewController->isEnabled(VIEW_MAP_EDITOR))
     {
         emit sig_updateView();
     }
@@ -615,21 +677,9 @@ bool MapEditor::procKeyEvent(QKeyEvent * k)
 
     switch (key)
     {
-    // actions
-    case 'F': flipLineExtension(); break;
-    case 'M': emit sig_raiseMenu(); break;
-    case 'Q': emit sig_close(); break;
-    case Qt::Key_F1:
-    {
-        QMessageBox  * box = new QMessageBox();
-        box->setWindowTitle("Map Editor Shortcuts");
-        box->setText(Shortcuts::getMapEditorShortcuts());
-        box->setModal(false);
-        box->show();
-        break;
-    }
+    case Qt::Key_F1: Shortcuts::popup(VIEW_MAP_EDITOR); break;
 
-        // modes
+    // modes
     case Qt::Key_Escape: setMapedMouseMode(MAPED_MOUSE_NONE);  return false; // propagate
     case Qt::Key_F3:     setMapedMouseMode(MAPED_MOUSE_DRAW_LINE); break;
     case Qt::Key_F4:     setMapedMouseMode(MAPED_MOUSE_CONSTRUCTION_LINES); break;

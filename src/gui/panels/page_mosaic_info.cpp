@@ -48,10 +48,13 @@ void  page_mosaic_info::onEnter()
 
 void  page_mosaic_info::onRefresh()
 {
+    showMotifsFromStyles();
 }
 
 void page_mosaic_info::showMotifsFromStyles()
 {
+    motifTable->clearContents();
+
     int row = 0;
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if (mosaic)
@@ -59,16 +62,11 @@ void page_mosaic_info::showMotifsFromStyles()
         const StyleSet sset = mosaic->getStyleSet();
         for (auto & style : std::as_const(sset))
         {
+
             ProtoPtr pp = style->getPrototype();
-
-            QVector<DesignElementPtr>  dels = pp->getDesignElements();
-            for (int i=0; i < dels.size(); i++)
+            if (pp)
             {
-                DesignElementPtr del = dels[i];
-                MotifPtr motif = del->getMotif();
-
                 motifTable->setRowCount(row+1);
-
                 QString stylename = style->getStyleDesc() + " " + addr(style.get());
                 QTableWidgetItem * item =  new QTableWidgetItem(stylename);
                 motifTable->setItem(row,COL_STYLE_NAME,item);
@@ -77,15 +75,28 @@ void page_mosaic_info::showMotifsFromStyles()
                 item =  new QTableWidgetItem(pinfo);
                 motifTable->setItem(row,COL_PROTO,item);
 
-                QString tileName = pp->getTiling()->getName().get() + "  " + addr(pp->getTiling().get());
-                item =  new QTableWidgetItem(tileName);
-                motifTable->setItem(row,COL_TILING_NAME,item);
+                TilingPtr tiling = pp->getTiling();
+                if (tiling)
+                {
+                    QString tileName = tiling->getVName().get() + "  " + addr(tiling.get());
+                    item =  new QTableWidgetItem(tileName);
+                    motifTable->setItem(row,COL_TILING_NAME,item);
+                }
 
-                QString figName = motif->getMotifDesc() + "  " + addr(motif.get());
-                item =  new QTableWidgetItem(figName);
-                motifTable->setItem(row,COL_TILE_TYPE,item);
+                QVector<DesignElementPtr>  dels = pp->getDesignElements();
+                for (auto & del : dels)
+                {
+                    MotifPtr motif = del->getMotif();
+                    if (motif)
+                    {
+                        QString figName = motif->getMotifDesc() + "  " + addr(motif.get());
+                        item =  new QTableWidgetItem(figName);
+                        motifTable->setItem(row,COL_TILE_TYPE,item);
+                    }
 
-                row++;
+                    row++;
+                    motifTable->setRowCount(row+1);
+                }
             }
         }
     }

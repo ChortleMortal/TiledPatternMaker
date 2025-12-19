@@ -16,8 +16,9 @@ class DlgListSelect : public QDialog
 public:
     DlgListSelect(VersionFileList & xfiles, QWidget * parent);
 
-    LoaderListWidget * list;
+    void    load(VersionFileList & xfiles);
 
+    LoaderListWidget * list;
     VersionedFile selected;
 
 protected slots:
@@ -37,8 +38,13 @@ class AQFrame : public QFrame
 public:
     void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
 
-    PlacedTilePtr tile;
+    void          setPlacedTile(PlacedTilePtr placedTile) { _placedTile = placedTile; }
+    PlacedTilePtr placedTile() { return _placedTile; }
+
     int scale;
+
+private:
+    PlacedTilePtr _placedTile;
 };
 
 class GirihListSelect : public DlgListSelect

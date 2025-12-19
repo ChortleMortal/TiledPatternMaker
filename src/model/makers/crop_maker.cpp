@@ -3,8 +3,8 @@
 #include "model/makers/mosaic_maker.h"
 #include "sys/sys.h"
 #include "model/mosaics/mosaic.h"
-#include "gui/viewers/crop_view.h"
-#include "gui/top/view.h"
+#include "gui/viewers/crop_viewer.h"
+#include "gui/top/system_view.h"
 
 QString sCropMaker[] =
 {
@@ -62,8 +62,7 @@ bool CropMaker::setClip(bool state)
 CropPtr CropMaker::createCrop()
 {
     // this sets up a default crop
-    View  * view    = Sys::view;
-    QRectF srect    = view->rect();
+    QRectF srect    = Sys::viewController->viewRect();
     QPointF scenter = srect.center();
     QSizeF ssz      = srect.size();
     ssz            *= 0.8;
@@ -104,6 +103,13 @@ void MosaicCropMaker::removeCrop()
     auto mosaic = mosaicMaker->getMosaic();
     Q_ASSERT(mosaic);
     mosaic->resetCrop();
+}
+
+void MosaicCropMaker::removePainterCrop()
+{
+    auto mosaic = mosaicMaker->getMosaic();
+    Q_ASSERT(mosaic);
+    mosaic->resetPainterCrop();
 }
 
 CropPtr MosaicCropMaker::getCrop()

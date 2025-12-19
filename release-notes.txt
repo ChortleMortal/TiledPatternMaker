@@ -1,10 +1,75 @@
-Version 3.6.3
-=============
+﻿Version 4.0
+===========
+
+This is a significant new release with hundreds of modifications and changes.  Emphasis again has been on improving
+the UI menu system to support the overall workflow from tiling creation and motif creation to applying styles to form
+complete mosaics. Additionally, photographs of designs (pngs, jpgs) can be imported, adjusted for size, position,
+and skew, so that tilings and completed mosaics can be built as layers on top of the background image, and so assist
+in the analysis and re-creation of the imported design.
+
+Core functionality has been enhanced to:
+    - support creation and of curved lines
+    - support overlapping tiles in tilings and compositing tiling layers (more than one tiling in  a design), thus
+      going further than the use of 'polygons in contact' described by Hankin
+    - Support of 'lawful inexactitudes' by using the map editor to fit together regular polygons that don’t exactly
+      align, so making them irregular polygons in the manner described by Hankin.
+    - implementation of crops, together with a rudimentary implementation of borders for placing designs into
+      a defined space.
+    - The alignment of layers (views) has been improved. Each layer has a transform of translation, scale, and rotataion,
+      applied to it. Tilings, Mosaic Styles, and Background Image layers are considered primaray and all other views are derived.
+      In general layers are aligned to one primaray layer the SYS transform. However layers can break away from SYS and become
+      independant (INDP). When a layer is independant, keyboard/mouse positioning is not applied to independant layers.
+      Also, a layer can be made SOLO, so that keyboard/mouse positioning is only applied to this layer. When SOLO is turned off
+      it becomes independeant.  Examples of use are having mosiac style layers be offset from one another, or a motif pattern
+      be enlarged to work on it using  the motif maker. Positioning can also be locked for any layer except the current primary.
+
+Improvements:
+
+    Motif Maker         Redesigned. Single mode shows an enlarged single motif.  Selected mode allows display
+                        of all motifs in the Tiling Unit.  And (new) All mode shows all motifs in the
+                        Prototype.  This is similar to Prototype View but with a different emphasis.
+    Tiling Maker        Significant rework to support compositing tilings to make a mosaic and move
+                        tiles between loaded tilings
+                        Adds placement of tile into a corner (as per Hankin). Best used in
+                        single(ton) mode
+                        Supports loading more than one tiling. Each tiling has its own motifs which
+                        can be superimposed on each other.
+    Outline Style       Code refactored and fixes made to bad casing points.  Similarly to the issue
+                        with map cleansing, it would be better to generate a good casing in the first
+                        place rather than repair the generated casing.
+    Interlace Style     Substantially improved to handle curves. But still a work in progress.
+    Startup             Faster
+    Control Panel       All control panel pages can now be floated.  Either double-click  or right click on
+                        item in Menu Select to detach.  Similarly menu which have tabs, can have each tab floated
+                        by double clicking in the tab. To re-attach, simple dismiss (close) the menu pop up.
+    Layer Control       Emphasis on controlling the relationship between viewable layers such as mosaic layers of styles,
+                        background images. Most layers are synchronized such that keyboard actions to position, scale,
+                        or rotate are coordinated. This is especially important for background image layers.
+                        However layers can now be locked (to avoid modification) or soloed such that keyboard actions
+                        only modify that layer. These selections of independent, locked, soloed, are used throughout
+                        the menu system. A new menu page 'Layer Control' is added which summarizes all the visible layers.
+    Map Editor          Map line extensions have been revised, and F-key functions have been reorded. Some help
+                        messages on panel status line have been added.
+    File Services       The construction line template directory (used by the map editor) has been moved
+                        from media/design/templates to media/templates and re-implemented as .xml files.
+                        (Older template .dat files have been deleted and moved into .xml files)
+    Tools
 
 Fixes:
-    ControlPanel        CheckBoxes in menus not operating correctly
-    Control Panel       Width of Mosaic Maker page incorrect
-    Configuration       Repair for crash loading older versions
+    Motif Maker         Numerous display and selection fixes
+    Image Tools         View tilings cycler did not cycle
+    Split Screen        Improved handling of floating menu pages in large screen mode
+    Control Panel       Page status bar at top of panel was not always displayed
+    Control Panel       Turning off multi-select turned off too many views
+
+Build System            This release has been built and tested with Qt 6.10.1  Support for builds with Qt5 is no
+                        longer supported.  Cmake builds have been enhanced to use Unity builds and optional caching.
+Roadmap:
+    Interlace Style     There is room for much improvement here, especially relating to wide lines. Also.
+                        requires better integration with Borders and Crops
+    Borders             Current implementation is rudimentary, more a placeholder for future designs.
+    Map Editor          Push from map editor to tiles, tilings, motifs, and mosaics needs improvement.
+                        It works now in some cases, but not for others.
 
 Version 3.6.2
 =============
@@ -45,15 +110,15 @@ Fixes:
     MotifView           Fix display of Extended Boundary and highlight unify
     Borders             Model Xform was not being set in XML write/read
     DebugView           DebugView and debug maps repaired
-    Image Tools         Fixes for '2nd use loaded' comparions and views
+    Image Tools         Fixes for '2nd use loaded' comparisons and views
     System Info         Removes limit on height when floated
-    Log                 Restores vertical scollbar
+    Log                 Restores vertical scrollbar
 
 Version 3.5.1
 =============
 
 Improvements:
-    Interlace Style     Improved outlining and handling three edges intersecations
+    Interlace Style     Improved outlining and handling three edge intersections
     Maps                Adds cleanse mechanism to coalesce near points into one vertex
 
 Fixes:
@@ -62,7 +127,7 @@ Fixes:
 Version 3.5
 =============
 
-Version 3.5 intoduces a new Color Fill Style "New 4 : Color per Face". To use this style
+Version 3.5 introduces a new Color Fill Style "New 4 : Color per Face". To use this style
 first create a palette of colors using the control panel menu, then left-click select a color from the palette.
 Now go to the image view and left-click on each face in turn to color it. A right-click will remove the color.
 
@@ -75,12 +140,12 @@ Improvements:
     Crops               Revised Crop menu and added Painter Crops
     Style Tile Colors   Refactored code improves creation and maintenance
     Inferred Motifs     Improvements made to creating inferred motifs relating to floating point precision
-                        especailly impacting linux compilers
+                        especially impacting linux compilers
     Tiling Maker        Re-implements Undo/Redo in a new way
     Tiling Maker        Adds hide T1/T2 for convenience
     Tiling Maker        Improved display of T1/T2 for newly created tilings
     Tiling Maker View   Irregular tiles now have blue outline
-    Borders menu        Further improvments to the revisions made in version 3.4
+    Borders menu        Further improvements to the revisions made in version 3.4
     Map Editor          Push to Tiling replaces all tiles (rather than adding to tiles)
     Map Editor          Loading a map delegates the view to the Map Editor
     Grid                Adds 'lock to view'
@@ -90,7 +155,7 @@ Fixes:
     Builds              Supports Qt 6.6.3 and QtCreator 13.0 default build directory
     Builds              Several linux and qt5 build issues fixed
     Tiling Maker        Some edited tilings were not being saved correctly
-    Tiling Maker        Fixed conversion of stright edges to curves
+    Tiling Maker        Fixed conversion of straight edges to curves
     Tiling Maker        Fixed auto-fill
     Tiling Maker View   Fixed crash when grid enabled and drawing (creating) a polygon
     Prototype Info      Improved selections
@@ -102,7 +167,7 @@ Fixes:
     Map Editor          Handling of construction circles fixed
     Map Editor          Intersection of construction lines with map curved edges fixed
     Media               Repairs made to some Design XML files
-    Image Tools         Borders not being placed into genertated BMPs
+    Image Tools         Borders not being placed into generated BMPs
     Image Tools         Views were deselected after generating Mosaic or Tiling bitmaps
 
 Version 3.4.1
@@ -118,8 +183,8 @@ Fixes:
     Motifs              Several motifs had incorrect copy constructors
     Motifs              Extended Boundary sides could not be changed and was incorrectly tied to number of sides
     Motif View          Motifs with non-unity scales were not displayed correctly, needed DesignElement transform
-    Media               Several mosaic files needed reparing for version 3.4 especially
-                        those using Rosettes wth non zero k parameters
+    Media               Several mosaic files needed repairing for version 3.4 especially
+                        those using Rosettes with non zero k parameters
     Measure View        Toggling view enable clears previous measurements
     Debug               Using 'K' in motif view to display debug lines was not updating every time
 
@@ -127,7 +192,7 @@ Fixes:
 Version 3.4
 ===========
 
-Improvments:
+Improvements:
     Motif Maker         Adds Rosette2 which relaxes constraints in Rosette
     Motif Maker         Adds Star2 which is more like Kaplan 2005 than Kaplan 2000
     Borders             Still embryonic but improved with 'use view size' and being
@@ -139,7 +204,7 @@ Improvments:
     Image Tools         Dramatic speedup of generating and comparing image BMPs files by using multithreading
     Keyboard Shortcuts  + and - buttons now zoom, < and > keys now rotate
     Configuration       Both Light and Dark themes improved and auto mode added
-    Control Panel       Loader page - ability to sort by date creatded
+    Control Panel       Loader page - ability to sort by date created
     Control Panel       Loader page - ability to show only mosaics/tilings with background images
     Control Panel       Crop Maker page - adds Re-apply Crop button
     Control Panel       Model Settings page - improved
@@ -147,7 +212,7 @@ Improvments:
 
 Fixed
     Tiling Maker        Occasional crash in Snap-to introduced in version 3.3
-    Tiling Maker        Detection of overlaps/toucing was slowing down the maker
+    Tiling Maker        Detection of overlaps/touching was slowing down the maker
     Tiling Maker        Repeat points not shown correctly while creating them
     Save Tilng          Removed spurious exhortations to save tiling
     Image Tools         Repair of "Show original PNGs"
@@ -163,7 +228,7 @@ Version 3.3.1
 =============
 
 Fixes:
-    Mosiacs:            fixes FillData repetition bugd introduced in version 2.6 for some original mosaics
+    Mosaics:            fixes FillData repetition bug introduced in version 2.6 for some original mosaics
     Loaders             fixes possible crash in debug builds
     Builds              fixes some builds using qt 5.15.2 and early versions of qt6
 
@@ -171,7 +236,7 @@ Version 3.3
 =============
 
 This version built and tested with Qt versions 6.5.2 and 5.15.2 with
-both cmake ansd qmake using QtCreator on Windows and Linux systems
+both cmake and qmake using QtCreator on Windows and Linux systems
 
 Changes:
     Tiling Maker:       right click on tile now adds show/hide to the menu
@@ -188,12 +253,12 @@ Fixes
     Tiling Maker:       clear translation vectors was not working
     Tiling Maker:       placed tile scale not being set correctly from menu
     Tiling Maker:       snap-to on edge mid-points now working correctly (does not resize)
-    Tiling Maker:       irregular tilesd with scale/rotation were double multiplied
+    Tiling Maker:       irregular tiles with scale/rotation were double multiplied
     Configuration Menu: several bugs in Split Screen mode fixed
     Prototype View:     crash when selected at startup
     Motif Maker:        improved propagation to Mosaic Maker and Map Editor
     Image Tools Menu:   creation of worklist for motifs repaired
-    Image Tools Menu:   an unitialised variable could cause
+    Image Tools Menu:   an uninitialized variable could cause
                         compare cycle to crash when spacebar pressed
 
 Version 3.2.1
@@ -212,9 +277,9 @@ Changes
 - Improvements to grids and adding show layer center
 - More aspect ratios for crops
 - Configuration/Split Screen working better especially for large (UHD) screens
-- XML files more readbable
+- XML files more readable
 - Tighter motif maker menu layout
-- Rotaion added to extended boundary
+- Rotation added to extended boundary
 
 Fixes
 - Irregular motif scale and rotation were not working
@@ -224,9 +289,9 @@ Fixes
 - Tiling worklists were not working
 - Skew adjustment caused crash when global mouse translate was enabled
 - Perspective was being incorrectly saved after image had been skew adjusted
-- Background image postioning and scale were incorrectly retained after adjusted image saved
+- Background image positioning and scale were incorrectly retained after adjusted image saved
 - ConnectStar not expressed well in XML and Bird.v5 fixed too
-- Layer selection maintained on exit and re-entru to layer menu
+- Layer selection maintained on exit and re-entry to layer menu
 - Grid alignments fixed
 
 
@@ -242,37 +307,37 @@ Changes
 
 Fixes
 - Background Image perspective (skew) adjustments were not being saved in tiling
-- Addition of tiles in tiling maker were not immediately propagatd to prototype maker
-- Motif scale and boundary scale were bing throttled by the control panel
+- Addition of tiles in tiling maker were not immediately propagated to prototype maker
+- Motif scale and boundary scale were being throttled by the control panel
 - Tiling Maker table changes to rotation and scale incorrect for placed tiles
 - Crops were being ignored by Tile Color Style
 - Modifications to borders affected Crops and vice versa
 
 Known Problem:
 - Positioning of control panel and view widgets on the display screen are random for Linux.
-- The inferred rosette currently cannot reproduce all the orignal taprats/alhambra designs.
+- The inferred rosette currently cannot reproduce all the original taprats/alhambra designs.
 
 
 Version 3.0
 ===========
 
 Version 3.0 provides an improved stable platform for creating Mosaic designs.  There have been many code changes
-since version 2.7. The image tools have been improved for creatig images and comparing differences.
+since version 2.7. The image tools have been improved for creating images and comparing differences.
 
 Version 3.0 has been built with Qt 6.5.0 and Qt 5.15.2. It supports both cmake and qmake.
 
-The media directory tree has been revised and versioning of files redone.  The intent has been to fully
-support the original taprats designs and make additions to that.  In doing so, it became apprarent that the
+The media directory tree has been revised and versioning of files redone.  The intent has been to fully 
+support the original taprats designs and make additions to that.  In doing so, it became apparent that the
 original taprats java designs used the class "ExplicitFigure".  This class was to produce motifs (figures)
 for tiles (features) which were irregular polygons.  The ExplicitFigure class could be constructed in a number
-of ways, but its data was persisted (saved) as a map which did not have any indication of how it was made.
+of ways, but its data was persisted (saved) as a map which did not have any indication of how it was made. 
 So for version 3.0, the TPM application was used to re-create the original map using the various supported
 ways of creating the motif map.  This painstaking process has been largely successful, but there are a few
 instances where the ExpicitFigure could not be recreated. The inference is that the design was created with
 taprats code that differed from that which has been released/distributed and the exact way the design was
-created is now lost. Since the development of taprats was exprimental and part of work done for Dr. Kaplan's
+created is now lost. Since the development of taprats was experimental and part of work done for Dr. Kaplan's
 PhD thesis, it is quite understandable that his work on rosettes and stars changed over time as his expertise
-and insights developed.  Nervertheless, the following mosaics still have some motifs built
+and insights developed.  Nevertheless, the following mosaics still have some motifs built
 with explicit maps (now using the ExplicitMapMotif class).
 - Bloom of May
 - Bluer shade of Sky
@@ -283,12 +348,12 @@ with explicit maps (now using the ExplicitMapMotif class).
 
 If an Inferred Motif is not in contact with another Inferred Motif then the app works well. For those other
 cases a two-pass process on loading seems to work best.  Looking at the imported taprats code it is surmised
-that the Infer class was created first, and the more specialised ways of creating Hourglass, Girih, etc., were
-derived from that to handle the difficulties associated with multiple inffered motifs. However this is purely
+that the Infer class was created first, and the more specialized ways of creating Hourglass, Girih, etc., were
+derived from that to handle the difficulties associated with multiple inferred motifs. However this is purely
 speculation.  Islamic designs do have these shapes in contact, it is just this software that has difficulties
 with this.
 
-There are still placess where the IrregularMotifMap class (ex Explicitfigure) is used intentionally,
+There are still places where the IrregularMotifMap class (ex Explicitfigure) is used intentionally,
 where maps are created (or modified) using the Map Editor.
 
 
@@ -302,11 +367,11 @@ In this version the terminology is streamlined under the hood to match the visib
 panel menus.
 - Instead of tilings containing features, tilings now contain tiles
 - Instead of prototypes containing figures (and features) they now contain motifs (and tiles)
-- The resultaant mosaic decorates the prototype with styles
+- The resultant mosaic decorates the prototype with styles
 
 The original taprats/starpat embraced the concept of Polygons in Contact (PIC) and this remains the
 central thrust of the program.  However, this constraint is relaxed in making tilings, so that tiles
-can now be separated, and even overrlapped.  Articulation of these relaxed constraints is still a
+can now be separated, and even overlapped.  Articulation of these relaxed constraints is still a
 work-in-progress.  But additionally tiles need not be repeated to flood the visible region. These
 tilings are provisionally termed singletons.
 
@@ -315,7 +380,7 @@ Changes:
 
 Known Problems:
 - The explicit/inferred rosette needs improvement. As it currently is it cannot reproduce all the
-orignal taprats/starpat designs.
+original taprats/starpat designs.
 
 
 Version 2.6.0

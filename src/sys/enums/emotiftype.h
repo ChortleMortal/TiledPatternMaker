@@ -29,4 +29,11 @@ enum eMotifType
     MAX_MOTIF_TYPE = MOTIF_TYPE_IRREGULAR_NO_MAP
 };
 
+enum eMotifView
+{
+    MOTIF_VIEW_SOLO  = 0,
+    MOTIF_VIEW_SELECTED  = 1,
+    MOTIF_VIEW_DESIGN_UNIT     = 2
+};
+
 #endif // EMOTIFTYPE_H

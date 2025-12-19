@@ -6,7 +6,6 @@
 #include <QBoxLayout>
 
 class ControlPanel;
-class View;
 class panel_page;
 class AQHBoxLayout;
 class AQVBoxLayout;

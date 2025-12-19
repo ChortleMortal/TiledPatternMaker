@@ -2,16 +2,9 @@
 #ifndef CROPWIDGET_H
 #define CROPWIDGET_H
 
-#include <QWidget>
 #include <QDialog>
 
-class QHBoxLayout;
-class QButtonGroup;
-class LayoutQRectF;
-class LayoutQPointF;
-class SpinSet;
-class DoubleSpinSet;
-class QCheckBox;
+#include "gui/widgets/layout_qrectf.h"
 
 typedef std::shared_ptr<class Crop> CropPtr;
 

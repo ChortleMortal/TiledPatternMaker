@@ -61,12 +61,11 @@ public:
     void    dump();
 
 protected:
-#if 1
     void    extendMotifRays(MapPtr motifMap);
     void    extendBoundaryMap(MapPtr motifMap, TilePtr tile);
     void    extendTipsToBoundary(MapPtr motifMap, QTransform unitRotationTr);
     void    connectOuterVertices(MapPtr motifMap);
-#endif
+
     void    embedBoundary(MapPtr motifMap);
     void    embedTile(MapPtr motifMap, TilePtr tile);
 

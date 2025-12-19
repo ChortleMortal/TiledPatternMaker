@@ -80,7 +80,7 @@ bool ExtendedBoundary::equals(const ExtendedBoundary & other)
 
 bool ExtendedBoundary::isUnity(MotifPtr motif)
 {
-    int tile_sides = motif->getTile()->numSides();
+    int tile_sides = motif->getTile()->numEdges();
     if ( (sides == 1 || sides == tile_sides)
         && Loose::equals(scale,1.0)
         && Loose::zero(rotate))
@@ -106,6 +106,6 @@ void ExtendedBoundary::buildRadial()
 void ExtendedBoundary::buildExplicit(TilePtr tile)
 {
     radial    = false;
-    sides      = tile->numSides();
+    sides      = tile->numEdges();
     set(tile->getPolygon());
 }

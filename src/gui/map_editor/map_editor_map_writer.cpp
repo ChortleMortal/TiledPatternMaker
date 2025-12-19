@@ -1,27 +1,27 @@
-﻿#include "gui/map_editor/map_editor_map_writer.h"
-#include "gui/map_editor/map_editor.h"
+﻿#include "gui/map_editor/map_editor.h"
 #include "gui/map_editor/map_editor_db.h"
-#include "sys/sys/fileservices.h"
+#include "gui/map_editor/map_editor_map_writer.h"
+#include "gui/top/system_view_controller.h"
+#include "gui/viewers/map_editor_view.h"
+#include "model/tilings/backgroundimage.h"
+#include "model/tilings/tiling_writer.h"
 #include "sys/qt/tpm_io.h"
 #include "sys/sys.h"
-#include "gui/viewers/backgroundimageview.h"
-#include "gui/top/view_controller.h"
-#include "gui/viewers/map_editor_view.h"
-#include "model/tilings/tiling_writer.h"
+#include "sys/sys/fileservices.h"
 
-MapEditorMapWriter::MapEditorMapWriter(MapEditorView *view) : MosaicWriter()
-{
-    meView = view;
-}
+MapEditorMapWriter::MapEditorMapWriter() : MosaicWriter()
+{}
 
 MapEditorMapWriter::~MapEditorMapWriter()
-{
-}
+{}
 
 // this is used by MapEditor to save a map
-bool MapEditorMapWriter::writeXML(VersionedFile xfile, MapPtr map, eMapEditorMapType mapType)
+bool MapEditorMapWriter::writeXML(VersionedFile xfile, MapEditorDb * db)
 {
     qDebug() << "Writing XML:" << xfile.getPathedName();
+
+    MapPtr map = db->getEditMap();
+    eMapEditorMapType mapType = db->getMapType(map);
 
     QFile xml(xfile.getPathedName());
     if (!xml.open(QFile::WriteOnly | QFile::Truncate))
@@ -38,10 +38,10 @@ bool MapEditorMapWriter::writeXML(VersionedFile xfile, MapPtr map, eMapEditorMap
     bool rv;
     try
     {
-        refId = 0;
+        mwbase.refId = 0;
         qDebug() << "version=" << currentXMLVersion;
         QString qs = QString(" version=\"%1\"").arg(currentXMLVersion);
-        ts << "<vector" << nextId() << qs << ">" << endl;
+        ts << "<vector" << mwbase.nextId() << qs << ">" << endl;
 
         if (MapEditorDb::isMotif(mapType))
         {
@@ -49,20 +49,24 @@ bool MapEditorMapWriter::writeXML(VersionedFile xfile, MapPtr map, eMapEditorMap
         }
 
         // frame settings
-        auto & canvas    = Sys::viewController->getCanvas();
-        QSize size       = Sys::view->getSize();
-        QSize zsize     = canvas.getSize();
+        auto & canvas   = Sys::viewController->getCanvas();
+        QSize size      = canvas.getViewSize();
+        QSize zsize     = canvas.getCanvasSize();
         procSize(ts,size,zsize);
 
         // canvas settings
-        const Xform & xf = meView->getModelXform();
+        const Xform & xf = Sys::mapEditorView->getModelXform();
         QString str = "ModelSettings";
         ts << "<" << str << ">" << endl;
         procesToolkitGeoLayer(ts,xf,0);
         ts << "</" << str << ">" << endl;
 
         // background
-        TilingWriter::writeBackgroundImage(ts);
+        auto bip  = db->getBackgroundImage();
+        if (bip && bip->isLoaded())
+        {
+            TilingWriter::writeBackgroundImage(ts,bip);
+        }
 
         // map
         rv = setMap(ts,map);

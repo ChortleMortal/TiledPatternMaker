@@ -2,16 +2,11 @@
 #include "legacy/shapefactory.h"
 #include <QDebug>
 
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <QtMath>
-#endif
-
 ShapeFactory::ShapeFactory(qreal diameter, QPointF loc)
 {
     setLoc(loc);
     _diameter       = diameter;
     _radius         = diameter/2.0;
-
 }
 
 ShapeFactory::~ShapeFactory()

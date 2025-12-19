@@ -17,9 +17,6 @@
 #include <QPolygonF>
 #include <QGraphicsItem>
 #include <QPainter>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <QDebug>
-#endif
 #include "sys/enums/emotiftype.h"
 #include "model/motifs/extender.h"
 #include "model/motifs/motif_connector.h"
@@ -42,12 +39,11 @@ public:
     virtual void    buildMotifMap()         = 0;
 
     virtual QTransform getMotifTransform()  = 0;
+    virtual QTransform getDELTransform()    = 0;
+
     virtual QString getMotifDesc()          = 0;
     virtual MapPtr  getMotifMap()           = 0;
     virtual MapPtr  getExistingMotifMap()           { return motifMap; }
-
-    QTransform      getDELTransform();
-    void            scaleAndRotate(MapPtr map);
 
     virtual void    setN(int n)                     { _n = n; }
     int             getN()                          { return _n; }
@@ -65,14 +61,14 @@ public:
     void            setMotifRotate(qreal rot)       { motifRotate = rot; }
     qreal           getMotifRotate()                { return motifRotate; }
 
-    void            buildMotifBoundary();
     QPolygonF &     getMotifBoundary()              { return _motifBoundary; }
+    void            setMotifBoundary(QPolygonF p)   { _motifBoundary = p; }
 
+    void            cleanExtenders();
     ExtenderPtr     addExtender();
     void            deleteExtender(ExtenderPtr extender);
     ExtenderPtr     getExtender(uint i);
     const QVector<ExtenderPtr> & getExtenders()     { return _extenders; }
-    void            cleanExtenders();
 
     ConnectPtr      addConnector();
     ConnectPtr      addRadialConnector()            { connector = std::make_shared<MotifConnector>();  return connector; }
@@ -91,20 +87,14 @@ public:
     qreal           getCleanseSensitivity()         { return sensitivity; }
 
     virtual bool    equals(const  MotifPtr other);
-
-    virtual void    dump() = 0;
-
     static int      modulo(int i, int sz);
 
-    DebugMap *      getDebugMap()                   { return debugMap; }
-    uint            getDbgVal()                     { return dbgVal; }
+    virtual void    dump() = 0;
+    uint            getMotifDebug()                 { return motifDebug; }
 
     static int      refs;
 
 protected:
-    void            annotateEdges();
-    void            drawAnnotation(QPainter *painter, QTransform T);
-
     // data
     qreal            motifRotate;       // degrees
     qreal            motifScale;
@@ -120,12 +110,9 @@ protected:
     qreal            sensitivity;       // cleanse sensitivity
     uint             cleanseVal;
 
-    DebugMap *       debugMap;          // generated
-    uint             dbgVal;            // set as needed
+    uint             motifDebug;            // set as needed
 
 private:
-    void             setMotifBoundary(QPolygonF p)   { _motifBoundary = p; }
-
     int                  _n;            // number of sides = number of points
     TilePtr              _tile;
     QPolygonF            _motifBoundary;

@@ -33,8 +33,7 @@ Motif::Motif()
     motifRotate   = 0.0;
     _n            = 10;
     version       = 1;          // default
-    dbgVal        = 0;
-    debugMap      = nullptr;
+    motifDebug    = 0;
     cleanseVal    = 0;
     sensitivity   = 1e-2;
 }
@@ -51,15 +50,13 @@ Motif::Motif(const Motif & other) : enable_shared_from_this()
     _motifBoundary    = other._motifBoundary;
     _extenders        = other._extenders;
     version           = other.version;
-    dbgVal            = other.dbgVal;
-    debugMap          = other.debugMap;
+    motifDebug        = other.motifDebug;
     cleanseVal        = other.cleanseVal;
     sensitivity       = other.sensitivity;
     if (other.getRadialConnector())
     {
         addRadialConnector();
     }
-
 }
 
 Motif::Motif(MotifPtr other)
@@ -74,9 +71,7 @@ Motif::Motif(MotifPtr other)
     _motifBoundary    = other->_motifBoundary;
     _extenders        = other->_extenders;
     version           = other->version;
-    dbgVal            = other->dbgVal;
-    debugMap          = other->debugMap;
-    cleanseVal        = other->cleanseVal;
+    motifDebug        = other->motifDebug;
     sensitivity       = other->sensitivity;
     if (other->getRadialConnector())
     {
@@ -153,47 +148,6 @@ bool Motif::isRadial() const
     }
 }
 
-QTransform Motif::getDELTransform()
-{
-    Q_ASSERT(getTile());
-    return getTile()->getTransform() * getMotifTransform();
-}
-
-void Motif::scaleAndRotate(MapPtr map)
-{
-    QTransform t = getDELTransform();
-
-    if (!t.isIdentity())
-    {
-        map->transform(t);
-    }
-}
-
-void Motif::buildMotifBoundary()
-{
-    Q_ASSERT(getTile());
-
-    QPolygonF boundary;
-    if (isRadial() &&  getN() >= 3)
-    {
-        Tile f(getN());
-        boundary  = f.getPolygon();
-    }
-    else
-    {
-        boundary  = getTile()->getPoints();
-    }
-
-    if (!boundary.isClosed())
-    {
-        boundary << boundary[0];
-    }
-
-    QTransform t = getDELTransform();
-    boundary = t.map(boundary);
-    setMotifBoundary(boundary);
-}
-
 ExtenderPtr Motif:: addExtender()
 {
     ExtenderPtr extender = make_shared<Extender>(shared_from_this());
@@ -247,23 +201,6 @@ ConnectPtr Motif::addConnector()
         cp =  addRadialConnector();
     }
     return cp;
-}
-
-// uses existing tmpIndices
-void Motif::annotateEdges()
-{
-    if (!motifMap)
-    {
-        return;
-    }
-
-    int i=0;
-    for (auto & edge : std::as_const(motifMap->getEdges()))
-    {
-        QPointF p = edge->getMidPoint();
-        if (debugMap)
-            debugMap->insertDebugMark(p, QString::number(i++));
-    }
 }
 
 int Motif::modulo(int i, int sz)

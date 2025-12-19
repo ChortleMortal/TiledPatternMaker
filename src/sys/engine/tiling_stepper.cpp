@@ -25,7 +25,7 @@ bool TilingStepper::begin()
 
     qDebug() << "Starting tiling view cycle";
 
-    cydata.files = FileServices::getTilingFiles(config->viewFileFilter);
+    cydata.files = FileServices::getTilingFiles(config->imageFileFilter);
 
     cydata.cIndex = -1;
     cydata.cCount = config->cycleInterval;     // start now
@@ -56,7 +56,7 @@ bool TilingStepper::next()
     }
     cydata.cCount = 0;
 
-    if (++cydata.cIndex < cydata.files.count())
+    if (++cydata.cIndex < cydata.files.size())
     {
         VersionedFile file = cydata.files.at(cydata.cIndex);
         Sys::tilingMaker->loadTiling(file,TILM_LOAD_FROM_STEPPER);
@@ -82,7 +82,7 @@ bool TilingStepper::end()
     {
         start(false);
         finish("Tiling viewing");
-        panel->clearStatus();
+        panel->restorePageStatus();
         return true;
     }
     else

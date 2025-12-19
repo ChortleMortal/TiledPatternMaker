@@ -2,9 +2,8 @@
 #define PRTOTOYPE_VIEW
 
 #include "gui/viewers/layer_controller.h"
-#include "model/makers/prototype_maker.h"
 #include "model/prototypes/design_element.h"
-#include "sys/geometry/edgepoly.h"
+#include "sys/geometry/edge_poly.h"
 
 typedef std::shared_ptr<class Prototype> ProtoPtr;
 
@@ -34,14 +33,10 @@ public:
 
     ProtoViewColors & getColors()                    { return colors; }
 
-     const Xform &   getModelXform() override;
-     void            setModelXform(const Xform & xf, bool update) override;
-
-     eViewType iamaLayer() override { return VIEW_PROTOTYPE; }
      void iamaLayerController() override {}
 
 public slots:
-     void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+     void slot_mousePressed(QPointF spt, Qt::MouseButton btn) override;
      void slot_mouseDragged(QPointF spt)       override;
      void slot_mouseMoved(QPointF spt)         override;
      void slot_mouseReleased(QPointF spt)      override;

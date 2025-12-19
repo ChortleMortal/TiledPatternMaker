@@ -92,7 +92,7 @@ void DesignElement::createMotifFromTile()
     {
         // make a TileMotif
         auto tmotif   = make_shared<TileMotif>();
-        tmotif->setN(tile->numSides());
+        tmotif->setN(tile->numEdges());
         tmotif->setTile(tile);
         motif = tmotif;
     }
@@ -105,16 +105,14 @@ void DesignElement::recreateMotifFromChangedTile()
     Q_ASSERT(tile);
     Q_ASSERT(motif);
 
-    motif->resetMotifMap();
-
-    Q_ASSERT(validMotifRegularity());
-
-    int newsides = tile->numSides();
+    int newsides = tile->numEdges();
     if (motif->getN() != newsides)
     {
         motif->setN(newsides);  // this should do the trick
     }
+
     motif->setTile(tile);
+    motif->resetMotifMap();
     motif->buildMotifMap();
 }
 
@@ -241,6 +239,7 @@ void DesignElement::setMotif(const MotifPtr & motif)
 void DesignElement::replaceTile(const TilePtr & tile)
 {
     motif->setTile(tile);
+    motif->resetMotifMap();
     if (tile->isSimilar(tile))
     {
         this->tile = tile;
@@ -250,6 +249,13 @@ void DesignElement::replaceTile(const TilePtr & tile)
         this->tile = tile;
         recreateMotifFromChangedTile();
     }
+}
+
+void DesignElement::exactReplaceTile(const TilePtr & tile)
+{
+    motif->setTile(tile);
+    motif->resetMotifMap();
+    this->tile = tile;
 }
 
 bool DesignElement::validMotifRegularity()
@@ -286,7 +292,7 @@ void DesignElement::describe()
     else
         qDebug().noquote()  << "Motif: 0";
     if (tile)
-        qDebug().noquote()  << "Tile:" << tile.get()  << "sides:" << tile->numSides() << ((tile->isRegular()) ? "regular" : "irregular");
+        qDebug().noquote()  << "Tile:" << tile.get()  << "sides:" << tile->numEdges() << ((tile->isRegular()) ? "regular" : "irregular");
     else
         qDebug().noquote()  << "Tile: 0";
 }

@@ -17,6 +17,9 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent)
 
     selMosaic     = new QRadioButton("Mosaic");
     selTiling     = new QRadioButton("Tiling");
+    useWorklist   = new QCheckBox("Modify Current Worklist");
+
+    inverseMosaicWorklist = new QCheckBox("Inverse Current Workslist");
 
     QButtonGroup * qbg1 = new QButtonGroup();
     qbg1->addButton(selMosaic);
@@ -65,12 +68,21 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent)
 
     int row = 0;
     QGridLayout * grid = new QGridLayout();
+
     grid->addLayout(hbox, row++, 1);
+
+    grid->addWidget(useWorklist, row++, 0);
+
+    grid->addWidget(inverseMosaicWorklist, row++, 0);
+
     grid->addWidget(chkLoadFilter, row++, 0);
+
     grid->addWidget(radText, row, 0);
     grid->addWidget(text, row++, 1);
+
     grid->addWidget(radStyle, row, 0);
     grid->addWidget(styleNames, row++, 1);
+
     grid->addWidget(radMotif, row, 0);
     grid->addWidget(motifNames, row++, 1);
 
@@ -93,6 +105,9 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent)
 
     connect(canBtn, &QPushButton::clicked, this, &QDialog::reject);
     connect(okBtn,  &QPushButton::clicked, this, &QDialog::accept);
+    connect(text,   &QLineEdit::textChanged, this, [this] { radText->setChecked(true); } );
+    connect(styleNames, &QComboBox::currentIndexChanged, this, [this] { radStyle->setChecked(true); } );
+    connect(motifNames, &QComboBox::currentIndexChanged, this, [this] { radMotif->setChecked(true); } );
 }
 
 QStringList DlgWorklistCreate::selectedMotifNames()

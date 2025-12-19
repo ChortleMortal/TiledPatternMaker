@@ -13,9 +13,6 @@
 #include <QLineF>
 #include <QString>
 #include <QPolygonF>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 
 typedef std::shared_ptr<class Tile>          TilePtr;
 typedef std::shared_ptr<class PlacedTile>    PlacedTilePtr;

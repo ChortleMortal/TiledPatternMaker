@@ -18,7 +18,7 @@
 #include <QTransform>
 #include <QTextStream>
 #include "sys/sys/pugixml.hpp"
-#include "sys/geometry/edgepoly.h"
+#include "sys/geometry/edge_poly.h"
 
 typedef std::shared_ptr<class PlacedTile>   PlacedTilePtr;
 typedef std::shared_ptr<class Tile>         TilePtr;
@@ -39,20 +39,20 @@ public:
     PlacedTile(TilePtr tile, QTransform T);
     ~PlacedTile() {}
 
-    bool operator == (const PlacedTile other);
+    bool operator == (const PlacedTile & other);
+    bool operator != (const PlacedTile & other) { return !(*this == other); }
 
     PlacedTilePtr   copy();
 
-    void            setTransform(QTransform newT);
     void            setTile(TilePtr tile);
+    TilePtr         getTile();
+
+    void            setPlacement(QTransform newT);
+    QTransform      getPlacement();
+
     void            setShow(bool show);
     bool            loadFromGirihShape(VersionedName vname);
 
-    TilePtr         getTile();
-    QTransform      getTransform();
-    const EdgePoly& getTileEdgePoly();
-    EdgePoly&       getTileEdgePolyRW();
-    QPolygonF       getTilePoints();
     EdgePoly        getPlacedEdgePoly();
     QPolygonF       getPlacedPoints();
 
@@ -81,9 +81,9 @@ protected:
     void loadGirihShapeOld(pugi::xml_node & poly_node);
 
 private:
-    VersionedName   girihShapeName;
     TilePtr         tile;
-    QTransform      T;
+    QTransform      placement;
+    VersionedName   girihShapeName;
     bool            _show;  // used by tiling maker
     uint            _viewState;
     bool            _included;

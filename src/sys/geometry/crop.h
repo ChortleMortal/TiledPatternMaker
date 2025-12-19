@@ -5,7 +5,7 @@
 #include <QRectF>
 #include "sys/enums/eborder.h"
 #include "sys/geometry/circle.h"
-#include "sys/geometry/edgepoly.h"
+#include "sys/geometry/edge_poly.h"
 #include "sys/geometry/polygon.h"
 
 typedef std::shared_ptr<class Crop>     CropPtr;
@@ -27,6 +27,7 @@ public:
     Crop(const Crop & other);
 
     void         draw(QPainter * painter, QTransform t, bool active);
+    void        setPainterClip(QPainter * painter, QTransform transform);
 
     QPointF      getCenter();
 

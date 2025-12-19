@@ -8,30 +8,31 @@
 #include "model/settings/filldata.h"
 #include "model/styles/colorset.h"
 #include "sys/sys/versioning.h"
+#include "sys/engine/tiling_bmp_generator.h"
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
-typedef std::shared_ptr<class MosaicReaderBase> MRBasePtr;
 typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
+
+class SystemViewController;
+class ReaderBase;
+class Layer;
 
 class TilingReader
 {
-    friend class TilingManager;
-    friend class MosaicReader;
-    friend class LegacyLoader;
-    friend class TilingBMPEngine;
 
 public:
+    TilingReader(SystemViewController * vc) { _vc = vc; legacyCenterConverted = false; }
+
     TilingPtr    readTiling(QString file);
     TilingPtr    readTiling(QTextStream & st);
-    TilingPtr    readTilingXML(VersionedFile & xfile);
-    TilingPtr    readTilingXML(VersionedFile & xfile, MRBasePtr base);
+    TilingPtr    readTilingXML(VersionedFile & xfile, ReaderBase * mrbase);
 
-    ColorGroup & getTileColors() { return tileColors; }
+    ColorGroup & getTileColors();
 
-    static BkgdImagePtr getBackgroundImage(pugi::xml_node & node);
+    BkgdImagePtr getBackgroundImage(pugi::xml_node & node);
 
 protected:
-    TilingPtr   readTilingXML(pugi::xml_node & tiling_node, MRBasePtr base);
+    TilingPtr   readTilingXML(pugi::xml_node & tiling_node, ReaderBase * mrbase);
 
     QString     readQuotedString(QTextStream & str);
     QPointF     getPoint(QString txt);
@@ -39,16 +40,22 @@ protected:
     QTransform  getAffineTransform(pugi::xml_node & node);
     static QTransform  getQTransform(QString txt);
 
-    Xform       getXform(pugi::xml_node & node);
+    Xform       getOldView(pugi::xml_node & node);
     FillData    getFill(QString txt, bool isSingle);
 
     void        getViewSettings(pugi::xml_node & node);
 
+    bool        legacyCenterConverted;
+
 private:
-    TilingReader() {}
+    SystemViewController * _vc;
+
+    VersionedFile  _xfile;
     TilingPtr      tiling;
     BkgdImagePtr   bip;
-    ColorGroup     tileColors;
+
+    static bool    debug;
+    uint           _tilingVersion;
 };
 
 #endif

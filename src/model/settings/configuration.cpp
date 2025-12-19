@@ -2,10 +2,10 @@
 #include <QDir>
 #include <QStandardPaths>
 #include <QApplication>
-#include "sys/enums/eviewtype.h"
-#include "sys/tiledpatternmaker.h"
-#include "sys/sys.h"
 #include "model/settings/configuration.h"
+#include "sys/enums/eviewtype.h"
+#include "sys/sys.h"
+#include "sys/tiledpatternmaker.h"
 
 extern TiledPatternMaker * theApp;
 
@@ -15,12 +15,16 @@ Configuration::Configuration()
     qRegisterMetaType<QList<int>>();
 #endif
 
+    firstBirthday = false;
+
     // peersist
     QSettings s;
 
-    lastLoadedTiling.set(s.value("lastLoadedTiling","").toString());
-    lastLoadedMosaic.set(s.value("lastLoadedMosaic","").toString());
-    lastLoadedLegacy.set( s.value("lastLoadedLegacy","").toString());
+    lastLoadedTiling    = s.value("lastLoadedTiling","").toString();
+    lastLoadedMosaic    = s.value("lastLoadedMosaic","").toString();
+    lastLoadedLegacy    = s.value("lastLoadedLegacy","").toString();
+    lastLoadedType      = (eLoadUnitType)s.value("lastLoadedType2",LT_UNDEFINED).toUInt();
+
     cycleInterval       = s.value("cycleInterval",4).toInt();
     polySides           = s.value("polySides",8).toInt();
     protoViewMode       = s.value("protoViewMode2",PROTO_ALL_TILES | PROTO_ALL_MOTIFS).toInt();
@@ -28,7 +32,7 @@ Configuration::Configuration()
     rootImageDir        = s.value("rootImageDir",getImageRoot()).toString();
     BMPCompare0         = s.value("image0","").toString();
     BMPCompare1         = s.value("image1","").toString();
-    panelName           = s.value("panelName","Load").toString();
+    pageName            = s.value("panelName","Load").toString();
     mosaicFilter        = s.value("designFilter","").toString();
     tileFilter          = s.value("tileFilter","").toString();
     xmlTool             = s.value("xmlTool","").toString();
@@ -38,16 +42,14 @@ Configuration::Configuration()
     gridColorModel      = s.value("gridColorModel2", QColor(Qt::green).name(QColor::HexArgb)).toString();
     gridColorScreen     = s.value("gridColorScreen2", QColor(Qt::blue).name(QColor::HexArgb)).toString();
     colorTheme          = static_cast<eColorTheme>(s.value("colorTheme",AUTO_THEME).toUInt());
-    autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
-    autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
-    autoLoadDesigns     = s.value("autoLoadDesigns",false).toBool();
+    autoLoadLast        = s.value("autoLoadLast",false).toBool();
     scaleToView         = s.value("scaleToView",true).toBool();
     verifyMaps          = s.value("verifyMaps",false).toBool();
-    verifyProtos        = s.value("verifyProtos",false).toBool();
+    forceVerifyProtos   = s.value("verifyProtos",false).toBool();
     verifyPopup         = s.value("verifyPopup",false).toBool();
     verifyDump          = s.value("verifyDump",false).toBool();
     verifyVerbose       = s.value("verifyVerbose",false).toBool();
-    unDuplicateMerge    = s.value("unDuplicateMerge",false).toBool();
+    slowCleanseMapMerges = s.value("unDuplicateMerge",false).toBool();
     buildEmptyNmaps     = s.value("buildEmptyNmaps",false).toBool();
     baseLogName         = s.value("baseLogName","tiledPatternMakerLog").toString();
     logToStderr         = s.value("logToStderr",true).toBool();
@@ -56,11 +58,14 @@ Configuration::Configuration()
     logToPanel          = s.value("logToPanel",true).toBool();
     logNumberLines      = s.value("logNumberLines",true).toBool();
     logDebug            = s.value("logDebug",false).toBool();
+    enableLog2          = s.value("enableLog2",false).toBool();
     logTime             = static_cast<eLogTimer>(s.value("logTimer",LOGT_NONE).toUInt());
     mapedStatusBox      = s.value("mapedStatusBox",false).toBool();
     mapedLoadCopies     = s.value("mapedLoadCopies",false).toBool();
+    mapedOldTemplates   = s.value("mapedOldTemplates",false).toBool();
     mosaicFilterCheck   = s.value("designFilterCheck",false).toBool();
     mosaicWorklistCheck = s.value("mosaicWorklistCheck",false).toBool();
+    mosaicWorklistXCheck = s.value("mosaicWorklistXCheck",false).toBool();
     mosaicOrigCheck     = s.value("mosaicOrigCheck",true).toBool();
     mosaicNewCheck      = s.value("mosaicNewCheck",true).toBool();
     mosaicTestCheck     = s.value("mosaicTestCheck",true).toBool();
@@ -71,13 +76,14 @@ Configuration::Configuration()
     tilingTestCheck     = s.value("tilingTestCheck",true).toBool();
     tileFilterCheck     = s.value("tileFilterCheck",false).toBool();
     tilingWorklistCheck = s.value("tilingWorklistCheck",false).toBool();
+    tilingWorklistXCheck = s.value("tilingWorklistXCheck",false).toBool();
     tm_showExcludes     = s.value("tm_showAllTiles",false).toBool();
-    tm_hideTable        = s.value("tm_hideTable",true).toBool();
     tm_hideTranslations = s.value("tm_hideTranslations",true).toBool();
     tm_showDebug        = s.value("tm_showDebug",false).toBool();
     tm_loadFill         = s.value("tm_autofill",false).toBool();
-    tm_showOverlaps     = s.value("tm_showOverlaps",true).toBool();
+    tm_tileColorMode    = static_cast<eTileColorModes>(s.value("tm_tileColorMode",TILE_COLOR_TOUCHING).toUInt());
     lockView            = s.value("lockView",false).toBool();
+    multiView           = s.value("multiView",false).toBool();
     splitScreen         = s.value("screenIsSplit",false).toBool();
     bigScreen           = s.value("bigScreen",false).toBool();
     showTileBoundary    = s.value("showTileBoundary",true).toBool();
@@ -93,10 +99,10 @@ Configuration::Configuration()
 
     use_workListForCompare= s.value("use_workListForCompare",false).toBool();
     skipExisting        = s.value("skipExisting",false).toBool();
-    showBackgroundImage = s.value("showBackgroundImage",true).toBool();
-    motifMultiView      = s.value("motifMultiView",false).toBool();
-    motifEnlarge        = s.value("motifEnlarge",true).toBool();
+    motifMakerView      = static_cast<eMotifView>(s.value("motifMakerView",MOTIF_VIEW_SOLO).toInt());
     limitViewSize       = s.value("limitViewSize",true).toBool();
+    disableSplash       = s.value("disableSplash",false).toBool();
+    disableResizeNotify = s.value("disableResizeNotify",false).toBool();
     insightMode         = s.value("insightMode",false).toBool();
     cs_showBkgds        = s.value("cs_showBkgds",false).toBool();
     defaultImageRoot    = s.value("defaultImageRoot",true).toBool();
@@ -105,15 +111,13 @@ Configuration::Configuration()
     saveTilingTest      = s.value("saveTilingTest",false).toBool();
     vCompLock           = s.value("vCompLock",true).toBool();
     vCompXML            = s.value("vCompXML",true).toBool();
-    vCompTile           = s.value("vCompTile",false).toBool();
+    sysinfo_all         = s.value("sysinfo_all",false).toBool();
 
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAPED_MODE_MAP).toUInt());
     repeatMode          = static_cast<eRepeatType>(s.value("repeat",REPEAT_DEFINED).toUInt());
 
+    debugTabIndex       = s.value("debugTabIndex",0).toUInt();
     showCenterDebug     = s.value("showCenterDebug",false).toBool();
-    showGrid            = s.value("showGrid",false).toBool();
-    lockGridToView      = s.value("lockGridToView",true).toBool();
-    showGridLayerCenter= s.value("showGridLayerCenter",false).toBool();
     showGridModelCenter = s.value("showGridModelCenter",false).toBool();
     showGridViewCenter= s.value("showGridScreenCenter",false).toBool();
     gridUnits           = static_cast<eGridUnits>(s.value("gridUnits",GRID_UNITS_SCREEN).toUInt());
@@ -129,24 +133,22 @@ Configuration::Configuration()
     gridScreenCenter    = s.value("gridScreenCenter",false).toBool();
     gridTilingWidth     = s.value("gridTilingWidth",3).toInt();
     gridZLevel          = s.value("gridZLevel",5).toInt();
-    debugViewConfig     = s.value("debugViewConfig",0).toUInt();
+    debugViewConfig     = s.value("debugViewConfig2",0xffff).toUInt();
     mapedCleanseLevel   = s.value("mapedCleanseLevel",44).toUInt();
-    snapToGrid          = s.value("snapToGrid",true).toBool();
+    tm_snapToGrid       = s.value("snapToGrid",true).toBool();
+    tm_snapOnly         = s.value("tm_snapOnly",false).toBool();
     gridAngle           = s.value("gridAngle",30.0).toDouble();
     mapedAngle          = s.value("mapedAngle",30.0).toDouble();
-    mapedRadius         = s.value("mapedRadius",0.25).toDouble();
+    mapedRadius         = s.value("mapedRadius",2.0).toDouble();
     mapedLen            = s.value("mapedLen",1.0).toDouble();
     mapedMergeSensitivity = s.value("mapedMergeSensitivity",1e-2).toDouble();
     protoviewWidth      = s.value("protoviewWidth",3.0).toDouble();
     motifViewWidth      = s.value("motifViewWidth",3.0).toDouble();
-    genCycleMosaic      = s.value("genCycleMosaic",true).toBool();
     multithreadedGeneration = s.value("multithreadedGeneration",true).toBool();
+    includeBkgdGeneration   = s.value("includeBkgdGeneration",false).toBool();
     
-    viewCycle2          = static_cast<eCycleMode>(s.value("viewCycle2",CYCLE_VIEW_MOSAICS).toInt());
-
-    genFileFilter       = static_cast<eLoadType>(s.value("fileFilter",ALL_MOSAICS).toInt());
-    viewFileFilter      = static_cast<eLoadType>(s.value("viewFilter",ALL_MOSAICS).toInt());
-    versionFilter       = static_cast<eLoadType>(s.value("versionFilter",ALL_MOSAICS).toInt());
+    imageType           = static_cast<eImageType>(s.value("imageType",IMAGE_MOSAICS).toInt());
+    imageFileFilter     = static_cast<eLoadType>(s.value("fileFilter",ALL_MOSAICS).toInt());
 
     lastCompareName     = s.value("lastCompareName","").toString();
 
@@ -166,7 +168,7 @@ Configuration::Configuration()
     {
         qsl2 << "#ffffff";
     }
-    viewColors          = s.value("viewColors2",qsl2).toStringList();
+    viewColors          = s.value("viewColors3",qsl2).toStringList();
     if (viewColors.size() != NUM_VIEW_TYPES)
     {
         int diff = viewColors.size() - NUM_VIEW_TYPES;
@@ -192,7 +194,10 @@ Configuration::Configuration()
 
 Configuration::~Configuration()
 {
-    save();
+    if (!firstBirthday)
+    {
+        save();
+    }
 }
 
 void Configuration::save()
@@ -201,6 +206,8 @@ void Configuration::save()
     s.setValue("lastLoadedTiling",lastLoadedTiling.get());
     s.setValue("lastLoadedMosaic",lastLoadedMosaic.get());
     s.setValue("lastLoadedLegacy",lastLoadedLegacy.get());
+    s.setValue("lastLoadedType2",lastLoadedType);
+
     s.setValue("protoViewMode2",protoViewMode);
     s.setValue("polySides",polySides);
     s.setValue("cycleInterval",cycleInterval);
@@ -208,15 +215,15 @@ void Configuration::save()
     s.setValue("image1",BMPCompare1);
     s.setValue("mapEditorMode",mapEditorMode);
     s.setValue("repeat",repeatMode);
-    s.setValue("panelName", panelName);
+    s.setValue("panelName", pageName);
     s.setValue("colorTheme",colorTheme);
-    s.setValue("autoLoadStyles",autoLoadStyles);
+    s.setValue("autoLoadLast",autoLoadLast);
     s.setValue("verifyMaps",verifyMaps);
-    s.setValue("verifyProtos",verifyProtos);
+    s.setValue("verifyProtos",forceVerifyProtos);
     s.setValue("verifyPopup",verifyPopup);
     s.setValue("verifyDump",verifyDump);
     s.setValue("verifyVerbose",verifyVerbose);
-    s.setValue("unDuplicateMerge",unDuplicateMerge);
+    s.setValue("unDuplicateMerge",slowCleanseMapMerges);
     s.setValue("buildEmptyNmaps",buildEmptyNmaps);
     s.setValue("baseLogName",baseLogName);
     s.setValue("logToStderr",logToStderr);
@@ -224,15 +231,16 @@ void Configuration::save()
     s.setValue("logToAppDir",logToAppDir);
     s.setValue("logToPanel",logToPanel);
     s.setValue("logDebug",logDebug);
+    s.setValue("enableLog2",enableLog2);
     s.setValue("logNumberLines",logNumberLines);
     s.setValue("logTimer",logTime);
     s.setValue("mapedStatusBox",mapedStatusBox);
     s.setValue("mapedLoadCopies",mapedLoadCopies);
-    s.setValue("autoLoadTiling",autoLoadTiling);
-    s.setValue("autoLoadDesigns",autoLoadDesigns);
+    s.setValue("mapedOldTemplates",mapedOldTemplates);
     s.setValue("scaleToView",scaleToView);
     s.setValue("designFilterCheck",mosaicFilterCheck);
     s.setValue("mosaicWorklistCheck",mosaicWorklistCheck);
+    s.setValue("mosaicWorklistXCheck",mosaicWorklistXCheck);
     s.setValue("mosaicOrigCheck",mosaicOrigCheck);
     s.setValue("mosaicNewCheck",mosaicNewCheck);
     s.setValue("mosaicTestCheck",mosaicTestCheck);
@@ -243,15 +251,16 @@ void Configuration::save()
     s.setValue("tilingTestCheck",tilingTestCheck);
     s.setValue("tileFilterCheck",tileFilterCheck);
     s.setValue("tilingWorklistCheck",tilingWorklistCheck);
+    s.setValue("tilingWorklistXCheck",tilingWorklistXCheck);
     s.setValue("designFilter",mosaicFilter);
     s.setValue("tileFilter",tileFilter);
     s.setValue("tm_showAllTiles",tm_showExcludes);
-    s.setValue("tm_hideTable",tm_hideTable);
     s.setValue("tm_hideTranslations",tm_hideTranslations);
     s.setValue("tm_showDebug",tm_showDebug);
     s.setValue("tm_autofill",tm_loadFill);
-    s.setValue("tm_showOverlaps",tm_showOverlaps);
+    s.setValue("tm_tileColorMode",tm_tileColorMode);
     s.setValue("lockView",lockView);
+    s.setValue("multiView",multiView);
     s.setValue("screenIsSplit",splitScreen);
     s.setValue("bigScreen",bigScreen);
     s.setValue("showTileBoundary",showTileBoundary);
@@ -266,10 +275,10 @@ void Configuration::save()
     s.setValue("filter_transparent",compare_filterColor);
 
     s.setValue("use_workListForCompare",use_workListForCompare);
-    s.setValue("showBackgroundImage",showBackgroundImage);
-    s.setValue("motifMultiView",motifMultiView);
+    s.setValue("motifMakerView",motifMakerView);
     s.setValue("limitViewSize",limitViewSize);
-    s.setValue("motifEnlarge",motifEnlarge);
+    s.setValue("disableSplash",disableSplash);
+    s.setValue("disableResizeNotify",disableResizeNotify);
     s.setValue("xmlTool",xmlTool);
     s.setValue("diffTool",diffTool);
     s.setValue("insightMode",insightMode);
@@ -282,15 +291,12 @@ void Configuration::save()
     s.setValue("saveTilingTest",saveTilingTest);
     s.setValue("vCompLock",vCompLock);
     s.setValue("vCompXML",vCompXML);
-    s.setValue("vCompTile",vCompTile);
+    s.setValue("sysinfo_all",sysinfo_all);
 
     s.setValue("protoViewColors",protoViewColors);
-    s.setValue("viewColors2",viewColors);
+    s.setValue("viewColors3",viewColors);
 
     s.setValue("showCenterDebug",showCenterDebug);
-    s.setValue("showGrid",showGrid);
-    s.setValue("lockGridToView",lockGridToView);
-    s.setValue("showGridLayerCenter",showGridLayerCenter);
     s.setValue("showGridModelCenter",showGridModelCenter);
     s.setValue("showGridScreenCenter",showGridViewCenter);
     s.setValue("gridUnits",gridUnits);
@@ -302,10 +308,11 @@ void Configuration::save()
     s.setValue("gridScreenWidth",gridScreenWidth);
     s.setValue("gridScreenCenter",gridScreenCenter);
     s.setValue("gridTilingWidth",gridTilingWidth);
-    s.setValue("snapToGrid",snapToGrid);
+    s.setValue("snapToGrid",tm_snapToGrid);
+    s.setValue("snapOnly",tm_snapOnly);
     s.setValue("gridScreenSpacing",gridScreenSpacing);
     s.setValue("gridZLevel",gridZLevel);
-    s.setValue("debugViewConfig",debugViewConfig);
+    s.setValue("debugViewConfig2",debugViewConfig);
     s.setValue("mapedCleanseLevel",mapedCleanseLevel);
     s.setValue("gridAngle",gridAngle);
     s.setValue("mapedAngle",mapedAngle);
@@ -318,13 +325,12 @@ void Configuration::save()
     s.setValue("gridColorTiling2",gridColorTiling);
     s.setValue("gridColorModel2",gridColorModel);
     s.setValue("gridColorScreen2",gridColorScreen);
-    s.setValue("genCycleMosaic",genCycleMosaic);
+    s.setValue("imageType",imageType);
     s.setValue("multithreadedGeneration",multithreadedGeneration);
-    s.setValue("viewCycle2",viewCycle2);
-    s.setValue("fileFilter",genFileFilter);
-    s.setValue("viewFilter",viewFileFilter);
-    s.setValue("versionFilter",versionFilter);
+    s.setValue("includeBkgdGeneration",includeBkgdGeneration);
+    s.setValue("fileFilter",imageFileFilter);
     s.setValue("lastCompareName",lastCompareName);
+    s.setValue("debugTabIndex",debugTabIndex);
 
     worklist.save(s);
 }
@@ -392,7 +398,7 @@ QString Configuration::getMediaRootLocal()
         QDir adir(qroot);
         if (adir.exists())
         {
-            return qroot;
+            return adir.canonicalPath();
         }
 
         // could be new qmake
@@ -479,7 +485,7 @@ void Configuration::configurePaths()
     Sys::originalMosaicDir   = root + "designs/original/";
     Sys::newMosaicDir        = root + "designs/new_designs/";
     Sys::testMosiacDir       = root + "designs/tests/";
-    Sys::templateDir         = root + "designs/templates/";
+    Sys::templateDir         = root + "templates/";
     Sys::examplesDir         = root + "history/examples/";
     Sys::mapsDir             = root + "maps/";
     Sys::worklistsDir        = root + "worklists/";

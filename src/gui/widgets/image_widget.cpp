@@ -4,8 +4,12 @@
 #include <QSettings>
 
 #include "gui/widgets/image_widget.h"
+#include "gui/top/system_view_controller.h"
 #include "sys/engine/image_engine.h"
 #include "sys/sys.h"
+#include "sys/tiledpatternmaker.h"
+
+extern  TiledPatternMaker * theApp;
 
 /////////////////////////////////////////////
 ///
@@ -17,14 +21,13 @@ ImageWidget::ImageWidget()
 {
     setMouseTracking(true);
     setMaximumSize(Sys::MAX_WIDTH, Sys::MAX_HEIGHT);
-    setAttribute(Qt::WA_DeleteOnClose);
+    setScaledContents(false);
+
+    connect(theApp, &TiledPatternMaker::sig_imageToPrimary, this, &ImageWidget::slot_moveToPrimary,Qt::QueuedConnection);
 }
 
 ImageWidget::~ImageWidget()
-{
-    QSettings s;
-    s.setValue("imageWidgetPos",pos());
-}
+{}
 
 QPixmap ImageWidget::removeAlphaChannel(const QPixmap &src)
 {
@@ -38,6 +41,22 @@ QPixmap ImageWidget::removeAlphaChannel(const QPixmap &src)
     painter.end();
 
     return opaquePixmap;
+}
+
+void ImageWidget::closeEvent(QCloseEvent * event)
+{
+    QSettings s;
+    s.setValue("imageWidgetPos",pos());
+
+    QLabel::closeEvent(event);
+
+    emit sig_closed(this);
+}
+
+void ImageWidget::setContentSize(QSize sz)
+{
+    resize(sz);
+    update();
 }
 
 void ImageWidget::keyPressEvent(QKeyEvent * k)
@@ -62,11 +81,7 @@ void ImageWidget::mouseMoveEvent(QMouseEvent *event)
 void ImageWidget::mousePressEvent(QMouseEvent *event)
 {
     QPoint pt;
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-    pt = event->pos();
-#else
     pt = event->position().toPoint();
-#endif
 
     QPixmap pm = grab(QRect(pt,QSize(1,1)));
     QImage img = pm.toImage();
@@ -81,8 +96,31 @@ void ImageWidget::slot_closeMe()
     QTimer::singleShot(500, this, &ImageWidget::close);
 }
 
+void ImageWidget::slot_moveToPrimary()
+{
+    QScreen * primary = qApp->primaryScreen();
 
+    QWindow * wh = Sys::viewController->windowHandle();
+    if (!wh)
+    {
+        return;
+    }
+    move(primary->geometry().center() - Sys::viewController->viewRect().center());
+    setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+    raise();  // for MacOS
+    activateWindow();  // for windows
+}
 
+void ImageWidget::setPixmap(const QPixmap & pixmap)
+{
+    _pixmap = pixmap;
+    QLabel::setPixmap(_pixmap);
+}
 
+void ImageWidget::setPixmap(const QPixmap & pixmap, qreal scale)
+{
+    _pixmap = pixmap;
+    QLabel::setPixmap(pixmap.scaled((pixmap.size() * scale),Qt::KeepAspectRatio ,Qt::SmoothTransformation));
+}
 
 

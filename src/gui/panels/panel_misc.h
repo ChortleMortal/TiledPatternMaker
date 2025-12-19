@@ -14,6 +14,8 @@ class QWidget;
 #include <QComboBox>
 #include <QCheckBox>
 
+#include "sys/sys.h"
+
 class AQVBoxLayout : public QVBoxLayout
 {
 public:
@@ -110,6 +112,14 @@ class AQCheckBox : public QCheckBox
 public:
     AQCheckBox();
     AQCheckBox(QString string);
+};
+
+class Separator : public AQHBoxLayout
+{
+public:
+    Separator();
+
+    QFrame * frame;
 };
 
 #endif // MISC_H

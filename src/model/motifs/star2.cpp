@@ -57,14 +57,13 @@ bool Star2::equals(const MotifPtr other)
 void Star2::buildUnitMap()
 {
     // int s = number of intersects, qreal theta  = angle
-    qDebug() << "Star2::buildUnitMap" << "n:" << getN() << "theta:" << theta << "intersects:" << s;
 
-    dbgVal = 0x0;
-    debugMap = nullptr;
-    if (dbgVal > 0)
+    //qDebug() << "Star2::buildUnitMap" << "n:" << getN() << "theta:" << theta << "intersects:" << s;
+
+    motifDebug = 0x0;
+    if (motifDebug > 0)
     {
-        debugMap = Sys::debugView->getMap();
-        debugMap->wipeout();
+        Sys::debugMapCreate->wipeout();
     }
 
     Tile tile(getN());
@@ -106,10 +105,10 @@ void Star2::buildUnitMap()
         raySet1.transform(t);
     }
 
-    if (dbgVal & 0x01) raySet1.debug();
+    if (motifDebug & 0x01) raySet1.debug();
     QTransform t = getDELTransform();
     raySet1.transform(t);
-    if (dbgVal & 0x01) raySet1.debug();
+    if (motifDebug & 0x01) raySet1.debug();
 
     auto tr = getUnitRotationTransform();
     raySet2 = raySet1;
@@ -120,12 +119,12 @@ QLineF Star2::getRay(int side, qreal theta, bool sign)
 {
     //side = modulo(side,getN());
 
-    qDebug() << "Ray:" << "n" << getN() << "side:" << side << "sign:" << sign << "theta" << theta;
+    //qDebug() << "Ray:" << "n" << getN() << "side:" << side << "sign:" << sign << "theta" << theta;
 
     qreal angle;
     QLineF branchRay(mids[side], corners[side]);
 
-    if (dbgVal & 0x02) debugMap->insertDebugMark(mids[side],QString::number(side));
+    if (motifDebug & 0x02) Sys::debugMapCreate->insertDebugMark(mids[side],QString::number(side),Qt::red);
 
     if (sign)
     {
@@ -143,7 +142,7 @@ QLineF Star2::getRay(int side, qreal theta, bool sign)
     len *= 100;
     branchRay.setLength(len);
 
-    if (dbgVal & 0x02) debugMap->insertDebugLine(branchRay);
+    if (motifDebug & 0x02) Sys::debugMapCreate->insertDebugLine(branchRay,Qt::blue);
 
     return branchRay;
 }

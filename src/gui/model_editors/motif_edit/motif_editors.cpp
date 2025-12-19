@@ -11,7 +11,7 @@
 #include "model/settings/configuration.h"
 #include "gui/widgets/layout_sliderset.h"
 #include "gui/panels/panel_misc.h"
-#include "gui/top/view.h"
+#include "gui/top/system_view.h"
 
 
 Q_DECLARE_METATYPE(NamedMotifEditor *)
@@ -90,7 +90,7 @@ NamedMotifEditor::NamedMotifEditor(QString motifName)
     setLayout(vbox);
 
     connect(this,       &NamedMotifEditor::sig_motif_modified,  this,      &NamedMotifEditor::slot_motifModified); //, Qt::QueuedConnection);
-    connect(this,       &NamedMotifEditor::sig_motif_modified,  Sys::view, &View::slot_update);
+    connect(this,       &NamedMotifEditor::sig_motif_modified,  Sys::viewController, &SystemViewController::slot_updateView);
     connect(motifSides, &SliderSet::valueChanged,               this, [this]() { editorToMotif(true);});
     connect(motifScale, &DoubleSliderSet::valueChanged,         this, [this]() { editorToMotif(true);});
     connect(motifRotate,&DoubleSliderSet::valueChanged,         this, [this]() { editorToMotif(true);});
@@ -194,11 +194,14 @@ void NamedMotifEditor::slot_motifModified(MotifPtr motif)
     del->setMotif(motif);
 
     // notify motif maker
-    bool multi = Sys::config->motifMultiView;
+    bool multi = (Sys::config->motifMakerView == MOTIF_VIEW_SELECTED);
     Sys::prototypeMaker->select(MVD_DELEM,del,multi);     // if this is the samne design element this does nothing
 
     auto tiling = Sys::prototypeMaker->getSelectedPrototype()->getTiling();
-    Sys::prototypeMaker->sm_takeUp(tiling,PROM_MOTIF_CHANGED);
+    ProtoEvent pevent;
+    pevent.event = PROM_MOTIF_CHANGED;
+    pevent.tiling = tiling;
+    Sys::prototypeMaker->sm_takeUp(pevent);
     
     //data->select(MVD_DELEM,del,multi);
     Sys::prototypeMaker->getWidget()->update();
@@ -454,7 +457,7 @@ MotifTypeCombo:: MotifTypeCombo()
 {
     setFixedWidth(131);
 
-    connect(this, QOverload<int>::of(&QComboBox::currentIndexChanged), this,   &MotifTypeCombo::slot_motifTypeSelected);
+    connect(this, &QComboBox::currentIndexChanged, this,   &MotifTypeCombo::slot_motifTypeSelected);
 }
 
 void MotifTypeCombo::updateChoices(MotifPtr motif)

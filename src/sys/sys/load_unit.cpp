@@ -2,35 +2,54 @@
 #include "sys/sys.h"
 #include "model/settings/configuration.h"
 
-LoadUnit::LoadUnit()
+LoadUnit::LoadUnit(eLoadUnitType type)
 {
-    loadState = LOADING_NONE;
-    lastState = LOADING_NONE;
+    loadType  = type;
+    loadState = LS_READY;
 }
 
-void LoadUnit::setLoadState(eLoadState state, VersionedFile file)
+void LoadUnit::start(VersionedFile file)
+{
+    loadState = LS_LOADING;
+    loadFile  = file;
+    loadTimer.restart();
+}
+
+void LoadUnit::end(eLoadUnitState state)
 {
     loadState = state;
-    loadFile  = file;
 
-    lastState = state;
-    lastFile  = file;
-
-    switch (state)
+    if (state == LS_LOADED)
     {
-    case LOADING_MOSAIC:
-        Sys::config->lastLoadedMosaic = file.getVersionedName();
-        break;
+        switch (loadType)
+        {
+        case LT_MOSAIC:
+            Sys::config->lastLoadedMosaic = loadFile.getVersionedName();
+            break;
 
-    case LOADING_TILING:
-        Sys::config->lastLoadedTiling = file.getVersionedName();
-        break;
+        case LT_TILING:
+            Sys::config->lastLoadedTiling = loadFile.getVersionedName();
+            break;
 
-    case LOADING_LEGACY:
-        Sys::config->lastLoadedLegacy = file.getVersionedName();
-        break;
+        case LT_LEGACY:
+            Sys::config->lastLoadedLegacy = loadFile.getVersionedName();
+            break;
 
-    default:
-        break;
+        default:
+            break;
+        }
+        Sys::config->lastLoadedType = loadType;
     }
-};
+}
+
+void LoadUnit::ready()
+{
+    loadState = LS_READY;
+}
+
+void  LoadUnit::declareLoaded(VersionedFile name)
+{
+    start(name);
+    end(LS_LOADED);
+    ready();
+}

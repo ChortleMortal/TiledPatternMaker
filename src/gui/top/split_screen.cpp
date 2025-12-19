@@ -5,7 +5,7 @@
 #include "sys/sys.h"
 #include "gui/top/split_screen.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/view.h"
+#include "gui/top/system_view.h"
 #include "gui/panels/panel_page.h"
 #include "gui/panels/panel_misc.h"
 
@@ -29,15 +29,16 @@ SplitScreen::SplitScreen(QWidget *parent) : QFrame(parent)
     // together
     hbox  = new AQHBoxLayout();
     hbox->addWidget(LHS,0,Qt::AlignLeft);
-    hbox->addWidget(Sys::view,0,Qt::AlignLeft | Qt::AlignTop);
+    hbox->addWidget(Sys::sysview,0,Qt::AlignLeft | Qt::AlignTop);
     setLayout(hbox);
 
-    QScreen * sc = qApp->screenAt(Sys::controlPanel->pos());
-    QRect rec    = sc->geometry();
+    QList<QScreen *> screens = qApp->screens();
+    QScreen * screen         = screens[0];
+    QRect rec                = screen->geometry();
     move(rec.topLeft());
 
-    connect(Sys::view, &View::sig_viewSizeChanged, this, &SplitScreen::adjustMe);
-    connect(this,      &SplitScreen::sig_adjust,   this, &SplitScreen::adjustMe2, Qt::QueuedConnection);
+    connect(Sys::sysview, &SystemView::sig_viewSizeChanged, this, &SplitScreen::adjustMe);
+    connect(this,         &SplitScreen::sig_adjust,         this, &SplitScreen::adjustMe2, Qt::QueuedConnection);
 }
 
 void SplitScreen::addFloater(panel_page * pp)

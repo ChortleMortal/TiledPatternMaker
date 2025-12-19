@@ -29,6 +29,14 @@ void Worklist::add(VersionedName version)
     }
 }
 
+void Worklist::remove(VersionedName version)
+{
+    if (vlist.remove(version))
+    {
+        emit theApp->sig_workListChanged();
+    }
+}
+
 void Worklist::clear()
 {
     listname.clear();
@@ -42,6 +50,8 @@ void Worklist::load(QSettings & s)
 
     vlist.clear();
     QStringList qsl = s.value("worklist","").toStringList();
+    qsl.removeDuplicates();
+
     for (auto & str : std::as_const(qsl))
     {
         if (!str.isEmpty())

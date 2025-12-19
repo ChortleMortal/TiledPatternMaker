@@ -16,6 +16,7 @@ public:
 
     CanvasSettings & operator=(const CanvasSettings & other);
     bool             operator== (const CanvasSettings & other) const;
+    bool             operator != (const CanvasSettings & other) const { return !(*this == other); }
 
     QColor          getBackgroundColor() const;
     void            setBackgroundColor(QColor color);
@@ -26,13 +27,10 @@ public:
     void            setCanvasSize(QSize size)   { _canvasSize = size; }
     QSize           getCanvasSize() const       { return _canvasSize; }
 
-    void            setStartTile(QPointF pt)    { _startTile = pt;  }
-    QPointF         getStartTile() const        { return _startTile;}
-
     void            setFillData(FillData & fd)  { _fillData = fd; }
     FillData        getFillData() const         { return _fillData; };
 
-    QPointF         getCenter();
+    QPointF         getViewCenter();
 
 protected:
 
@@ -40,7 +38,6 @@ private:
     QSize           _viewSize;
     QSize           _canvasSize;
     QColor          _bkgdColor;
-    QPointF         _startTile;
     FillData        _fillData;
 };
 

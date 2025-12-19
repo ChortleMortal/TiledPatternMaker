@@ -5,10 +5,11 @@
 #include <QPainter>
 
 #include "gui/widgets/dlg_listselect.h"
+#include "model/tilings/placed_tile.h"
+#include "model/tilings/tile.h"
 #include "sys/sys/fileservices.h"
 #include "sys/sys/pugixml.hpp"
 #include "gui/widgets/layout_sliderset.h"
-#include "model/tilings/placed_tile.h"
 
 using namespace pugi;
 using std::make_shared;
@@ -21,45 +22,51 @@ using std::make_shared;
 
 DlgListSelect::DlgListSelect(VersionFileList & xfiles, QWidget *parent) : QDialog(parent)
 {
-    _xfiles = xfiles;
-
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
     list = new LoaderListWidget();
     list->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    list->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    hbox = new QHBoxLayout;
-    hbox->addWidget(list);
+    list->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    list->setFixedHeight(600);
 
     QPushButton * cancelBtn = new QPushButton("Cancel");
     QPushButton * okBtn = new QPushButton("OK");
     okBtn->setDefault(true);
 
     QHBoxLayout * hBtnBox = new QHBoxLayout;
+    hBtnBox->addStretch();
     hBtnBox->addWidget(cancelBtn);
     hBtnBox->addWidget(okBtn);
-    hBtnBox->addStretch();
 
     QVBoxLayout * vbox = new QVBoxLayout;
-    vbox->addLayout(hbox);
+    vbox->addWidget(list);
     vbox->addLayout(hBtnBox);
-    setLayout(vbox);
+
+    hbox = new QHBoxLayout;
+    hbox->addLayout(vbox);
+
+    setLayout(hbox);
 
     connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
     connect(okBtn,     &QPushButton::clicked, this, &QDialog::accept);
+    connect(list, &QListWidget::currentRowChanged,   this, &DlgListSelect::slot_currentRow);
+    connect(list, &LoaderListWidget::leftDoubleClick,this, &DlgListSelect::slot_dclick);
+
+    load(xfiles);
+}
+
+void DlgListSelect::load(VersionFileList & xfiles)
+{
+    _xfiles = xfiles;
+
+    list->clear();
 
     for (VersionedFile & xfile : xfiles)
     {
         QListWidgetItem * item = new QListWidgetItem(xfile.getVersionedName().get());
         list->addItem(item);
     }
-    list->setMinimumWidth(list->sizeHintForColumn(0) + 10);
-    list->setMinimumHeight((list->sizeHintForRow(0) * xfiles.size()) + 10);
-    adjustSize();
 
-    connect(list, &QListWidget::currentRowChanged,   this, &DlgListSelect::slot_currentRow);
-    connect(list, &LoaderListWidget::leftDoubleClick,this, &DlgListSelect::slot_dclick);
+    list->setMinimumWidth(list->sizeHintForColumn(0) + 10);
+    adjustSize();
 }
 
 void DlgListSelect::slot_currentRow(int row)
@@ -70,7 +77,7 @@ void DlgListSelect::slot_currentRow(int row)
     }
     else
     {
-        selected = _xfiles[row];
+        selected = _xfiles.at(row);
     }
 
     selectAction();
@@ -145,7 +152,7 @@ void GirihListSelect::whereUsed()
     {
         for (int i=0; i < results.size(); i++)
         {
-            QString str = results[i].getVersionedName().get();
+            QString str = results.at(i).getVersionedName().get();
             resultStr  += str;
             resultStr += "<br>";
         }
@@ -169,7 +176,7 @@ bool GirihListSelect::isUsed(QString girihname, VersionFileList & results)
     {
         if (containsGirih(girihname,tile))
         {
-            results << tile;
+            results.add(tile);
         }
     }
 
@@ -223,10 +230,12 @@ QStringList GirihListSelect::getSelected()
 
 void GirihListSelect::selectAction()
 {
+    Q_ASSERT(frame);
+
     qDebug() << "file:" << selected.getVersionedName().get();
 
-    frame->tile = make_shared<PlacedTile>();
-    bool rv = frame->tile->loadFromGirihShape(selected.getVersionedName());
+    frame->setPlacedTile(make_shared<PlacedTile>());
+    bool rv = frame->placedTile()->loadFromGirihShape(selected.getVersionedName());
     Q_ASSERT(rv);
 
     frame->update();
@@ -250,7 +259,8 @@ void AQFrame::paintEvent(QPaintEvent *event)
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     painter.setPen(QPen(Qt::black,3));
-    EdgePoly ep = tile->getTileEdgePoly();
+    TilePtr tp    = placedTile()->getTile();
+    EdgePoly ep   = tp->getEdgePoly();
     QTransform tr = QTransform::fromTranslate(150,150);
     QTransform t2 = QTransform::fromScale(scale,scale);
     QTransform t3 = t2 * tr;

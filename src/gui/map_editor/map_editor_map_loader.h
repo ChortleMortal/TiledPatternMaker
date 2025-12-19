@@ -16,7 +16,10 @@ public:
     Xform               getXform ()     { return _xf; }
     eMapEditorMapType   getType()       { return maptype; }
     QSize               getViewSize()   { return _viewSize; }
-    BkgdImagePtr        getBackground() { return _bip; }
+    BkgdImagePtr        getBackground() { return _mosbip; }
+
+protected:
+    BkgdImagePtr        getBackgroundImage(xml_node & node);
 
 private:
     Xform               _xf;

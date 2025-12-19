@@ -25,18 +25,24 @@ public:
     void    compareBMPs(VersionedFile & fileA,  VersionedFile & fileB);
     void    compareBMPwithLoaded(VersionedName & name);
     void    compareImages(QImage & imgA, QImage & imgB, VersionedFile & fileA, VersionedFile & fileB);
-
+    void    showBMP(VersionedName & name);
 
     static QPixmap createTransparentPixmap(QImage img);
-    static bool    validViewKey(QKeyEvent * k);
 
     QPixmap makeTextPixmap(QString txt,QString txt2=QString(),QString txt3=QString());
 
     void    closeAllImageViewers(bool force = true);
 
+    void    setPopupScale(qreal scale);
+
+    ImageWidget * currentPopup() { return currentImgWidget; }
+
+    void    setCompareMode(bool set) { _compareMode = set; }
+
 signals:
     void sig_tick();
     void sig_next();
+    void sig_prev();
     void sig_end();
     void sig_pause();
     void sig_ready();
@@ -53,28 +59,30 @@ signals:
     void cycle_sig_workList();
 
     void sig_reconstructView();
+    void sig_updateView();
 
 public slots:
     void slot_stepperKey(int key);
-    void slot_imageKeyPressed(QKeyEvent * k);
+    bool slot_imageKeyPressed(QKeyEvent * k);
+    void slot_imageWidgetClosed(ImageWidget * widget);
 
 protected:
     ImageEngine();      // only the friend class page_image_tools can create this
 
-    class WorklistBMPStepper    * wlStepper;
+    class CompareBMPStepper     * compareBMPStepper;
+    class ViewBMPStepper        * viewBMPStepper;
     class VersionStepper        * verStepper;
     class MosaicStepper         * mosaicStepper;
     class TilingStepper         * tilingStepper;
     class PNGStepper            * pngStepper;
 
 private:
-
     void view_image(VersionedFile & file);
     void ping_pong_images();
 
-    void                     viewPixmap( QPixmap & pixmap,QString title);
-    ImageWidget *            popupPixmap(QPixmap & pixmap,QString title);
-    TransparentImageWidget * popupTransparentPixmap(QPixmap & pixmap,QString title);
+    void          viewPixmap            (QPixmap & pixmap,QString title);
+    ImageWidget * popupPixmap     (const QPixmap & pixmap,QString title);
+    ImageWidget * popupTransparentPixmap(QPixmap & pixmap,QString title);
 
     Configuration       * config;
     QTimer              * timer;
@@ -86,8 +94,11 @@ private:
     VersionedFile _fileB;
 
     bool    _showA;
+    bool    _compareMode;
 
     ImageWidget * currentImgWidget;
+
+    static qreal popupScale;
 };
 
 #endif // IMAGEENGINE_H

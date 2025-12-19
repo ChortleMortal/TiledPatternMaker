@@ -1,16 +1,19 @@
 #include <math.h>
+#include "gui/viewers/motif_maker_view.h"
 #include "model/motifs/inferred_motif.h"
 #include "model/motifs/irregular_tools.h"
+#include "model/prototypes/prototype.h"
 #include "model/tilings/tile.h"
-#include "sys/geometry/loose.h"
-#include "sys/geometry/intersect.h"
-#include "sys/geometry/vertex.h"
+#include "model/tilings/tiling.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/geo.h"
+#include "sys/geometry/intersect.h"
+#include "sys/geometry/loose.h"
 #include "sys/geometry/map.h"
-#include "model/prototypes/prototype.h"
-#include "model/tilings/tiling.h"
-#include "gui/viewers/motif_view.h"
+#include "sys/geometry/map_verifier.h"
+#include "sys/geometry/neighbour_map.h"
+#include "sys/geometry/neighbours.h"
+#include "sys/geometry/vertex.h"
 
 using std::make_shared;
 
@@ -106,7 +109,7 @@ void InferredMotif::infer()
     // create the empty inferred map
     motifMap = std::make_shared<Map>("Inferred Motif map");
 
-    qDebug() << "InferredMotif::infer()  tile-sides :" << getTile()->numSides();
+    qDebug() << "InferredMotif::infer()  tile-sides :" << getTile()->numEdges();
 
     // Get the index of a good transform for this tile.
     int cur              = findPrimaryTile(getTile());
@@ -139,14 +142,14 @@ void InferredMotif::infer()
             }
             Q_ASSERT(adjmap);
             Q_ASSERT(!adjmap->isEmpty());
-            qDebug().noquote() << "     motif=" << adjmap->summary() << "Tile Sides" << tile->numSides();
+            qDebug().noquote() << "     motif=" << adjmap->summary() << "Tile Sides" << tile->numEdges();
         }
         else
         {
             if (adjmap)
-                qDebug().noquote() << "     motif=" << adjmap->summary() << "Tile Sides" << tile->numSides();
+                qDebug().noquote() << "     motif=" << adjmap->summary() << "Tile Sides" << tile->numEdges();
             else
-                qDebug().noquote() << "     motif=" << "NO MAP" << "Tile Sides" << tile->numSides();
+                qDebug().noquote() << "     motif=" << "NO MAP" << "Tile Sides" << tile->numEdges();
         }
 
         adjacentTileMaps.insert(tile, adjmap);
@@ -338,14 +341,18 @@ void InferredMotif::infer()
         {
             if (contact->colinear == Contact::COLINEAR_MASTER)
             {
-                auto edge = motifMap->insertEdge(contact->position, contact->isect_contact.lock()->position );
-                if (debugContacts) qDebug().noquote() << "Pass 1 inserting edge A:" << edge->info() << motifMap->summary();
+                VertexPtr v1 = motifMap->insertVertex(contact->position);
+                VertexPtr v2 = motifMap->insertVertex(contact->isect_contact.lock()->position);
+                EdgePtr ep = motifMap->insertEdge(v1,v2);
+                if (debugContacts) qDebug().noquote() << "Pass 1 inserting edge A:" << ep->info() << motifMap->summary();
             }
         }
         else
         {
-            auto edge = motifMap->insertEdge(contact->position, contact->isect );
-            if (debugContacts) qDebug().noquote() << "Pass 1 inserting edge B:" << edge->info() << motifMap->summary();
+            VertexPtr v1 = motifMap->insertVertex(contact->position);
+            VertexPtr v2 = motifMap->insertVertex(contact->isect);
+            EdgePtr ep   = motifMap->insertEdge(v1,v2);
+            if (debugContacts) qDebug().noquote() << "Pass 1 inserting edge B:" << ep->info() << motifMap->summary();
         }
     }
 
@@ -363,7 +370,7 @@ void InferredMotif::infer()
         {
             if (!con->isect_contact.lock())
             {
-                for (const auto &ocon : contacts )
+                for (auto & ocon : contacts )
                 {
                     if (ocon == con)
                     {
@@ -385,11 +392,18 @@ void InferredMotif::infer()
                     tmp *= (minlen*0.5);
                     QPointF ex2 = ocon->position + tmp; // ditto
 
-                    auto edge = motifMap->insertEdge( con->position, ex1 );
+                    VertexPtr vcon_position  = motifMap->insertVertex(con->position);
+                    VertexPtr vocon_position = motifMap->insertVertex(ocon->position);
+                    VertexPtr vex1           = motifMap->insertVertex(ex1);
+                    VertexPtr vex2           = motifMap->insertVertex(ex2);
+
+                    EdgePtr  edge = motifMap->insertEdge(vcon_position, vex1);
                     qDebug().noquote() << "inserting edge:" << edge->info() << motifMap->summary();
-                    edge = motifMap->insertEdge( ex1, ex2 );
+
+                    edge = motifMap->insertEdge(vex1, vex2);
                     qDebug().noquote() << "inserting edge:" << edge->info() << motifMap->summary();
-                    edge = motifMap->insertEdge( ex2, ocon->position );
+
+                    edge = motifMap->insertEdge(vex2, vocon_position);
                     qDebug().noquote() << "inserting edge:" << edge->info() << motifMap->summary();
 
                     con->isect_contact  = ocon;
@@ -401,7 +415,8 @@ void InferredMotif::infer()
 
     motifMap->transform(primaryMids->getTransform().inverted());
 
-    motifMap->verify();
+    MapVerifier mv(motifMap);
+    mv.verify();
 
     if (motifMap->isEmpty())
     {
@@ -428,7 +443,7 @@ QVector<ContactPtr> InferredMotif::buildContacts(MidsPtr pp, const QVector<Adjac
         {
             if (debugContacts) qDebug().noquote() << "Existing adjacent map"  << motifMap->summary();
             MapPtr placedMotifMap = motifMap->recreate();
-            placedMotifMap->transform(adj->placedTile->getTransform());
+            placedMotifMap->transform(adj->placedTile->getPlacement());
             adjacentMotifMaps.push_back(placedMotifMap);
             if (debugContacts) qDebug().noquote() << "Placed   adjacent map" << placedMotifMap->summary();
         }
@@ -461,6 +476,7 @@ QVector<ContactPtr> InferredMotif::buildContacts(MidsPtr pp, const QVector<Adjac
 
         MapPtr          map = adjacentMotifMaps[iPoint];
         AdjacentTilePtr adj = adjs[iPoint];
+        NeighbourMap   nmap(map);
 
         for (const auto & v : std::as_const(map->getVertices()))
         {
@@ -469,7 +485,7 @@ QVector<ContactPtr> InferredMotif::buildContacts(MidsPtr pp, const QVector<Adjac
             if (Loose::Near(dist2, adj->tolerance) &&  !Loose::Near(pos, pt, adj->tolerance) &&  !Loose::Near(pos, nextPt, adj->tolerance))
             {
                 // This vertex lies on the edge.  Add all its edges to the contact list.
-                NeighboursPtr n = map->getNeighbours(v);
+                NeighboursPtr n = nmap.getNeighbours(v);
                 for (auto & wedge : std::as_const(*n))
                 {
                     EdgePtr edge = wedge.lock();
@@ -569,13 +585,13 @@ void InferredMotif::setupInfer(ProtoPtr proto)
         {
             // Building a 3x3 tiling of the prototype.
             // Create placed_points instances for all the tiles in the nine translational units
-            QPointF pt   = (tiling->getData().getTrans1() * static_cast<qreal>(x)) + (tiling->getData().getTrans2() * static_cast<qreal>(y));
+            QPointF pt   = (tiling->hdr().getTrans1() * static_cast<qreal>(x)) + (tiling->hdr().getTrans2() * static_cast<qreal>(y));
             QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
 
-            const TilingPlacements tilingUnit = tiling->getTilingUnitPlacements();
+            const PlacedTiles tilingUnit = tiling->unit().getIncluded();
             for (const auto & placedTile : std::as_const(tilingUnit))
             {
-                QTransform Tf   = placedTile->getTransform() * T;
+                QTransform Tf   = placedTile->getPlacement() * T;
                 TilePtr tile    = placedTile->getTile();
 
                 QPolygonF t_pts = Tf.map(tile->getPoints());
@@ -600,7 +616,7 @@ void InferredMotif::setupInfer(ProtoPtr proto)
 int InferredMotif::findPrimaryTile(TilePtr tile )
 {
     // The start and end of the tiles in the (0,0) unit.
-    int count = tiling->numIncluded();
+    int count = tiling->unit().numIncluded();
     int start = count * 4;
     int end   = count * 5;
     int cur_reg_count = -1;

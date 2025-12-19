@@ -16,7 +16,6 @@ Xform::Xform(const Xform  & other)
     translateX   = other.translateX;
     translateY   = other.translateY;
     rotRadians   = other.rotRadians;
-    modelCenter  = other.modelCenter;
 }
 
 Xform & Xform::operator=(const Xform & other)
@@ -25,8 +24,17 @@ Xform & Xform::operator=(const Xform & other)
     translateX   = other.translateX;
     translateY   = other.translateY;
     rotRadians   = other.rotRadians;
-    modelCenter  = other.modelCenter;
     return *this;
+}
+
+bool Xform::operator==(const Xform & other) const
+{
+    if (scale       != other.scale)       return false;
+    if (translateX  != other.translateX)  return false;;
+    if (translateY  != other.translateY)  return false;;
+    if (rotRadians  != other.rotRadians)  return false;
+
+    return true;
 }
 
 Xform::Xform(QTransform t)
@@ -42,14 +50,6 @@ void Xform::setTransform(QTransform t)
     rotRadians  = Transform::rotation(t);
 }
 
-void Xform::addTransform(QTransform t)
-{
-    scale       += Transform::scalex(t);
-    translateX  += Transform::transx(t);
-    translateY  += Transform::transy(t);
-    rotRadians  += Transform::rotation(t);
-}
-
 QTransform Xform::getTransform() const
 {
     QTransform t;
@@ -60,13 +60,7 @@ QTransform Xform::getTransform() const
     return t;
 }
 
-QTransform Xform::toQTransform(QTransform transform) const
-{
-    QPointF cent = transform.map(modelCenter);
-    return toQTransform(cent);
-}
-
-QTransform Xform::toQTransform(QPointF rotCenter) const
+QTransform Xform::getTransform(QPointF rotCenter) const
 {
     QTransform t;
     t.translate(rotCenter.x(), rotCenter.y());
@@ -78,38 +72,19 @@ QTransform Xform::toQTransform(QPointF rotCenter) const
     return t;
 }
 
-QTransform Xform::toQTransform() const
-{
-    QTransform t;
-    t.translate(modelCenter.x(), modelCenter.y());
-    t.translate(translateX,translateY);
-    t.rotateRadians(rotRadians);
-    t.scale(scale,scale);
-    t.translate(-modelCenter.x(), -modelCenter.y());
-    //qDebug().noquote() << "Xform::toQTransform()" << Transform::toInfoString(t) << center;
-    return t;
-}
-
 
 QTransform Xform::rotateAroundPoint(QPointF pt)
 {
     return (QTransform::fromTranslate(-pt.x(),-pt.y()) * (QTransform().rotateRadians(rotRadians) * QTransform().translate(pt.x(), pt.y())));
 }
 
-QTransform Xform::scaleAroundPoint(QPointF pt)
-{
-    return (QTransform::fromTranslate(-pt.x(),-pt.y()) * (QTransform::fromScale(scale,scale) * QTransform().translate(pt.x(), pt.y())));
-}
-
 QString Xform::info(int precision) const
 {
     QString s;
-    s  = QString("Scale=%1 ").arg(QString::number(scale,'g',precision));
-    s += QString("Rot=%1 ").arg(QString::number(rotRadians,'g',precision));
-    s += QString("X=%1 ").arg(QString::number(translateX,'g',precision));
-    s += QString("Y=%1 Center=").arg(QString::number(translateY,'g',precision));
-    QDebug deb(&s);
-    deb << modelCenter;
+    s  = QString("scale=%1 ").arg(QString::number(scale,'g',precision));
+    s += QString("rot=%1 ").arg(QString::number(rotRadians,'g',precision));
+    s += QString("x=%1 ").arg(QString::number(translateX,'g',precision));
+    s += QString("y=%1").arg(QString::number(translateY,'g',precision));
     return s;
 }
 
@@ -164,6 +139,12 @@ void Xform::setTranslate(QPointF t)
     translateY = t.y();
 }
 
+void Xform::applyTranslate(QPointF t)
+{
+    translateX += t.x();
+    translateY += t.y();
+}
+
 void Xform::setTranslateX(qreal x)
 {
     translateX = x;
@@ -174,8 +155,9 @@ void Xform::setTranslateY(qreal y)
     translateY = y;
 }
 
-void Xform::setModelCenter(QPointF mpt)
+
+qreal Xform::hash()
 {
-    modelCenter = mpt;  // model units
-    qDebug() << "modelCenter:" << modelCenter;
+    qreal h = (scale +1) * (rotRadians+2) * (translateX+3) * (translateY+4);
+    return h;
 }

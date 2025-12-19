@@ -15,20 +15,35 @@ public:
     ImageWidget();
     virtual ~ImageWidget();
 
-    void keyPressEvent(QKeyEvent *k) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
+    virtual void setContentSize(QSize sz);
 
     static QPixmap removeAlphaChannel(const QPixmap &src);
 
+    virtual QString gettypename() { return "image"; }
+
+    void setPixmap(const QPixmap & pixmap);
+    void setPixmap(const QPixmap & pixmap, qreal scale);
+    QPixmap getPixmap() { return _pixmap; }
+
+    void closeEvent(QCloseEvent * event) override;
+
 signals:
     void sig_keyPressed(QKeyEvent *);
+    void sig_closed(ImageWidget *);
 
 public slots:
     void slot_closeMe();
+    void slot_moveToPrimary();
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void keyPressEvent(QKeyEvent *k) override;
+
+
 
 private:
-    bool    onTop;
+    QPixmap _pixmap;
 };
 
 #endif

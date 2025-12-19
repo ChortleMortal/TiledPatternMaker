@@ -24,11 +24,7 @@ void WorklistWidget::mousePressEvent(QMouseEvent * event)
 {
     if (event->button() == Qt::RightButton)
     {
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-        QPoint pt = event->localPos().toPoint();
-#else
         QPoint pt = event->position().toPoint();
-#endif
         QMenu menu(this);
         QListWidgetItem * qlwi = itemAt(pt);
         if (qlwi)
@@ -45,11 +41,7 @@ void WorklistWidget::mousePressEvent(QMouseEvent * event)
         {
             menu.addAction("Insert",this,&WorklistWidget::slot_insertAction);
         }
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-        menu.exec(event->screenPos().toPoint());
-#else
         menu.exec(event->globalPosition().toPoint());
-#endif
     }
     else
     {
@@ -116,7 +108,7 @@ void WorklistWidget::slot_editAction()
         }
         else
         {
-            VersionedName vn(name);
+            VersionedName vn(newName);
             newList.add(vn);
         }
     }

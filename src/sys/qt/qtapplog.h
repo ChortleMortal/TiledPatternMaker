@@ -53,7 +53,8 @@ protected:
     qtAppLog();
     virtual ~qtAppLog();
 
-    void log(QString & msg);
+    void logToFile(QString & msg);
+    void logToFile2(QString & msg);
     void endTrap();
 
 private:
@@ -69,6 +70,7 @@ private:
     static bool _logDebug;
 
     static bool	_active;
+    static bool	_active2;
     static bool _suspended;
     static bool _trapping;
 
@@ -83,8 +85,12 @@ private:
     static eLogTimer         _logTimerSetting;
     static QElapsedTimer     elapseTimer;
 
-    QFile	mCurrentFile;
+    static QtMessageHandler  originalHandler;
+
+    QFile	mLogFile;
+    QFile	mLogFile2;
     QString _logDir;
+
 };
 
 #endif

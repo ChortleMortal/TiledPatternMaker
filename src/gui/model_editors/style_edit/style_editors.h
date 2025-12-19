@@ -6,9 +6,6 @@
 #include <QPointF>
 #include <QColor>
 #include <QWidget>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 
 class QPushButton;
 class QCheckBox;
@@ -26,8 +23,6 @@ class Interlace;
 class Colored;
 class Thick;
 class AQTableWidget;
-class View;
-
 
 using std::shared_ptr;
 using std::weak_ptr;
@@ -147,7 +142,7 @@ protected:
 
     void displayParms1();
     void displayParms2();
-    void displayParms3();
+    void displayParms3(int crow);
     void displayParmsPalette();
 
 private:
@@ -161,6 +156,8 @@ private:
     StyleColorFillGroup     * fillGroup;
     StyleColorFillFace      * fillFaces;
     StyleColorFillOriginal  * fillOriginal;
+
+    int crow;
 
     class ControlPanel  * panel;
 };

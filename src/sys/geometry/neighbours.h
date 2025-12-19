@@ -4,15 +4,14 @@
 
 #include <QMap>
 #include <QVector>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 
 typedef std::shared_ptr<class Edge>         EdgePtr;
 typedef std::weak_ptr<class Edge>           WeakEdgePtr;
 typedef std::shared_ptr<class Vertex>       VertexPtr;
 typedef std::weak_ptr<class Vertex>         WeakVertexPtr;
 typedef std::shared_ptr<class Neighbours>   NeighboursPtr;
+typedef std::weak_ptr<class Neighbours>     WeakNeighboursPtr;
+typedef std::shared_ptr<class Map>          MapPtr;
 
 struct BeforeAndAfter
 {
@@ -30,23 +29,28 @@ public:
     Neighbours(const Neighbours & other);
     ~Neighbours();
 
-    void insertNeighbour(const EdgePtr &np);
+    void            insertNeighbour(const EdgePtr &np);
 
-    uint numNeighbours()  { return (uint)size(); }
+    uint            numNeighbours()  { return (uint)size(); }
 
-    BeforeAndAfter getBeforeAndAfter(const EdgePtr & edge);
-    EdgePtr        getNeighbour(int index);
-    EdgePtr        getFirstNonvisitedNeighbour(const EdgePtr & home);
+    BeforeAndAfter  getBeforeAndAfter(const EdgePtr & edge);
+    EdgePtr         nearest(const EdgePtr & edge, bool side1);
+    EdgePtr         getContinuation(const EdgePtr edge, int type);
 
-    bool verify();
-    void cleanse();
-    void dumpNeighbours() const;
+    EdgePtr         getNeighbour(int index);
+    VertexPtr       getVertex() { return vertex.lock();}
+
+    bool            verify();
+    void            cleanse();
+    QString         info(MapPtr &  map);
+    QString         casingInfo();
+
+    static int      refs;
 
 protected:
     bool contains(const EdgePtr & e) const;
 
-private:
-    WeakVertexPtr vertex;
+    WeakVertexPtr   vertex;
 };
 
 #endif // NEIGHBOURS_H

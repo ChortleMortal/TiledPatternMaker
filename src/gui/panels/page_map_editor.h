@@ -7,6 +7,7 @@ class MapEditorDb;
 class MapEditorView;
 class CropMaker;
 class CropViewer;
+class SMXWidget;
 
 #include "gui/panels/panel_page.h"
 #include "sys/sys/versioning.h"
@@ -51,9 +52,7 @@ private slots:
     void slot_verify();
     void slot_divideIntersectingEdges();
     void slot_joinColinearEdges();
-    void slot_cleanNeighbours();
     void slot_cleanVertices();
-    void slot_rebuildNeighbours();
     void slot_removeUnconnectedVertices();
     void slot_removeSingleConnectVertices();
     void slot_removeZombieEdges();
@@ -90,8 +89,6 @@ private slots:
     void slot_lineWidthChanged(uint r);
     void slot_consWidthChanged(uint r);
     void slot_cleanseSettings();
-    void slot_align1();
-    void slot_align2();
     void slot_viewLayer(int id, bool checked);
     void slot_editLayer(int id, bool checked);
 
@@ -109,18 +106,21 @@ protected:
     void refreshStatusBox();
     void tallySelects();
     void tallyCropButtons();
+    void initPageStatusString();
 
 private:
     MapEditor     * maped;
-    MapEditorView * mapedView;
     MapEditorDb   * db;
     class CropDlg * cropDlg;
 
+    QGroupBox     * constructionBox;
     QGroupBox     * editorStatusBox;
     QTextEdit     * statusBox;
     QCheckBox     * animateChk;
 
     QRadioButton  * viewDCEL;
+
+    SMXWidget     * smxWidget;
 
     QCheckBox     * chkEditCrop;
     QToolButton   * pbEmbedCrop;
@@ -144,6 +144,8 @@ private:
     QButtonGroup   * editGroup;
     QButtonGroup   * viewGroup;
     QButtonGroup   * modeGroup;
+
+    QSpinBox       * styleBox;
 
     VersionedFile   lastNamedTemplate;
     VersionedName   lastNamedMap;

@@ -1,7 +1,7 @@
 #include <QDebug>
 #include "model/motifs/radial_ray.h"
 #include "sys/geometry/map.h"
-#include "gui/viewers/debug_view.h"
+#include "sys/geometry/debug_map.h"
 
 using std::make_shared;
 
@@ -61,7 +61,7 @@ MapPtr RadialRay::getMap()
 
     map = make_shared<Map>("RadialRay");
 
-    for (QPointF pt : points)
+    for (QPointF & pt : points)
     {
         map->insertVertex(pt);
     }
@@ -88,18 +88,19 @@ void RadialRay::addToMap(MapPtr map)
 {
     for (int i = 0; i < points.size() -1; i++)
     {
-        map->insertEdge(points[i],points[i+1]);
+        VertexPtr v1 = map->insertVertex(points[i]);
+        VertexPtr v2 = map->insertVertex(points[i+1]);
+        map->insertEdge(v1,v2);
     }
 }
 
 void RadialRay::debug()
 {
     qInfo().noquote() << info();
-    DebugMap * map = Sys::debugView->getMap();
     uint idx = 0;
-    for (QPointF pt : points)
+    for (QPointF & pt : points)
     {
-        map->insertDebugMark(pt,QString("pt%1").arg(idx++));
+        Sys::debugMapCreate->insertDebugMark(pt,QString("pt%1").arg(idx++),Qt::red);
     }
 }
 

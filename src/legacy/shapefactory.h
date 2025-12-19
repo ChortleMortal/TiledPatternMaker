@@ -7,16 +7,13 @@
 #include <QGraphicsItem>
 #include <QPainter>
 
-class Canvas;
-
-
 class ShapeFactory : public LegacyShapeViewer
 {
 public:
     ShapeFactory(qreal diameter, QPointF loc = QPointF());
     ~ShapeFactory();
 
-    void reset() { polyforms.clear(); Layer::reset(); }
+    void reset() { polyforms.clear(); Layer::resetPos(); }
 
     // points
     void getHexPackingPoints(QPolygonF &pf);

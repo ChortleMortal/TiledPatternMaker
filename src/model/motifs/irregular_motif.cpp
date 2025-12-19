@@ -1,8 +1,9 @@
 #include <QDebug>
 #include "model/motifs/irregular_motif.h"
-#include "sys/geometry/map.h"
-#include "sys/geometry/transform.h"
 #include "model/tilings/tile.h"
+#include "sys/geometry/map.h"
+#include "sys/geometry/map_verifier.h"
+#include "sys/geometry/transform.h"
 
 // this is protected method used in class hierarchy
 IrregularMotif::IrregularMotif() : Motif()
@@ -110,19 +111,60 @@ void IrregularMotif::buildMotifMap()
     infer();
     if (motifMap)
     {
-        scaleAndRotate(motifMap);
-        completeMap();
-        buildMotifBoundary();
-        extendMaps();
+        irr_scaleAndRotate(motifMap);
+        irr_completeMap();
+        irr_buildMotifBoundary();
+        irr_extendMaps();
     }
 }
 
-void IrregularMotif::extendMaps()
+void IrregularMotif::irr_extendMaps()
 {
     for (ExtenderPtr extender : getExtenders())
     {
         extender->extendMotifMap();
     }
+}
+
+void IrregularMotif::irr_scaleAndRotate(MapPtr map)
+{
+    QTransform t = getDELTransform();
+
+    if (!t.isIdentity())
+    {
+        map->transform(t);
+    }
+}
+
+void IrregularMotif::irr_buildMotifBoundary()
+{
+    Q_ASSERT(getTile());
+
+    QPolygonF boundary;
+    if (isRadial() &&  getN() >= 3)
+    {
+        Tile f(getN());
+        boundary  = f.getPolygon();
+    }
+    else
+    {
+        boundary  = getTile()->getPoints();
+    }
+
+    if (!boundary.isClosed())
+    {
+        boundary << boundary[0];
+    }
+
+    QTransform t = getDELTransform();
+    boundary = t.map(boundary);
+    setMotifBoundary(boundary);
+}
+
+QTransform IrregularMotif::getDELTransform()
+{
+    Q_ASSERT(getTile());
+    return getMotifTransform(); // does not use the tile transform since already used by infer
 }
 
 QTransform IrregularMotif::getMotifTransform()
@@ -141,10 +183,10 @@ QTransform IrregularMotif::getMotifTransform()
     return t;
 }
 
-void IrregularMotif::completeMap()
+void IrregularMotif::irr_completeMap()
 {
-    motifMap->resetNeighbourMap();
-    motifMap->verifyAndFix();
+    MapVerifier mv(motifMap);
+    mv.verifyAndFix();
 }
 
 void IrregularMotif::resetMotifMap()

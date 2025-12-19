@@ -1,14 +1,16 @@
+#include "gui/map_editor/map_editor.h"
+#include "gui/top/controlpanel.h"
+#include "gui/top/system_view.h"
+#include "gui/top/system_view_controller.h"
+#include "gui/viewers/debug_view.h"
+#include "gui/viewers/image_view.h"
 #include "model/makers/mosaic_maker.h"
-#include "sys/engine/image_engine.h"
 #include "model/makers/prototype_maker.h"
 #include "model/makers/tiling_maker.h"
+#include "model/mosaics/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_manager.h"
-#include "sys/sys/load_unit.h"
-#include "sys/sys.h"
-#include "gui/map_editor/map_editor.h"
 #include "model/prototypes/prototype.h"
-#include "gui/top/controlpanel.h"
 #include "model/settings/configuration.h"
 #include "model/styles/emboss.h"
 #include "model/styles/filled.h"
@@ -19,17 +21,17 @@
 #include "model/styles/thick.h"
 #include "model/styles/tile_colors.h"
 #include "model/tilings/tiling.h"
-#include "model/tilings/backgroundimage.h"
-#include "gui/viewers/backgroundimageview.h"
-#include "gui/viewers/debug_view.h"
-#include "gui/top/view_controller.h"
-#include "gui/top/view.h"
+#include "sys/engine/image_engine.h"
+#include "sys/sys.h"
+#include "sys/sys/load_unit.h"
 
 using std::make_shared;
 
 MosaicMaker::MosaicMaker()
 {
     _mosaic = make_shared<Mosaic>();
+
+    loadUnit = new LoadUnit(LT_MOSAIC);
 }
 
 MosaicMaker::~MosaicMaker()
@@ -39,14 +41,8 @@ MosaicMaker::~MosaicMaker()
 
 void MosaicMaker::init()
 {
-    prototypeMaker = Sys::prototypeMaker;
-    config         = Sys::config;
-    controlPanel   = Sys::controlPanel;
-    viewControl    = Sys::viewController;
-    tilingMaker    = Sys::tilingMaker;
-
-    connect(this, &MosaicMaker::sig_updateView,      Sys::view,   &View::slot_update);
-    connect(this, &MosaicMaker::sig_reconstructView, viewControl, &ViewController::slot_reconstructView);
+    connect(this, &MosaicMaker::sig_updateView,      Sys::viewController, &SystemViewController::slot_updateView);
+    connect(this, &MosaicMaker::sig_reconstructView, Sys::viewController, &SystemViewController::slot_reconstructView);
 }
 
 // This the most complete load of a Mosaic - it does everything needed
@@ -55,9 +51,9 @@ MosaicPtr MosaicMaker::loadMosaic(VersionedFile &file)
 {
     qDebug().noquote() << "MosaicMaker::loadMosaic" << file.getVersionedName().get();
 
-    Sys::debugView->clear();
+    Sys::debugView->unloadLayerContent();
 
-    Sys::loadUnit->setLoadState(LOADING_MOSAIC,file);
+    loadUnit->start(file);
 
     // the advantage of using the manager is that it does not persist
     MosaicPtr mosaic;
@@ -65,18 +61,29 @@ MosaicPtr MosaicMaker::loadMosaic(VersionedFile &file)
     mosaic = mm.loadMosaic(file);
     if (mosaic)
     {
-        viewControl->removeAllImages();
+        Sys::imageViewer->unloadLayerContent();
 
         // starts the chain reaction
         sm_takeDown(mosaic);
 
         emit sig_reconstructView();
         emit sig_mosaicLoaded(file);
+
+        loadUnit->end(LS_LOADED);
+    }
+    else
+    {
+        loadUnit->end(LS_FAILED);
     }
 
-    Sys::loadUnit->resetLoadState();
-
     return mosaic;
+}
+
+void MosaicMaker::reload()
+{
+    VersionedFile vf = loadUnit->getLoadFile();
+    if (!vf.isEmpty())
+        loadMosaic(vf);
 }
 
 bool MosaicMaker::saveMosaic(MosaicPtr mosaic, bool forceOverwrite)
@@ -84,9 +91,9 @@ bool MosaicMaker::saveMosaic(MosaicPtr mosaic, bool forceOverwrite)
     qDebug() << "TiledPatternMaker::saveMosaic"  << mosaic->getName().get();
 
     // match size of mosaic view
-    auto & canvas    = viewControl->getCanvas();
-    QSize size       = Sys::view->getSize();
-    QSize zsize      = canvas.getSize();
+    auto & canvas    = Sys::viewController->getCanvas();
+    QSize size       = canvas.getViewSize();
+    QSize zsize      = canvas.getCanvasSize();
 
     CanvasSettings cs = _mosaic->getCanvasSettings();
     cs.setViewSize(size);
@@ -99,8 +106,7 @@ bool MosaicMaker::saveMosaic(MosaicPtr mosaic, bool forceOverwrite)
     if (rv)
     {
         Sys::mapEditor->keepStash(retSavedFile.getVersionedName());
-        Sys::loadUnit->setLoadState(LOADING_MOSAIC,retSavedFile);
-        Sys::loadUnit->resetLoadState();
+        loadUnit->declareLoaded(retSavedFile);
 
         emit sig_mosaicWritten();
         emit sig_mosaicLoaded(retSavedFile);
@@ -112,38 +118,46 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
 {
 	_mosaic = mosaic;
 
-    auto bip   = _mosaic->getBkgdImage();
-    auto bview = Sys::backgroundImageView;
-    bview->setImage(bip);      // sets or clears
-
-    if (bip)
-    {
-        bview->setModelXform(bip->getImageXform(),false);
-    }
-
     QVector<ProtoPtr> protos = _mosaic->getPrototypes();
 
     qDebug() << "MosaicMaker::sm_takeDown styles=" << _mosaic->numStyles() << "protos=" << protos.size();
 
-    prototypeMaker->sm_takeDown(protos);
+    if (mosaic->getBkgdImage())
+        Sys::currentBkgImage = BKGD_IMAGE_MOSAIC;
+    else
+        Sys::currentBkgImage = BKGD_IMAGE_NONE;
+
+    Sys::prototypeMaker->sm_takeDown(protos);
 
     CanvasSettings csettings = mosaic->getCanvasSettings();
 
-    Canvas & canvas = viewControl->getCanvas();
-    canvas.reInit();
-    canvas.setModelAlignment(M_ALIGN_MOSAIC);
-    canvas.initCanvasSize(csettings.getCanvasSize());
+    Canvas & canvas = Sys::viewController->getCanvas();
+    canvas.setCanvasSize(csettings.getCanvasSize());
 
-    if (config->splitScreen)
+    if (Sys::config->splitScreen)
     {
-        viewControl->setFixedSize(csettings.getViewSize());
+        Sys::viewController->setFixedSize(csettings.getViewSize());
     }
     else
     {
-        viewControl->setSize(csettings.getViewSize());
+        Sys::viewController->setSize(csettings.getViewSize());
     }
 
-    viewControl->setBackgroundColor(VIEW_MOSAIC,csettings.getBackgroundColor());
+    Sys::viewController->setBackgroundColor(VIEW_MOSAIC,csettings.getBackgroundColor());
+
+    auto border = mosaic->getBorder();
+    if (border && border->getRequiresConversion())
+    {
+        auto style  = mosaic->getFirstRegularStyle();
+        auto xf     = style->getModelXform();
+        border->setModelXform(xf,true,Sys::nextSigid());
+        border->legacy_convertToModelUnits();
+        border->setRequiresConversion(false);
+        border->resetStyleRepresentation();
+    }
+
+    emit Sys::viewController->sig_resetLayers();
+    Sys::viewController->setSelectedPrimaryLayer(mosaic->getFirstRegularStyle());
 }
 
 /* actions are
@@ -152,7 +166,7 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
     3. add prototype to existing mosaic
 */
 
-void MosaicMaker::sm_createMosaic(const QVector<ProtoPtr> prototypes)
+void MosaicMaker::sm_createMosaic(ProtoPtr prototype)
 {
     QColor oldColor = _mosaic->getCanvasSettings().getBackgroundColor();
 
@@ -161,25 +175,22 @@ void MosaicMaker::sm_createMosaic(const QVector<ProtoPtr> prototypes)
 
     CanvasSettings csettings = _mosaic->getCanvasSettings();
 
-    for (auto & prototype : std::as_const(prototypes))
+    prototype->setMosaic(_mosaic);
+
+    StylePtr thick = make_shared<Plain>(prototype);
+    _mosaic->addStyle(thick);
+
+    TilingPtr tp = prototype->getTiling();
+    if (tp)
     {
-        prototype->setMosaic(_mosaic);
-
-        StylePtr thick = make_shared<Plain>(prototype);
-        _mosaic->addStyle(thick);
-
-        TilingPtr tp = prototype->getTiling();
-        if (tp)
-        {
-            thick->setModelXform(tp->getModelXform(),false);
-            csettings = tp->getData().getCanvasSettings();
-        }
-        else
-        {
-            // whaddya gonna do?
-            Xform  xf = viewControl->getCurrentModelXform();
-            thick->setModelXform(xf,false);
-        }
+        thick->setModelXform(tp->getModelXform(),false,Sys::nextSigid());
+        csettings = tp->hdr().getCanvasSettings();
+    }
+    else
+    {
+        // whaddya gonna do?
+        Xform  xf = Sys::viewController->getSystemModelXform();
+        thick->setModelXform(xf,false,Sys::nextSigid());
     }
 
     // tiling has no intrinsic background color
@@ -187,56 +198,49 @@ void MosaicMaker::sm_createMosaic(const QVector<ProtoPtr> prototypes)
     _mosaic->setCanvasSettings(csettings);
 }
 
-void MosaicMaker::sm_addPrototype(const QVector<ProtoPtr> prototypes)
+void MosaicMaker::sm_addPrototype(ProtoPtr prototype)
 {
     auto existing_protos = _mosaic->getPrototypes();
-
-    for (auto & prototype : std::as_const(prototypes))
+    if (existing_protos.contains(prototype))
     {
-        if (existing_protos.contains(prototype))
-        {
-            continue;
+        qWarning() << "MosaicMaker::sm_addPrototype" <<" trying to add exisitng prototype";
+        return;
+    }
 
-        }
+    // this is the new prototype
+    prototype->setMosaic(_mosaic);
 
-        // this is the new prototype
-        prototype->setMosaic(_mosaic);
-
-        StylePtr thick = make_shared<Plain>(prototype);
-        _mosaic->addStyle(thick);
-        auto crop = _mosaic->getCrop();
-        if (crop)
-        {
-            prototype->setCrop(crop);
-        }
+    StylePtr thick = make_shared<Plain>(prototype);
+    _mosaic->addStyle(thick);
+    auto crop = _mosaic->getCrop();
+    if (crop)
+    {
+        prototype->setCrop(crop);
     }
 }
 
-void MosaicMaker::sm_removePrototype(const QVector<ProtoPtr> prototypes)
+void MosaicMaker::sm_removePrototype(ProtoPtr prototype)
 {
     auto existing_protos = _mosaic->getPrototypes();
+    if (!existing_protos.contains(prototype))
+    {
+        qWarning() << "MosaicMaker::sm_removePrototype" << "could not delete prototype";
+        return;
+    }
 
     QVector<StylePtr> fordeletion;
-    for (auto & prototype : std::as_const(existing_protos))
+    // remove syles containing this proto
+    for (auto & style : _mosaic->getStyleSet())
     {
-        if (prototypes.contains(prototype))
+        if (style->getPrototype() == prototype)
         {
-            continue;
+            fordeletion.push_back(style);
         }
+    }
 
-        // remove syles containing this proto
-        for (auto & style : _mosaic->getStyleSet())
-        {
-            if (style->getPrototype() == prototype)
-            {
-                fordeletion.push_back(style);
-            }
-        }
-
-        for (auto & style : fordeletion)
-        {
-            _mosaic->deleteStyle(style);
-        }
+    for (auto & style : fordeletion)
+    {
+        _mosaic->deleteStyle(style);
     }
 }
 
@@ -263,66 +267,55 @@ void MosaicMaker::sm_resetStyles()
     }
 }
 
-void MosaicMaker::sm_takeUp(QVector<ProtoPtr> prototypes, eMOSM_Event event)
+void MosaicMaker::sm_takeUp(MosaicEvent & mosEvent)
 {
-    // note - passing the prototypes themselves, not references, so that prototype maker weak pointers remain good.
+    // note - passing the prototype, not a references,
+    // so prototype maker weak pointers remain good.
 
-    qDebug().noquote() << __FUNCTION__ << sMOSM_Events[event] << "protos" << prototypes.count();
-    switch (event)
+    auto event = mosEvent.event;
+    auto proto = mosEvent.prototype;
+
+    qDebug().noquote() << "MosaicMaker::sm_takeUp" << sMOSM_Events[event];
+
+    switch (mosEvent.event)
     {
-    case MOSM_LOAD_EMPTY:
-        sm_createMosaic(prototypes);
+    case MOSM_LOAD_PROTO_EMPTY:
+        sm_createMosaic(proto);
         break;
 
-    case MOSM_LOAD_SINGLE:
-        sm_createMosaic(prototypes);
+    case MOSM_LOAD_PROTO_SINGLE:
+        sm_createMosaic(proto);
         break;
 
-    case MOSM_RELOAD_SINGLE:
+    case  MOSM_LOAD_PROTO_MULTI:
+        sm_addPrototype(proto);
+        break;
+
+    case MOSM_RELOAD_PROTO_SINGLE:
         // the prototype remains the same, but may have different content
         // so just reset the styles so that they may be drawn again
+        sm_resetStyles();   // FIXME  could be more granular
+        break;
+
+    case MOSM_RELOAD_PROTO_MULTI:
+        sm_replacePrototype(proto);
         sm_resetStyles();
         break;
 
-    case MOSM_LOAD_MULTI:
-        sm_addPrototype(prototypes);
-        break;
-
-    case MOSM_RELOAD_MULTI:
-        sm_replacePrototype(prototypes.first());
+    case MOSM_PROTO_CHANGED:
         sm_resetStyles();
         break;
 
-    case MOSM_TILING_CHANGED:
-        sm_replacePrototype(prototypes.first());
-        sm_resetStyles();
-        break;
-
-    case MOSM_TILE_CHANGED:
-    case MOSM_MOTIF_CHANGED:
-        sm_resetStyles();
-        break;
-
-    case MOSM_TILING_DELETED:
-        sm_removePrototype(prototypes);
-        break;
-
-    case MOSM_RENDER:
-        if (!_mosaic->hasContent())
-        {
-            sm_createMosaic(prototypes);
-        }
-        else
-        {
-            sm_resetStyles();
-        }
+    case MOSM_PROTO_DELETED:
+        sm_removePrototype(proto);
         break;
 
     default:
-        qCritical().noquote() << __FUNCTION__ << "unsuported event" << sMOSM_Events[event];
+        qCritical().noquote() << "MosaicMaker::sm_takeUp" << "unsuported event" << sMOSM_Events[event];
+        break;
     }
 
-    if (viewControl->isEnabled(VIEW_MOSAIC))
+    if (Sys::viewController->isEnabled(VIEW_MOSAIC))
         emit sig_reconstructView();
     else
         emit sig_updateView();

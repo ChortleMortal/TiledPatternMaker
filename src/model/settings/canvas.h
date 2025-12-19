@@ -6,37 +6,42 @@
 #include <QColor>
 #include "sys/geometry/bounds.h"
 
-enum eAlignment
-{
-    M_ALIGN_NONE,
-    M_ALIGN_MOSAIC,
-    M_ALIGN_TILING,
-};
+/*
+ * The canvas transform converts any point in model space into a point in screen (pixel) space,
+ * and it's invert converts from screen to model
+ * Model space is defined by Bounds which although can be varied, in this application are so far fixed.
+ * Model space has a width of 20.0  and it's top left coordinate is defined as (-10.0, 10.0) and from
+ * this a rectangle can be defined using an aspecst ratio whuich is the same as the aspect ratrio of
+ * the screen view
+ */
 
 class Canvas
 {
-    friend class ViewController;
+    friend class SystemViewController;
 
 public:
     Canvas();
 
-    void            reInit();
+    void            setDefaultSize();
 
     QColor          getBkgdColor() const                { return _bkgdColor; }
 
-    void            initCanvasSize(QSize size);
-    QSize           getSize() const                     { return _canvasSize + _deltaSize; }
+    void            setCanvasSize(QSize size);
+    QSize           getCanvasSize() const               { return _canvasSize + _deltaSize; }
     void            setDeltaCanvasSize(QSize size);
 
+    void            setViewSize(QSize size)             { _viewSize = size; }
+    QSize           getViewSize()                       { return _viewSize; }
+
+#ifdef VARIABLE_BOUNDS
     Bounds          getBounds() const                   { return _bounds; }
     void            setBounds(Bounds & b)               { _bounds = b; computeCanvasTransform(); }
+#endif
 
-    void            setModelAlignment(eAlignment mode)  { _alignment = mode; }
-    eAlignment      getModelAlignment() const           { return _alignment; }
+    QTransform      getTransform() const                { return _canvasTransform; }
+    QPointF         getCenter();
 
-    QTransform      getCanvasTransform() const          { return _canvasTransform; }
-    QTransform      getInvertedCanvasTransform() const  { return _canvasInverted; }
-    qreal           getScale()                          { return _scale; }
+    void            dump();
 
 protected:
     void            computeCanvasTransform();
@@ -45,19 +50,17 @@ private:
     void            setBkgdColor(QColor color)          { _bkgdColor = color; }
 
     QTransform      _canvasTransform;
-    QTransform      _canvasInverted;
 
     QColor          _bkgdColor;
 
     Bounds          _bounds;
+#ifdef VARIABLE_BOUNDS
     Bounds          _defaultBounds;
-
+#endif
+    QSize           _viewSize;    // the main window size
     QSize           _canvasSize;
     QSize           _deltaSize;
     QSize           _defaultSize;
-    qreal           _scale;
-
-    eAlignment      _alignment;
 };
 
 

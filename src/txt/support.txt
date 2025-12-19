@@ -1,0 +1,10 @@
+Support
+=======
+
+If you would like help understanding how to build or use Tiled Pattern Maker, then please send email to me at:
+    dcportal3@gmail.com
+
+It is my understanding that only a handful of people have discovered this program, and I am happy to hear from you
+also if you have feedback, bug reports, or suggestions as to how it can be improved.
+
+David

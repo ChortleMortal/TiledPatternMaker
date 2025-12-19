@@ -2,9 +2,13 @@
 #ifndef OUTLINE_H
 #define OUTLINE_H
 
+#include "model/styles/outline_casing.h"
 #include "model/styles/thick.h"
-#include "sys/geometry/edge.h"
-#include "sys/geometry/belowandaboveedge.h"
+#include "sys/sys/debugflags.h"
+
+typedef std::shared_ptr<class OutlineCasing> OutlineCasingPtr;
+
+class OutlineCasingSet;
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -17,7 +21,6 @@
 // The same code that computes the draw elements for Outline can
 // be used by other "fat" styles, such as Emboss.
 
-
 class Outline : public Thick
 {
 public:
@@ -29,15 +32,17 @@ public:
     void createStyleRepresentation() override;
     void draw(GeoGraphics *gg ) override;
 
+    virtual MapPtr     getStyleMap()  override;
     virtual eStyleType getStyleType() const override { return STYLE_OUTLINED; }
     QString            getStyleDesc() const override { return "Outlined"; }
     virtual void       dump()         const override { qDebug().noquote() << getStyleDesc() << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color << colors.colorsString(); }
 
-    static BelowAndAbove getPoints(const MapPtr & map, const EdgePtr & edge, const VertexPtr & fromV, const VertexPtr & toV, qreal qwidth);
-    static QPointF       getJoinPoint(QPointF joint, QPointF from, QPointF to, qreal qwidth);
+public slots:
+    void    slot_dbgChanged(eDbgType type);
+    void    slot_dbgTrigger(int val);
 
 protected:
-    QVector<BelowAndAboveEdge> pts4; // Internal representation of the rendering.
+    OutlineCasingSet casings;
 };
 #endif
 

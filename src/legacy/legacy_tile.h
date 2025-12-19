@@ -26,11 +26,6 @@ public:
 
     void tile_rotate(int amount);
 
-    virtual const Xform &   getModelXform() override;
-    virtual void            setModelXform(const Xform & xf, bool update) override;
-
-    eViewType iamaLayer() override { return VIEW_DESIGN; }
-
 protected:
     qreal getSLinearPos(int step, int duration);
 

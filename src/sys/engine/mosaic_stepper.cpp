@@ -1,9 +1,10 @@
-#include "sys/engine/mosaic_stepper.h"
-#include "sys/sys/fileservices.h"
-#include "sys/sys.h"
-#include "model/makers/mosaic_maker.h"
 #include "gui/top/controlpanel.h"
+#include "gui/top/system_view.h"
+#include "model/makers/mosaic_maker.h"
 #include "model/settings/configuration.h"
+#include "sys/engine/mosaic_stepper.h"
+#include "sys/sys.h"
+#include "sys/sys/fileservices.h"
 
 ////////////////////////////////////////////
 ///
@@ -11,7 +12,11 @@
 ///
 ////////////////////////////////////////////
 
-MosaicStepper::MosaicStepper(ImageEngine * parent) : SteppingEngine(parent) {}
+MosaicStepper::MosaicStepper(ImageEngine * parent) : SteppingEngine(parent)
+{
+    mImmediate = false;
+    connect(Sys::sysview, &SystemView::sig_loadComplete, this, &MosaicStepper::do_immediate, Qt::QueuedConnection);
+}
 
 bool MosaicStepper::begin()
 {
@@ -23,14 +28,17 @@ bool MosaicStepper::begin()
 
     qDebug() << "Starting mosaic view cycle";
 
-    cydata.files  = FileServices::getMosaicFiles(config->viewFileFilter);
+    cydata.files  = FileServices::getMosaicFiles(config->imageFileFilter);
     cydata.cIndex = -1;
     cydata.cCount = config->cycleInterval;     // start now
 
     setPaused (false);
     start(true);
 
-    return next();
+    if (mImmediate)
+        return do_immediate();
+    else
+        return next();
 }
 
 bool MosaicStepper::tick()
@@ -46,14 +54,41 @@ bool MosaicStepper::next()
     if (isPaused())
         return false;
 
+    if (mImmediate)
+        return false;
+
     if (cydata.cCount++ <= config->cycleInterval)
     {
         qDebug() << "Tick";
         return false;
     }
-
     cydata.cCount = 0;
-    if (++cydata.cIndex < cydata.files.count())
+
+    if (++cydata.cIndex < cydata.files.size())
+    {
+        VersionedFile file = cydata.files.at(cydata.cIndex);
+        Sys::mosaicMaker->loadMosaic(file);
+    }
+    else
+    {
+        end();
+    }
+
+    return true;
+}
+
+bool MosaicStepper::do_immediate()
+{
+    if (!isStarted())
+        return false;
+
+    if (isPaused())
+        return false;
+
+    if (!mImmediate)
+        return false;
+
+    if (++cydata.cIndex < cydata.files.size())
     {
         VersionedFile file = cydata.files.at(cydata.cIndex);
         Sys::mosaicMaker->loadMosaic(file);
@@ -81,7 +116,7 @@ bool MosaicStepper::end()
     {
         start(false);
         finish("Mosaic viewing");
-        panel->clearStatus();
+        panel->restorePageStatus();
         return true;
     }
     else

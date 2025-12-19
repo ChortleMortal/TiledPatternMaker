@@ -4,9 +4,13 @@
 
 #include "gui/map_editor/map_editor_stash.h"
 #include "gui/map_editor/map_editor_db.h"
+#include "model/settings/configuration.h"
 #include "sys/sys/fileservices.h"
 #include "sys/sys.h"
-#include "gui/top/view.h"
+#include "sys/qt/tpm_io.h"
+#include "sys/sys/pugixml.hpp"
+
+using namespace pugi;
 
 #define STASH_VERSION 3
 
@@ -42,22 +46,36 @@ bool MapEditorStash::writeStash(QString name, MapEditorDb * db)
         return false;
     }
 
-    QDataStream out(&file);
+    QTextStream ts(&file);
+    ts.setRealNumberPrecision(16);
 
-    // Write a header with a "magic number" and a version
-    out << static_cast<quint64>(0xA0B0C0D00);
-    out << static_cast<qint64>(STASH_VERSION);
+    ts << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << endl;
+    ts << "<template>" << endl;
 
-    // Write the data
-    out << db->constructionLines;
+    ts << "<lines>" << endl;
+
+    for (const auto & line : std::as_const(db->constructionLines))
+    {
+        ts << "<line>" << line.p1().x() << "," << line.p1().y() << "," << line.p2().x() << "," << line.p2().y() << "</line>" << endl;
+    }
+    ts << "</lines>" << endl;
+
+    ts << "<circles>" << endl;
 
     for (const auto & c : std::as_const(db->constructionCircles))
     {
-        Circle circle = *c;
-        out << circle;
+        QString str = QString("<circle radius=\"%1\" centreX=\"%2\" centreY=\"%3\" />").arg(c->radius).arg(c->centre.x()).arg(c->centre.y());
+        ts << str << endl;
     }
+    ts << "</circles>" << endl;
 
-    return true;
+    ts << "</template>" << endl;
+    file.close();
+
+    // reformat
+    VersionedFile xfile;
+    xfile.setFromFullPathname(name);    // name works for current directory
+    return FileServices::reformatXML(xfile);
 }
 
 bool MapEditorStash::destash()
@@ -73,16 +91,21 @@ bool MapEditorStash::destash()
 
 bool MapEditorStash::animateReadStash(VersionedFile &xfile)
 {
-    bool rv = readStashTo(xfile, localLines, localCircs);
-    return rv;
+    if (Sys::config->mapedOldTemplates)
+        return readStashDat(xfile, localLines, localCircs);
+    else
+        return readStashXML(xfile, localLines, localCircs);
 }
 
 bool MapEditorStash::readStash(VersionedFile & xfile, MapEditorDb * db)
 {
-    return readStashTo(xfile,db->constructionLines, db->constructionCircles);
+     if (Sys::config->mapedOldTemplates)
+         return readStashDat(xfile,db->constructionLines, db->constructionCircles);
+     else
+         return readStashXML(xfile,db->constructionLines, db->constructionCircles);
 }
 
-bool MapEditorStash::readStashTo(VersionedFile & xfile, QVector<QLineF>  & lines, QVector<CirclePtr> & circs)
+bool MapEditorStash::readStashDat(VersionedFile & xfile ,QVector<QLineF>  & lines, QVector<CirclePtr> & circs)
 {
     qInfo() << "Loading template" << xfile.getPathedName();
 
@@ -101,7 +124,7 @@ bool MapEditorStash::readStashTo(VersionedFile & xfile, QVector<QLineF>  & lines
     in >> magic;
     if (magic != 0xA0B0C0D00)
     {
-        qWarning() << "invalid stash header"  << magic;
+        qWarning() << "invalid stash header"  << Qt::hex <<  magic;
         return false;
     }
     qint64 version = 0;
@@ -154,9 +177,76 @@ bool MapEditorStash::readStashTo(VersionedFile & xfile, QVector<QLineF>  & lines
     return true;
 }
 
+bool MapEditorStash::readStashXML(VersionedFile &xfile,QVector<QLineF>  & lines, QVector<CirclePtr> & circs)
+{
+    qInfo() << "Loading template" << xfile.getPathedName();
+
+    xml_document doc;
+
+    xml_parse_result result = doc.load_file(xfile.getPathedName().toStdString().c_str());
+    if (result == false)
+    {
+        qWarning() << result.description();
+        return false;
+    }
+
+    xml_node node = doc.child("template");
+    if (!node)
+    {
+        qWarning() << "Invalid templa4e XML file";
+        return false;
+    }
+
+    xml_node node2 = node.child("lines");
+    if (node2)
+    {
+        for (xml_node node3 = node2.child("line"); node3; node3 = node3.next_sibling())
+        {
+            QString line = node3.child_value();
+            QStringList l = line.split(',');
+            QLineF aline(l[0].toDouble(),l[1].toDouble(),l[2].toDouble(),l[3].toDouble());
+            lines.push_back(aline);
+        }
+    }
+
+    node2 = node.child("circles");
+    if (node2)
+    {
+        for (xml_node node3 = node2.child("circle"); node3; node3 = node3.next_sibling())
+        {
+            qreal x = 0;
+            qreal y = 0;
+            qreal radius = 1;
+            xml_attribute attr = node3.attribute("radius");
+            if (attr)
+            {
+                QString str = attr.value();
+                radius = str.toDouble();
+            }
+            attr = node3.attribute("centreX");
+            if (attr)
+            {
+                QString str = attr.value();
+                x = str.toDouble();
+            }
+            attr = node3.attribute("centreY");
+            if (attr)
+            {
+                QString str = attr.value();
+                y = str.toDouble();
+            }
+            CirclePtr c = std::make_shared<Circle>(QPointF(x,y),radius);
+            circs.push_back(c);
+        }
+    }
+
+    qInfo() << "Template loaded" << xfile.getPathedName();
+    return true;
+}
+
 bool MapEditorStash::initStash(VersionedName mosaicname, MapEditorDb * db)
 {
-    VersionedFile xfile = FileServices::getFile(mosaicname,FILE_TEMPLATE);
+    VersionedFile xfile = FileServices::getFile(mosaicname,FILE_TEMPLATE2);
     if (xfile.isEmpty())
     {
         // there is no existing template assocoated with the newly
@@ -174,10 +264,10 @@ bool MapEditorStash::saveTemplate(VersionedName vname)
     if (current == -1)
         return false;
 
-    VersionedFile xfile = FileServices::getFile(vname,FILE_TEMPLATE);
+    VersionedFile xfile = FileServices::getFile(vname,FILE_TEMPLATE2);
     if (xfile.isEmpty())
     {
-        QString pname = Sys::templateDir + vname.get() + ".dat";
+        QString pname = Sys::templateDir + vname.get() + ".xml";
         xfile.setFromFullPathname(pname);
     }
     else
@@ -229,7 +319,7 @@ void MapEditorStash::add(int index)
 
 QString MapEditorStash::getStashName(int index)
 {
-    QString name = QString("constructionstash%1.dat").arg(QString::number(index));
+    QString name = QString("constructionstash%1.xml").arg(QString::number(index));
     return name;
 }
 

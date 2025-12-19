@@ -1,16 +1,17 @@
 #include <QSize>
 #include <QApplication>
-#include "design_maker.h"
-#include "gui/viewers/gui_modes.h"
-#include "legacy/design.h"
-#include "legacy/designs.h"
-#include "sys/sys/load_unit.h"
-#include "sys/sys.h"
 #include "gui/top/controlpanel.h"
-#include "model/settings/configuration.h"
-#include "gui/top/view.h"
-#include "gui/top/view_controller.h"
+#include "gui/top/system_view.h"
+#include "gui/top/system_view_controller.h"
+#include "gui/viewers/gui_modes.h"
+#include "gui/viewers/image_view.h"
+#include "legacy/design.h"
+#include "legacy/design_maker.h"
+#include "legacy/designs.h"
 #include "model/settings/canvas_settings.h"
+#include "model/settings/configuration.h"
+#include "sys/sys.h"
+#include "sys/sys/load_unit.h"
 
 #ifdef __linux__
 #define ALT_MODIFIER Qt::MetaModifier
@@ -24,6 +25,8 @@ DesignMaker::DesignMaker()
 {
     selectedLayer   = 0;
     stepsTaken      = 0;
+
+    loadUnit        = new LoadUnit(LT_LEGACY);
 }
 
 void DesignMaker::init()
@@ -49,12 +52,12 @@ void DesignMaker::init()
     availableDesigns.insert(DESIGN_KUMIKO1,make_shared<DesignKumiko1>(DESIGN_KUMIKO1,"Kumiko 1"));
     availableDesigns.insert(DESIGN_KUMIKO2,make_shared<DesignKumiko2>(DESIGN_KUMIKO2,"Kumiko 2"));
 
-    connect(Sys::view, &View::sig_deltaScale,    this, &DesignMaker::designScale);
-    connect(Sys::view, &View::sig_deltaRotate,   this, &DesignMaker::designRotate);
-    connect(Sys::view, &View::sig_deltaMoveY,    this, &DesignMaker::designMoveY);
-    connect(Sys::view, &View::sig_deltaMoveX,    this, &DesignMaker::designMoveX);
-    connect(this,      &DesignMaker::sig_updateView,      Sys::view, &View::slot_update);
-    connect(this,      &DesignMaker::sig_reconstructView, viewControl, &ViewController::slot_reconstructView);
+    connect(Sys::sysview, &SystemView::sig_deltaScale,    this, &DesignMaker::designScale);
+    connect(Sys::sysview, &SystemView::sig_deltaRotate,   this, &DesignMaker::designRotate);
+    connect(Sys::sysview, &SystemView::sig_deltaMoveY,    this, &DesignMaker::designMoveY);
+    connect(Sys::sysview, &SystemView::sig_deltaMoveX,    this, &DesignMaker::designMoveX);
+    connect(this,         &DesignMaker::sig_updateView,      viewControl, &SystemViewController::slot_updateView);
+    connect(this,         &DesignMaker::sig_reconstructView, viewControl, &SystemViewController::slot_reconstructView);
 }
 
 void DesignMaker::addDesign(DesignPtr d)
@@ -86,7 +89,7 @@ void DesignMaker::slot_loadDesign(eDesign design)
 
     if (!config->lockView)
     {
-        Sys::controlPanel->delegateView(VIEW_DESIGN);
+        Sys::controlPanel->delegateView(VIEW_LEGACY,true);
     }
     
     emit sig_reconstructView();
@@ -100,7 +103,7 @@ void DesignMaker::slot_buildDesign(eDesign design)
     VersionedName vn(desName);
     VersionedFile vf;
     vf.updateFromVersionedName(vn);
-    Sys::loadUnit->setLoadState(LOADING_LEGACY,vf);
+    loadUnit->start(vf);
 
     DesignMaker * designMaker = Sys::designMaker;
 
@@ -117,18 +120,27 @@ void DesignMaker::slot_buildDesign(eDesign design)
     // size view to design
     QSize size = d->getDesignInfo().getViewSize();
     auto & canvas = viewControl->getCanvas();
-    canvas.initCanvasSize(size);
-    canvas.setModelAlignment(M_ALIGN_NONE);
+    canvas.setCanvasSize(size);
 
     viewControl->setSize(size);
 
-    viewControl->removeAllImages();
+    Sys::imageViewer->unloadLayerContent();
 
-    Sys::loadUnit->resetLoadState();
+    loadUnit->end(LS_LOADED);
 
     emit sig_reconstructView();
 
     emit sig_loadedDesign(design);
+}
+
+void DesignMaker::reload()
+{
+    VersionedFile vf = loadUnit->getLoadFile();
+    if (!vf.isEmpty())
+    {
+        eDesign design = (eDesign)designs.key(vf.getVersionedName().get());
+        Sys::designMaker->slot_loadDesign(design);
+    }
 }
 
 void DesignMaker::designLayerSelect(int layer)
@@ -191,7 +203,7 @@ void DesignMaker::designReposition(qreal x, qreal y)
             design->setXseparation(design->getXseparation() + x);
             design->setYseparation(design->getYseparation() + y);
 
-            qDebug() << "origin=" << design->getDesignInfo().getStartTile() << "xSep=" << design->getXseparation() << "ySep=" << design->getYseparation();
+            qDebug() << "origin=" << design->getStartTile() << "xSep=" << design->getXseparation() << "ySep=" << design->getYseparation();
 
             design->repeat();
         }
@@ -229,12 +241,10 @@ void DesignMaker::designOrigin(int x, int y)
     {
         if (design->isVisible())
         {
-            CanvasSettings info = design->getDesignInfo();
-            QPointF pt = info.getStartTile();
+            QPointF pt = design->getStartTile();
             pt.setX(pt.x() + x);
             pt.setY(pt.y()+ y);
-            info.setStartTile(pt);
-            design->setDesignInfo(info);
+            design->setStartTile(pt);
         }
     }
     designReposition(0,0);
@@ -274,15 +284,15 @@ void DesignMaker::setStep(int astep)
 void DesignMaker::ProcKeyUp()
 {
     // up arrow
-    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ZLEVEL))
+    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ZLEVEL))
         designLayerZPlus();
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_STEP))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_STEP))
         step(1);
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_SEPARATION))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_MODE_DES_SEPARATION))
         designReposition(0,-1);
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_OFFSET))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_OFFSET))
         designOffset(0,-1);
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ORIGIN))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ORIGIN))
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
@@ -295,15 +305,15 @@ void DesignMaker::ProcKeyUp()
 void DesignMaker::ProcKeyDown()
 {
     // down arrrow
-    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ZLEVEL))
+    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ZLEVEL))
         designLayerZMinus();
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_STEP))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_STEP))
         step(-1);
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_SEPARATION))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_MODE_DES_SEPARATION))
         designReposition(0,1);
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_OFFSET))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_OFFSET))
         designOffset(0,1);
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ORIGIN))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ORIGIN))
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
@@ -315,11 +325,11 @@ void DesignMaker::ProcKeyDown()
 
 void DesignMaker::ProcKeyLeft()
 {
-    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_SEPARATION))
+    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_MODE_DES_SEPARATION))
         designReposition(-1,0);
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_OFFSET))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_OFFSET))
         designOffset(-1,0);
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ORIGIN))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ORIGIN))
     {   Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
             designOrigin(-100,0);
@@ -330,11 +340,11 @@ void DesignMaker::ProcKeyLeft()
 
 void DesignMaker::ProcKeyRight()
 {
-    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_SEPARATION))
+    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_MODE_DES_SEPARATION))
         designReposition(1,0);
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_OFFSET))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_OFFSET))
         designOffset(1,0);
-    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ORIGIN))
+    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ORIGIN))
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
@@ -369,7 +379,7 @@ void DesignMaker::designRotate(int delta)
 
 void DesignMaker::designMoveY(int delta)
 {
-    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_POS) || Sys::guiModes->getKbdMode(KBD_MODE_DES_LAYER_SELECT))
+    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_POS) || Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_LAYER_SELECT))
     {
         for (auto & design : std::as_const(activeDesigns))
         {
@@ -394,7 +404,7 @@ void DesignMaker::designMoveY(int delta)
 
 void DesignMaker::designMoveX(int delta)
 {
-    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_POS) || Sys::guiModes->getKbdMode(KBD_MODE_DES_LAYER_SELECT))
+    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_POS) || Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_LAYER_SELECT))
     {
         for (auto & design : std::as_const(activeDesigns))
         {

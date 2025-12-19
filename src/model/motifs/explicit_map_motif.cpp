@@ -26,6 +26,6 @@ void ExplicitMapMotif::infer()
 
 void ExplicitMapMotif::resetMotifMap()
 {
-    explicitMap.reset();
+    //explicitMap.reset();  // the explicit map should not be messed with
     motifMap.reset();
 }

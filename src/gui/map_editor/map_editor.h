@@ -6,9 +6,11 @@
 #include "model/tilings/tiling.h"
 #include "gui/map_editor/map_editor_mouseactions.h"
 #include "gui/map_editor/map_editor_stash.h"
+#include "gui/map_editor/map_selection.h" // needed
 
 typedef std::shared_ptr<class Tiling>        TilingPtr;
 typedef std::shared_ptr<class Mosaic>        MosaicPtr;
+typedef std::shared_ptr<class Prototype>     ProtoPtr;
 
 class MapEditorSelection;
 class MapEditorDb;
@@ -30,7 +32,7 @@ public:
     ~MapEditor();
     void    init();
 
-    bool    loadMosaicPrototype();
+    bool    loadMosaicPrototype(int style);
     void    loadMotifPrototype();
     bool    loadSelectedMotifs();
     void    loadTilingUnit();
@@ -46,6 +48,7 @@ public:
     bool    pushToMotif(MapPtr map);
     bool    pushToTiling(MapPtr map, bool outer);
 
+
     QString  getStatus();
 
     bool    procKeyEvent(QKeyEvent *k);
@@ -60,10 +63,8 @@ public:
     bool    keepStash(VersionedName name);
     bool    initStashFrom(VersionedName mosaicname);
 
-    void    flipLineExtension();
-
     void setMapedMouseMode(eMapEditorMouseMode mapType);
-    eMapEditorMouseMode getMouseMode();
+    eMapEditorMouseMode getMapedMouseMode();
 
     MapEditorDb        * getDb()        { return db; }
     MapEditorSelection * getSelector()  { return selector; }
@@ -74,8 +75,11 @@ signals:
     void    sig_close();
     void    sig_updateView();
     void    sig_raiseMenu();
+    void    sig_styleMapUpdated(MapPtr map);
 
 protected:
+    ProtoPtr createPrototypeFromMap(MapPtr map);
+    bool     createMosiacFromPrototypes(QVector<ProtoPtr> &protos);
 
 private:
     MapEditorStash         _stash;                // stash of construction lines
@@ -83,7 +87,6 @@ private:
 
     MapEditorDb           * db;
     MapEditorSelection    * selector;
-    MapEditorView         * meView;
 
     class Configuration   * config;
     class MosaicMaker     * mosaicMaker;

@@ -28,6 +28,9 @@ public:
     CanvasSettings &  getDesignInfo() { return settings; }
     void            setDesignInfo(const CanvasSettings & ms) { settings = ms; }
 
+    void            setStartTile(QPointF pt) { _startTile = pt;  }
+    QPointF         getStartTile()           { return _startTile; }
+
     QVector<PatternPtr> &   getPatterns()      { return patterns; }
 
     void            doSteps(int maxIndex = 100);
@@ -98,6 +101,7 @@ protected:
     bool            visible;
     
     CanvasSettings  settings;
+    QPointF         _startTile;
 };
 
 

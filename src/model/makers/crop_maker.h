@@ -3,9 +3,6 @@
 #define CROPMAKER_H
 
 #include <QObject>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 
 enum eCropMaker
 {
@@ -45,6 +42,7 @@ public:
     CropPtr getCrop();
     void    setCrop(CropPtr crop);
     void    removeCrop();
+    void    removePainterCrop();
 };
 
 class PainterCropMaker : public CropMaker

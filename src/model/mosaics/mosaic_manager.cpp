@@ -1,19 +1,18 @@
 #include <QMessageBox>
 
-#include "model/mosaics/mosaic_manager.h"
+#include "gui/top/controlpanel.h"       // required
+#include "gui/widgets/version_dialog.h"
 #include "model/makers/mosaic_maker.h"
-#include "sys/sys/fileservices.h"
-#include "sys/sys/load_unit.h"
-#include "sys/sys.h"
 #include "model/mosaics/mosaic.h"
+#include "model/mosaics/mosaic_manager.h"
 #include "model/mosaics/mosaic_reader.h"
 #include "model/mosaics/mosaic_writer.h"
-#include "gui/top/controlpanel.h"
 #include "model/settings/configuration.h"
-#include "gui/widgets/version_dialog.h"
+#include "sys/sys.h"
+#include "sys/sys/fileservices.h"
 
 // This is a GUI wropper for MosaciReader
-// which also calls sm_takeDown
+// Called by MosaicMaker which handles signals/slots
 MosaicPtr MosaicManager::loadMosaic(VersionedFile vfile)
 {
     qDebug().noquote() << "MosaicManager::loadMosaic()" << vfile.getVersionedName().get();
@@ -40,10 +39,9 @@ MosaicPtr MosaicManager::loadMosaic(VersionedFile vfile)
     }
 
     qDebug().noquote() << "Loading:"  << vfile.getPathedName();
-    Sys::loadUnit->loadTimer.restart();
 
     // load
-    MosaicReader reader;
+    MosaicReader reader(Sys::viewController);
     mosaic = reader.readXML(vfile);
 
     if (!mosaic)
@@ -57,6 +55,8 @@ MosaicPtr MosaicManager::loadMosaic(VersionedFile vfile)
     }
 
     mosaic->setName(vfile.getVersionedName());
+
+    mosaic->dumpTransforms();
 
     return mosaic;
 }

@@ -11,7 +11,7 @@
 #include "gui/top/controlpanel.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
-#include "gui/top/view_controller.h"
+#include "gui/top/system_view_controller.h"
 #include "gui/widgets/layout_sliderset.h"
 #include "gui/panels/panel_misc.h"
 
@@ -22,27 +22,36 @@ Q_DECLARE_METATYPE(WeakDesignElementPtr);
 
 page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_PROTO_INFO,"Prototype Info")
 {
-    protoView       = Sys::prototypeView;
+    pageStatusString = "<body><span>Click on row to select tile  &nbsp;&nbsp; | &nbsp;&nbsp; Click on color to change</span></body>";
+
     protoMaker      = Sys::prototypeMaker;
 
     //setMouseTracking(true);
 
-    SpinSet * widthSpin = new SpinSet("Line Width",3,1,9);
+    SpinSet * widthSpin         = new SpinSet("Line Width",3,1,9);
     widthSpin->setValue((int)config->protoviewWidth);
 
-    QCheckBox * cbDrawMap        = new QCheckBox("Prototype Map");
-    QCheckBox * cbDrawTiles      = new QCheckBox("All Tiles");
-    QCheckBox * cbDrawMotifs     = new QCheckBox("All Motifs");
-    QCheckBox * cbDrawProto      = new QCheckBox("Prototype");
-    QCheckBox * cbHiliteTiles    = new QCheckBox("DEL Tiles");
-    QCheckBox * cbHiliteMotifs   = new QCheckBox("DEL Motifs");
+    QPushButton * pbRender      = new QPushButton("Render Prototypes");
+    pbRender->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    QCheckBox * cbAllVisible        = new QCheckBox("All");
-    QCheckBox * cbVisibleMotifs     = new QCheckBox("Motifs");
-    QCheckBox * cbVisibleTiles      = new QCheckBox("Tiles");
+    QHBoxLayout * line1Layout   = new QHBoxLayout;
+    line1Layout->addLayout(widthSpin);
+    line1Layout->addStretch();
+    line1Layout->addWidget(pbRender);
 
-    QPushButton * hideBtn = new QPushButton("Hide All");
-    QPushButton * showBtn = new QPushButton("Show All");
+    QCheckBox * cbDrawMap       = new QCheckBox("Prototype Map");
+    QCheckBox * cbDrawTiles     = new QCheckBox("All Tiles");
+    QCheckBox * cbDrawMotifs    = new QCheckBox("All Motifs");
+    QCheckBox * cbDrawProto     = new QCheckBox("Prototype");
+    QCheckBox * cbHiliteTiles   = new QCheckBox("DEL Tiles");
+    QCheckBox * cbHiliteMotifs  = new QCheckBox("DEL Motifs");
+
+    QCheckBox * cbAllVisible    = new QCheckBox("All");
+    QCheckBox * cbVisibleMotifs = new QCheckBox("Motifs");
+    QCheckBox * cbVisibleTiles  = new QCheckBox("Tiles");
+
+    QPushButton * hideBtn       = new QPushButton("Hide All");
+    QPushButton * showBtn       = new QPushButton("Show All");
 
     int mode = config->protoViewMode;
 
@@ -110,7 +119,7 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
     DELTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     DELTable->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    vbox->addLayout(widthSpin);
+    vbox->addLayout(line1Layout);
     vbox->addLayout(showSettings);
     vbox->addSpacing(7);
     vbox->addWidget(protoTable);
@@ -124,6 +133,7 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
     connect(DELTable,      &AQTableWidget::cellClicked, this, &page_prototype_info::slot_DELSelected);
 
     connect(widthSpin,        &SpinSet::valueChanged,   this, &page_prototype_info::slot_widthChanged);
+    connect(pbRender,         &QPushButton::clicked,    this, [] { Sys::render(RENDER_RESET_PROTOTYPES);} );
     connect(cbDrawProto,      &QCheckBox::clicked,      this, &page_prototype_info::drawProtoClicked);
     connect(cbDrawMap,        &QCheckBox::clicked,      this, &page_prototype_info::drawMapClicked);
     connect(cbDrawTiles,      &QCheckBox::clicked,      this, &page_prototype_info::drawTileClicked);
@@ -142,7 +152,7 @@ void page_prototype_info::buildColorGrid()
 {
     int row = 1;
     int col = 0;
-    ProtoViewColors & colors = protoView->getColors();
+    ProtoViewColors & colors = Sys::prototypeView->getColors();
 
     ClickableLabel * label = new ClickableLabel();
     QVariant variant = colors.mapColor;
@@ -228,12 +238,13 @@ void  page_prototype_info::onRefresh()
 
 void page_prototype_info::onEnter()
 {
+    setPageStatus();
     populateTables();
 }
 
-QString page_prototype_info::getPageStatus()
+void page_prototype_info::onExit()
 {
-    return "<body><span>Click on row to select tile  &nbsp;&nbsp; | &nbsp;&nbsp; Click on color to change</span></body>";
+    clearPageStatus();
 }
 
 void page_prototype_info::populateTables()
@@ -259,7 +270,7 @@ void page_prototype_info::setupProtoTable()
         item->setData(Qt::UserRole,QVariant::fromValue(WeakProtoPtr(proto)));
         protoTable->setItem(row,PROTO_COL_PROTO,item);
 
-        item = new QTableWidgetItem(proto->getTiling()->getName().get());
+        item = new QTableWidgetItem(proto->getTiling()->getVName().get());
         protoTable->setItem(row,PROTO_COL_TILING,item);
 
         item = new QTableWidgetItem(prototypeMaker->isHidden(MVD_PROTO,proto) ? "hidden" : "visible");
@@ -296,7 +307,7 @@ void page_prototype_info::setupDelTable()
             item->setData(Qt::UserRole,QVariant::fromValue(WeakProtoPtr(proto)));
             DELTable->setItem(row,DEL_COL_PROTO,item);
 
-            item = new QTableWidgetItem(proto->getTiling()->getName().get());
+            item = new QTableWidgetItem(proto->getTiling()->getVName().get());
             DELTable->setItem(row,DEL_COL_TILING,item);
 
             item = new QTableWidgetItem(addr(del.get()));
@@ -466,7 +477,7 @@ void page_prototype_info::pickColor(QColor & color)
     {
         color = acolor;
         
-        config->protoViewColors = protoView->getColors().getColors();
+        config->protoViewColors = Sys::prototypeView->getColors().getColors();
         buildColorGrid();
         emit sig_reconstructView();
     }
@@ -481,10 +492,10 @@ void page_prototype_info::setDefaultColors()
     colors.delMotifColor     = QColor(Qt::blue);
     colors.delTileColor      = QColor(Qt::yellow);
     colors.tileBrushColor    = QColor(255, 217, 217,128);
-    ProtoViewColors & viewColors = protoView->getColors();
+    ProtoViewColors & viewColors = Sys::prototypeView->getColors();
     viewColors = colors;
     
-    config->protoViewColors = protoView->getColors().getColors();
+    config->protoViewColors = Sys::prototypeView->getColors().getColors();
     buildColorGrid();
     emit sig_reconstructView();
 }

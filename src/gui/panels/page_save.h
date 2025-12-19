@@ -4,6 +4,8 @@
 
 #include "gui/panels/panel_page.h"
 
+typedef std::shared_ptr<class Tiling> TilingPtr;
+
 class page_save : public panel_page
 {
     Q_OBJECT
@@ -23,26 +25,26 @@ public slots:
     void slot_saveImage();
     void slot_saveMenu();
     void slot_saveSvg();
+    void slot_print();
 
 private slots:
     void slot_saveMosaic();
-    void slot_designSourceChanged();
-    void slot_tilingSourceChanged();
+    void slot_tilingChanged(int idx);
     void setup();
 
 protected:
     void createMosaicSave();
     void createTilingSave();
     void savePixmap(QPixmap & pixmap, QString name);
+    void selectTiling(TilingPtr tiling);
 
 private:
     QTextEdit   * designNotes;
     QLineEdit   * leSaveXmlName;
 
-    QLineEdit   * tile_name;
+    QComboBox   * tile_names;
     QTextEdit   * tile_desc;
     QLineEdit   * tile_author;
     QLabel      * requiresSave;
 };
-
 #endif

@@ -9,6 +9,7 @@
 #include "model/settings/configuration.h"
 #include "model/styles/style.h"
 #include "model/tilings/tiling.h"
+#include "sys/geometry/transform.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -53,20 +54,19 @@ DELSelectorWidget::DELSelectorWidget(MotifMakerWidget * makerWidget)
 
 void DELSelectorWidget::setup(ProtoPtr proto)
 {
-    if (!proto || !proto->getTiling() || proto->getTiling()->numIncluded() == 0 || proto->numDesignElements() == 0)
+    if (!proto || !proto->getTiling() || proto->getTiling()->unit().numIncluded() == 0 || proto->numDesignElements() == 0)
     {
-        DELBtnPtr dummy;
         buttons.clear();
+        delegatedButton.reset();
+
+        DELBtnPtr dummy;
         delegate(dummy,false,true);
         return;
     }
 
     QVector<DesignElementPtr> & dels = proto->getDesignElements();
-    populateMotifButtons(dels);
-}
+    auto tiling = proto->getTiling();
 
-void DELSelectorWidget::populateMotifButtons(QVector<DesignElementPtr> & dels)
-{
     buttons.clear();
     delegatedButton.reset();
 
@@ -77,7 +77,14 @@ void DELSelectorWidget::populateMotifButtons(QVector<DesignElementPtr> & dels)
     while(rit != dels.constBegin())
     {
         rit--;
-        DELBtnPtr fb = std::make_shared<DesignElementButton>(*rit,idx);
+
+        // only use rotation from first placement, since scale and position are backed out
+        // in the design element button which tries to center the del in its window
+        DesignElementPtr del = *rit;
+        QTransform t  = tiling->unit().getFirstPlacement(del->getTile());
+        qreal rotation = Transform::rotation(t);
+
+        DELBtnPtr fb = std::make_shared<DesignElementButton>(idx,*rit,Transform::rotate(rotation));
         buttons.push_back(fb);
         fb->setSize( QSize( 130, 130 ) );
         fb->QFrame::installEventFilter(this);
@@ -104,14 +111,14 @@ bool DELSelectorWidget::eventFilter(QObject *watched, QEvent *event)
             {
                 if (btn.get() == fb)
                 {
-                    bool add = config->motifMultiView;
+                    bool add = (config->motifMakerView == MOTIF_VIEW_SELECTED);
                     Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
                     if (kms == Qt::SHIFT)
                     {
                         add = true;
                     }
                     bool set = true;
-                    if (config->motifMultiView && fb->isDelegated())
+                    if ((config->motifMakerView == MOTIF_VIEW_SELECTED) && fb->isDelegated())
                     {
                         set = false;
                     }
@@ -201,4 +208,13 @@ void DELSelectorWidget::getNextPosition(int index, int & row, int & col)
     else
         col = 0;
     row = index >> 1;
+}
+
+void DELSelectorWidget::update()
+{
+    QWidget::update();
+    for (auto & btn : buttons)
+    {
+        btn->update();
+    }
 }

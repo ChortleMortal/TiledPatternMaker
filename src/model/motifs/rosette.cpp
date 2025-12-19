@@ -93,12 +93,10 @@ void Rosette::buildUnitMap()
 {
     qDebug().noquote() << "Rosette::buildUnit"  << getN() << q << s << "scale" << getMotifScale() << "rot" << getMotifRotate();
 
-    dbgVal = 0x100;
-    debugMap = nullptr;
-    if (dbgVal > 0)
+    motifDebug = 0;     //0x100;
+    if (motifDebug > 0)
     {
-        debugMap = Sys::debugView->getMap();
-        debugMap->wipeout();
+        Sys::debugMapCreate->wipeout();
     }
 
     raySet1.clear();
@@ -188,15 +186,15 @@ void Rosette::buildUnitMap()
         raySet1.transform(t);
     }
 
-    if (dbgVal & 0x01) raySet1.debug();
+    if (motifDebug & 0x01) raySet1.debug();
     QTransform t = getDELTransform();
     raySet1.transform(t);
-    if (dbgVal & 0x01) raySet1.debug();
+    if (motifDebug & 0x01) raySet1.debug();
 
     auto tr = getUnitRotationTransform();
     raySet2 = raySet1;
     raySet2.transform(tr);
-    if (dbgVal & 0x01) raySet2.debug();
+    if (motifDebug & 0x01) raySet2.debug();
 }
 
 

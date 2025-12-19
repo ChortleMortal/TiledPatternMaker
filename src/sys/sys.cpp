@@ -1,16 +1,17 @@
-#include <QDebug>
 #include "gui/map_editor/map_editor.h"
+#include "gui/map_editor/map_editor_db.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/splash_screen.h"
-#include "gui/top/view_controller.h"
-#include "gui/viewers/backgroundimageview.h"
-#include "gui/viewers/crop_view.h"
+#include "gui/top/split_screen.h"
+#include "gui/top/system_view.h"
+#include "gui/top/system_view_controller.h"
+#include "gui/viewers/crop_viewer.h"
 #include "gui/viewers/debug_view.h"
 #include "gui/viewers/grid_view.h"
 #include "gui/viewers/gui_modes.h"
+#include "gui/viewers/image_view.h"
 #include "gui/viewers/map_editor_view.h"
-#include "gui/viewers/measure_view.h"
-#include "gui/viewers/motif_view.h"
+#include "gui/viewers/motif_maker_view.h"
 #include "gui/viewers/prototype_view.h"
 #include "legacy/design_maker.h"
 #include "model/makers/mosaic_maker.h"
@@ -25,19 +26,33 @@
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
 #include "sys/geometry/dcel.h"
+#include "sys/geometry/debug_map.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/vertex.h"
+#include "sys/debugflags.h"
 #include "sys/sys.h"
-#include "sys/sys/load_unit.h"
 #include "sys/version.h"
+
+#ifdef QT_DEBUG
+#ifdef Q_OS_WINDOWS
+#include <Windows.h>
+#else
+#include <signal.h>
+#endif
+#endif
+
+using std::make_shared;
 
 // system
 qtAppLog        * Sys::log              = nullptr;
 Configuration   * Sys::config           = nullptr;
 ControlPanel    * Sys::controlPanel     = nullptr;
+SplitScreen     * Sys::splitter         = nullptr;
 SplashScreen    * Sys::splash           = nullptr;
 GuiModes        * Sys::guiModes         = nullptr;
-LoadUnit        * Sys::loadUnit         = nullptr;
+DebugMap        * Sys::debugMapCreate   = nullptr;
+DebugMap        * Sys::debugMapPaint    = nullptr;
+DebugFlags      * Sys::flags            = nullptr;
 
 // makers
 DesignMaker    * Sys::designMaker       = nullptr;
@@ -45,65 +60,68 @@ MapEditor      * Sys::mapEditor         = nullptr;
 MosaicMaker    * Sys::mosaicMaker       = nullptr;
 PrototypeMaker * Sys::prototypeMaker    = nullptr;
 TilingMaker    * Sys::tilingMaker       = nullptr;
+ImageEngine    * Sys::imageEngine       = nullptr;
 
 // viewers
-View           * Sys::view              = nullptr;
-ViewController * Sys::viewController    = nullptr;
-DebugView      * Sys::debugView         = nullptr;
-CropViewer     * Sys::cropViewer        = nullptr;
-GridView       * Sys::gridViewer        = nullptr;
-MapEditorView  * Sys::mapEditorView     = nullptr;
-MeasureView    * Sys::measureView       = nullptr;
-MotifView      * Sys::motifView         = nullptr;
-TilingMakerView* Sys::tilingMakerView   = nullptr;
-PrototypeView  * Sys::prototypeView     = nullptr;
-ImageEngine    * Sys::imageEngine       = nullptr;
-BackgroundImageView * Sys::backgroundImageView = nullptr;
+SystemView           * Sys::sysview           = nullptr;
+SystemViewController * Sys::viewController    = nullptr;
+
+DebugViewPtr     Sys::debugView;
+CropViewPtr      Sys::cropViewer;
+GridViewPtr      Sys::gridViewer;
+MapedViewPtr     Sys::mapEditorView;
+MMViewiewPtr     Sys::motifMakerView;
+TMViewPtr        Sys::tilingMakerView;
+ProtoViewPtr     Sys::prototypeView;
+ImageViewPtr     Sys::imageViewer;
 
 Layer          * Sys::selectedLayer     = nullptr;
 
-int  Sys::appInstance       = 0;
+wBkgdImagePtr    Sys::definedBkImage;
 
+int  Sys::appInstance       = 0;
+uint Sys::rx_sigid          = 1;
 bool Sys::isDarkTheme       = false;
-bool Sys::usingImgGenerator = false;
+bool Sys::imgGeneratorInUse = false;
 bool Sys::localCycle        = false;
 bool Sys::primaryDisplay    = false;
-bool Sys::circleX           = false;
 bool Sys::hideCircles       = false;
 bool Sys::showCenterMouse   = false;
 bool Sys::dontReplicate     = false;
 bool Sys::highlightUnit     = false;
 bool Sys::dontTrapLog       = false;
-bool Sys::measure           = false;
-bool Sys::flagA             = false;
-bool Sys::flagB             = false;
-bool Sys::updatePanel       = true;
-bool Sys::motifPropagate    = true;
-bool Sys::enableDetachedPages = true;
-bool Sys::tm_fill           = false;
 
-bool Sys::_tilingViewChange = false;
+bool Sys::updatePanel       = true;
+bool Sys::tm_fill           = false;
+bool Sys::enableDetachedPages = true;
 
 QString Sys::gitBranch;
 QString Sys::gitSha;
-QString Sys::rootTileDir;
-QString Sys::originalTileDir;
-QString Sys::newTileDir;
-QString Sys::testTileDir;
-QString Sys::rootMosaicDir;
-QString Sys::originalMosaicDir;
-QString Sys::newMosaicDir;
-QString Sys::testMosiacDir;
-QString Sys::templateDir;
+QString Sys::gitRoot;
+
+QString Sys::sysBMPDir;
+QString Sys::workingBMPDir;
 QString Sys::examplesDir;
 QString Sys::mapsDir;
+QString Sys::newMosaicDir;
+QString Sys::newTileDir;
+QString Sys::originalMosaicDir;
+QString Sys::originalTileDir;
+QString Sys::rootMosaicDir;
+QString Sys::rootTileDir;
+QString Sys::templateDir;
+QString Sys::testMosiacDir;
+QString Sys::testTileDir;
 QString Sys::worklistsDir;
+
 QString Sys::lastPanelTitle;
 QString Sys::lastViewTitle;
 
 VersionFileList  Sys::tilingsList;
 VersionFileList  Sys::mosaicsList;
 TilingUses       Sys::tilingUses;
+
+eBkgdImgSource  Sys::currentBkgImage    = BKGD_IMAGE_NONE;
 
 const QChar Sys::MathSymbolSquareRoot   = QChar(0x221A);
 const QChar Sys::MathSymbolPi           = QChar(0x03A0);
@@ -124,8 +142,8 @@ const int   Sys::DEFAULT_HEIGHT         = 927;
 const int   Sys::MAX_WIDTH              = 4096;
 const int   Sys::MAX_HEIGHT             = 2160;
 
-const QString Sys::defaultMosaicName =  "The Formless";
-const QString Sys::defaultTilingName = "The Unnamed";
+const QString Sys::defaultMosaicName    = "The Formless";
+const QString Sys::defaultTilingName    = "The Unnamed";
 
 ///////////////////////////////////////////////////////////////
 ///
@@ -141,6 +159,7 @@ Sys::Sys()
 
     QString astring     = QString("Tiled Pattern Maker (Version %1) Loading...........").arg(tpmVersion);
     splash              = new SplashScreen();
+    splash->disable(config->disableSplash);
     splash->display(astring);
 
     mosaicMaker         = new MosaicMaker;
@@ -151,21 +170,24 @@ Sys::Sys()
 
     controlPanel        = new ControlPanel;
     guiModes            = new GuiModes;
-    loadUnit            = new LoadUnit;
 
-    view                = new View;
-    viewController      = new ViewController;
+    sysview             = new SystemView;
+    viewController      = new SystemViewController;
 
-    tilingMakerView     = new TilingMakerView;
-    prototypeView       = new PrototypeView;
-    motifView           = new MotifView;
-    mapEditorView       = new MapEditorView;
-    debugView           = new DebugView;
-    cropViewer          = new CropViewer;
-    backgroundImageView = new BackgroundImageView;
-    ProtoPtr nullProto;
-    measureView         = new MeasureView(nullProto);
-    gridViewer          = new GridView;
+    tilingMakerView     = make_shared<TilingMakerView>();
+    prototypeView       = make_shared<PrototypeView>();
+    motifMakerView      = make_shared<MotifMakerView>();
+    mapEditorView       = make_shared<MapEditorView>();
+    debugView           = make_shared<DebugView>();
+    cropViewer          = make_shared<CropViewer>();
+    gridViewer          = make_shared<GridView>();
+    imageViewer         = make_shared<ImageViewer>();
+
+    debugMapCreate      = new DebugMap;
+    debugMapPaint       = new DebugMap;
+    flags               = new DebugFlags;
+
+    sysBMPDir           = createBMPDirectory();
 
     // init makers
     mosaicMaker->init();
@@ -175,40 +197,36 @@ Sys::Sys()
     mapEditor->init();
 
     // init views
-    view->init(viewController);
-    viewController->init(view);
+    sysview->init(viewController);
+    viewController->attach(sysview);
 
     // init control panel
     controlPanel->init();
+
+    if (config->splitScreen)
+    {
+        splitter = new SplitScreen();
+        splitter->show();
+    }
 }
 
 Sys::~Sys()
 {
-    delete gridViewer;
-    gridViewer = nullptr;
-    delete measureView;
-    measureView = nullptr;
-    delete backgroundImageView;
-    backgroundImageView = nullptr;
-    delete cropViewer;
-    cropViewer = nullptr;
-    delete debugView;
-    debugView = nullptr;
-    delete mapEditorView;
-    mapEditorView = nullptr;
-    delete motifView;
-    motifView = nullptr;
-    delete prototypeView;
-    prototypeView = nullptr;
-    delete tilingMakerView;
-    tilingMakerView = nullptr;
+    flags->persist();
+
+    gridViewer.reset();
+    imageViewer.reset();
+    cropViewer.reset();
+    debugView.reset();
+    mapEditorView.reset();
+    motifMakerView.reset();
+    prototypeView.reset();
+    tilingMakerView.reset();
 
     delete viewController;
     viewController = nullptr;
-    delete view;
-    view = nullptr;
-    delete loadUnit;
-    loadUnit = nullptr;
+    delete sysview;
+    sysview = nullptr;
 
     delete controlPanel;
     controlPanel = nullptr;
@@ -227,6 +245,49 @@ Sys::~Sys()
     mosaicMaker = nullptr;
 
     dumpRefs();
+}
+
+void Sys::appDebugBreak()
+{
+#ifdef QT_DEBUG
+    qWarning() << "Sys::appDebugBreak";
+#ifdef Q_OS_WINDOWS
+    if (IsDebuggerPresent())
+    {
+        DebugBreak();
+    }
+#else
+    raise(SIGTRAP);
+#endif
+#endif
+}
+
+void Sys::render(eRenderType rtype)
+{
+    switch (rtype)
+    {
+    case RENDER_RESET_MOTIFS:
+        prototypeMaker->sm_resetMotifMaps();
+        prototypeMaker->sm_resetProtoMaps();
+        mosaicMaker->sm_resetStyles();
+        break;
+
+    case RENDER_RESET_PROTOTYPES:
+        prototypeMaker->sm_resetProtoMaps();
+        mosaicMaker->sm_resetStyles();
+        break;
+
+    case RENDER_RESET_STYLES:
+        mosaicMaker->sm_resetStyles();
+        break;
+    }
+
+    viewController->slot_reconstructView();
+}
+
+bool Sys::isGuiThread()
+{
+    return QThread::currentThread() == QApplication::instance()->thread();
 }
 
 QMultiMap<eMotifType,QString>  Sys::motifRepresentation = initMotifAssociations();
@@ -308,6 +369,97 @@ QStringList Sys::XMLgetMotifNames(eMotifType type)
     return motifRepresentation.values(type);
 }
 
+QString Sys::createBMPDirectory()
+{
+    QString dirname;
+
+    QDateTime d = QDateTime::currentDateTime();
+
+    dirname = d.toString("yyyy-MM-dd");
+    if (!Sys::gitBranch.isEmpty())
+    {
+        dirname = dirname + "-" + Sys::gitBranch;
+    }
+    else if (!Sys::gitSha.isEmpty())
+    {
+        dirname = dirname + "-" + Sys::gitSha;
+    }
+    return dirname;
+}
+
+QString Sys::getBMPPath(eActionType generatorType)
+{
+    QString subdir;
+    switch (config->repeatMode)
+    {
+    case REPEAT_SINGLE:
+        subdir = "single/";
+        break;
+    case REPEAT_PACK:
+        subdir = "pack/";
+        break;
+    case REPEAT_DEFINED:
+        subdir = "defined/";
+        break;
+    }
+
+    QString dir = workingBMPDir;
+
+    QString path = config->rootImageDir;
+    if (generatorType == ACT_GEN_TILING_BMP)
+        path += "tilings/" + subdir + dir;
+    else
+        path += subdir + dir;
+
+    QDir adir(path);
+    if (!adir.exists())
+    {
+        if (!adir.mkpath(path))
+        {
+            qFatal("could not make path");
+        }
+    }
+    return path;
+}
+
+BkgdImagePtr Sys::getBackgroundImageFromSource()
+{
+    BkgdImagePtr bip;
+    switch (currentBkgImage)
+    {
+    case BKGD_IMAGE_NONE:
+        break;
+
+    case BKGD_IMAGE_MOSAIC:
+    {
+        MosaicPtr mosaic = Sys::mosaicMaker->getMosaic();
+        if (mosaic)
+        {
+            bip = mosaic->getBkgdImage();
+        }
+    }   break;
+
+    case BKGD_IMAGE_TILING:
+    {
+        TilingPtr tiling = Sys::tilingMaker->getSelected();
+        if (tiling)
+        {
+            bip = tiling->getBkgdImage();
+        }
+    }   break;
+
+    case BKGD_IMAGE_MAPED:
+        bip = Sys::mapEditor->getDb()->getBackgroundImage();
+        break;
+
+    case BKGD_IMAGE_DEFINED:
+        bip =  definedBkImage.lock();
+        break;
+    }
+
+    return bip;
+}
+
 void Sys::dumpRefs()
 {
     qDebug() << "Mosaics:"  << Mosaic::refs
@@ -321,5 +473,6 @@ void Sys::dumpRefs()
              << "Tilings:"  << Tiling::refs
              << "Tiles:"    << Tile::refs
              << "Edges:"    << Edge::refs
-             << "Vertices:" << Vertex::refs;
+             << "Vertices:" << Vertex::refs
+             << "Neighbours:" << Neighbours::refs;
 }

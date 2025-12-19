@@ -6,24 +6,29 @@
 #include <QTransform>
 #include "sys/geometry/edge.h"
 #include "sys/geometry/arcdata.h"
+#include "sys/geometry/debug_map.h"
 #include "sys/geometry/geo.h"
 #include "sys/geometry//loose.h"
 #include "sys/geometry/vertex.h"
+#ifdef QT_DEBUG
+#include "sys/sys/debugflags.h"
+#endif
 
 using std::make_shared;
 
-int Edge::refs = 0;
+int  Edge::refs          = 0;
+bool Edge::curvesAsLines = false;
 
 Edge::Edge()
 {
-    type        = EDGETYPE_NULL;
+    _type       = EDGETYPE_NULL;
     dvisited    = false;
     refs++;
 }
 
 Edge::Edge(const VertexPtr &v1)
 {
-    type        = EDGETYPE_POINT;
+    _type       = EDGETYPE_POINT;
     dvisited    = false;
     this->v1    = v1;
     this->v2    = v1; // same
@@ -32,33 +37,30 @@ Edge::Edge(const VertexPtr &v1)
 
 Edge::Edge(const VertexPtr & v1, const VertexPtr & v2 )
 {
-    type        = EDGETYPE_LINE;
+    _type       = EDGETYPE_LINE;
     dvisited    = false;
     this->v1    = v1;
     this->v2    = v2;
     refs++;
 }
 
-Edge::Edge(const VertexPtr & v1, const VertexPtr & v2, const QPointF & arcCenter, bool convex, bool chord)
+Edge::Edge(const VertexPtr & v1, const VertexPtr & v2, const QPointF & arcCenter, eCurveType ctype)
 {
-    if (chord)
-        type    = EDGETYPE_CHORD;
-    else
-        type    = EDGETYPE_CURVE;
+    _type       = EDGETYPE_CURVE;
     dvisited    = false;
     this->v1    = v1;
     this->v2    = v2;
-    setCurvedEdge(arcCenter,convex,chord);   // this creates arcData too
+    chgangeToCurvedEdge(arcCenter,ctype);   // this creates arcData too
     refs++;
 }
 
 Edge::Edge(const Edge & other)
 {
-    type        = other.type;
+    _type       = other._type;
     dvisited    = other.dvisited;
     v1          = other.v1;
     v2          = other.v2;
-    if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
+    if (_type == EDGETYPE_CURVE)
     {
         //setCurvedEdge(other.getArcCenter(),other.isConvex(),(type==EDGETYPE_CHORD));
         arcData = other.arcData;
@@ -70,43 +72,40 @@ EdgePtr Edge::createTwin()
 {
     // has same edge index as original
     EdgePtr ep        = make_shared<Edge>(*this);
-    ep->dvisited      = dvisited;
     ep->v1            = v2;
     ep->v2            = v1;
-    if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
+    if (_type == EDGETYPE_CURVE)
     {
         ep->arcData       = arcData;
-        ep->arcData.create(ep->v1->pt,ep->v2->pt,arcData.getCenter(),!arcData.convex());
+        ep->arcData.create(ep->getLine(),arcData.getCenter(),(arcData.getCurveType() == CURVE_CONVEX) ? CURVE_CONCAVE : CURVE_CONVEX);
     }
     return ep;
 }
 
 Edge::Edge(const EdgePtr &other)
 {
-    type           = other->type;
+    _type          = other->_type;
     dvisited       = false;
     v1             = other->v1;
     v2             = other->v2;
-    if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
+    if (_type == EDGETYPE_CURVE)
     {
-        ArcData & ad = getArcData();
-        ad = other->getArcData();
+        arcData = other->getArcData();
     }
     refs++;
 }
 
 Edge::Edge(const EdgePtr &other, QTransform T)
 {
-    type           = other->type;
+    _type          = other->_type;
     dvisited       = false;
     QPointF p1     = T.map(other->v1->pt);
     QPointF p2     = T.map(other->v2->pt);
     v1 = make_shared<Vertex>(p1);
     v2 = make_shared<Vertex>(p2);
-    if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
+    if (_type == EDGETYPE_CURVE)
     {
-        ArcData & ad = getArcData();
-        ad = other->getArcData();
+        arcData = other->getArcData();
     }
     refs++;
 }
@@ -117,6 +116,30 @@ Edge::~Edge()
     //qDebug() << "Edge destructor";
     //v1.reset();
     //v2.reset();
+}
+
+eEdgeType Edge::getType()
+{
+    if (curvesAsLines)
+        return EDGETYPE_LINE;
+    else
+        return _type;
+}
+
+bool Edge::isLine()
+{
+     if (curvesAsLines)
+        return true;
+     else
+        return (_type == EDGETYPE_LINE);
+}
+
+bool Edge::isCurve()
+{
+    if (curvesAsLines)
+        return false;
+    else
+        return (_type == EDGETYPE_CURVE);
 }
 
 double Edge::angle() const
@@ -171,15 +194,15 @@ bool Edge::equals(const EdgePtr & other)
     if (!Loose::equalsPt(v2->pt,other->v2->pt))
         return false;
 
-    if (type != other->type)
+    if (_type != other->_type)
         return false;
 
-    if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
+    if (_type == EDGETYPE_CURVE)
     {
         if (getArcCenter() != other->getArcCenter())
             return false;
 
-        if (isConvex() != other->isConvex())
+        if (getCurveType() != other->getCurveType())
             return false;
     }
 
@@ -191,100 +214,64 @@ void  Edge::setV1(const VertexPtr & v)
     this->v1 = v;
     if (isCurve())
     {
-        arcData.create(v1->pt,v2->pt,arcData.getCenter(),arcData.convex());
+        arcData.create(QLineF(v1->pt,v2->pt),arcData.getCenter(),arcData.getCurveType());
     }
 }
 
 void  Edge::setV2(const VertexPtr & v)
 {
     this->v2 = v;
-    if ((type == EDGETYPE_NULL) || (type == EDGETYPE_POINT))
+    if ((_type == EDGETYPE_NULL) || (_type == EDGETYPE_POINT))
     {
-        type = EDGETYPE_LINE;
+        _type = EDGETYPE_LINE;
     }
     else if (isCurve())
     {
-        arcData.create(v1->pt,v2->pt,arcData.getCenter(),arcData.convex());
+        arcData.create(QLineF(v1->pt,v2->pt),arcData.getCenter(),arcData.getCurveType());
     }
 }
 
 void Edge::resetCurveToLine()
 {
-    if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
+    if (_type == EDGETYPE_CURVE)
     {
-        type = EDGETYPE_LINE;
+        _type = EDGETYPE_LINE;
     }
 }
 
-void Edge::setConvex(bool convex)
+void Edge::changeCurveType(eCurveType ctype)
 {
-    ArcData & ad = getArcData();
-    ad.setConvex(convex,v1->pt,v2->pt);
+    arcData.changeCurveType(ctype);
 }
 
-void Edge::setCurvedEdge(QPointF arcCenter, bool convex, bool chord)
+void Edge::chgangeToCurvedEdge(QPointF arcCenter, eCurveType ctype)
 {
-    if (chord)
-        type     = EDGETYPE_CHORD;
-    else
-        type     = EDGETYPE_CURVE;
-
-    ArcData & ad = getArcData();
-    ad.create(v1->pt,v2->pt,arcCenter,convex);
-    calcMagnitude();
-    ad.calcSpan(this);
+    _type = EDGETYPE_CURVE;
+    arcData.create(QLineF(v1->pt,v2->pt),arcCenter,ctype);
 }
 
-// FIXME - only used in create
-void Edge::convertToConvexCurve()
+// saying convex makes it concave
+
+// only used to create
+void Edge::convertToCurve(eCurveType ctype)
 {
     // calculates a default line center
-    type  = EDGETYPE_CURVE;
+    QLineF line     = getLine();
+    QPointF mid     = getMidPoint();
 
-    QLineF line = getLine();
-    QPointF mid = getMidPoint();
-    QPointF pt  = mid + QPointF(-line.dy(), line.dx());
-
-    setCurvedEdge(pt,true,false);
-}
-
-void Edge::calcMagnitude()
-{
-    // calcs magnitude from arcCenter
-    ArcData & ad = getArcData();
-    QLineF line  = getLine();
-    QPointF mid  = getMidPoint();
-    qreal dist   = Geo::dist(mid,getArcCenter());
-    ad.magnitude = (dist/line.length());
-    //qDebug() << "magnitude=" << arcMagnitude;
-}
-
-void Edge::setArcMagnitude(qreal magnitude)
-{
-    // calcs arcCenter from magntiude
-    Q_ASSERT(isCurve());   // this means arcCenter is already set
-    QLineF line = getLine();
-    QPointF mid = getMidPoint();
-    QPointF pt;
-    if (isConvex())
+    if (ctype == CURVE_CONVEX)
     {
-        pt = mid + QPointF(-line.dy(), line.dx());
+        QPointF center  = mid - QPointF(line.dy(), -line.dx());
+        chgangeToCurvedEdge(center,CURVE_CONVEX);
+        Sys::debugMapCreate->insertDebugMark(center,"convex");
     }
     else
     {
-        pt = mid - QPointF(line.dy(), -line.dx());
+        QPointF center   = mid + QPointF(line.dy(), -line.dx());
+        chgangeToCurvedEdge(center,CURVE_CONCAVE);
+        Sys::debugMapCreate->insertDebugMark(center,"concave");
     }
-
-    QLineF perp(mid,pt);
-
-    qreal arcCenterLen = magnitude * line.length();
-    perp.setLength(arcCenterLen);
-
-    ArcData & ad  = getArcData();
-    ad.setCenter(perp.p2());
-    ad.calcSpan(this);
 }
-
 
 // Data access.
 
@@ -339,9 +326,28 @@ QPointF Edge::getOtherP(const QPointF & pos) const
     }
 }
 
+eSide  Edge::side(VertexPtr v)
+{
+    Q_ASSERT(contains(v));
+    return (v1 == v) ? SIDE_1 : SIDE_2;
+}
+
+eSide  Edge::side(QPointF p)
+{
+    Q_ASSERT(contains(p));
+    return (v1->pt == p) ? SIDE_1 : SIDE_2;
+}
+
 bool Edge::contains(const VertexPtr & v)
 {
     if ((v == v1) || (v == v2))
+        return true;
+    return false;
+}
+
+bool Edge::contains(const QPointF & p)
+{
+    if ((p == v1->pt) || (p == v2->pt))
         return true;
     return false;
 }
@@ -359,7 +365,12 @@ qreal Edge::getMaxX()
 
 qreal Edge::getRadius()
 {
-    return QLineF(getArcCenter(),v1->pt).length();
+    qreal r1 =  QLineF(getArcCenter(),v1->pt).length();
+#if 0
+    qreal r2 =  QLineF(getArcCenter(),v2->pt).length();
+    Q_ASSERT(Loose::equals(r1,r2));
+#endif
+    return r1;
 }
 
 bool Edge::isTrivial(qreal tolerance)
@@ -431,7 +442,7 @@ QString Edge::info()
 
     deb << this;
 
-    switch (type)
+    switch (_type)
     {
     case EDGETYPE_LINE:
         deb << "Edge LINE "
@@ -442,17 +453,11 @@ QString Edge::info()
         deb << "Edge CURVE"
             << "v1" << v1->pt
             << "v2" << v2->pt
-            << "arcCenter:" << getArcCenter()  << (isConvex() ? "CONVEX" : "CONCAVE");
+            << "arcCenter:" << getArcCenter()  << sCurveType[getCurveType()];
         break;
     case EDGETYPE_POINT:
         deb << "Edge POINT"
             << "v1" << v1->pt;
-        break;
-    case EDGETYPE_CHORD:
-        deb << "Edge CHORD"
-            << "v1" << v1->pt
-            << "v2" << v2->pt
-            << "arcCenter:" << getArcCenter()  << (isConvex() ? "CONVEX" : "CONCAVE");
         break;
     case EDGETYPE_NULL:
         deb << "Edge NULL";
@@ -470,22 +475,18 @@ QString Edge::summary()
     QString astring;
     QDebug  deb(&astring);
 
-    switch (type)
+    switch (_type)
     {
     case EDGETYPE_LINE:
         deb << "LINE";
         break;
     case EDGETYPE_CURVE:
         deb << "CURVE"
-            << "arcCenter:" << getArcCenter()  << (isConvex() ? "CONVEX" : "CONCAVE");
+            << "arcCenter:" << getArcCenter()  << sCurveType[getCurveType()];
         break;
     case EDGETYPE_POINT:
         deb << "POINT"
             << "v1" << v1->pt;
-        break;
-    case EDGETYPE_CHORD:
-        deb << "CHORD"
-            << "arcCenter:" << getArcCenter()  << (isConvex() ? "CONVEX" : "CONCAVE");
         break;
     case EDGETYPE_NULL:
         deb << "NULL";

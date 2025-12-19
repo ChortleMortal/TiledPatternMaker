@@ -3,9 +3,6 @@
 #define REGULAR_MOTIF_EDITORS_H
 
 #include "gui/model_editors/motif_edit/motif_editors.h"
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 
 class QCheckBox;
 

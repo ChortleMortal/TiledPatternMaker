@@ -18,12 +18,12 @@ class page_mosaic_maker : public panel_page
 
     enum eStyleCol
     {
-        STYLE_COL_CHECK_SHOW,
+        STYLE_COL_ENABLE,
         STYLE_COL_TILING,
-        STYLE_COL_STYLE,
-        STYLE_COL_ADDR,
-        STYLE_COL_STYLE_DATA = STYLE_COL_ADDR,
-        STYLE_COL_TRANS,
+        STYLE_COL_STYLE_TYPE,
+        STYLE_COL_LAYER_CONTROL,
+        STYLE_COL_TRANSFORM,
+        STYLE_COL_STYLE_ADDR,
         STYLE_COL_NUM_COLS
     };
 
@@ -40,17 +40,21 @@ private slots:
     void    slot_moveStyleUp();
     void    slot_moveStyleDown();
     void    slot_duplicateStyle();
-    void    slot_analyzeStyleMap();
     void    slot_set_reps();
     void    slot_setCleanse();
     void    slot_cleansed();
     void    singleton_changed(bool checked);
 
+    void    slot_noaddr(bool checked);
+    void    slot_notrans(bool checked);
+    void    slot_nolayer(bool checked);
+
 protected:
-    void     setCurrentEditor(StylePtr style);
+    QVBoxLayout * createBackgroundInfo();
+
     void     styleChanged(int row);
     void     tilingChanged(int row);
-    void     styleVisibilityChanged(int row);
+    void     styleVisibilityChanged(int row, bool checked);
 
     void     reEnter();
     void     displayStyles();
@@ -65,7 +69,6 @@ protected:
 private:
     QWidget       * lowerWidget;
     StyleEditor   * currentEditor;
-    StyleEditor   * emptyWidget;
 
     AQTableWidget * styleTable;
 
@@ -73,9 +76,12 @@ private:
     QPushButton * upBtn;
     QPushButton * downBtn;
     QPushButton * dupBtn;
-    QPushButton * analyzeBtn;
 
     QCheckBox  * chkSingle;
+    QCheckBox  * chk_noaddr;
+    QCheckBox  * chk_notrans;
+    QCheckBox  * chk_nolayer;
+
     SpinSet    * xRepMin;
     SpinSet    * xRepMax;
     SpinSet    * yRepMin;
@@ -83,6 +89,9 @@ private:
 
     QPushButton * pbClean;
     QLabel      * cleanseStatus;
+
+    QCheckBox   * chkBkgd;
+    QPushButton * pbExam;
 };
 
 #endif

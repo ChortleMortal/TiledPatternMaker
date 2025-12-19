@@ -21,10 +21,9 @@ enum eSettingsGroup
     MOSAIC_SETTINGS,    // propagates to Canvas
     TILING_SETTINGS,    // propagates to Canvas
     CANVAS,             // the canvas
-    VIEW_STATUS        // the view
 };
 
-#define NUM_SETTINGS        (VIEW_STATUS + 1)
+#define NUM_SETTINGS        (CANVAS + 1)
 #define NUM_BORDER_COLORS   2
 
 public:
@@ -38,15 +37,20 @@ private slots:
     void slot_set_repsDesign(int val);
     void slot_set_repsTiling(int val);
 
-    void slot_canvasSizeChanged(int);
-    void slot_viewerSizeChanged(int);
-    void slot_windowSizeChanged(int);
+    void slot_mosaicCanvasChanged(int);
+    void slot_mosaicViewChanged(int);
+    void slot_tilingCanvasChanged(int val);
+    void slot_tilingViewChanged(int val);
+    void slot_viewCanvasChanged(int);
+    void slot_viewViewChanged(int);
 
     void backgroundColorDesignPick();
     void backgroundColorDesignChanged(const QString & str);
 
-    void slot_tilingSizeChanged(int val);
+
+#ifdef VARIABLE_BOUNDS
     void slot_boundsChanged();
+#endif
 
     void singleton_changed_des(bool checked);
     void singleton_changed_tile(bool checked);
@@ -75,12 +79,29 @@ private:
     AQSpinBox       * yRepMin[NUM_SETTINGS];
     AQSpinBox       * yRepMax[NUM_SETTINGS];
 
-    SpinSet         * sizeW[NUM_SETTINGS];  // FIXME canvas is double
-    SpinSet         * sizeH[NUM_SETTINGS];
+    SpinSet         * sizeMosaicCanvasW;
+    SpinSet         * sizeMosaicCanvasH;
+    SpinSet         * sizeMosaicViewW;
+    SpinSet         * sizeMosaicViewH;
 
+    SpinSet         * sizeTilingCanvasW;
+    SpinSet         * sizeTilingCanvasH;
+    SpinSet         * sizeTilingViewW;
+    SpinSet         * sizeTilingViewH;
+
+    SpinSet         * sizeViewCanvasW;
+    SpinSet         * sizeViewCanvasH;
+    SpinSet         * sizeViewViewW;
+    SpinSet         * sizeViewViewH;
+
+    SpinSet         * actualSizeW;
+    SpinSet         * actualSizeH;
+
+#ifdef VARIABLE_BOUNDS
     DoubleSpinSet   * ds_left;
     DoubleSpinSet   * ds_top;
     DoubleSpinSet   * ds_width;
+#endif
 
     QLabel          * l_xform;
     QLabel          * l_canvas;
@@ -88,9 +109,6 @@ private:
 
     QLineEdit       * bkColorEdit[NUM_SETTINGS];
     ClickableLabel  * bkgdColorPatch[NUM_SETTINGS];
-
-    DoubleSpinSet   * startEditX[NUM_SETTINGS];
-    DoubleSpinSet   * startEditY[NUM_SETTINGS];
 
     QPushButton     * bkgdImageBtn[NUM_SETTINGS];
     QLineEdit       * bkgdImage[NUM_SETTINGS];

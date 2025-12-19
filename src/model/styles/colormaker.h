@@ -37,6 +37,7 @@ protected:
     void createFacesToDo(DCELPtr dcel);
     void initDCELFaces(DCELPtr dcel);
     void removeOverlappingFaces();
+    void removePaletteIndex(DCELPtr dcel,int index);
 
     void assignColorsOriginal(DCELPtr dcel);
     void assignColorsNew1(DCELPtr dcel);

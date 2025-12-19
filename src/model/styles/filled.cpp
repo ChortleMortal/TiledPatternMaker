@@ -68,20 +68,26 @@ void  Filled::setAlgorithm(eFillType val)
 void Filled::resetStyleRepresentation()
 {
     colorMaker->clear();
+    created = false;
 }
 
 void Filled::createStyleRepresentation()
 {
-    // Filled does not use a style map, just a DCEL
-    DCELPtr dcel = prototype->getDCEL();
-    Q_ASSERT(dcel);
-
-    colorMaker->buildFaceSets(algorithm, dcel);
+    if (!created)
+    {
+        // Filled does not use a style map, just a DCEL
+        FilledDCELPtr dcel = prototype->getFilledDCEL();
+        if (dcel)
+        {
+            colorMaker->buildFaceSets(algorithm, dcel);
+        }
+        created = true;
+    }
 }
 
 void Filled::draw(GeoGraphics * gg)
 {
-    if (!isVisible() || !getPrototype()->getDCEL())
+    if (!isVisible() || !getPrototype()->getFilledDCEL())
     {
         return;
     }
@@ -154,7 +160,7 @@ void Filled::drawDCELNew2(GeoGraphics *gg)
             QPen pen(Qt::red, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
             for (const FacePtr & face : std::as_const(*fset))
             {
-                EdgePoly & ep = *face.get();
+                EdgeSet & ep = *face.get();
                 gg->fillEdgePoly(ep,pen);
             }
         }
@@ -166,7 +172,7 @@ void Filled::drawDCELNew2(GeoGraphics *gg)
                 QPen pen(tpcolor.color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
                 for (const FacePtr & face : std::as_const(*fset))
                 {
-                    EdgePoly & ep = *face.get();
+                    EdgeSet & ep = *face.get();
                     gg->fillEdgePoly(ep,pen);
                 }
             }
@@ -185,7 +191,7 @@ void Filled::drawDCELNew3(GeoGraphics *gg)
             QPen pen(Qt::red, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
             for (FacePtr & face : *fset)
             {
-                EdgePoly & ep = *face.get();
+                EdgeSet & ep = *face.get();
                 gg->fillEdgePoly(ep,pen);
             }
             continue;
@@ -206,7 +212,6 @@ void Filled::drawDCELNew3(GeoGraphics *gg)
 
         for (const FacePtr & face : std::as_const(*fset))
         {
-            Q_ASSERT(face->isClockwise());
             TPColor tpc = cset->getNextTPColor();
             if (tpc.hidden)
             {
@@ -214,7 +219,7 @@ void Filled::drawDCELNew3(GeoGraphics *gg)
                 continue;
             }
             QPen pen(tpc.color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-            EdgePoly & ep = *face.get();
+            EdgeSet & ep = *face.get();
             gg->fillEdgePoly(ep,pen);
         }
     }
@@ -222,7 +227,7 @@ void Filled::drawDCELNew3(GeoGraphics *gg)
 
 void Filled::drawDCELDirectColor(GeoGraphics *gg)
 {
-    DCELPtr dcel = getPrototype()->getDCEL();
+    FilledDCELPtr dcel = getPrototype()->getFilledDCEL();
     if (!dcel) return;
 
     const FaceSet & faces = dcel->getFaceSet();
@@ -270,3 +275,10 @@ void Filled::setColorIndex(int faceIndex,int colorIndex)
     }
 }
 
+void Filled::removeColorIndex(int index)
+{
+    FilledDCELPtr dcel = getPrototype()->getFilledDCEL();
+    if (!dcel) return;
+
+    colorMaker->removePaletteIndex(dcel,index);
+}

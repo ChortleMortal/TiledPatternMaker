@@ -22,10 +22,10 @@
 
 #include "model/motifs/irregular_tools.h"
 #include "model/motifs/motif.h"
-#include "sys/geometry/geo.h"
-#include "sys/geometry/edgepoly.h"
 #include "model/tilings/placed_tile.h"
 #include "model/tilings/tiling.h"
+#include "sys/geometry/edge_poly.h"
+#include "sys/geometry/geo.h"
 
 // Transformed mid-points of a tile.
 TileMidPoints::TileMidPoints(PlacedTilePtr placedTile, Points & mids, EdgePoly &ep)

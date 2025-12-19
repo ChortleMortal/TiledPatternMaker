@@ -1,4 +1,4 @@
-#include "gui/top/view_controller.h"
+#include "gui/top/system_view_controller.h"
 #include "gui/viewers/geo_graphics.h"
 #include "gui/viewers/prototype_view.h"
 #include "gui/viewers/viewer_services.h"
@@ -14,13 +14,14 @@
 #include "model/tilings/tiling.h"
 #include "sys/geometry/fill_region.h"
 #include "sys/geometry/map.h"
+#include "sys/geometry/neighbour_map.h"
 #include "sys/sys.h"
 
 using std::make_shared;
 
-PrototypeView::PrototypeView() : LayerController("PrototypeView",false)
+PrototypeView::PrototypeView() : LayerController(VIEW_PROTOTYPE,DERIVED,"Prototype")
 {
-    colors.setColors(config->protoViewColors);
+    colors.setColors(Sys::config->protoViewColors);
 }
 
 PrototypeView::~PrototypeView()
@@ -28,7 +29,7 @@ PrototypeView::~PrototypeView()
 
 void PrototypeView::paint(QPainter *painter)
 {
-    lineWidth = config->protoviewWidth;
+    lineWidth = Sys::config->protoviewWidth;
 
     painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
@@ -45,9 +46,8 @@ void PrototypeView::paint(QPainter *painter)
 
 void PrototypeView::draw()
 {
-    qDebug() << "PrototypeView::draw  mode=" << config->protoViewMode;
-
-    Sys::prototypeMaker->dumpData(MVD_PROTO);
+    //qDebug() << "PrototypeView::draw  mode=" << config->protoViewMode;
+    //Sys::prototypeMaker->dumpData(MVD_PROTO);
 
     for (const auto & proto : Sys::prototypeMaker->getPrototypes())
     {
@@ -69,24 +69,68 @@ void PrototypeView::drawProto(ProtoPtr proto)
         return;
     }
 
-    qDebug() << "PrototypeView  proto="  << proto.get();
+    //qDebug() << "PrototypeView  proto="  << proto.get();
 
-    mode = config->protoViewMode;
+    mode = Sys::config->protoViewMode;
 
     if (mode & PROTO_DRAW_MAP)
     {
         MapPtr map = proto->getProtoMap();
-        qDebug() << "PrototypeView  proto="  << proto.get() << "protoMap" << map.get();
+        //qDebug() << "PrototypeView  proto="  << proto.get() << "protoMap" << map.get();
 
         QPen pen(colors.mapColor,lineWidth);
 
-        EdgePoly edges(map->getEdges());    // this is not really an EdgePoly it is a vector of Edges
-        edges.draw(gg, pen);
-        edges.drawPts(gg, pen);
+        NeighbourMap nmap(map);
+
+        for (const auto & edge : std::as_const(map->getEdges()))
+        {
+            gg->drawEdge(edge,pen);
+
+            QColor c1,c2;
+
+            int num1 = nmap.getNeighbours(edge->v1)->numNeighbours();
+            switch (num1)
+            {
+            case 2:
+                c1 = Qt::red;
+                break;
+            case 3:
+                c1 = Qt::green;
+                break;
+            case 4:
+                c1 = Qt::cyan;
+                break;
+            default:
+                c1 =  Qt::yellow;
+                break;
+            }
+
+            int num2 = nmap.getNeighbours(edge->v2)->numNeighbours();
+            switch (num2)
+            {
+            case 2:
+                c2 = Qt::red;
+                break;
+            case 3:
+                c2 = Qt::green;
+                break;
+            case 4:
+                c2 = Qt::cyan;
+                break;
+            default:
+                c2 =  Qt::yellow;
+                break;
+            }
+
+            gg->drawCircle(edge->v1->pt,6,QPen(Qt::red),QBrush(c1));
+            gg->drawCircle(edge->v2->pt,6,QPen(Qt::red),QBrush(c2));
+            gg->drawCircle(edge->v1->pt,3,pen, QBrush(pen.color()));
+            gg->drawCircle(edge->v2->pt,3,pen, QBrush(pen.color()));
+        }
     }
-    
+
     FillRegion flood(proto->getTiling().get(),proto->getMosaic()->getCanvasSettings().getFillData());
-    Placements fillPlacements = flood.getPlacements(config->repeatMode);
+    Placements fillPlacements = flood.getPlacements(Sys::config->repeatMode);
 
     if (mode & (PROTO_ALL_TILES | PROTO_ALL_MOTIFS))
     {
@@ -97,7 +141,7 @@ void PrototypeView::drawProto(ProtoPtr proto)
                 auto motif = del->getMotif();
                 auto tile  = del->getTile();
 
-                auto tilePlacements = tiling->getPlacements(tile);
+                auto tilePlacements = tiling->unit().getPlacements(tile);
                 for (const auto & T0 : std::as_const(tilePlacements))
                 {
                     QTransform T2 = T0 * T1;
@@ -133,7 +177,7 @@ void PrototypeView::drawProto(ProtoPtr proto)
             auto tile   = del->getTile();
             const EdgePoly & ep = tile->getEdgePoly();
 
-            auto tilePlacements = tiling->getPlacements(tile);
+            auto tilePlacements = tiling->unit().getPlacements(tile);
             for (const auto & T0 : std::as_const(tilePlacements))
             {
                 gg->pushAndCompose(T0);
@@ -164,7 +208,7 @@ void PrototypeView::drawProto(ProtoPtr proto)
             {
                 auto motif = del->getMotif();
                 auto tile  = del->getTile();
-                auto tilePlacements = tiling->getPlacements(tile);
+                auto tilePlacements = tiling->unit().getPlacements(tile);
                 for (const auto & T0 : std::as_const(tilePlacements))
                 {
                     gg->pushAndCompose(T0);
@@ -192,7 +236,7 @@ void PrototypeView::drawProto(ProtoPtr proto)
             {
                 auto motif = del->getMotif();
                 auto tile  = del->getTile();
-                auto placements = tiling->getPlacements(tile);
+                auto placements = tiling->unit().getPlacements(tile);
                 QTransform T0;
                 if (placements.size())
                 {
@@ -221,21 +265,7 @@ void PrototypeView::drawProto(ProtoPtr proto)
     }
 }
 
-void PrototypeView::setModelXform(const Xform & xf, bool update)
-{
-    Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
-    viewControl->setCurrentModelXform(xf,update);
-}
-
-const Xform & PrototypeView::getModelXform()
-{
-    Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().info() << (isUnique() ? "unique" : "common");
-    return viewControl->getCurrentModelXform();
-}
-
-void PrototypeView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+void PrototypeView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 { Q_UNUSED(spt); Q_UNUSED(btn); }
 void PrototypeView::slot_mouseDragged(QPointF spt)
 { Q_UNUSED(spt); }

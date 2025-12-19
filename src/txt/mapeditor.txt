@@ -1,0 +1,20 @@
+<H1>Map Editor Keyboard Shortcuts</H1>
+These shortcuts override the Common Keyboard/Mouse modes and actions
+
+<pre>
+Modes:
+    ESC: No mode
+    F1 : Help (show this)
+    F2 : Draw map lines
+    F3 : Create map lines
+            Click on an exisiting map line
+    F4 : Draw construction lines
+    F5 : Draw construction circles
+            Right-click to create circle
+            Left-click inside circle and drag to move circle
+            Left-click on circle edge and drag to resize circle
+    F6 : Split edge in middle
+    F7 : Extend line at start (p1) by clicking on it and dragging
+    F8 : Extend line at end (p2) by clicking on it and dragging
+    F5 : Delete selected line or point
+</pre>

@@ -3,44 +3,53 @@
 #define DLG_EDGE_POLY_EDIT_H
 
 #include "gui/panels/panel_misc.h"
-#include "sys/geometry/edgepoly.h"
+#include "model/makers/tiling_maker.h"
+#include "sys/geometry/edge_poly.h"
 
-typedef std::shared_ptr<class Tile>  TilePtr;
+typedef std::shared_ptr<class Tile>   TilePtr;
+typedef std::shared_ptr<class Tiling> TilingPtr;
 
 class DlgEdgePolyEdit : public QDialog
 {
     Q_OBJECT
 
 public:
-    DlgEdgePolyEdit(TilePtr tile, QTransform t, QWidget * parent = nullptr);
+    DlgEdgePolyEdit(TilingPtr tp, TilePtr tile, QTransform placement, QWidget * parent = nullptr);
     ~DlgEdgePolyEdit();
 
 signals:
-    void sig_update();
+    void sig_updatePos();
     void sig_currentPoint(QPointF pt);
     void sig_updateView();
 
 public slots:
-    void display();
+    void display(eTileMenuRefresh refresh);
 
 protected slots:
     void slot_ok();
     void slot_undo();
-    void slot_applyDeltas();
     void slot_moveUp();
     void slot_moveDown();
     void slot_currentPoint(QPointF pt);
+    void slot_makeClockwise();
+
+protected:
+    void finish(bool good);
 
 private:
-    TilePtr       tile;
-    EdgePoly &    epoly;
-    EdgePoly      original2;
-    QTransform    T;
-    AQTableWidget  table;
+    EdgePoly &    epoly;        // this is the epoly which is edited
+    EdgePoly      original;
 
-    class DoubleSpinSet * deltaX;
-    class DoubleSpinSet * deltaY;
-    QLabel              * label;
+    TilingPtr     tiling;
+    TilePtr       tile;
+
+    QTransform    T;
+
+    AQTableWidget table;
+    QLabel      * cwLabel;
+    QPushButton * makeCWBtn;
+
+    bool          finished;
 };
 
 #endif // DLG_EDGE_POLY_EDIT_H

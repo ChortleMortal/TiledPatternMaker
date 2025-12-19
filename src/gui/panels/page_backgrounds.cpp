@@ -2,43 +2,56 @@
 #include <QCheckBox>
 #include <QFileDialog>
 #include <QMessageBox>
+
+#include "gui/map_editor/map_editor.h"
+#include "gui/map_editor/map_editor_db.h"
 #include "gui/panels/page_backgrounds.h"
+#include "gui/panels/panel_misc.h"
+#include "gui/top/controlpanel.h"
+#include "gui/top/system_view_controller.h"
+#include "gui/viewers/gui_modes.h"
+#include "gui/widgets/dlg_name.h"
+#include "gui/widgets/smx_widget.h"
+#include "model/makers/mosaic_maker.h"
+#include "model/makers/tiling_maker.h"
+#include "model/mosaics/mosaic.h"
+#include "model/settings/configuration.h"
+#include "model/tilings/backgroundimage.h"
 #include "sys/enums/emousemode.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/vertex.h"
-#include "gui/viewers/gui_modes.h"
-#include "model/makers/mosaic_maker.h"
-#include "model/mosaics/mosaic.h"
-#include "gui/top/controlpanel.h"
-#include "gui/panels/panel_misc.h"
-#include "model/tilings/backgroundimage.h"
-#include "model/settings/configuration.h"
-#include "gui/viewers/backgroundimageview.h"
-#include "gui/top/view_controller.h"
-#include "gui/widgets/dlg_name.h"
 
 page_backgrounds::page_backgrounds(ControlPanel * apanel) : panel_page(apanel,PAGE_BKGD_MAKER,"Backgrounds"),  bkgdLayout("Bkgd Xform")
 {
-    bview = Sys::backgroundImageView;
-
+                bkgdViewGroup  = createBackgroundViewGroup();
     QGroupBox * bkgdImageGroup = createBackgroundImageGroup();
     QGroupBox * bkgdColorGroup = createBackgroundColorGroup();
 
+    vbox->addWidget(bkgdViewGroup);
     vbox->addWidget(bkgdImageGroup);
-    vbox->addSpacing(13);
     vbox->addWidget(bkgdColorGroup);
     vbox->addStretch();
 }
 
 void page_backgrounds::onEnter()
 {
-    displayBackgroundStatus(true);
+    displayBackgroundImageStatus(true);
+}
+
+void page_backgrounds::onExit()
+{
+    clearPageStatus();
 }
 
 void page_backgrounds::onRefresh()
 {
-    chkShowBkgd->setChecked(config->showBackgroundImage);
-    displayBackgroundStatus(false);
+    bkgdViewGroup->setChecked(viewControl->isEnabled(VIEW_BKGD_IMG));
+
+    displayBackgroundImageStatus(false);
+
+    auto bip = Sys::getBackgroundImageFromSource();
+    smxWidget->setLayer(bip.get());
+    smxWidget->refresh();
 
     for (int i = 0; i < viewTable->rowCount(); i++)
     {
@@ -54,6 +67,44 @@ void page_backgrounds::onRefresh()
     }
 }
 
+QGroupBox * page_backgrounds::createBackgroundViewGroup()
+{
+    btnNone   = new QRadioButton("None");
+    btnMosaic = new QRadioButton("Mosaic");
+    btnTiling = new QRadioButton("Tiling");
+    btnMaped  = new QRadioButton("Map Editor");
+    btnDefine = new QRadioButton("Map Editor Defined");
+
+    smxWidget = new SMXWidget(nullptr,false,true);
+
+    QHBoxLayout * hb = new  QHBoxLayout();
+    hb->addWidget(btnNone);
+    hb->addWidget(btnMosaic);
+    hb->addWidget(btnTiling);
+    hb->addWidget(btnMaped);
+    hb->addWidget(btnDefine);
+    hb->addStretch();
+    hb->addWidget(smxWidget);
+
+    QGroupBox * bkgdViewGroup  = new QGroupBox("Background Image Location");
+    bkgdViewGroup->setLayout(hb);
+    bkgdViewGroup->setCheckable(true);
+    bkgdViewGroup->setChecked(viewControl->isEnabled(VIEW_BKGD_IMG));
+
+    connect(bkgdViewGroup, &QGroupBox::clicked,    this, &page_backgrounds::slot_showImageChanged);
+    connect(btnNone,       &QRadioButton::toggled, this, [this] (bool checked) { if (checked) Sys::currentBkgImage = BKGD_IMAGE_NONE;
+                                                                                 displayBackgroundImageStatus(true);  emit sig_updateView();   } );
+    connect(btnMosaic,     &QRadioButton::toggled, this, [this] (bool checked) { if (checked) Sys::currentBkgImage = BKGD_IMAGE_MOSAIC;
+                                                                                 displayBackgroundImageStatus(true);  emit sig_updateView();  } );
+    connect(btnTiling,     &QRadioButton::toggled, this, [this] (bool checked) { if (checked) Sys::currentBkgImage = BKGD_IMAGE_TILING;
+                                                                                 displayBackgroundImageStatus(true);  emit sig_updateView();  } );
+    connect(btnMaped,      &QRadioButton::toggled, this, [this] (bool checked) { if (checked) Sys::currentBkgImage = BKGD_IMAGE_MAPED;
+                                                                                 displayBackgroundImageStatus(true);  emit sig_updateView();  } );
+    connect(btnDefine,     &QRadioButton::toggled, this, [this] (bool checked) { if (checked) Sys::currentBkgImage = BKGD_IMAGE_DEFINED;
+                                                                                 displayBackgroundImageStatus(true);  emit sig_updateView();  } );
+    return bkgdViewGroup;
+}
+
 QGroupBox * page_backgrounds::createBackgroundImageGroup()
 {
     QPushButton * loadBkgdBtn        = new QPushButton("Load Background");
@@ -63,19 +114,15 @@ QGroupBox * page_backgrounds::createBackgroundImageGroup()
     QPushButton * clearBtn           = new QPushButton("Clear");
     QPushButton * resetBtn           = new QPushButton("Reset Xform");
     QPushButton * removeBkgdBtn      = new QPushButton("Remove Background");
-                  chkShowBkgd        = new QCheckBox("Show Background Image");
-                  chk_useAdjusted    = new QCheckBox("Use Perspective");
 
-    chkShowBkgd->setChecked(config->showBackgroundImage);
+    chk_useAdjusted    = new QCheckBox("Use Perspective");
 
     startAdjustBtn->setStyleSheet("QPushButton::checked { background-color: yellow; color: red;}");
 
     imageName        = new QLineEdit("Image name");
 
     QHBoxLayout * box0 = new QHBoxLayout();
-    box0->addWidget(chkShowBkgd);
-    box0->addSpacing(13);
-    box0->addWidget(chk_useAdjusted);
+    box0->addWidget(removeBkgdBtn);
     box0->addStretch();
 
     QHBoxLayout * box = new QHBoxLayout();
@@ -84,11 +131,11 @@ QGroupBox * page_backgrounds::createBackgroundImageGroup()
     box->addWidget(clearBtn);
 
     QHBoxLayout * box2 = new QHBoxLayout();
+    box2->addWidget(chk_useAdjusted);
     box2->addWidget(startAdjustBtn);
     box2->addWidget(completeAdjustBtn);
     box2->addWidget(saveAdjustedBtn);
     box2->addStretch();
-    box2->addWidget(removeBkgdBtn);
 
     QHBoxLayout * box3 = new QHBoxLayout();
     box3->addLayout(&bkgdLayout);
@@ -112,7 +159,6 @@ QGroupBox * page_backgrounds::createBackgroundImageGroup()
     connect(removeBkgdBtn,     &QPushButton::clicked,         this,    &page_backgrounds::slot_removeBackground);
     connect(chk_useAdjusted,   &QCheckBox::clicked,           this,    &page_backgrounds::slot_useAdjustedClicked);
     connect(&bkgdLayout,       &LayoutTransform::xformChanged,this,    &page_backgrounds::slot_setBkgdXform);
-    connect(chkShowBkgd,       &QCheckBox::clicked,           this,    &page_backgrounds::slot_showImageChanged);
 
     return bkgdGroup;
 }
@@ -178,17 +224,40 @@ QGroupBox * page_backgrounds::createBackgroundColorGroup()
     return bkgdGroup;
 }
 
-void page_backgrounds::displayBackgroundStatus(bool force)
+void page_backgrounds::displayBackgroundImageStatus(bool force)
 {
     if (!refresh && !force)
     {
         return;
     }
 
-    auto bip   = bview->getImage();
+    switch (Sys::currentBkgImage)
+    {
+    case BKGD_IMAGE_NONE:
+        if (!btnNone->isChecked())
+            btnNone->setChecked(true);
+        break;
+    case BKGD_IMAGE_MOSAIC:
+        if (!btnMosaic->isChecked())
+            btnMosaic->setChecked(true);
+        break;
+    case BKGD_IMAGE_TILING:
+        if (!btnTiling->isChecked())
+            btnTiling->setChecked(true);
+        break;
+    case BKGD_IMAGE_MAPED:
+        if (!btnMaped->isChecked())
+            btnMaped->setChecked(true);
+        break;
+    case BKGD_IMAGE_DEFINED:
+        if (!btnDefine->isChecked())
+            btnDefine->setChecked(true);
+    }
+
+    auto bip   = Sys::getBackgroundImageFromSource();
     if (bip && bip->isLoaded())
     {
-        const Xform & xform = bview->getModelXform();
+        const Xform & xform = bip->getModelXform();
         bkgdLayout.blockSignals(true);
         bkgdLayout.setTransform(xform);
         bkgdLayout.blockSignals(false);
@@ -232,35 +301,63 @@ void page_backgrounds::slot_loadBackground()
         QString name = info.fileName();
         if (bip->load(name))
         {
-            // The owner of the image is the mosaic
-            auto mosaic = mosaicMaker->getMosaic();
-            Q_ASSERT(mosaic);
-            mosaic->setBkgdImage(bip);
+            if (Sys::viewController->isEnabled(VIEW_TILING_MAKER) || Sys::viewController->isEnabled(VIEW_TILING))
+            {
+                // The owner of the image is the mosaic
+                auto tiling = tilingMaker->getSelected();
+                Q_ASSERT(tiling);
+                tiling->setBkgdImage(bip);
+                Sys::currentBkgImage = BKGD_IMAGE_TILING;
 
-            // the view has a weak_ptr
-            bview->setImage(bip);
-            config->showBackgroundImage = true;     // since we loaded it, might as well see it
+            }
+            else
+            {
+                // The owner of the image is the mosaic
+                auto mosaic = mosaicMaker->getMosaic();
+                Q_ASSERT(mosaic);
+                mosaic->setBkgdImage(bip);
+                Sys::currentBkgImage = BKGD_IMAGE_MOSAIC;
+            }
             setupBackground(bkgdLayout.getXform());
-            displayBackgroundStatus(true);
-            emit sig_reconstructView();
+            displayBackgroundImageStatus(true);
+            panel->delegateView(VIEW_BKGD_IMG,true);     // since we loaded it, might as well see it
         }
     }
-
 }
 
 void page_backgrounds::slot_removeBackground()
 {
-    auto mosaic = mosaicMaker->getMosaic();
-    mosaic->removeBkgdImage();
+    switch (Sys::currentBkgImage)
+    {
+    case BKGD_IMAGE_MOSAIC:
+    {
+        auto mosaic = mosaicMaker->getMosaic();
+        mosaic->removeBkgdImage();
+    }   break;
+
+    case BKGD_IMAGE_TILING:
+    {
+        auto tiling = tilingMaker->getSelected();
+        tiling->removeBkgdImage();
+    }   break;
+
+    case BKGD_IMAGE_MAPED:
+        Sys::mapEditor->getDb()->removeBackgroundImage();
+        break;
+
+    case BKGD_IMAGE_NONE:
+    case BKGD_IMAGE_DEFINED:
+        break;
+    }
 
     emit sig_reconstructView();
 
-    displayBackgroundStatus(true);
+    displayBackgroundImageStatus(true);
 }
 
 void page_backgrounds::slot_useAdjustedClicked(bool checked)
 {
-    auto bip = bview->getImage();
+    auto bip = Sys::getBackgroundImageFromSource();
     if (!bip) return;
 
     bip->setUseAdjusted(checked);
@@ -270,50 +367,53 @@ void page_backgrounds::slot_useAdjustedClicked(bool checked)
 
 void page_backgrounds::setupBackground(Xform xform)
 {
-    auto bip = bview->getImage();
+    auto bip = Sys::getBackgroundImageFromSource();
     if (!bip) return;
     
-    bview->setModelXform(xform,false);
+    bip->setModelXform(xform,false,Sys::nextSigid());
     bip->createPixmap();
 }
 
 void page_backgrounds::slot_clearBackground ()
 {
-    auto bip = bview->getImage();
+    auto bip = Sys::getBackgroundImageFromSource();
     if (!bip) return;
 
     bip->unload();
-    displayBackgroundStatus(true);
+    displayBackgroundImageStatus(true);
     emit sig_reconstructView();
 }
 
 void page_backgrounds::slot_setBkgdXform()
 {
-    auto bip = bview->getImage();
+    auto bip = Sys::getBackgroundImageFromSource();
     if (!bip) return;
     
-    Xform xform = bview->getModelXform();
-    xform.setTransform(bkgdLayout.getQTransform());
-    bview->setModelXform(xform,false);
+    Xform xform = bip->getModelXform();
+    xform.setTransform(bkgdLayout.getQTransform());  // TOD -what is  this. is it right?
+    bip->setModelXform(xform,false,Sys::nextSigid());
     bip->createPixmap();
     emit sig_updateView();
 }
 
 void page_backgrounds::slot_startSkewAdjustment(bool checked)
 {
+    auto bip = Sys::getBackgroundImageFromSource();
+    if (!bip) return;
+
     Sys::guiModes->setMouseMode(MOUSE_MODE_NONE,true);    // ensure mouse gets here
 
     if (checked)
     {
-        QString txt = "Click to select four points on background image. Then press 'Complete Perspective Adjustement' to fix camera skew.";
-        panel->setStatus(txt);
+        pageStatusString = "Click to select four points on background image. Then press 'Complete Perspective Adjustement' to fix camera skew.";
+        setPageStatus();
 
-        bview->setSkewMode(true);
+        bip->setSkewMode(true);
     }
     else
     {
-        panel->clearStatus();
-        bview->setSkewMode(false);    // also stops mouse interaction
+        clearPageStatus();
+        bip->setSkewMode(false);    // also stops mouse interaction
     }
     emit sig_reconstructView();
 }
@@ -322,14 +422,15 @@ void page_backgrounds::slot_resetXform()
 {
     bkgdLayout.init();
     setupBackground(bkgdLayout.getXform());
+    emit sig_updateView();
 }
 
 void page_backgrounds::slot_adjustBackground()
 {
-    auto bip = bview->getImage();
+    auto bip = Sys::getBackgroundImageFromSource();
     if (!bip) return;
 
-    if (!bview->getSkewMode())
+    if (!bip->getSkewMode())
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
@@ -338,7 +439,7 @@ void page_backgrounds::slot_adjustBackground()
         return;
     }
 
-    EdgePoly & saccum = bview->getAccum();
+    EdgeSet & saccum = bip->getAccum();
     if (saccum.size() != 4)
     {
         QMessageBox box(this);
@@ -348,15 +449,15 @@ void page_backgrounds::slot_adjustBackground()
         return;
     }
 
-    bview->createBackgroundAdjustment(bip, saccum[0]->v1->pt, saccum[1]->v1->pt, saccum[2]->v1->pt, saccum[3]->v1->pt);
+    bip->createBackgroundAdjustment(saccum[0]->v1->pt, saccum[1]->v1->pt, saccum[2]->v1->pt, saccum[3]->v1->pt);
 
     bip->createPixmap();
 
-    displayBackgroundStatus(true);
+    displayBackgroundImageStatus(true);
 
-    bview->setSkewMode(false);
+    bip->setSkewMode(false);
 
-    panel->clearStatus();
+    clearPageStatus();
 
     startAdjustBtn->setChecked(false);
 
@@ -365,10 +466,10 @@ void page_backgrounds::slot_adjustBackground()
 
 void page_backgrounds::slot_saveAdjustedBackground()
 {
-    auto bip = bview->getImage();
+    auto bip = Sys::getBackgroundImageFromSource();
     if (!bip) return;
     
-    Xform xf = bview->getModelXform();
+    Xform xf = bip->getModelXform();
 
     QString oldname = bip->getTitle();
 
@@ -407,21 +508,17 @@ void page_backgrounds::slot_saveAdjustedBackground()
         bip->load(newName);
         if (bip->isLoaded())
         {
-            bview->setModelXform(xf,false);
+            bip->setModelXform(xf,false,Sys::nextSigid());
             bip->setUseAdjusted(false);
-
-            config->showBackgroundImage = true;     // since we loaded it, might as well see it
-
-            displayBackgroundStatus(true);
-            emit sig_reconstructView();
+            displayBackgroundImageStatus(true);
+            panel->delegateView(VIEW_BKGD_IMG,true);
         }
     }
 }
 
 void page_backgrounds::slot_showImageChanged(bool checked)
 {
-    config->showBackgroundImage = checked;
-    emit sig_reconstructView();
+    panel->delegateView(VIEW_BKGD_IMG,checked);
 }
 
 void page_backgrounds::selectColor(int row)
@@ -445,7 +542,7 @@ void page_backgrounds::selectColor(int row)
 
 void page_backgrounds::reInitBkgdColors(QColor bcolor)
 {
-    //setBkgdColor(VIEW_DESIGN,bcolor);
+    viewControl->setBackgroundColor(VIEW_LEGACY,bcolor);
     viewControl->setBackgroundColor(VIEW_MOSAIC,bcolor);
     viewControl->setBackgroundColor(VIEW_PROTOTYPE,bcolor);
     viewControl->setBackgroundColor(VIEW_MOTIF_MAKER,bcolor);
@@ -454,10 +551,8 @@ void page_backgrounds::reInitBkgdColors(QColor bcolor)
     viewControl->setBackgroundColor(VIEW_MAP_EDITOR,bcolor);
     viewControl->setBackgroundColor(VIEW_BKGD_IMG,bcolor);
     viewControl->setBackgroundColor(VIEW_GRID,bcolor);
-    viewControl->setBackgroundColor(VIEW_BORDER,bcolor);
     viewControl->setBackgroundColor(VIEW_CROP,bcolor);
-    //viewControl->setBackgroundColor(VIEW_MEASURE,bcolor);
-    //viewControl->setBackgroundColor(VIEW_CENTER,bcolor);
-    viewControl->setBackgroundColor(VIEW_IMAGE,bcolor);
+    viewControl->setBackgroundColor(VIEW_DEBUG,bcolor);
+    viewControl->setBackgroundColor(VIEW_BMP_IMAGE,bcolor);
     emit sig_reconstructView();
 }

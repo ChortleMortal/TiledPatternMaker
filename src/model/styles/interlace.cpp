@@ -1,15 +1,19 @@
+#include "gui/viewers/geo_graphics.h"
+#include "model/makers/mosaic_maker.h"
+#include "model/styles/casing_neighbours.h"
 #include "model/styles/interlace.h"
 #include "sys/geometry/arcdata.h"
+#include "sys/geometry/debug_map.h"
 #include "sys/geometry/map.h"
+#include "sys/geometry/neighbour_map.h"
 #include "sys/geometry/neighbours.h"
-#include "sys/geometry/geo.h"
 #include "sys/geometry/transform.h"
 #include "sys/geometry/vertex.h"
-#include "gui/viewers/geo_graphics.h"
-#include "model/styles/outline.h"
+#include "sys/sys/debugflags.h"
 
-
-using std::make_shared;
+#ifdef DEBUG_THREADS
+#include "sys/sys/load_unit.h"
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -30,15 +34,31 @@ using std::make_shared;
 // just a pain when crossing edges don't cross in a perfect X.  I
 // might get this wrong.
 
+#ifdef QT_DEBUG
+uint Interlace::dbgDump2 = 0x0; //0x3240;
+#else
+uint Interlace::dbgDump2 = 0x00;
+#endif
+uint Interlace::iCount   = 0;
+uint Interlace::iTrigger = 0;
+
 Interlace::Interlace(ProtoPtr proto) : Thick(proto)
 {
     outline_width         = 0.03;
     join_style            = Qt::BevelJoin;
     cap_style             = Qt::SquareCap;
     gap                   = 0.0;
-    shadow                = 0.05;
+    shadow                = 0.0;
     includeTipVertices    = false;
     interlace_start_under = false;
+    iTrigger              = 0;  // for debug
+
+    connect(Sys::flags, &DebugFlags::sig_dbgChanged, this, &Interlace::slot_dbgChanged, Qt::QueuedConnection);
+    connect(Sys::flags, &DebugFlags::sig_dbgTrigger, this, &Interlace::slot_dbgTrigger);
+
+#ifdef THREAD_LIMITS
+    threads.chainLimit  = 0;
+#endif
 }
 
 Interlace::Interlace(StylePtr other) : Thick(other)
@@ -50,6 +70,7 @@ Interlace::Interlace(StylePtr other) : Thick(other)
         shadow                = intl->shadow;
         includeTipVertices    = intl->includeTipVertices;
         interlace_start_under = intl->interlace_start_under;
+        iTrigger              = 0;
     }
     else
     {
@@ -61,10 +82,14 @@ Interlace::Interlace(StylePtr other) : Thick(other)
             cap_style      = Qt::SquareCap;
         }
         gap                   = 0.0;
-        shadow                = 0.05;
+        shadow                = 0.0;
         includeTipVertices    = false;
         interlace_start_under = false;
+        iTrigger              = 0;  // for debug
     }
+
+    connect(Sys::flags, &DebugFlags::sig_dbgChanged, this, &Interlace::slot_dbgChanged, Qt::QueuedConnection);
+    connect(Sys::flags, &DebugFlags::sig_dbgTrigger, this, &Interlace::slot_dbgTrigger);
 }
 
 Interlace:: ~Interlace()
@@ -80,115 +105,218 @@ Interlace:: ~Interlace()
 void Interlace::draw(GeoGraphics * gg)
 {
     if (!isVisible())
-    {
         return;
-    }
 
-    if (segments.size() == 0)
-    {
+    if (casings.size() == 0)
         return;
+
+    int index = Sys::flags->getDbgIndex();
+    bool solo = Sys::flags->flagged(SOLO_EDGE);
+
+    //Sys::debugMapPaint->wipeout();
+
+    QPen pen(Qt::black,1, Qt::SolidLine, cap_style, join_style);      // OUTLINE_DEFAULT;
+    if (drawOutline == OUTLINE_SET)
+    {
+        pen = QPen(outline_color,Transform::scalex(gg->getTransform() * outline_width * 0.5));
+    }
+    pen.setJoinStyle(join_style);
+    pen.setCapStyle(cap_style);
+
+    for (CasingPtr & casing : casings)
+    {
+        if (solo&& index != casing->edgeIndex)
+            continue;
+
+        if (!casing->created())
+            continue;
+
+        casing->setPainterPath();
+
+        InterlaceCasingPtr icp = std::static_pointer_cast<InterlaceCasing>(casing);
+        QPen pen2(icp->color, 1, Qt::SolidLine, cap_style, join_style);
+        casing->fillCasing(gg,pen2);
     }
 
-    QPen pen(Qt::black, 1, Qt::SolidLine, cap_style, join_style);
-
-    for (const Segment & seg : std::as_const(segments))
+    if (!Sys::flags->flagged(NO_SHADOW))
     {
-        seg.draw(gg,pen);
-    }
-
-    if ( shadow > 0.0)
-    {
-        for (Segment seg : std::as_const(segments))
+        for (CasingPtr & casing : casings)
         {
-            QPen & spen = seg.getShadowPen();
-            spen.setJoinStyle(join_style);
-            spen.setCapStyle(cap_style);
-            seg.drawShadows(gg,shadow);
+            if (shadow > 0.0)
+            {
+                InterlaceCasingPtr icp = std::static_pointer_cast<InterlaceCasing>(casing);
+                QPen & spen = icp->getShadowPen();
+                spen.setJoinStyle(join_style);
+                spen.setCapStyle(cap_style);
+                icp->drawShadows(gg,shadow);
+            }
         }
     }
 
     if (drawOutline != OUTLINE_NONE)
     {
-        QPen pen(Qt::black,1, Qt::SolidLine, cap_style, join_style);      // OUTLINE_DEFAULT;
-        if (drawOutline == OUTLINE_SET)
+        for (CasingPtr & casing : casings)
         {
-            pen = QPen(outline_color,Transform::scalex(gg->getTransform() * outline_width * 0.5));
+            casing->drawOutline(gg,pen);
         }
-        pen.setJoinStyle(join_style);
-        pen.setCapStyle(cap_style);
+    }
 
-        for (const Segment & seg : segments)
+    if (!Sys::flags->flagged(ILACE_DBG))
+        return;
+
+    // DEBUG CODE BELOW
+
+    int colorIndex = 0;
+    static const QColor colors[6] = {  Qt::red, Qt::green, Qt::blue, Qt::yellow, Qt::magenta, Qt::cyan };
+
+    for (auto & casing : casings)
+    {
+        auto edge = casing->getEdge();
+        if (!edge)
+            continue;
+
+        if (!casing->created())
+            continue;
+
+        if (solo && casing->edgeIndex != index)
+            continue;
+
+        if (edge->isLine() && Sys::flags->flagged(DRAW_CURVES_ONLY))
+            continue;
+
+        if ((casing->edgeIndex == index) && Sys::flags->flagged(HIGHLIGHT_SELECTED))
         {
-            seg.drawOutline(gg,pen);
+            QPen p2(Qt::red,3,Qt::SolidLine, cap_style, join_style);
+            casing->fillCasing(gg,p2);
+            casing->drawOutline(gg,p2);
         }
+
+        if (Sys:: flags->flagged(OVER_UNDER))
+        {
+            auto is1 = static_cast<InterlaceSide*>(casing->s1);
+            auto is2 = static_cast<InterlaceSide*>(casing->s2);
+            QString str = QString::number(casing->edgeIndex);
+            str  += (is1->under()) ? "U" : "O";
+            Sys::debugMapPaint->insertDebugMark(casing->s1->mid,str,Qt::blue);
+            QString str2 = QString::number(casing->edgeIndex);
+            str2 += (is2->under()) ? "U" : "O";
+            Sys::debugMapPaint->insertDebugMark(casing->s2->mid,str2,Qt::blue);
+        }
+
+        if (Sys::flags->flagged(SIDE_1_LINE))
+        {
+            auto is1 = static_cast<InterlaceSide*>(casing->s1);
+            if (is1->under())
+                Sys::debugMapPaint->insertDebugLine(casing->s1Line(),Qt::green,3);
+            else
+                Sys::debugMapPaint->insertDebugLine(casing->s1Line(),Qt::red,3);
+        }
+
+        if (Sys::flags->flagged(SIDE_2_LINE))
+        {
+            auto is2 = static_cast<InterlaceSide*>(casing->s2);
+            if (is2->under())
+                Sys::debugMapPaint->insertDebugLine(casing->s2Line(),Qt::green,3);
+            else
+                Sys::debugMapPaint->insertDebugLine(casing->s2Line(),Qt::red,3);
+        }
+
+        if (edge->isCurve() &&  Sys::flags->flagged(INDEX_CURVES))
+        {
+            Sys::debugMapPaint->insertDebugMark(edge->getMidPoint(), QString::number(casing->edgeIndex),Qt::red);
+        }
+        else if (Sys::flags->flagged(INDEX_LINES))
+        {
+            Sys::debugMapPaint->insertDebugMark(edge->getMidPoint(), QString::number(casing->edgeIndex),Qt::red);
+        }
+
+        int idx = colorIndex++ % 6;
+        QColor color = colors[idx];
+        casing->debugDraw(color,width);
     }
 }
 
 void Interlace::resetStyleRepresentation()
 {
     Thick::resetStyleRepresentation();
-    segments.clear();
+    casings.reset();
+    threads.clear();
+    created = false;
 }
 
 void Interlace::createStyleRepresentation()
 {
-    if (segments.size())
+    qDebug() << "Interlace::createStyleRepresentation";
+
+    if (created)
+        return;
+
+    MapPtr map = getProtoMap();
+    if (!map)
+        return;
+
+    Q_ASSERT(!map->isEmpty());
+    Q_ASSERT(casings.isEmpty());
+    Q_ASSERT(threads.isEmpty());
+    Q_ASSERT(todo.isEmpty());
+
+    Sys::debugMapCreate->wipeout();
+
+    iCount   = 0;
+
+    bool oldSetting = Edge::curvesAsLines;
+    bool newSetting = Sys::flags->flagged(CURVES_AS_LINES);
+    if (oldSetting != newSetting)
     {
+        Edge::curvesAsLines = newSetting;
+        Sys::mosaicMaker->reload();
         return;
     }
 
-    MapPtr map = prototype->getProtoMap();
+    NeighbourMap nmap(map);
+    for (auto & vertex : map->getVertices())
+    {
+        NeighboursPtr np   = nmap.getNeighbours(vertex);
+        auto cneighbours   = std::make_shared<CasingNeighbours>(*np.get());
+        casings.weavings[vertex] = cneighbours;
+    }
 
+    int index = 0;
+    for (auto & edge  : map->getEdges())
+    {
+        auto casing = std::make_shared<InterlaceCasing>(&casings,edge,width);
+        casing->init();
+        casings.push_back(casing);
+        casing->edgeIndex = index;
+        edge->casingIndex = index;
+        index++;
+    }
+
+    for (auto it = casings.weavings.begin(); it != casings.weavings.end(); it++)
+    {
+        CNeighboursPtr cneighbours   = it.value();
+        cneighbours->findNeighbouringCasings(&casings);
+    }
+
+    // setup interlacing
+#ifdef DEBUG_THREADS
+    defaultColor = Qt::white;
+#else
+    defaultColor = colors.getLastTPColor().color;
+#endif
+    // assign thread to each casing
     if (colors.size() > 1)
     {
-        threads.createThreads(map.get());
+        threads.createThreads(casings);
         threads.assignColors(colors);
+#ifdef DEBUG_THREADS
+        qInfo() << "LOG2: " << Sys::mosaicMaker->getLoadUnit()->getLoadFile().getVersionedName().get() << "Threads " << threads.size();
+#endif
     }
 
-    assignInterlacing(map.get());
-
-    // Given the interlacing assignment created above, we can
-    // use the beefy getPoints routine to extract the graphics
-    // of the interlacing.
-
-    for (const auto & edge  : std::as_const(map->getEdges()))
-    {
-        ThreadPtr thread;
-        QColor color;
-        if ((colors.size() > 1) && (thread = edge->thread.lock()))
-        {
-            color = thread->color;
-        }
-        else
-        {
-            color = colors.getFirstTPColor().color;
-        }
-
-        Segment seg(edge->getType(),color);
-        if (edge->isCurve())
-        {
-            seg.setCurve(edge->isConvex(),edge->getArcCenter());
-        }
-        seg.v1.getPoints(edge, edge->v1, edge->v2, width, gap, map,  edge->v1_under);
-        seg.v2.getPoints(edge, edge->v2, edge->v1, width, gap, map, !edge->v1_under);
-        seg.setPainterPath();
-        seg.setShadowColor();
-        segments.push_back(seg);
-    }
-
-    annotateEdges(map);
-
-    map->verify();
-}
-
-void Interlace::assignInterlacing(Map * map)
-{
-    for (const auto & edge :std::as_const(map->getEdges()))
-    {
-        edge->visited = false;
-    }
-
-    for (const auto & vert : std::as_const(map->getVertices()))
+    // define under/over for casing
+    auto & vertices = getProtoMap()->getVertices();
+    for (auto & vert : vertices)
     {
         vert->visited = false;
     }
@@ -196,34 +324,140 @@ void Interlace::assignInterlacing(Map * map)
     // Stack of edge to be processed.
     todo.clear();
 
-    for (const auto & edge : std::as_const(map->getEdges()))
+    for (auto & casing : casings)
     {
-        if (!edge->visited )
+        auto is1 = static_cast<InterlaceSide*>(casing->s1);
+        if (!is1->visited())
         {
-            edge->v1_under = !interlace_start_under;
-            todo.push(edge);
-            buildFrom(map);
+            InterlaceCasingPtr icp = std::static_pointer_cast<InterlaceCasing>(casing);
+
+            icp->setUnder(!interlace_start_under);
+
+            todo.push(icp);
+            buildFrom();
             //map->dumpMap(false);
         }
     }
+
+    // create casing colors
+    for (auto & casing  : casings)
+    {
+        InterlaceCasingPtr icp = std::static_pointer_cast<InterlaceCasing>(casing);
+        icp->createColors(defaultColor);
+    }
+
+    // re-align curved edges
+    if (!Sys::flags->flagged(NO_ALIGN_CURVES))
+    {
+        for (auto & casing : casings)
+        {
+            auto edge = casing->getEdge();
+            if (edge && edge->isCurve())
+            {
+                casing->innerCircle = Circle(edge->getArcCenter(),edge->getRadius()-width);
+                casing->outerCircle = Circle(edge->getArcCenter(),edge->getRadius()+width);
+
+                casing->alignCurvedEdgeSide1(casings);
+                casing->alignCurvedEdgeSide2(casings);
+            }
+        }
+    }
+
+    if (Sys::flags->flagged(DUMP_CASINGS)) casings.dump("aligned");
+
+    casings.weave();
+
+    if (dbgDump2 & 0x800) casings.dumpWeaveStatus();
+
+    if (!Sys::flags->flagged(NO_GAP))
+    {
+        if (gap > 0.0)
+        {
+            // set gaps
+            for (auto & casing : casings)
+            {
+                InterlaceCasingPtr icp = std::static_pointer_cast<InterlaceCasing>(casing);
+                icp->setGap(gap);
+            }
+        }
+    }
+
+    if (Sys::flags->flagged(VALIDATE)) casings.validate();
+    if (Sys::flags->flagged(DUMP_CASINGS)) casings.dump("Complete");
+
+    created = true;
 }
 
+#if 0 // FIXME - delete unused
+void Interlace::createUnders()
+{
+    Q_ASSERT(Sys::flags->flagged(APPROACH_6));
+
+    for (auto & casing  : casings)
+    {
+        CasingData cd1 = casing->getCasingData();
+
+        InterlaceCasingPtr icp = std::static_pointer_cast<InterlaceCasing>(casing);
+        icp->createUnder();
+
+        if (Interlace::dbgDump2  & 0x80)
+        {
+            CasingData cd2 = casing->getCasingData();
+            if (cd1 != cd2)
+                cd1.dumpDiffs(cd2);
+        }
+
+        if (Sys::flags->flagged(USE_TRIGGER_2) && (casing->edgeIndex == iTrigger))
+            break;
+    }
+}
+#endif
+#if 0 // FIXME - delete unused
+void Interlace::alignCurvedEdges(eDbgFlag flag)
+{
+
+    if (Sys::flags->flagged(NO_ALIGN_CURVES))
+        return;
+
+    Q_UNUSED(flag);
+    for (CasingPtr & casing : casings)
+    {
+        auto edge = casing->getEdge();
+        if (edge && edge->isCurve())
+        {
+            qDebug() << "aligning edge:" << casing->edgeIndex;
+            auto is1 = static_cast<InterlaceSide*>(casing->s1);
+            is1->alignS1Inner(casing);
+            is1->alignS1Outer(casing);
+
+            auto is2 = static_cast<InterlaceSide*>(casing->s2);
+            is2->alignS2Inner(casing);
+            is2->alignS2Outer(casing);
+        }
+    }
+}
+#endif
+
 // Propagate the over-under relation from an edge to its incident vertices.
-void Interlace::buildFrom(Map * map)
+void Interlace::buildFrom()
 {
     //qDebug() << "Interlace::buildFrom";
 
     while (!todo.empty())
     {
-        EdgePtr edge = todo.pop();
+        InterlaceCasingPtr casing = todo.pop();
 
-        if (!edge->v1->visited)
+        if (!casing->getEdge()->v1->visited)
         {
-            propagate(map, edge->v1, edge, edge->v1_under);
+            casing->getEdge()->v1->visited = true;
+            auto is1 = static_cast<InterlaceSide*>(casing->s1);
+            propagate(casing, is1, is1->under());
         }
-        if (!edge->v2->visited)
+        if (!casing->getEdge()->v2->visited)
         {
-            propagate(map, edge->v2, edge, !edge->v1_under);
+            casing->getEdge()->v2->visited = true;
+            auto is2 = static_cast<InterlaceSide*>(casing->s2);
+            propagate(casing, is2, is2->under());
         }
     }
 }
@@ -235,37 +469,37 @@ void Interlace::buildFrom(Map * map)
 // The whole trick is to manage how neighbours receive modifications
 // of edge_under_at_vert.
 
-void Interlace::propagate(Map * map, VertexPtr & vertex, EdgePtr & edge, bool edge_under_at_vert)
+void Interlace::propagate(InterlaceCasingPtr &cp, InterlaceSide *s, bool edge_under_at_vert)
 {
-    vertex->visited = true;
+    VertexPtr v = s->vertex();
+    NeighboursPtr neighbours = casings.weavings.value(v);
 
-    NeighboursPtr neighbours = map->getNeighbours(vertex);
+    EdgePtr edge = cp->getEdge();
 
     int nn = neighbours->numNeighbours();
-    //qInfo() << "Interlace Edge Count" << nn;
-
     if (nn == 1)
     {
         if ( includeTipVertices)
         {
             EdgePtr oe = neighbours->getNeighbour(0);
-
-            if( !oe->visited )
+            CasingPtr cp = casings.find(oe);
+            auto is1 = static_cast<InterlaceSide*>(cp->s1);
+            if (!is1->visited())
             {
                 // With a bend, we don't want to change the underness
                 // of the edge we're propagating to.
-                if( oe->v1 == vertex)
+                InterlaceCasingPtr icp = std::static_pointer_cast<InterlaceCasing>(cp);
+                if (cp->s1->vertex() == s->vertex())
                 {
                     // The new edge starts at the current vertex.
-                    oe->v1_under = !edge_under_at_vert;
+                    icp->setUnder(!edge_under_at_vert);
                 }
                 else
                 {
                     // The new edge ends at the current vertex.
-                    oe->v1_under = edge_under_at_vert;
+                    icp->setUnder(edge_under_at_vert);
                 }
-                oe->visited = true;
-                todo.push( oe );
+                todo.push(icp);
             }
         }
     }
@@ -273,41 +507,42 @@ void Interlace::propagate(Map * map, VertexPtr & vertex, EdgePtr & edge, bool ed
     {
         BeforeAndAfter  ba  = neighbours->getBeforeAndAfter(edge);
         EdgePtr oe          = ba.before;
-
-        if( !oe->visited )
+        CasingPtr cp = casings.find(oe);
+        auto is1 = static_cast<InterlaceSide*>(cp->s1);
+        if (!is1->visited())
         {
             // With a bend, we don't want to change the underness
             // of the edge we're propagating to.
-            if( oe->v1 == vertex)
+            InterlaceCasingPtr icp = std::static_pointer_cast<InterlaceCasing>(cp);
+            if( cp->s1->vertex() == s->vertex())
             {
                 // The new edge starts at the current vertex.
-                oe->v1_under = !edge_under_at_vert;
+                icp->setUnder(!edge_under_at_vert);
             }
             else
             {
                 // The new edge ends at the current vertex.
-                oe->v1_under = edge_under_at_vert;
+                icp->setUnder(edge_under_at_vert);
             }
-            oe->visited = true;
-            todo.push( oe );
+            todo.push(icp);
         }
     }
     else
     {
-        QVector<EdgePtr> ns;
+        QVector<WeakEdgePtr> ns;
         int index    = 0;
         int edge_idx = -1;  // index of edge in ns
 
-        for (auto & wedge : std::as_const(*neighbours))
+        for (auto & wedge : *neighbours)
         {
-            EdgePtr edge2 = wedge.lock();
-            ns << edge2;
-            if (edge2 == edge)
+            ns << wedge;
+            if (wedge.lock() == edge)
             {
                 edge_idx = index;
             }
             index++;
         }
+        Q_ASSERT(edge_idx != -1);
 
         // this assumes edges are sorted by angle, so the +1 edge has the reversed
         // v1_under, and the +2 edge is the colinear continuation of the first edge, etc.
@@ -316,317 +551,103 @@ void Interlace::propagate(Map * map, VertexPtr & vertex, EdgePtr & edge, bool ed
         for (int idx = 1; idx < nn; ++idx )
         {
             int cur = (edge_idx + idx) % nn;
-            EdgePtr oe = ns[cur];
+            EdgePtr oe      = ns[cur].lock();
             Q_ASSERT(oe);
-
-            if (!oe->visited)
+            CasingPtr cp   = casings.find(oe);
+            auto is1 = static_cast<InterlaceSide*>(cp->s1);
+            if (!is1->visited())
             {
-                if( oe->v1 == vertex)
+                InterlaceCasingPtr icp = std::static_pointer_cast<InterlaceCasing>(cp);
+                if( cp->s1->vertex() == s->vertex())
                 {
-                    oe->v1_under = !edge_under_at_vert;
+                    icp->setUnder(!edge_under_at_vert);
                 }
                 else
                 {
-                    oe->v1_under = edge_under_at_vert;
+                    icp->setUnder(edge_under_at_vert);
                 }
-                oe->visited = true;
-                todo.push(oe);
+                todo.push(icp);
             }
             edge_under_at_vert = !edge_under_at_vert;
         }
     }
 }
 
-///////////////////////////////////////////////////////////////////
-///
-///  Segment
-///
-////////////////////////////////////////////////////////////////////
-
-Segment::Segment(eEdgeType etype, QColor ecolor)
+void Interlace::slot_dbgChanged(eDbgType type)
 {
-    type  = etype;
-    color = ecolor;
-}
-
-void Segment::setCurve(bool isConvex, QPointF center)
-{
-    convex = isConvex;
-    arcCenter = center;
-}
-
-QPolygonF Segment::getPoly()
-{
-    QPolygonF p;
-    p << v1.below <<  v1.v << v1.above <<  v2.below <<  v2.v << v2.above; // same as interlace
-    //p << v2.below << v2.v << v2.above << v1.below << v1.v << v1.above;  // same as for outline
-    if (!Geo::isClockwise(p))
-        qWarning() << "Poly is CCW";
-    return p;
-}
-
-void Segment::setPainterPath()
-{
-    path.clear();
-
-    if (type == EDGETYPE_LINE)
+    switch(type)
     {
-        path.moveTo(v2.below);
-        path.lineTo(v2.v);
-        path.lineTo(v2.above);
-        path.lineTo(v1.below);
-        path.lineTo(v1.v);
-        path.lineTo(v1.above);
-        path.lineTo(v2.below);
-    }
-    else if (type == EDGETYPE_CURVE)
-    {
-        path.moveTo(v2.below);
-        path.lineTo(v2.v);
-        path.lineTo(v2.above);
+    case FLAG_REPAINT:
+        Sys::viewController->slot_updateView();
+        break;
 
-        ArcData ad1;
-        ad1.create(v2.above,v1.below,arcCenter,convex);
-        path.arcTo(ad1.rect,ad1.start,ad1.span());
+    case FLAG_CREATE_STYLE:
+        resetStyleRepresentation();
+        createStyleRepresentation();
+        Sys::viewController->slot_updateView();
+        break;
 
-        path.lineTo(v1.v);
-        path.lineTo(v1.above);
-
-        ArcData ad2;
-        ad2.create(v1.above,v2.below,arcCenter,convex);
-        path.arcTo(ad2.rect,ad2.start,-ad2.span());
-    }
-    else if (type == EDGETYPE_CHORD)
-    {
-        qWarning("BelowAndAboveEdge - unexpected EDGETYPE_CHORD");
+    case FLAG_CREATE_MOTIF:
+        // not handled here
+        break;
     }
 }
 
-void Segment::draw(GeoGraphics * gg, QPen & pen) const
+void Interlace::slot_dbgTrigger(int val)
 {
-    pen.setColor(color);
-    gg->fillPath(path,pen);
-}
+    qDebug() << "slot_dbgTrigger" << val;
 
-void  Segment::drawOutline(GeoGraphics * gg, QPen & pen) const
-{
-    if (type == EDGETYPE_LINE)
-    {
-        gg->drawLine(v2.above, v1.below, pen);
-        gg->drawLine(v2.below, v1.above, pen);
-    }
-    else if (type == EDGETYPE_CURVE)
-    {
-        gg->drawArc(v2.above, v1.below,  arcCenter, convex, pen);    // inside
-        gg->drawArc(v2.below, v1.above,  arcCenter, convex, pen);    // outside
-    }
-    else if (type == EDGETYPE_CHORD)
-    {
-        gg->drawChord(v2.above, v1.below, arcCenter, convex, pen);  // inside
-        gg->drawChord(v2.below, v1.above, arcCenter, convex, pen);  // outside
-    }
-}
+    iTrigger = val;
+    slot_dbgChanged(FLAG_CREATE_STYLE);
 
-void  Segment::drawShadows(GeoGraphics * gg, qreal shadow) const
-{
-    if (v1.shadow)
+#ifdef DEBUG_EDGES
+    auto & map   = prototype->getProtoMap();
+    auto & edges = map->getEdges();
+    if (val >= 0 && val < edges.size())
     {
-        QPolygonF shadowPts1;
-        shadowPts1 << (v1.above + getShadowVector(v1.above, v2.below, shadow));
-        shadowPts1 <<  v1.above;
-        shadowPts1 <<  v1.below;
-        shadowPts1 << (v1.below + getShadowVector(v1.below, v2.above, shadow));
-        gg->fillPolygon(shadowPts1,shadowPen);
+        auto edge = edges[val];
+        if(edge->isCurve())
+        {
+            auto casing = casings.find(edge);
+            casing->alignCurvedEdge(casings);
+            Sys::viewController->slot_updateView();
+        }
     }
-
-    if (v2.shadow)
-    {
-        QPolygonF shadowPts2;
-        shadowPts2 << (v2.below + getShadowVector(v2.below, v1.above, shadow));
-        shadowPts2 <<  v2.below;
-        shadowPts2 <<  v2.above;
-        shadowPts2 << (v2.above + getShadowVector(v2.above, v1.below, shadow));
-        gg->fillPolygon(shadowPts2,shadowPen);
-    }
-}
-
-QPointF Segment::getShadowVector(QPointF from, QPointF to, qreal shadow) const
-{
-    QPointF dir = to - from;
-    qreal magnitude = Geo::mag(dir);
-    if ( shadow < magnitude )
-    {
-        dir *= (shadow / magnitude );
-    }
-    return dir;
-}
-
-void Segment::setShadowColor()
-{
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
-    float h;
-    float s;
-    float b;
-#else
-    qreal h;
-    qreal s;
-    qreal b;
 #endif
-    color.getHsvF(&h,&s,&b);
-    shadowColor.setHsvF(h, s * 0.9, b * 0.8 );
-
-    shadowPen = QPen(shadowColor);
+#ifdef DEBUG_THREADS
+    slot_dbgChanged(FLAG_CREATE_STYLE);
+    threads.chainLimit++;
+#endif
 }
 
-bool Segment::valid()
+MapPtr Interlace::getStyleMap()
 {
-    bool rv = true;
-    if (QLineF(v1.above,v1.v).length() != QLineF(v1.v,v1.below).length())
-        rv = false;
-    if (QLineF(v2.above,v2.v).length() != QLineF(v2.v,v2.below).length())
-        rv = false;
-    return rv;
+    casings.buildMap();
+    return casings.map;
 }
 
-///////////////////////////////////////////////////////////////////
-///
-///  Piece
-///
-////////////////////////////////////////////////////////////////////
-
-void Piece::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, qreal width, qreal gap, MapPtr map, bool from_under)
+void Interlace::slot_styleMapUpdated(MapPtr map)
 {
-    //bool from_under = (edge->v1 == from ) == edge->v1_under;  // methinks ugly code
+    if (map != casings.map)
+        return;
 
-    QPointF pfrom = from->pt;
-    QPointF pto   = to->pt;
+    casings.useMap();
 
-    // Four cases:
-    //  - cap
-    //  - bend
-    //  - interlace over
-    //  - interlace under
+    Sys::viewController->repaintView();
+}
 
-    NeighboursPtr toNeighbours = map->getNeighbours(to);
-
-    int nn = toNeighbours->numNeighbours();
-    if (nn == 1)
+bool Interlace::dbgBreak(InterlaceCasingPtr & casing, QString msg)
+{
+    switch (casing->edgeIndex)
     {
-        // cap
-        QPointF dir = pto - pfrom;
-        Geo::normalizeD(dir);
-        dir *= width;
-        QPointF perp = Geo::perp(dir);
+    case 278:
+    case 399:
+    case 521:
+    case 580:
+        qDebug() << "BREAK" << msg << casing->edgeIndex;
+        return true;
 
-        below  = pto - perp;
-        below += dir;
-        v      = pto + dir;
-        above  = pto + perp;
-        above += dir;
-    }
-    else if (nn == 2 || nn ==3)
-    {
-        // bend
-        BelowAndAbove jps = Outline::getPoints(map, edge, from, to, width);
-        below = jps.below;
-        v     = pto;
-        above = jps.above;
-    }
-    else
-    {
-        if( from_under )
-        {
-            // interlace over
-            QVector<EdgePtr> ns;
-            int index    = 0;
-            int edge_idx = -1;
-            for (auto & wedge : std::as_const(*toNeighbours))
-            {
-                EdgePtr nedge = wedge.lock();
-                ns << nedge;
-                if (nedge == edge)
-                {
-                    edge_idx = index;
-                }
-                index++;
-            }
-
-            int nidx = (edge_idx + 2) % nn;
-
-            QPointF op = ns[nidx]->getOtherP(to);
-
-            below = Outline::getJoinPoint(pto, pfrom, op, width);
-            if ( below.isNull() )
-            {
-                QPointF perp = pto - pfrom;
-                Geo::perpD(perp);
-                Geo::normalizeD(perp);
-                perp *= width;
-                below = pto - perp ;
-            }
-
-            v   = pto;
-            above = Geo::convexSum(below, pto, 2.0);
-        }
-        else
-        {
-            // interlace under
-
-            // This is the hard case, fraught with pitfalls for
-            // the imprudent (i.e., me).  I think what I've got
-            // now does a reasonable job on well-behaved maps
-            // and doesn't dump core on badly-behaved ones.
-
-            BeforeAndAfter ba = toNeighbours->getBeforeAndAfter(edge);
-            QPointF before_pt = ba.before->getOtherP(to);
-            QPointF after_pt  = ba.after->getOtherP(to);
-
-            below = Outline::getJoinPoint(pto, pfrom,     after_pt, width );
-            above = Outline::getJoinPoint(pto, before_pt, pfrom,    width );
-            v     = Outline::getJoinPoint(pto, before_pt, after_pt, width );
-
-            QPointF dir = pto - pfrom ;
-            Geo::normalizeD(dir);
-            QPointF perp = Geo::perp(dir);
-            perp        *= width;
-
-            if (below.isNull())
-            {
-                below = pto - perp;
-            }
-            if (above.isNull())
-            {
-                above = pto + perp;
-            }
-            if (v.isNull())
-            {
-                QPointF ab = after_pt - before_pt ;
-                Geo::normalizeD(ab);
-                Geo::perpD(ab);
-                ab *= width;
-                v   = pto - ab ;
-            }
-
-            // FIXMECSK -- The gap size isn't consistent since
-            // it's based on subtracting gap scaled unit vectors.
-            // Scale gap by 1/sin(theta) to compensate for
-            // angle with neighbours and get a _perpendicular_ gap.
-
-            if ( gap > 0.0 )
-            {
-                below -= (dir * capGap(below, pfrom, gap));
-                above -= (dir * capGap(above, pfrom, gap));
-                v     -= (dir * capGap(v  ,   pfrom, gap));
-            }
-
-            shadow = true;
-        }
+    default:
+        return false;
     }
 }
-
-qreal Piece::capGap( QPointF p, QPointF base, qreal gap )
-{
-    qreal max_gap = Geo::dist(p, base );
-    return (gap < max_gap) ? gap : max_gap;
-}
-

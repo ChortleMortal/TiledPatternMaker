@@ -3,16 +3,11 @@
 #define PANELLISTWIDGET_H
 
 #include <QListWidget>
+#include "sys/enums/epanelpage.h"
 #include "gui/panels/panel_page.h"
 
 class ControlPanel;
-
-enum ePageState
-{
-    PAGE_ATTACHED,
-    PAGE_SUB_ATTACHED,
-    PAGE_DETACHED
-};
+class panel_page;
 
 class PageData
 {
@@ -22,7 +17,6 @@ public:
 
     PageData & operator=(const PageData & other);
 
-    ePageState        pageState;
     panel_page      * page;
     QListWidgetItem * pageItem;
     QString           pageName;
@@ -55,6 +49,7 @@ public:
     void        addSeparator();
 
     QStringList wereFloated();
+    QString     wasSubAttached();
 
     virtual void mousePressEvent(QMouseEvent * event) override;
 

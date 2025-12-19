@@ -6,11 +6,18 @@
 
 extern const  QString sCycleMode[];
 
-enum eCycleMode
+
+enum eImageType
 {
-    CYCLE_VIEW_MOSAICS,
-    CYCLE_VIEW_TILINGS,
-    CYCLE_VIEW_ORIGINAL_PNGS,
+    IMAGE_MOSAICS,
+    IMAGE_TILINGS
+};
+
+enum eActionType
+{
+    ACT_GEN_MOSAIC_BMP,
+    ACT_GEN_TILING_BMP,
+    ACT_GEN_COMPARE_WLIST
 };
 
 #endif // ECYCLEMODE_H

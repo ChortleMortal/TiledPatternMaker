@@ -1,7 +1,7 @@
 #include <QDebug>
 #include "model/motifs/tile_motif.h"
 #include "model/tilings/tile.h"
-#include "sys/geometry/edgepoly.h"
+#include "sys/geometry/edge_poly.h"
 #include "sys/geometry/vertex.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/map.h"
@@ -24,25 +24,24 @@ TileMotif::TileMotif(const Motif &other) : IrregularMotif(other)
 
 void TileMotif::infer()
 {
-    qDebug() << "TileMotif::inferMotif";
+    qDebug() << "TileMotif::inferMotif" << "sides" << getN();
 
     motifMap = std::make_shared<Map>("Tile motif map");
 
-    auto epoly = getTile()->getEdgePoly();
-
-    for (auto edge : std::as_const(epoly))
+    const EdgePoly &  epoly = getTile()->getEdgePoly();
+    for (auto edge : epoly.get())
     {
         // this makes new eges and vertices since they can get altered in the map
         VertexPtr v1 = motifMap->insertVertex(edge->v1->pt);
         VertexPtr v2 = motifMap->insertVertex(edge->v2->pt);
-        EdgePtr newEdge = motifMap->insertEdge(v1,v2);
         if (edge->isCurve())
         {
-            bool convex = edge->isConvex();
             QPointF ac  = edge->getArcCenter();
-            newEdge->setCurvedEdge(ac,convex,(edge->getType() == EDGETYPE_CHORD));
+            motifMap->insertEdge(v1,v2,ac,edge->getCurveType());
+        }
+        else
+        {
+            motifMap->insertEdge(v1,v2);
         }
     }
-
-    qDebug().noquote() << motifMap->summary();
 }

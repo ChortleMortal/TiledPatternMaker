@@ -17,12 +17,14 @@
 
 #include <QPainterPath>
 #include "gui/viewers/geo_graphics.h"
+#include "gui/viewers/debug_view.h"
 #include "sys/geometry/arcdata.h"
 #include "sys/geometry/edge.h"
-#include "sys/geometry/edgepoly.h"
+#include "sys/geometry/edge_poly.h"
 #include "sys/geometry/geo.h"
 #include "sys/geometry/transform.h"
 #include "sys/geometry/vertex.h"
+#include "sys/sys/debugflags.h"
 
 GeoGraphics::GeoGraphics(QPainter * painter, QTransform  transform)
 {
@@ -32,17 +34,15 @@ GeoGraphics::GeoGraphics(QPainter * painter, QTransform  transform)
 
 void GeoGraphics::drawEdge(const EdgePtr & e, const QPen & pen)
 {
-    if (e->getType() == EDGETYPE_LINE)
+    if (e->isLine())
     {
         drawLine(e->getLine(), pen);
     }
-    else if (e->getType() == EDGETYPE_CURVE)
+    else
     {
-        drawArc(e->v1->pt,e->v2->pt,e->getArcCenter(),e->isConvex(),pen);
-    }
-    else if (e->getType() == EDGETYPE_CHORD)
-    {
-        drawChord(e->v1->pt,e->v2->pt,e->getArcCenter(),e->isConvex(),pen);
+        Q_ASSERT(e->isCurve());
+        //drawArc(e->v1->pt,e->v2->pt,e->getArcCenter(),e->getCurveType(),pen,true);
+        drawArc(e->getArcData(),pen,true);
     }
 }
 
@@ -53,13 +53,6 @@ void GeoGraphics::drawLine(const QLineF &line, const QPen &pen)
 
 void GeoGraphics::drawLine(const QPointF &p1, const QPointF &p2, const QPen &pen)
 {
-#if 0
-    QPen pen = painter->pen();
-    pen.setJoinStyle(Qt::MiterJoin);
-    pen.setCapStyle(Qt::RoundCap);
-    painter->setPen(pen);
-#endif
-
     QLineF line(transform.map(p1),transform.map(p2));
 
     painter->setPen(pen);
@@ -74,31 +67,15 @@ void GeoGraphics::drawLineDirect(const QPointF & v1, const QPointF & v2, const Q
 
 void GeoGraphics::drawRect(QRectF rect, QPen pen, QBrush brush)
 {
-#if 0
-    drawRect(rect.topLeft(), rect.width(), rect.height(), brush);
-#else
-    //QBrush br = painter->brush();   // save
     painter->setPen(pen);
     painter->setBrush(brush);
     painter->drawRect(rect);
-    //painter->setBrush(br);
-#endif
 }
 
 void GeoGraphics::drawRect(QPointF topleft, qreal width, qreal height, QPen pen, QBrush brush)
 {
-#if 0
-    qreal x = topleft.x();
-    qreal y = topleft.y();
-
-    QPolygonF pts;
-    pts << topleft << QPointF( x + width, y ) << QPointF( x + width, y + height ) << QPointF( x, y + height );
-
-    drawPolygon(pts, brush);
-#else
     QRectF rect(topleft.x(),topleft.y(),width,height);
     drawRect(rect,pen,brush);
-#endif
 }
 
 void GeoGraphics::drawPolygon(const QPolygonF & pgon, QPen &pen)
@@ -119,39 +96,24 @@ void GeoGraphics::fillPolygon(const QPolygonF & pgon, const QPen & pen)
     painter->drawPolygon(p);
 }
 
-void GeoGraphics::fillEdgePoly(const EdgePoly & epoly, QPen & pen)
+void GeoGraphics::drawEdgePoly(const EdgePoly & epoly, const QPen &pen)
 {
-    EdgePoly ep = epoly.map(transform);
-    Q_ASSERT(ep.isCorrect());
-
-    QPainterPath path;
-
-    auto e = ep.first();
-    path.moveTo(e->v1->pt);
-    for (const auto & edge : std::as_const(ep))
-    {
-        if (edge->getType() == EDGETYPE_LINE)
-        {
-            path.lineTo(edge->v2->pt);
-        }
-        else if (edge->getType() == EDGETYPE_CURVE)
-        {
-            ArcData & ad = edge->getArcData();
-            path.arcTo(ad.rect, ad.start, ad.span());
-        }
-        else if (edge->getType() == EDGETYPE_CHORD)
-        {
-            // TODO - does this work
-            path.moveTo(edge->v2->pt);
-            path.lineTo(edge->v1->pt);
-            ArcData & ad = edge->getArcData();
-            path.arcTo(ad.rect, ad.start, ad.span());
-        }
-    }
+    QPainterPath path  = epoly.getPainterPath();
+    QPainterPath path2 = transform.map(path);
 
     painter->setPen(pen);
-    painter->drawPath(path);
-    painter->fillPath(path,QBrush(pen.color()));
+    //painter->setBrush(Qt::NoBrush);
+    painter->drawPath(path2);
+}
+
+void GeoGraphics::fillEdgePoly(const EdgePoly & epoly, const QPen &pen)
+{
+    QPainterPath path  = epoly.getPainterPath();
+    QPainterPath path2 = transform.map(path);
+
+    painter->setPen(pen);
+    painter->drawPath(path2);
+    painter->fillPath(path2,QBrush(pen.color()));
 }
 
 void GeoGraphics::fillPath(QPainterPath path, QPen & pen) const
@@ -163,41 +125,42 @@ void GeoGraphics::fillPath(QPainterPath path, QPen & pen) const
         path.setElementPositionAt(i,pt.x(),pt.y());
     }
 
-    painter->fillPath(path,QBrush(pen.color()));
-    painter->strokePath(path,pen);
+    if (!Sys::flags->flagged(NO_FILL))
+    {
+        painter->fillPath(path,QBrush(pen.color()));
+    }
+    if (!Sys::flags->flagged(NO_FILL_STROKE))
+    {
+        painter->strokePath(path,pen);  // always outline the fill
+    }
 }
 
-// FIXME - replace this with EdgePoly::draw  or vice versa
-void GeoGraphics::drawEdgePoly(const EdgePoly & epoly, QPen & pen)
+void GeoGraphics::fillStrokedPath(QPainterPath path, QPen & pen, QPainterPathStroker &ps) const
 {
-    EdgePoly ep = epoly.map(transform);
-    QPainterPath path;
-
-    auto e = ep.first();
-    path.moveTo(e->v1->pt);
-    for (const auto & edge : std::as_const(ep))
+    for (int i = 0; i < path.elementCount(); i++)
     {
-        if (edge->getType() == EDGETYPE_LINE)
-        {
-            path.lineTo(edge->v2->pt);
-        }
-        else if (edge->getType() == EDGETYPE_CURVE)
-        {
-            ArcData & ad = edge->getArcData();
-            path.arcTo(ad.rect, ad.start, ad.span());
-        }
-        else if (edge->getType() == EDGETYPE_CHORD)
-        {
-            // TODO - does this work
-            path.moveTo(edge->v2->pt);
-            path.lineTo(edge->v1->pt);
-            ArcData &  ad = edge->getArcData();
-            path.arcTo(ad.rect, ad.start, ad.span());
-        }
+        QPainterPath::Element element = path.elementAt(i);
+        QPointF pt = transform.map(QPointF(element.x,element.y));
+        path.setElementPositionAt(i,pt.x(),pt.y());
     }
 
-    painter->setPen(pen);
-    painter->drawPath(path);
+    //path = path.simplified();
+
+    if (Sys::flags->flagged(NO_FILL))
+    {
+        path = ps.createStroke(path);
+        painter->strokePath(path,pen);
+    }
+    else
+    {
+        QPen nopen(Qt::NoPen);
+        painter->setPen(nopen);
+        painter->fillPath(path,QBrush(pen.color()));
+
+        //painter->setPen(pen);
+        auto path2 = ps.createStroke(path);
+        painter->strokePath(path2,pen);
+    }
 }
 
 void GeoGraphics::drawArrow(QPointF from, QPointF to, qreal length, qreal half_width, QColor color)
@@ -250,12 +213,12 @@ void GeoGraphics::drawLineArrowDirect(QLineF line, QPen pen, QPainter * painter)
     QLineF line1;
     line1.setP1(centreEdge);
     line1.setAngle(angle - 135.0);
-    line1.setLength(25);
+    line1.setLength(15);
     painter->drawLine(line1);
 
     line1.setP1(centreEdge);
     line1.setAngle(angle + 135.0);
-    line1.setLength(25);
+    line1.setLength(15);
     painter->drawLine(line1);
 }
 
@@ -308,87 +271,42 @@ void GeoGraphics::drawText(QPointF pos, QString txt)
     painter->restore();
 }
 
-void GeoGraphics::drawArc(QPointF V1, QPointF V2, QPointF ArcCenter, bool Convex, QPen pen)
+void GeoGraphics::drawArc(QPointF p1, QPointF p2, QPointF center, eCurveType ctype, QPen pen, bool outer)
 {
-#if 0
-    QPen pen = painter->pen();
-    pen.setJoinStyle(Qt::MiterJoin);
-    pen.setCapStyle(Qt::RoundCap);
-    painter->setPen(pen);
-#endif
-
-    V1 = transform.map(V1);
-    V2 = transform.map(V2);
-    ArcCenter = transform.map(ArcCenter);
+    p1     = transform.map(p1);
+    p2     = transform.map(p2);
+    center = transform.map(center);
 
     ArcData ad;
-    ad.create(V1,V2,ArcCenter,Convex);
+    if (outer)
+        ad.create(QLineF(p1,p2),center,ctype);
+    else
+        ad.create(QLineF(p2,p1),center,ctype);
 
-    int start = qRound(ad.start  * 16.0);
-    int span  = qRound(ad.span() * 16.0);
+    int start = qRound(ad.start() * 16.0);
+    int span  = qRound(ad.span()  * 16.0);
 
     painter->setPen(pen);
-    painter->drawArc(ad.rect, start, span);
+
+    if (outer)
+        painter->drawArc(ad.rect(), start, span);
+    else
+        painter->drawArc(ad.rect(), start, -span);
 }
 
-
-
-void GeoGraphics::drawChord(QPointF V1, QPointF V2, QPointF ArcCenter, bool Convex, QPen pen)
+void GeoGraphics::drawArc(ArcData & ad, QPen pen, bool outer)
 {
-#if 0
-    QPen pen = painter->pen();
-    pen.setJoinStyle(Qt::MiterJoin);
-    pen.setCapStyle(Qt::RoundCap);
-    painter->setPen(pen);
-#endif
-    //qDebug() << "draw Chord" << Transform::toInfoString(transform);
+    ArcData ad2 = ad.transform(transform);
 
-    V1 = transform.map(V1);
-    V2 = transform.map(V2);
-    ArcCenter = transform.map(ArcCenter);
-
-    ArcData ad;
-    ad.create(V1,V2,ArcCenter,Convex);
-
-    int start = qRound(ad.start  * 16.0);
-    int span  = qRound(ad.span() * 16.0);
+    int start = qRound(ad2.start() * 16.0);
+    int span  = qRound(ad2.span()  * 16.0);
 
     painter->setPen(pen);
-    painter->drawChord(ad.rect, start, span);
-}
 
-void GeoGraphics::drawPie(QPointF V1, QPointF V2, QPointF ArcCenter, bool Convex, QPen pen, QBrush brush)
-{
-#if 0
-    QPen pen = painter->pen();
-    pen.setJoinStyle(Qt::MiterJoin);
-    pen.setCapStyle(Qt::RoundCap);
-    painter->setPen(pen);
-#endif
-    //qDebug() << "draw Chord" << Transform::toInfoString(transform);
-
-    V1 = transform.map(V1);
-    V2 = transform.map(V2);
-    ArcCenter = transform.map(ArcCenter);
-
-    ArcData ad;
-    ad.create(V1,V2,ArcCenter,Convex);
-
-    int start = qRound(ad.start  * 16.0);
-    int span  = qRound(ad.span() * 16.0);
-
-    if (brush.style() != Qt::NoBrush)
-    {
-        QPen pen = painter->pen();
-        QBrush br = painter->brush();
-        painter->setPen(Qt::transparent);   // prevents edges from being painted
-        painter->setBrush(brush);
-        painter->drawPie(ad.rect, start, span);
-        painter->setBrush(br);
-        painter->setPen(pen);
-    }
-    painter->setPen(pen);
-    painter->drawArc(ad.rect, start, span);
+    if (outer)
+        painter->drawArc(ad2.rect(), start, span);
+    else
+        painter->drawArc(ad2.rect(), start, -span);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -412,11 +330,7 @@ void GeoGraphics::drawThickEdge(const EdgePtr & e, qreal width, const QPen & pen
     }
     else if (e->getType() == EDGETYPE_CURVE)
     {
-        _drawThickArc(e->v1->pt,e->v2->pt,e->getArcCenter(),e->isConvex(), apen);
-    }
-    else if (e->getType() == EDGETYPE_CURVE)
-    {
-        _drawThickChord(e->v1->pt,e->v2->pt,e->getArcCenter(), e->isConvex(), apen);
+        _drawThickArc(e->v1->pt,e->v2->pt,e->getArcCenter(),e->getCurveType(), apen);
     }
 
     painter->restore();
@@ -427,13 +341,9 @@ void GeoGraphics::_drawThickLine(const QPointF &v1, const QPointF &v2, const QPe
     drawLine(v1, v2, pen);
 }
 
-void GeoGraphics::_drawThickArc(const QPointF & V1, const QPointF & V2, const QPointF && ArcCenter, bool Convex, const QPen & pen)
+void GeoGraphics::_drawThickArc(const QPointF & V1, const QPointF & V2, const QPointF && ArcCenter, eCurveType ctype, const QPen & pen)
 {
-    QPen apen = pen;
-    //pen.setJoinStyle(Qt::MiterJoin);
-    apen.setJoinStyle(Qt::RoundJoin);
-    apen.setCapStyle(Qt::RoundCap);
-    painter->setPen(apen);
+    painter->setPen(pen);
     painter->setBrush(Qt::NoBrush);
 
     QPointF v1 = transform.map(V1);
@@ -441,35 +351,60 @@ void GeoGraphics::_drawThickArc(const QPointF & V1, const QPointF & V2, const QP
     QPointF arcCenter = transform.map(ArcCenter);
 
     ArcData ad;
-    ad.create(v1,v2,arcCenter,Convex);
+    ad.create(QLineF(v1,v2),arcCenter,ctype);
 
-    int start = qRound(ad.start  * 16.0);
-    int span  = qRound(ad.span() * 16.0);
+    int start = qRound(ad.start() * 16.0);
+    int span  = qRound(ad.span()  * 16.0);
 
-    painter->drawArc(ad.rect, start, span);
+    painter->drawArc(ad.rect(), start, span);
 }
 
-void GeoGraphics::_drawThickChord(const QPointF & V1, const QPointF & V2, const QPointF && ArcCenter, bool Convex, const QPen & pen)
+void GeoGraphics::drawThickCorner(const QPointF & from, const QPointF & mid, const QPointF & to, QPen & pen, qreal width, QPainterPathStroker & ps)
 {
-    QPen apen = pen;
-    //pen.setJoinStyle(Qt::MiterJoin);
-    apen.setJoinStyle(Qt::RoundJoin);
-    apen.setCapStyle(Qt::RoundCap);
-    painter->setPen(apen);
+    // taken from Pierre Ballargeon's Alhhambra
+    qreal gwidth = Transform::scalex(transform) * width;
+    pen.setWidth(gwidth);
+    //pen.setWidth(width);
+    painter->setPen(pen);
     painter->setBrush(Qt::NoBrush);
 
-    //qDebug() << "draw Chord" << Transform::toInfoString(transform);
+    ps.setWidth(width);
 
-    QPointF v1 = transform.map(V1);
-    QPointF v2 = transform.map(V2);
-    QPointF arcCenter = transform.map(ArcCenter);
+    QPointF tf = transform.map(from);
+    QPointF tm = transform.map(mid);
+    QPointF tt = transform.map(to);
 
-    ArcData ad;
-    ad.create(v1,v2,arcCenter,Convex);
-
-    int start = qRound(ad.start  * 16.0);
-    int span  = qRound(ad.span() * 16.0);
-
-    painter->drawChord(ad.rect, start, span);
+#if 0
+    QPointF qps[3] = {tf, tm, tt};
+    painter->drawPolyline(qps, 3);
+#else
+    QPainterPath path;
+    path.moveTo(tf);
+    path.lineTo(tm);
+    path.lineTo(tt);
+    path = ps.createStroke(path);
+    painter->drawPath(path);
+#endif
 }
 
+void GeoGraphics::drawThickCorner2(const EdgePtr & e1, const EdgePtr &e2, QPen & pen, qreal width)
+{
+    // taken from Pierre Ballargeon's Alhhambra
+    pen.setWidth(Transform::scalex(transform) * width);
+    painter->setPen(pen);
+    painter->setBrush(Qt::NoBrush);
+
+    QLineF te1 = transform.map(e1->getLine());
+    QLineF te2 = transform.map(e2->getLine());
+
+#if 0
+    QPointF qps[3] = {te1.p1(), te1.p2(), te2.p2()};
+    painter->drawPolyline(qps, 3);
+#else
+    QPainterPath path;
+    path.moveTo(te1.p1());
+    path.lineTo(te1.p2());
+    path.lineTo(te2.p2());
+    painter->drawPath(path);
+#endif
+}

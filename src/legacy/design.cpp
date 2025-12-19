@@ -1,14 +1,10 @@
-﻿#include "gui/top/view.h"
+﻿#include "gui/top/system_view.h"
 #include "legacy/design.h"
 #include "legacy/patterns.h"
 #include "sys/sys.h"
 #include "model/settings/configuration.h"
 #include "sys/tiledpatternmaker.h"
 #include <QCoreApplication>
-
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <QDebug>
-#endif
 
 int Design::refs = 0;
 
@@ -33,7 +29,7 @@ Design::Design(eDesign design, QString title)
 
     Design::init();
 
-    connect (this, &Design::sig_updateView, Sys::view, &View::slot_update);
+    connect (this, &Design::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
 }
 
 Design::~Design()
@@ -181,7 +177,7 @@ void Design::RepeatSimples()
 
 void Design::LocSimple(PatternPtr pp)
 {
-    QPointF pt = settings.getStartTile();
+    QPointF pt = _startTile;
     pp->setLoc(QPointF(pt.x() + (xSeparation * pp->getCol()),
                        pt.y() + (ySeparation * pp->getRow())));
     //qDebug() << "LocSimple" << pp->getLoc();
@@ -199,7 +195,7 @@ void Design::RepeatHexagons()
 
 void Design::LocHexagon(PatternPtr t)
 {
-    QPointF pt = settings.getStartTile();
+    QPointF pt = _startTile;
     //qDebug() << t->getRow() << t->getCol() << xSeparation << ySeparation << xOffset2 << yOffset2;
     t->setLoc(QPointF(pt.x() + (xSeparation * t->getCol()) + (((xSeparation/2.0) + xOffset2) * (t->getRow() & 0x01)),
                       pt.y() + (ySeparation * t->getRow()) + (yOffset2 * (t->getCol() & 1))));
@@ -217,7 +213,7 @@ void Design::RepeatOctagonsFilled()
 
 void Design::LocOctagonFilled(PatternPtr t)
 {
-    QPointF pt = settings.getStartTile();
+    QPointF pt = _startTile;
     t->setLoc(QPointF(pt.x() + (xSeparation * t->getCol()) - (xSeparation/2.0),
                       pt.y() + (ySeparation * t->getRow()) - (ySeparation/2.0)));
 }

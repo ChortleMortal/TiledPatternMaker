@@ -1,0 +1,55 @@
+#pragma once
+#ifndef ETILINGMAKER_H
+#define ETILINGMAKER_H
+
+#include <QString>
+
+extern const QString sTilingMakerMouseMode[];
+
+enum eTilingMakerMouseMode
+{
+    TM_NO_MOUSE_MODE,
+    TM_COPY_MODE,
+    TM_DELETE_MODE,
+    TM_TRANSLATION_VECTOR_MODE,
+    TM_DRAW_POLY_MODE,
+    TM_INCLUSION_MODE,
+    TM_POSITION_MODE,
+    TM_MEASURE_MODE,
+    TM_EDIT_TILE_MODE,
+    TM_EDGE_CURVE_MODE,
+    TM_MIRROR_X_MODE,
+    TM_MIRROR_Y_MODE,
+    TM_CONSTRUCTION_LINES,
+    TM_REFLECT_EDGE,
+    TM_UNIQUIFY_MODE,
+    TM_UNIFY_MODE,
+    TM_DECOMPOSE_MODE
+};
+
+enum eTileMenuRefresh
+{
+    TMR_ALL_CLEAR,
+    TMR_ALL,
+    TMR_MAKER_TILINGS,
+    TMR_TILING,
+    TMR_TILING_HEADER,
+    TMR_TILING_UNIT,
+    TMR_PLACED_TILE,
+};
+
+enum eTileColorModes
+{
+    TILE_COLOR_TOUCHING,
+    TILE_COLOR_INCLUDES,
+    TILE_COLOR_UNIQUE
+};
+
+enum eVectorState
+{
+    VEC_READY,
+    VEC_SETTING_T1,
+    VEC_SETTING_T2
+};
+
+#endif

@@ -19,11 +19,6 @@ public:
 
     void enableAntialiasing(bool enable) { _antiAliasPolys = enable; }
 
-    virtual const Xform &   getModelXform() override;
-    virtual void            setModelXform(const Xform & xf, bool update) override;
-
-    eViewType iamaLayer() override { return VIEW_DESIGN; }
-
 protected:
     void    paint(QPainter *painter) override;
 

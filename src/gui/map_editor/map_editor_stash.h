@@ -1,13 +1,11 @@
 #pragma once
+#include <qdir.h>
 #ifndef MAPEDITORSTASH_H
 #define MAPEDITORSTASH_H
 
 #include <QObject>
 #include <QTimer>
 #include <QLineF>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 
 #include "sys/geometry/circle.h"
 
@@ -49,7 +47,8 @@ protected:
 
     QString getStashName(int index);
 
-    bool    readStashTo(VersionedFile &xfile, QVector<QLineF>  & lines, QVector<CirclePtr> &circs);
+    bool    readStashDat(VersionedFile &xfile, QVector<QLineF> &lines, QVector<CirclePtr> &circs);
+    bool    readStashXML(VersionedFile &xfile, QVector<QLineF> &lines, QVector<CirclePtr> &circs);
 
 private:
     int     first;

@@ -27,9 +27,10 @@ class StyleColorFillGroup : public QObject
 
 public:
     StyleColorFillGroup(FilledPtr style, QVBoxLayout * vbox);
-    void display();
+    void display(int crow);
     void select(QPointF mpt);
     void setColor(QColor color);
+    int  getCurrentRow() { if (fillGroupTable) return fillGroupTable->currentRow(); else return 0; }
 
 signals:
     void sig_colorsChanged();

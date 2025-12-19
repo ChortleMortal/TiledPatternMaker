@@ -1,0 +1,41 @@
+<H1>Tiling Maker Keyboard Shortcuts</H1>
+These shortcuts override the Common Keyboard/Mouse modes and actions
+
+<pre>
+Modes:
+    ESC Normal Mode (Common keyboard/mouse actions)
+    F3  Translation Vector Mode
+          Use the mouse to draw the two translation vectors used to tile the plane
+    F4  New Polygon Mode
+          Click on vertices or whitespace to make a point. Chain a series of points counter-clockwise to draw a free-form polygon
+    F5  Copy Polygons Mode
+          Copy polygons by drag-and-drop with the mouse
+    F6  Delete Polygons Mode
+          Click on a polygons to delete them
+    F7  Include/Excwlude Polygons Mode
+          Click on polygons to toggle inclusion/exclusion in the tiling
+    F9  Measure Mode
+    F10 Unify Mode
+          Click on each tile to unify (meaning same tile with different position) Press ESC to end
+    F11 Edit Tile Mode
+          Points of selected polygon can be dragged
+    F12 Edit Edge
+          Edge can be made convex or concave curve, or reset to line
+
+Actions:
+    A  Add Polygon
+          Adds a regular polygon with N sides, where N is a number selected using the keyboard.
+    C  Copy Polygon
+          Copies the selected (clicked) polygon.  It can now be dragged
+    D  Delete Polygon
+         Deletes the selected (clicked) polygon
+    F  Toggles Fill Using Translation Vectors
+          On/Off Surrounding the tiling unit with copies using the translation vectors
+    I  Include/Exclude Polygons in Tiling
+          Toggles the inclusion/exclusion of the polygon under the mouse
+    R  Remove Excluded Polygons
+          Removes all polygons that are not included in the tiling
+    X  Clear Translation Vectors
+          Clears the translation vectors used to tile the plane
+    0-9 Sets number of sides for next regular polygon to be added
+</pre>

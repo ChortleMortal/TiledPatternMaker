@@ -4,17 +4,26 @@
 
 #include <QLabel>
 
+#include "sys/enums/epanelpage.h"
+
 class PanelStatus : public QLabel
 {
 public:
     PanelStatus();
 
-    void    setStatusText(QString & txt);
-    void    clearStatusText();
+    void    overridePanelStatus(const QString & txt);
+    void    restorePanelStatus();
+
+    void    setPageStatus(ePanelPage pp, const QString & str);
+    void    clearPageStatus(ePanelPage pp);
+
+    void    setBacgroundColor(QColor color);
 
 private:
     QString preamble;
     QString postamble;
+    QString pageStatus;
+    int     page;
 };
 
 #endif

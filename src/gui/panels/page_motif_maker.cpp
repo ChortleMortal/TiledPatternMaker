@@ -3,52 +3,75 @@
 #include <QMessageBox>
 #include <QComboBox>
 
-#include "model/motifs/explicit_map_motif.h"
-#include "gui/panels/page_motif_maker.h"
-#include "model/motifs/motif.h"
-#include "model/motifs/irregular_motif.h"
-#include "sys/geometry/map.h"
 #include "gui/map_editor/map_editor.h"
-#include "model/makers/mosaic_maker.h"
 #include "gui/model_editors/motif_edit/design_element_button.h"
 #include "gui/model_editors/motif_edit/design_element_selector.h"
-#include "gui/model_editors/motif_edit/motif_maker_widget.h"
 #include "gui/model_editors/motif_edit/motif_editor_widget.h"
-#include "model/prototypes/prototype.h"
+#include "gui/model_editors/motif_edit/motif_maker_widget.h"
+#include "gui/panels/page_motif_maker.h"
+#include "gui/panels/panel_misc.h"
+#include "gui/top/controlpanel.h"
+#include "gui/top/system_view.h"
+#include "gui/top/system_view_controller.h"
+#include "gui/viewers/motif_maker_view.h"
+#include "gui/widgets/layout_sliderset.h"
+#include "gui/widgets/smx_widget.h"
+#include "model/makers/mosaic_maker.h"
 #include "model/makers/prototype_maker.h"
 #include "model/makers/tiling_maker.h"
+#include "model/motifs/explicit_map_motif.h"
+#include "model/motifs/irregular_motif.h"
+#include "model/motifs/motif.h"
 #include "model/prototypes/design_element.h"
-#include "gui/top/controlpanel.h"
+#include "model/prototypes/prototype.h"
 #include "model/settings/configuration.h"
 #include "model/styles/style.h"
 #include "model/tilings/placed_tile.h"
-#include "model/tilings/tiling.h"
 #include "model/tilings/tile.h"
-#include "gui/top/view.h"
-#include "gui/top/view_controller.h"
-#include "gui/widgets/layout_sliderset.h"
+#include "model/tilings/tiling.h"
+#include "sys/enums/erender.h"
+#include "sys/geometry/map.h"
+#include "sys/geometry/map_cleanser.h"
+#include "sys/geometry/map_verifier.h"
+
 
 using std::make_shared;
 
 page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,PAGE_MOTIF_MAKER,"Motif Maker")
 {
-    QCheckBox * enlargeChk   = new QCheckBox("Enlarge");
+    setPageStatusString();
+
+    AQPushButton * pbEnlarged = new AQPushButton("Single");
+    AQPushButton * pbSelected = new AQPushButton("Selected");
+    AQPushButton * pbTiled    = new AQPushButton("Unit");
+    pbEnlarged->setMinimumWidth(10);
+    pbSelected->setMinimumWidth(10);
+    pbTiled->setMinimumWidth(10);
+
+    QButtonGroup * bgrp    = new QButtonGroup();
+    bgrp->setExclusive(true);
+    bgrp->addButton(pbEnlarged);
+    bgrp->addButton(pbSelected);
+    bgrp->addButton(pbTiled);
+
+    smxWidget  = new SMXWidget(Sys::motifMakerView.get(),true,true);
+    smxWidget->setObjectName("abc");
+    smxWidget->setStyleSheet("#abc {border: 1px solid black; }");
 
     SpinSet * widthSpin = new SpinSet("Line Width",3,1,9);
     widthSpin->setValue((int)config->motifViewWidth);
 
-    QCheckBox * chkMulti     = new QCheckBox("Multi-Select Motifs");
     QPushButton * pbDup      = new QPushButton("Duplicate Motif");
     QPushButton * pbDel      = new QPushButton("Delete Motif");
     QPushButton * pbEdit     = new QPushButton("Edit Map");
     QPushButton * pbCombine  = new QPushButton("Combine Motifs");
     QPushButton * pbSwapReg  = new QPushButton("Swap Tile Regularity");
-    QPushButton * pbRender   = new QPushButton("Render");
+    QPushButton * pbRender   = new QPushButton("Render Motifs");
     pbRender->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    QCheckBox   * pbPropagate = new QCheckBox("Propagate Changes");
-    pbPropagate->setChecked(Sys::motifPropagate);
-    connect(pbPropagate, &QCheckBox::clicked, this, [this](bool checked) { Sys::motifPropagate = checked; prototypeMaker->setPropagate(checked); } );    // OK
+    QCheckBox   * pbPropagate = new QCheckBox("Propagate");
+    pbPropagate->setChecked(true);
+    connect(pbPropagate, &QCheckBox::clicked, prototypeMaker, &PrototypeMaker::slot_propagateChanged);
 
     protoLabel              = new QLabel("Prototypes");
     prototypeCombo          = new QComboBox();
@@ -57,12 +80,12 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,PA
     QHBoxLayout * hbox      = new QHBoxLayout;
     hbox->addWidget(protoLabel);
     hbox->addWidget(prototypeCombo);
-    hbox->addStretch();
-    hbox->addWidget(enlargeChk);
-    hbox->addStretch();
+    hbox->addWidget(pbEnlarged);
+    hbox->addWidget(pbSelected);
+    hbox->addWidget(pbTiled);
+    hbox->addWidget(smxWidget);
     hbox->addLayout(widthSpin);
-    hbox->addStretch();
-    hbox->addWidget(chkMulti);
+
     vbox->addLayout(hbox);
 
     if (config->insightMode)
@@ -94,9 +117,9 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,PA
 
         hbox = new QHBoxLayout;
         hbox->addWidget(showMotif);
+        hbox->addWidget(showTile);
         hbox->addWidget(line1);
         hbox->addWidget(l_bounds);
-        hbox->addWidget(showTile);
         hbox->addWidget(showExt);
         hbox->addWidget(showMotifB);
         hbox->addWidget(line2);
@@ -118,8 +141,8 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,PA
         showTileC->setChecked(config->showTileCenter);
         showMotifC->setChecked(config->showMotifCenter);
 
-        connect(replicate,          &QCheckBox::clicked,     this, &page_motif_maker::replicateClicked);
-        connect(Sys::view,          &View::sig_rebuildMotif, this, &page_motif_maker::slot_rebuildMotif);
+        connect(replicate,          &QCheckBox::clicked, this,           &page_motif_maker::replicateClicked);
+        connect(Sys::sysview,       &SystemView::sig_rebuildMotif, this, &page_motif_maker::slot_rebuildMotif);
         connect(hiliteUnit,         &QCheckBox::clicked, this, [this](bool checked) { Sys::highlightUnit           = checked; emit sig_updateView(); } );
         connect(showTile,           &QCheckBox::clicked, this, [this](bool checked) { config->showTileBoundary     = checked; emit sig_updateView(); } );
         connect(showMotifB,         &QCheckBox::clicked, this, [this](bool checked) { config->showMotifBoundary    = checked; emit sig_updateView(); } );
@@ -148,7 +171,6 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,PA
     hbox->addWidget(pbSwapReg);
     hbox->addStretch();
     hbox->addWidget(pbRender);
-    hbox->addStretch();
     hbox->addWidget(pbPropagate);
     vbox->addLayout(hbox);
 
@@ -161,32 +183,51 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,PA
     vbox->addWidget(motifMakerWidget);
     vbox->addStretch();
 
-    chkMulti->setChecked(config->motifMultiView);
-    enlargeChk->setChecked(config->motifEnlarge);
+    switch (config->motifMakerView)
+    {
+    case MOTIF_VIEW_SOLO:
+        pbEnlarged->setChecked(true);
+        break;
+    case MOTIF_VIEW_SELECTED:
+        pbSelected->setChecked(true);
+        break;
+    case MOTIF_VIEW_DESIGN_UNIT:
+        pbTiled->setChecked(true);
+        break;
+    }
 
-    connect(pbRender,           &QPushButton::clicked,                  this,   &panel_page::sig_render);
-    connect(pbSwapReg,          &QPushButton::clicked,                  this,   &page_motif_maker::slot_swapTileRegularity);
-    connect(pbDup,              &QPushButton::clicked,                  this,   &page_motif_maker::slot_duplicateCurrent);
-    connect(pbDel,              &QPushButton::clicked,                  this,   &page_motif_maker::slot_deleteCurrent);
-    connect(pbEdit,             &QPushButton::clicked,                  this,   &page_motif_maker::slot_editCurrent);
-    connect(pbCombine,          &QPushButton::clicked,                  this,   &page_motif_maker::slot_combine);
-    connect(chkMulti,           &QCheckBox::clicked,                    this,   &page_motif_maker::multiClicked);
-    connect(prototypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_motif_maker::slot_prototypeSelected);
-    connect(enlargeChk,         &QCheckBox::clicked,                    this,   &page_motif_maker::slot_enlarge);
-    connect(widthSpin,          &SpinSet::valueChanged,                 this,   &page_motif_maker::slot_widthChanged);
+
+    connect(pbRender,           &QPushButton::clicked,              this, [] {Sys::render(RENDER_RESET_MOTIFS);} );
+    connect(pbSwapReg,          &QPushButton::clicked,              this,   &page_motif_maker::slot_swapTileRegularity);
+    connect(pbDup,              &QPushButton::clicked,              this,   &page_motif_maker::slot_duplicateCurrent);
+    connect(pbDel,              &QPushButton::clicked,              this,   &page_motif_maker::slot_deleteCurrent);
+    connect(pbEdit,             &QPushButton::clicked,              this,   &page_motif_maker::slot_editCurrent);
+    connect(pbCombine,          &QPushButton::clicked,              this,   &page_motif_maker::slot_combine);
+    connect(pbEnlarged,         &QPushButton::toggled,              this,   &page_motif_maker::enlargedClicked);
+    connect(pbSelected,         &QPushButton::toggled,              this,   &page_motif_maker::selectedClicked);
+    connect(pbTiled,            &QPushButton::toggled,              this,   &page_motif_maker::tiledClicked);
+    connect(prototypeCombo,     &QComboBox::currentIndexChanged,    this,   &page_motif_maker::slot_prototypeSelected);
+    connect(widthSpin,          &SpinSet::valueChanged,             this,   &page_motif_maker::slot_widthChanged);
 }
 
 void page_motif_maker::onEnter()
 {
+    setPageStatus();
+}
+
+void page_motif_maker::onExit()
+{
+    clearPageStatus();
 }
 
 void page_motif_maker::onRefresh(void)
 {
     loadProtoCombo();
-    motifMakerWidget->selectPrototype();
 
-    auto ed = motifMakerWidget->getMotifEditor();
-    ed->onRefresh();
+    motifMakerWidget->refreshMotifMakerWidget();
+
+    auto editor = motifMakerWidget->getMotifEditor();
+    editor->onRefresh();
 
     if (config->insightMode)
     {
@@ -194,17 +235,20 @@ void page_motif_maker::onRefresh(void)
         replicate->setChecked(!Sys::dontReplicate);
         replicate->blockSignals(false);
     }
+
+    smxWidget->refresh();
 }
 
-QString page_motif_maker::getPageStatus()
+void page_motif_maker::setPageStatusString()
 {
-    static QString msg("<body>"
+           QString msg("<body>"
                        "<font color=blue>motif</font>  |  "
                        "<font color=magenta>tile boundary</font>  |  "
                        "<font color=red>motif boundary</font>  |  "
                        "<font color=yellow>extended boundary</font>"
                        "</body>");
-    return msg;
+
+    pageStatusString = msg;
 }
 
 void page_motif_maker::loadProtoCombo()
@@ -254,7 +298,7 @@ void page_motif_maker::loadProtoCombo()
 
     for (auto & proto : std::as_const(currentProtos))
     {
-        prototypeCombo->addItem(proto->getTiling()->getName().get(),QVariant::fromValue(WeakProtoPtr(proto)));
+        prototypeCombo->addItem(proto->getTiling()->getVName().get(),QVariant::fromValue(WeakProtoPtr(proto)));
     }
 
     protoLabel->setText(QString("Prototypes (%1)").arg(prototypeCombo->count()));
@@ -267,7 +311,7 @@ void page_motif_maker::loadProtoCombo()
     ProtoPtr selected = prototypeMaker->getSelectedPrototype();
     if (selected)
     {
-        QString name = selected->getTiling()->getName().get();
+        QString name = selected->getTiling()->getVName().get();
         qDebug() << "page_motif_maker::reload() selected tiling:" << name;
         int index = prototypeCombo->findText(name);
         if (index >= 0)
@@ -308,15 +352,33 @@ void page_motif_maker::slot_rebuildMotif()
     emit sig_reconstructView();
 }
 
-void  page_motif_maker::multiClicked(bool state)
+void  page_motif_maker::enlargedClicked()
 {
-    config->motifMultiView = state;
-    if (!state)
-    {
-        // re-delegate currnent selection
-        auto btn = motifMakerWidget->getDelegatedButton();
-        motifMakerWidget->delegate(btn, state, true);
-    }
+    config->motifMakerView = MOTIF_VIEW_SOLO;
+
+    // re-delegate currnent selection
+    auto btn = motifMakerWidget->getDelegatedButton();
+    motifMakerWidget->delegate(btn, false, true);
+
+    emit sig_reconstructView();
+}
+
+void  page_motif_maker::selectedClicked()
+{
+    config->motifMakerView = MOTIF_VIEW_SELECTED;
+    auto btn = motifMakerWidget->getDelegatedButton();
+    motifMakerWidget->delegate(btn, true, true);
+    emit sig_reconstructView();
+}
+
+void  page_motif_maker::tiledClicked()
+{
+    config->motifMakerView = MOTIF_VIEW_DESIGN_UNIT;
+
+    // re-delegate currnent selection
+    auto btn = motifMakerWidget->getDelegatedButton();
+    motifMakerWidget->delegate(btn, false, true);
+
     emit sig_reconstructView();
 }
 
@@ -350,9 +412,9 @@ void page_motif_maker::slot_combine()
     for (auto & delp : std::as_const(delps))
     {
         auto tile = delp->getTile();
-        if (tile->numSides() > sides)
+        if (tile->numEdges() > sides)
         {
-            sides = tile->numSides();
+            sides = tile->numEdges();
             tp    = tile;
         }
 
@@ -362,11 +424,11 @@ void page_motif_maker::slot_combine()
     }
     Q_ASSERT(tp);
 
-    compositeMap->deDuplicateVertices(tolerance);
+    MapCleanser mc(compositeMap);
+    mc.deDuplicateVertices(tolerance);
 
-    //compositeMap->buildNeighbours();
-
-    compositeMap->verify(true);
+    MapVerifier mv(compositeMap);
+    mv.verify(true);
 
     auto emm = make_shared<ExplicitMapMotif>(compositeMap);
     emm->setN(sides);
@@ -405,9 +467,9 @@ void page_motif_maker::slot_deleteCurrent()
     TilePtr tile = del->getTile();
     if (!tile) return;
 
-    TilingPlacements deletions;
+    PlacedTiles deletions;
     TilingPtr tiling = proto->getTiling();
-    const TilingPlacements tilingUnit = tiling->getTilingUnitPlacements();
+    const PlacedTiles tilingUnit = tiling->unit().getIncluded();
     for (const auto & placedTile : std::as_const(tilingUnit))
     {
         if (placedTile->getTile() == tile)
@@ -417,14 +479,14 @@ void page_motif_maker::slot_deleteCurrent()
     }
     for (auto & ptp : std::as_const(deletions))
     {
-        tiling->removePlacedTile(ptp);
+        tiling->unit().removePlacedTile(ptp);
     }
     proto->removeDesignElement(del);
     proto->wipeoutProtoMap();
 
     prototypeMaker->select(MVD_DELEM,proto,false);
 
-    emit sig_render();
+    Sys::render(RENDER_RESET_STYLES);   // since protomap already reset
 }
 
 void page_motif_maker::slot_swapTileRegularity()
@@ -438,12 +500,16 @@ void page_motif_maker::slot_swapTileRegularity()
     auto tile  = del->getTile();
     tile->flipRegularity();
 
-    prototypeMaker->sm_takeUp(proto->getTiling(),PROM_TILE_REGULARITY_CHANGED,tile);
+    ProtoEvent pevent;
+    pevent.event  = PROM_TILE_UNIQUE_REGULARITY_CHANGED;
+    pevent.tiling = proto->getTiling();
+    pevent.tile = tile;
+    prototypeMaker->sm_takeUp(pevent);
 
     auto btn =  motifMakerWidget->getButton(del);
     motifMakerWidget->delegate(btn,false,true);
 
-    emit sig_render();
+    Sys::render(RENDER_RESET_MOTIFS);
 }
 
 void page_motif_maker::slot_prototypeSelected(int row)
@@ -460,12 +526,6 @@ void page_motif_maker::slot_prototypeSelected(int row)
 void page_motif_maker::slot_widthChanged(int val)
 {
     config->motifViewWidth = qreal(val);
-    emit sig_updateView();
-}
-
-void page_motif_maker::slot_enlarge(bool checked)
-{
-    config->motifEnlarge = checked;
     emit sig_updateView();
 }
 

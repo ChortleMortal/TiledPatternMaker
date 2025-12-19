@@ -3,7 +3,7 @@
 #include "model/motifs/motif.h"
 #include "model/tilings/tile.h"
 #include "sys/geometry/edge.h"
-#include "sys/geometry/edgepoly.h"
+#include "sys/geometry/edge_poly.h"
 #include "sys/geometry/map.h"
 #include "sys/geometry/vertex.h"
 
@@ -35,11 +35,7 @@ void  ViewerServices ::drawMotif(GeoGraphics * gg, MotifPtr motif, QPen pen)
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            gg->drawArc(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->isConvex(),pen);
-        }
-        else if (edge->getType() == EDGETYPE_CHORD)
-        {
-            gg->drawChord(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->isConvex(),pen);
+            gg->drawArc(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->getCurveType(),pen,true);
         }
     }
 }

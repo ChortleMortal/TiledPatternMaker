@@ -3,15 +3,15 @@
 #define TILE_WRITER_H
 
 #include <QTextStream>
-#include "model/mosaics/mosaic_writer_base.h"
-#include "sys/sys/pugixml.hpp"
+#include "model/mosaics/writer_base.h"
+#include "sys/geometry/edge_poly.h"
 #include "sys/geometry/vertex.h"
-#include "sys/geometry/edgepoly.h"
+#include "sys/sys/pugixml.hpp"
 
 using std::string;
 using namespace pugi;
 
-class TileWriter : public MosaicWriterBase
+class TileWriter
 {
 public:
     TileWriter();
@@ -22,6 +22,8 @@ public:
 protected:
     void setVertex(QTextStream & ts,VertexPtr v, QString name);
     void setPoint(QTextStream & ts, QPointF pt, QString name);
+
+    WriterBase    twbase;
 };
 
 #endif // FEATUREWRITER_H

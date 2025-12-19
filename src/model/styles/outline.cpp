@@ -1,15 +1,15 @@
 #include <QDebug>
-#include "model/styles/outline.h"
-#include "sys/geometry/map.h"
-#include "sys/geometry/neighbours.h"
-#include "sys/geometry/geo.h"
-#include "sys/geometry/transform.h"
-#include "sys/geometry/vertex.h"
 #include "gui/viewers/geo_graphics.h"
+#include "model/makers/mosaic_maker.h"
+#include "model/styles/casing_neighbours.h"
+#include "model/styles/outline.h"
+#include "sys/geometry/debug_map.h"
+#include "sys/geometry/edge.h"
+#include "sys/geometry/map.h"
+#include "sys/geometry/neighbour_map.h"
+#include "sys/geometry/transform.h"
+#include "sys/sys/debugflags.h"
 
-//#define DEBUG_NO_CURVES
-//#define DEBUG_BAE
-//#define DEBUG_BAE2
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -20,13 +20,17 @@
 // outline for the resulting fat figure.
 //
 // The same code that computes the draw elements for Outline can
-// be used by other "fat" styles, such as Emboss.
+// be inherited by other "fat" styles, such as Emboss.
 
 Outline::Outline(const ProtoPtr &proto) : Thick (proto)
 {
     outline_width   = 0.03;
     join_style      = Qt::BevelJoin;
     cap_style       = Qt::SquareCap;
+    created         = false;
+
+        connect(Sys::flags, &DebugFlags::sig_dbgChanged, this, &Outline::slot_dbgChanged);
+        connect(Sys::flags, &DebugFlags::sig_dbgTrigger, this, &Outline::slot_dbgTrigger);
 }
 
 Outline::Outline(const StylePtr & other) : Thick(other)
@@ -38,6 +42,10 @@ Outline::Outline(const StylePtr & other) : Thick(other)
         join_style      = Qt::BevelJoin;
         cap_style       = Qt::SquareCap;
     }
+    created = false;
+
+        connect(Sys::flags, &DebugFlags::sig_dbgChanged, this, &Outline::slot_dbgChanged,Qt::QueuedConnection);
+        connect(Sys::flags, &DebugFlags::sig_dbgTrigger, this, &Outline::slot_dbgTrigger);
 }
 
 Outline::~Outline()
@@ -48,37 +56,113 @@ Outline::~Outline()
 #endif
 }
 
-void Outline::draw(GeoGraphics *gg)
+void Outline::resetStyleRepresentation()
 {
-    if (!isVisible())
+    casings.clear();
+    created = false;
+}
+
+void Outline::createStyleRepresentation()
+{
+    qDebug() << "Outline::createStyleRepresentation()";
+
+    if (created)
+        return;
+
+    Sys::debugMapCreate->wipeout();
+
+    bool oldSetting = Edge::curvesAsLines;
+    bool newSetting = Sys::flags->flagged(CURVES_AS_LINES);
+    if (oldSetting != newSetting)
     {
+        Edge::curvesAsLines = newSetting;
+        Sys::mosaicMaker->reload();
         return;
     }
 
-#ifdef DEBUG_NO_CURVES
-    for (auto & bae : std::as_const(pts4))
+    MapPtr map = getProtoMap();
+    NeighbourMap nmap(map);
+
+    for (auto & vertex : map->getVertices())
     {
-        QColor color  = colors.getNextColor().color;
+        NeighboursPtr np   = nmap.getNeighbours(vertex);
+        auto cneighbours   = std::make_shared<CasingNeighbours>(*np.get());
+        casings.weavings[vertex] = cneighbours;
+    }
 
-        QPolygonF poly = bae.getPoly();
-        gg->fillPolygon(poly,color);
+    uint index = 0;
+    for (const EdgePtr & edge : map->getEdges())
+    {
+        OutlineCasingPtr casing = std::make_shared<OutlineCasing>(&casings,edge,width);
+        casing->init();
+        casings.push_back(casing);
+        casing->edgeIndex = index;
+        edge->casingIndex = index;
+        index++;
+    }
 
-        if (draw_outline )
+    for (CasingPtr & casing : casings)
+    {
+        auto edge = casing->getEdge();
+        if (edge && edge->isCurve())
         {
-            QPen pen(outline_color,Transform::scalex(gg->getTransform() * outline_width * 0.5));
-            pen.setJoinStyle(join_style);
-            pen.setCapStyle(cap_style);
-            gg->drawLine(bae.v2.above, bae.v1.below, pen);
-            gg->drawLine(bae.v1.above, bae.v2.below, pen);
+            if (!Sys::flags->flagged(NO_ALIGN_CURVES))
+            {
+                OutlineCasingPtr ocp = std::dynamic_pointer_cast<OutlineCasing>(casing);
+                ocp->alignCurvedEdgeSide1(casings);
+                ocp->alignCurvedEdgeSide2(casings);
+            }
         }
     }
-#else
-    for (auto & bae : pts4)
+
+    if (Sys::flags->flagged(VALIDATE))
+        casings.validate();
+
+    if (Sys::flags->flagged(DUMP_CASINGS))
+        casings.dump("Complete");
+
+    created = true;
+}
+
+void Outline::draw(GeoGraphics *gg)
+{
+    //qDebug() << "Outline::draw";
+
+    if (!isVisible())
+        return;
+
+    if (!created)
+        return;
+
+    for (auto & casing : std::as_const(casings))
     {
+        EdgePtr edge = casing->getEdge();
+        if (!edge)
+            continue;
+
+        if (Sys::flags->flagged(OUTLINE_DBG))
+        {
+            if (edge->getType() == EDGETYPE_LINE && Sys::flags->flagged(DRAW_CURVES_ONLY))
+                    continue;
+
+            if (Sys::flags->flagged(EXCLUDE_ODDS) && (casing->edgeIndex & 1))
+                    continue;
+
+            if (Sys::flags->flagged(EXCLUDE_EVENS) && !(casing->edgeIndex & 1))
+                    continue;
+        }
+
         QColor color  = colors.getNextTPColor().color;
-        QPen pen(color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-        QPainterPath path = bae.getPainterPath();
-        gg->fillPath(path,pen);
+        QPen pen(color, 1, Qt::SolidLine, cap_style, join_style);
+
+        casing->setPainterPath();
+
+        casing->fillCasing(gg,pen);
+
+        //QPainterPathStroker ps;
+        //ps.setCapStyle(cap_style);
+        //ps.setJoinStyle(join_style);
+        //gg->fillStrokedPath(path, pen, ps);
 
         if (drawOutline != OUTLINE_NONE)
         {
@@ -94,187 +178,81 @@ void Outline::draw(GeoGraphics *gg)
             }
             pen.setJoinStyle(join_style);
             pen.setCapStyle(cap_style);
+            casing->drawOutline(gg,pen);
+        }
+    }
 
-            if (bae.type == EDGETYPE_LINE)
+    if (Sys::flags->flagged(OUTLINE_DBG))
+    {
+        //Sys::debugMapPaint->wipeout();
+
+        int colorIndex = 0;
+        static const QColor colors[6] = {  Qt::red, Qt::green, Qt::blue, Qt::black, Qt::magenta, Qt::cyan };
+
+        for (auto & casing : std::as_const(casings))
+        {
+            auto edge = casing->getEdge();
+            if (!edge)
+                continue;
+
+            if (edge->isCurve() &&  Sys::flags->flagged(INDEX_CURVES))
             {
-                gg->drawLine(bae.v2.above, bae.v1.below, pen);
-                gg->drawLine(bae.v1.above, bae.v2.below, pen);
+                Sys::debugMapPaint->insertDebugMark(edge->getMidPoint(), QString::number(casing->edgeIndex),Qt::red);
             }
-            else if (bae.type == EDGETYPE_CURVE)
+            else if (Sys::flags->flagged(INDEX_LINES))
             {
-                gg->drawArc(bae.v1.below, bae.v2.above, bae.arcCenter, bae.convex, pen);    // inside
-                gg->drawArc(bae.v1.above, bae.v2.below, bae.arcCenter, bae.convex, pen);    // outside
+                Sys::debugMapPaint->insertDebugMark(edge->getMidPoint(), QString::number(casing->edgeIndex),Qt::red);
             }
-            else if (bae.type == EDGETYPE_CHORD)
-            {
-                gg->drawChord(bae.v1.below, bae.v2.above, bae.arcCenter, bae.convex, pen);  // inside
-                gg->drawChord(bae.v1.above, bae.v2.below, bae.arcCenter, bae.convex, pen);  // outside
-            }
+
+            int idx = colorIndex++ % 6;
+            QColor color = colors[idx];
+            casing->debugDraw(color,width);
         }
     }
-#endif
 }
 
-void Outline::resetStyleRepresentation()
+void Outline::slot_dbgChanged(eDbgType type)
 {
-    pts4.clear();
+    switch(type)
+    {
+    case FLAG_REPAINT:
+        Sys::viewController->slot_updateView();
+        break;
+
+    case FLAG_CREATE_STYLE:
+        resetStyleRepresentation();
+        createStyleRepresentation();
+        Sys::viewController->slot_updateView();
+        break;
+
+    default:
+    case FLAG_CREATE_MOTIF:
+        // not handled here
+        break;
+    }
 }
 
-void Outline::createStyleRepresentation()
+void Outline::slot_dbgTrigger(int val)
 {
-    qDebug() << __FUNCTION__;
-
-    if (pts4.size())
+    qDebug() << "slot_dbgTrigger" << val;
+    auto map     = prototype->getProtoMap();
+    auto & edges = map->getEdges();
+    if (val >= 0 && val < edges.size())
     {
-        return;
+        auto edge = edges[val];
+        if(edge->isCurve())
+        {
+            CasingPtr casing = casings.find(edge);
+            OutlineCasingPtr ocp = std::dynamic_pointer_cast<OutlineCasing>(casing);
+            ocp->alignCurvedEdgeSide1(casings);
+            ocp->alignCurvedEdgeSide2(casings);
+            Sys::viewController->slot_updateView();
+        }
     }
-
-    MapPtr map = prototype->getProtoMap();
-
-#ifdef DEBUG_BAE
-    qDebug() << "gen outline bae";
-    uint iEdge = 0;
-    uint iGood = 0;
-    uint iBad  = 0;
-#endif
-
-    for (auto & edge : std::as_const(map->getEdges()))
-    {
-#ifdef DEBUG_BAE
-        qDebug().noquote() << iEdge << edge->info();
-#endif
-        VertexPtr v1 = edge->v1;
-        VertexPtr v2 = edge->v2;
-
-        BelowAndAbove bae_to   = getPoints(map, edge, v1, v2, width);
-        BelowAndAbove bae_from = getPoints(map, edge, v2, v1, width);
-
-        BelowAndAboveEdge bae;
-
-        bae.v2.below = bae_to.below;
-        bae.v2.v     = v2->pt;
-        bae.v2.above = bae_to.above;
-
-        bae.v1.below = bae_from.below;
-        bae.v1.v     = v1->pt;
-        bae.v1.above = bae_from.above;
-
-        bae.type     = edge->getType();
-        if (bae.type == EDGETYPE_CURVE || bae.type == EDGETYPE_CHORD)
-        {
-            bae.convex    = edge->isConvex();
-            bae.arcCenter = edge->getArcCenter();
-        }
-
-#ifdef DEBUG_BAE
-        bae.dumpV(iEdge);
-        if (bae.validate(iEdge++))
-        {
-            iGood++;
-            pts4 << bae;
-        }
-        else
-        {
-            iBad++;
-        }
-#else
-        pts4 << bae;
-#endif
-    }
-
-#ifdef DEBUG_BAE
-    qDebug() << __FUNCTION__ << "- end - good =" << iGood << "bad =" << iBad;
-#endif
 }
 
-// Look at a given edge and construct a plausible set of points
-// to draw at the edge's 'to' vertex.  Call this twice to get the
-// complete outline of the hexagon to draw for this edge.
-BelowAndAbove Outline::getPoints(const MapPtr & map, const EdgePtr & edge, const VertexPtr & fromV, const VertexPtr & toV, qreal qwidth)
+MapPtr Outline::getStyleMap()
 {
-    QPointF fromP = fromV->pt;
-    QPointF toP   = toV->pt;
-
-    QPointF dir   = toP - fromP;
-    Geo::normalizeD(dir);
-    QPointF perp = Geo::perp(dir);
-
-    BelowAndAbove ret;
-
-    NeighboursPtr nto = map->getNeighbours(toV);
-    int nn = nto->numNeighbours();
-#ifdef DEBUG_BAE2
-    qDebug() << "nn = " << nn;
-#endif
-    if( nn == 1 )
-    {
-        ret.below = toP - (perp * qwidth);
-        ret.above = toP + (perp * qwidth);
-    }
-    else if( nn == 2 )
-    {
-        BeforeAndAfter ba = nto->getBeforeAndAfter(edge);
-        QPointF       pov = ba.before->getOtherP(toV);
-        QPointF        jp = getJoinPoint(toP, fromP, pov, qwidth);
-
-        if (jp.isNull())
-        {
-            ret.below = toP - (perp * qwidth);
-            ret.above = toP + (perp * qwidth);
-        }
-        else
-        {
-            ret.below = jp;
-            ret.above = Geo::convexSum(jp, toP, 2.0);
-        }
-    }
-    else
-    {
-        BeforeAndAfter ba = nto->getBeforeAndAfter(edge);
-        QPointF before_pt = ba.before->getOtherP(toV);
-        QPointF after_pt  = ba.after->getOtherP(toV);
-
-        ret.below = getJoinPoint(toP, fromP, after_pt, qwidth);
-        if (ret.below.isNull())
-        {
-            ret.below = toP - (perp * qwidth);
-        }
-        ret.above = getJoinPoint(toP, before_pt, fromP, qwidth);
-        if (ret.above.isNull())
-        {
-            ret.above = toP + (perp * qwidth);
-        }
-    }
-
-#ifdef DEBUG_BAE2
-    if (!ret.validate())
-    {
-        qWarning() << "Bad below and above" << ret.below << ret.above;
-        //qCritical("Bad BelowAndAbove");
-    }
-#endif
-    return ret;
-}
-
-// Do a mitered join of the two fat lines (a la postscript, for example).
-// The join point on the other side of the joint can be computed by
-// reflecting the point returned by this function through the joint.
-QPointF  Outline::getJoinPoint(QPointF joint, QPointF from, QPointF to, qreal qwidth )
-{
-    qreal theta = Geo::sweep(joint, from, to);
-
-    if (Loose::zero(theta) ||qAbs(theta - M_PI) < 1e-7)
-    {
-        return QPointF(0,0);
-    }
-
-    QPointF d1 = joint - from;
-    Geo::normalizeD(d1);
-    QPointF d2 = joint - to;
-    Geo::normalizeD(d2);
-
-    qreal l   = qwidth / qSin(theta);
-    qreal isx = joint.x() - ((d1.x() + d2.x()) * l);
-    qreal isy = joint.y() - ((d1.y() + d2.y()) * l);
-    return QPointF(isx, isy);
+    casings.buildMap();
+    return casings.map;
 }

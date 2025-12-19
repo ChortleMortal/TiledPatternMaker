@@ -12,11 +12,12 @@
 // and provides a bunch of services to subclasses for mouse-based
 // interaction with features.
 
-#include "gui/viewers/layer_controller.h"
-#include "sys/geometry/edgepoly.h"
 #include "gui/model_editors/tiling_edit/tiling_mouseactions.h"
+#include "gui/viewers/layer_controller.h"
+#include "sys/geometry/edge_poly.h"
 
 class GeoGraphics;
+class DlgEdgePolyEdit;
 
 typedef std::shared_ptr<class Tiling>       TilingPtr;
 typedef std::weak_ptr<class Tiling>        wTilingPtr;
@@ -38,25 +39,23 @@ public:
     void setTiling(TilingPtr tiling);
     void setFill(bool enb);
 
+    void unloadLayerContent() override { wTiling.reset(); clearViewData();}
+
     void clearViewData();
     void clearConstructionLines() { constructionLines.clear(); }
 
     void paint(QPainter * painter) override;
 
-    const Xform &   getModelXform() override;
-    void            setModelXform(const Xform & xf, bool update) override;
-
-    void drawTile(GeoGraphics * g2d, PlacedTilePtr pf, bool draw_c, QColor icol );
+    void drawTile(GeoGraphics * g2d, PlacedTilePtr pf, bool drawCenter, QColor color);
     void drawAccum(GeoGraphics * g2d);
     void drawMeasurements(GeoGraphics * g2d);
     void drawTranslationVectors(GeoGraphics * g2d, TilingPtr tiling);
 
-    void hideTiling(bool state);
     void hideVectors(bool state);
 
-    PlacedTileSelectorPtr tileSelector()                            { return _tileSelector; }
-    void                  resetTileSelector()                       { _tileSelector.reset(); }
-    void                  setTileSelector(PlacedTileSelectorPtr tsp){ _tileSelector = tsp; }
+    inline PlacedTileSelectorPtr tileSelector()     { return _tileSelector; }
+    void resetTileSelector()                        { _tileSelector.reset(); }
+    bool setTileSelector(PlacedTileSelectorPtr tsp);
 
     PlacedTileSelectorPtr findSelection(QPointF spt);
     PlacedTileSelectorPtr findTile(QPointF spt);
@@ -76,7 +75,7 @@ public:
     QPointF               findSelectionPointOrPoint(QPointF spt);
     PlacedTileSelectorPtr findNearGridPoint(QPointF spt);
 
-    EdgePoly               & getAccumW()        { return wAccum; }
+    EdgeSet                & getAccumW()        { return wAccum; }
     QVector<Measurement*>  & getMeasurementsS() { return wMeasurements; }
     QVector<QLineF>    & getConstructionLines() { return constructionLines; }
     QPointF                  getMousePos()      { return sMousePos; }
@@ -88,7 +87,7 @@ public:
     void setMousePos(QPointF spt);
 
     // Mouse interactions.
-    void startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton);
+    void startMouseInteraction(QPointF spt, Qt::MouseButton mouseButton);
     void setMouseInteraction(MouseActionPtr mouseAct) { mouse_interaction = mouseAct; }
     void resetMouseInteraction()                      { mouse_interaction.reset();}
     MouseActionPtr getMouseInteraction()              { return mouse_interaction; }
@@ -99,30 +98,35 @@ public:
     // Mouse interaction underway..
     void drawMouseInteraction(GeoGraphics * g2d);
 
-    void setEditPlacedTile(PlacedTilePtr ptp) { editPlacedTile = ptp; }
-    void resetEditPlacedTile()                { editPlacedTile.reset(); }
+    // editing edge polys
+    inline PlacedTilePtr editPlacedTile()     { return _editPlacedTile; }
+    void setEditPlacedTile(PlacedTilePtr ptp) { _editPlacedTile = ptp; }
+    void resetEditPlacedTile()                { _editPlacedTile.reset(); }
 
 public slots:
-    eViewType iamaLayer() override { return VIEW_TILING_MAKER; }
     void iamaLayerController() override {}
 
-    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    void slot_mousePressed(QPointF spt, Qt::MouseButton btn) override;
     void slot_mouseDragged(QPointF spt)       override;
-    void slot_mouseTranslate(QPointF pt)      override;
     void slot_mouseMoved(QPointF spt)         override;
     void slot_mouseReleased(QPointF spt)      override;
     void slot_mouseDoublePressed(QPointF spt) override;
 
-    void slot_setCenter(QPointF spt)    override;
-    void slot_wheel_scale(qreal delta)  override;
-    void slot_wheel_rotate(qreal delta) override;
+    void slot_mouseTranslate(uint sigid, QPointF pt)      override;
+    void slot_wheel_scale(uint sigid, qreal delta)  override;
+    void slot_wheel_rotate(uint sigid, qreal delta) override;
 
-    void slot_scale(int amount)    override;
-    void slot_rotate(int amount)   override;
-    void slot_moveX(qreal amount)  override;
-    void slot_moveY(qreal amount)  override;
+    void slot_scale(uint sigid, int amount)    override;
+    void slot_rotate(uint sigid, int amount)   override;
+    void slot_moveX(uint sigid, qreal amount)  override;
+    void slot_moveY(uint sigid, qreal amount)  override;
 
     void  slot_setTileEditPoint(QPointF pt);
+    void slot_subMenu1();
+    void slot_TL();
+    void slot_TR();
+    void slot_BL();
+    void slot_BR();
 
 protected:
     void draw(GeoGraphics * g2d);
@@ -134,23 +138,25 @@ protected:
     static constexpr QColor in_tiling_color     = QColor(255,217,217,128);  // pink
     static constexpr QColor overlapping_color   = QColor(205,102, 25,128);  // ochre
     static constexpr QColor touching_color      = QColor( 25,102,205,128);  // blue
-    static constexpr QColor under_mouse_color   = QColor(127,255,127,128);  // green
-    static constexpr QColor selected_color      = QColor(  0,255,  0,128);
+    static constexpr QColor selected_color      = QColor(127,255,127,128);  // green
+    static constexpr QColor under_mouse_color   = QColor(  0,255,  0,128);
     static constexpr QColor construction_color  = QColor(  0,128,  0,128);
     static constexpr QColor drag_color          = QColor(206,179,102,128);
     static constexpr QColor circle_color        = QColor(202,200,  0,128);
 
+    inline bool tileIsSelected(const PlacedTilePtr &tile);
+    inline bool tileUnderMouse(const PlacedTilePtr & tile);
+
 private:
     wTilingPtr              wTiling;
 
-    EdgePoly                wAccum;             // world points
+    EdgeSet                 wAccum;             // world points
     QVector<Measurement*>   wMeasurements;
 
-    bool                    _hideTiling;
     bool                    _hideVectors;
 
-    PlacedTileSelectorPtr   _tileSelector;      // Selected placed tile
-    PlacedTilePtr           editPlacedTile;     // Tile in DlgTileEdit
+    PlacedTileSelectorPtr   _tileSelector;      // Current mouse selection.
+    PlacedTilePtr           _editPlacedTile;    // Tile in DlgTileEdit
 
     QColor                  lineColor;
     QPointF                 sMousePos;          // screen points DAC added

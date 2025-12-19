@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #ifndef TILE_H
 #define TILE_H
 
@@ -20,7 +20,7 @@
 
 #include <QObject>
 #include <QPolygonF>
-#include "sys/geometry/edgepoly.h"
+#include "sys/geometry/edge_poly.h"
 
 typedef std::shared_ptr<class Tile>         TilePtr;
 
@@ -35,84 +35,52 @@ public:
     qreal    scale;
 };
 
-class Tile : public QObject
+class Tile : public EdgePoly
 {
-    Q_OBJECT
-
 public:
-    Tile(int n, qreal rotate = 0.0, qreal scale = 1.0);           // Create an n-sided regular polygon with a vertex at (1,0).
-    Tile(EdgePoly epoly, qreal rotate = 0.0, qreal scale = 1.0);
+    Tile(int n, qreal rotate = 0.0, qreal scale = 1.0); // Create an n-sided regular polygon with a vertex at (1,0).
+    Tile(EdgePoly epoly);                               // Creates an irregular tile
     Tile(const TilePtr other);
     Tile(const Tile & other);
     ~Tile();
 
     bool operator == (const Tile & other) const;
-
-    void        compose();      // makes epoly from base
-    void        decompose();    // makes base from epoly
+    bool operator != (const Tile & other) const { return !(*this == other); }
 
     TilePtr     copy();
     TilePtr     recreate();
 
     void        setRegular(bool enb);
     void        flipRegularity();
-    void        setN(int n);
-    void        setRotation(qreal rot);
-    void        setScale(qreal rot);
+    void        setN(uint n);
 
     void        deltaRotation(qreal delta);
     void        deltaScale(qreal delta);
 
-    qreal       getRotation()       { return rotation; }
-    qreal       getScale()          { return scale; }
-
-    bool        equals(const TilePtr other);
     bool        isSimilar(const TilePtr other);
     bool        isRegular()         { return regular; }
-    bool        isClockwise()       { return  epoly.isClockwise(); }
 
-    const EdgePoly& getEdgePoly()   { return epoly;}
-    EdgePoly&       getEdgePolyRW() { return epoly;}
-    const EdgePoly& getBase()       { return base; }
-
-    QVector<EdgePtr> getEdges()     { return epoly; }
-    QVector<QLineF>  getLines()     { return epoly.getLines(); }        // ignores curves
-
-    QPolygonF   getPolygon()        { return epoly.getPoly(); }         // closed
-    QPolygonF   getPoints()         { return epoly.getPoints(); }       // not closed
-    QPolygonF   getMids()           { return epoly.getMids(); }         // not closed
-    int         numPoints()         { return epoly.size(); }
-    int         numSides()          { return epoly.size(); }
+    const EdgePoly& getEdgePoly() const { return *this;}
+    EdgePoly&       getEdgePolyRW()     { return *this;}
 
     QPointF     getCenter();
-    QLineF      getEdge(int side);
-    qreal       edgeLen(int side = 0);
+    QLineF      getEdge(uint side);
+    qreal       edgeLen(uint side = 0);
 
     QString     toString() const;
     QString     toBaseString() const;
     QString     info();
     QString     summary();
 
-    QTransform  getTransform()      { return QTransform::fromScale(scale,scale).rotate(rotation); }
-    void        legacyDecompose();
-
     static int  refs;
-
-signals:
-    void        sig_tileChanged();
 
 private:
     void        createRegularBase();
 
-    int         n;              // sides
+    uint        n;              // sides
     bool        regular;
-    qreal       rotation;
-    qreal       scale;
 
-    EdgePoly    base;           // calculated
-    EdgePoly    epoly;          // calculated
-
-    PreConvert  conversion;     // stored when going from regular to irregular and vice versa
+    PreConvert  preconversion;     // stored when going from regular to irregular and vice versa
 };
 
 #endif

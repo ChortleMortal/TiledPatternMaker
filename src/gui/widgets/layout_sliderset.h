@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #ifndef SLIDERSET_H
 #define SLIDERSET_H
 
@@ -15,16 +15,15 @@ class AQSpinBox : public QSpinBox
 public:
     AQSpinBox();
 
-    void  leaveEvent(QEvent *event) override;
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
-    void  enterEvent(QEnterEvent *event) override;
-#else
-    virtual void  enterEvent(QEvent *event) override;
-#endif
+    void         leaveEvent(QEvent *event) override;
+    virtual void enterEvent(QEnterEvent *event) override;
 
     void setValue(int val);
 
     bool blocked;
+
+private:
+    QString backgroundColorName;
 };
 
 class AQDoubleSpinBox : public QDoubleSpinBox
@@ -32,18 +31,17 @@ class AQDoubleSpinBox : public QDoubleSpinBox
     Q_OBJECT
 
 public:
-    AQDoubleSpinBox();
+    AQDoubleSpinBox(QWidget * parent = nullptr);
 
-   void  leaveEvent(QEvent *event) override;
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
-    void  enterEvent(QEnterEvent *event) override;
-#else
-   virtual void  enterEvent(QEvent *event) override;
-#endif
+    void         leaveEvent(QEvent *event) override;
+    virtual void enterEvent(QEnterEvent *event) override;
 
     void setValue(double val);
 
     bool blocked;
+
+private:
+    QString backgroundColorName;
 };
 
 class SpinSet: public AQHBoxLayout
@@ -51,7 +49,7 @@ class SpinSet: public AQHBoxLayout
     Q_OBJECT
 
 public:
-    SpinSet(QString txt, int val, int min, int max);
+    SpinSet(QString txt, int val, int min, int max, bool nostretch = false);
     void    setValue(int val);
     void    setReadOnly(bool val)   { spin->setReadOnly(val); }
     void    setDisabled(bool val)   { spin->setDisabled(val); }
@@ -73,7 +71,7 @@ class DoubleSpinSet: public AQHBoxLayout
     Q_OBJECT
 
 public:
-    DoubleSpinSet(QString txt, qreal val, qreal min, qreal max);
+    DoubleSpinSet(QString txt, qreal val, qreal min, qreal max, bool nostretch = false);
     void    setLabel(QString txt)    { label->setText(txt); }
     void    setValue(qreal val);
     qreal   value()                  { return spin->value(); }

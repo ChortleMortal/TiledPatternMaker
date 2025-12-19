@@ -24,10 +24,12 @@ public:
 
     void draw(GeoGraphics * gg) override;
 
+    virtual void        resetStyleRepresentation()  override { created = false; };
+    virtual void        createStyleRepresentation() override;
+
     virtual eStyleType getStyleType() const override { return STYLE_PLAIN; }
     QString            getStyleDesc() const override {return "Plain";}
     virtual void       dump()         const override { qDebug().noquote() << getStyleDesc() << colors.colorsString(); }
-
 };
 #endif
 

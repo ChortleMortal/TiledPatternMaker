@@ -3,9 +3,7 @@
 #define TILINGMANAGER_H
 
 #include <QString>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
+
 #include "sys/enums/estatemachineevent.h"
 #include "sys/sys/versioning.h"
 
@@ -17,7 +15,7 @@ public:
     TilingManager() {}
 
     TilingPtr loadTiling(VersionedFile &vfile, eTILM_Event event);
-    bool      saveTiling(TilingPtr tiling);
+    bool      saveTiling(TilingPtr tiling, VersionedFile &retSavedFile, bool forceOverwrite);
     bool      verifyTilingFiles();
 };
 

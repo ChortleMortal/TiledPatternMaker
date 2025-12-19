@@ -2,7 +2,7 @@
 #include "gui/viewers/shape_view.h"
 #include "legacy/shapes.h"
 
-LegacyShapeViewer::LegacyShapeViewer() : Layer("ShapeViewer",false)
+LegacyShapeViewer::LegacyShapeViewer() : Layer(VIEW_LEGACY,PRIMARY,"ShapeViewer")
 {
     _antiAliasPolys  = true;
 }
@@ -96,14 +96,6 @@ void LegacyShapeViewer::paint(QPainter *painter)
                                       p->arcStart,p->arcSpan);
                 }
             }
-
-            if (Sys::circleX)
-            {
-                // draw inner X
-                painter->setPen(QPen(Qt::green,1.0));
-                painter->drawLine( - p->radius, 0.0, p->radius, 0.0);
-                painter->drawLine(0.0,- p->radius, 0.0, p->radius);
-            }
         }
     }
 
@@ -134,18 +126,4 @@ void LegacyShapeViewer::paint(QPainter *painter)
     }
 
     painter->restore();
-}
-
-void LegacyShapeViewer::setModelXform(const Xform & xf, bool update)
-{
-    Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
-    viewControl->setCurrentModelXform(xf,update);
-}
-
-const Xform & LegacyShapeViewer::getModelXform()
-{
-    Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().info() << (isUnique() ? "unique" : "common");
-    return viewControl->getCurrentModelXform();
 }

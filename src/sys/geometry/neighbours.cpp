@@ -1,20 +1,28 @@
 #include <QDebug>
+#include "sys/geometry/edge.h"
+#include "sys/geometry/map.h"
 #include "sys/geometry/neighbours.h"
 #include "sys/geometry/vertex.h"
-#include "sys/geometry/edge.h"
+
+int Neighbours::refs = 0;
+
+extern double angleBetween(EdgePtr a, EdgePtr b);
 
 Neighbours::Neighbours(const VertexPtr & vp)
 {
     vertex = vp;
+    refs++;
 }
 
 Neighbours::Neighbours(const Neighbours & other) : QVector<WeakEdgePtr>(other)
 {
     vertex = other.vertex;
+    refs++;
 }
 
 Neighbours::~Neighbours()
 {
+    refs--;
 }
 
 bool Neighbours::contains(const EdgePtr & e) const
@@ -29,6 +37,41 @@ bool Neighbours::contains(const EdgePtr & e) const
    }
    return false;
 }
+
+EdgePtr Neighbours::nearest(const EdgePtr &edge, bool side1)
+{
+    EdgePtr neaarestEdge;
+    qreal   angle = 1000;       // makes compiler happy since it does not understand this code
+    for (auto & wedge : std::as_const(*this))
+    {
+        auto nedge = wedge.lock();
+        if (nedge == edge)
+            continue;
+
+        qreal theta;
+        if (side1)
+            theta = angleBetween(nedge,edge);
+        else
+            theta = angleBetween(edge,nedge);
+
+        if (!neaarestEdge)
+        {
+            angle = theta;
+            neaarestEdge = nedge;
+        }
+        else
+        {
+            Q_ASSERT(angle != 1000);
+            if (theta < angle)
+            {
+                angle = theta;
+                neaarestEdge    = edge;
+            }
+        }
+    }
+    return neaarestEdge;
+}
+
 
 BeforeAndAfter Neighbours::getBeforeAndAfter(const EdgePtr &edge )
 {
@@ -66,6 +109,63 @@ BeforeAndAfter Neighbours::getBeforeAndAfter(const EdgePtr &edge )
     return ret;
 }
 
+EdgePtr Neighbours::getContinuation(EdgePtr edge, int type)
+{
+    EdgePtr result;
+    qreal   angle;
+
+    for (auto & wedge : *this)
+    {
+        EdgePtr nedge = wedge.lock();
+
+        if (!nedge)
+            continue;
+        if (edge == nedge)
+            continue;
+        if (edge->isTwin(nedge))
+            continue;
+
+        if (!result)
+        {
+            // first time
+            angle = qAbs(edge->getLine().angleTo(nedge->getLine()));
+            result = nedge;
+        }
+        else
+        {
+            qreal angle2 = qAbs(edge->getLine().angleTo(nedge->getLine()));
+            switch (type)
+            {
+            case 1:
+                // this gets most acute (smallest) angle, not nearest to 180 degrees)
+                if (angle2 < angle)
+                {
+                    angle  = angle2;
+                    result = nedge;
+                }
+                break;
+            case 2:
+                // this gets largest angle, not nearest to 180 degrees)
+                if (angle2 > angle)
+                {
+                    angle  = angle2;
+                    result = nedge;
+                }
+                break;
+            case 3:
+                // this not nearest to 180 degrees)
+                if ((180.0 - angle2) >  (180.0 - angle))
+                {
+                    angle  = angle2;
+                    result = nedge;
+                }
+                break;
+            }
+        }
+    }
+    return result;
+}
+
 /*
  * Insert the edge into the vertex's neighbour list.  Edges
  * are stored in sorted order by angle (though the starting point
@@ -90,7 +190,15 @@ void Neighbours::insertNeighbour(const EdgePtr & e)
     }
 
     qreal a = vertex.lock()->getAngle(e);
-
+#if 0
+    qreal b = e->angle();
+    qreal c = e->getLine().angle();
+    auto  e2 = e->createTwin();
+    qDebug() << qRadiansToDegrees(a) << qRadiansToDegrees(b) << c;
+    qreal b2 = e2->angle();
+    qreal c2 = e2->getLine().angle();
+    qDebug() << qRadiansToDegrees(a) << qRadiansToDegrees(b2) << c2;
+#endif
     for (int i=0; i < (int)size(); i++)
     {
         EdgePtr ep = at(i).lock();
@@ -110,45 +218,6 @@ void Neighbours::insertNeighbour(const EdgePtr & e)
     push_back(e);
 }
 
-void Neighbours::dumpNeighbours() const
-{
-    qDebug() << "vertex: " << vertex.lock()->pt << "num neighbour:" << size();
-    for (auto & wedge : std::as_const(*this))
-    {
-        auto edge = wedge.lock();
-        if (edge)
-        {
-            QPointF v1 = edge->v1->pt;
-            QPointF v2 = edge->v2->pt;
-            qDebug() << "      edge: " << edge.get() << " " << v1 << " " << v2;
-        }
-        else
-        {
-            qWarning("WEAK EDGE DOES NOT LOCK in dumpNeighbours");
-        }
-    }
-}
-
-EdgePtr Neighbours::getFirstNonvisitedNeighbour(const EdgePtr & home)
-{
-    QVector<qreal> angles;
-    qreal hangle = home->getAngle();
-    angles.push_back(hangle);
-    WeakEdgePtr ep;
-    for (auto & edge : std::as_const(*this))
-    {
-        if (edge.lock()->visited)
-        {
-            continue;
-        }
-        angles.push_back(edge.lock()->getAngle());
-        if (!ep.lock())
-            ep = edge;
-    }
-    //qDebug() << "Angles:" << angles;
-    return ep.lock();
-}
-
 bool Neighbours::verify()
 {
     bool rv = true;
@@ -165,7 +234,7 @@ bool Neighbours::verify()
 
 void Neighbours::cleanse()
 {
-    QVector<EdgePtr> baddies;
+    EdgeSet baddies;
 
     for (const WeakEdgePtr & e : std::as_const(*this))
     {
@@ -197,4 +266,26 @@ EdgePtr Neighbours::getNeighbour(int index)
     return wep.lock();
 }
 
+QString Neighbours::info(MapPtr &map)
+{
+    QString info;
+    for (const WeakEdgePtr & e : std::as_const(*this))
+    {
+        EdgePtr e1 = e.lock();
+        info += QString::number(map->edgeIndex(e1));
+        info += " ";
+    }
+    return info;
+}
 
+QString Neighbours::casingInfo()
+{
+    QString info;
+    for (const WeakEdgePtr & e : std::as_const(*this))
+    {
+        EdgePtr e1 = e.lock();
+        info += QString::number(e1->casingIndex);
+        info += " ";
+    }
+    return info;
+}

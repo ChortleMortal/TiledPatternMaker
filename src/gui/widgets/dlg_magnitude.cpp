@@ -30,7 +30,9 @@ DlgMagnitude::DlgMagnitude(PlacedTileSelectorPtr sel, QWidget * parent) :  QDial
 
 void DlgMagnitude::slot_valueChanged(qreal val)
 {
-    edge->setArcMagnitude(val);
+    ArcData & ad = edge->getArcData();
+    ad.setArcMagnitude(val);
+
     emit sig_magnitudeChanged();
 }
 

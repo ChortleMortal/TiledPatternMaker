@@ -48,8 +48,9 @@ public:
 
     DELBtnPtr       getButton(DesignElementPtr del);
 
+    void            update();
+
 protected:
-    void            populateMotifButtons(QVector<DesignElementPtr> & dels);
     void            getNextPosition(int index, int & row, int & col);
 
 private:

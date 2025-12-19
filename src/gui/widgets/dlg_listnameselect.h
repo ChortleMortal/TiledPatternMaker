@@ -3,6 +3,7 @@
 #define DLG_LIST_NAME_SELECT_H
 
 #include <QDialog>
+
 #include "gui/widgets/versioned_list_widget.h"
 #include "sys/sys/versioning.h"
 

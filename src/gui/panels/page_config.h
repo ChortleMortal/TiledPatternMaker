@@ -32,15 +32,24 @@ private slots:
     void    slot_reconfigurePaths();
     void    slot_mode(int id);
     void    slot_darkThemeChanged(int id);
-    void    slot_about();
     void    slot_bigScreen(bool enb);
+
+    void    slot_firstBirthday();
+    void    slot_eraseDebugFlagHistory();
+
+    void    slot_start_options();
+    void    slot_about();
+    void    slot_showSupport();
+    void    slot_showShortcuts();
 
 protected:
     void    updatePaths();
     void    restartApp();
 
-    QGroupBox   * createAppConfig();
+    QGroupBox   * createAppSetup();
     QGroupBox   * createMediaPaths();
+    QGroupBox   * createAppControl();
+    QGroupBox   * createAppInfo();
 
 private:
     qtAppLog    * log;

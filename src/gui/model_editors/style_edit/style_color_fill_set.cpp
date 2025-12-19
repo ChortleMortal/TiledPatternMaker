@@ -3,7 +3,7 @@
 
 #include "gui/model_editors/style_edit/style_color_fill_set.h"
 #include "sys/sys.h"
-#include "gui/top/view.h"
+#include "gui/top/system_view.h"
 #include "model/styles/filled.h"
 
 StyleColorFillSet::StyleColorFillSet(FilledPtr style, QVBoxLayout * vbox)  : filled(style)
@@ -50,9 +50,9 @@ StyleColorFillSet::StyleColorFillSet(FilledPtr style, QVBoxLayout * vbox)  : fil
     qslH << "Row" <<  "Faces" << "Sides" << "Area" << "Hide" << "Select" << "Color" << "Color";
     fillSetTable->setHorizontalHeaderLabels(qslH);
 
-    connect(fillSetTable,  &QTableWidget::cellClicked,        this,       &StyleColorFillSet::slot_click);
-    connect(fillSetTable,  &QTableWidget::cellDoubleClicked,  this,       &StyleColorFillSet::slot_double_click);
-    connect(this,          &StyleColorFillSet::sig_updateView, Sys::view, &View::slot_update);
+    connect(fillSetTable,  &QTableWidget::cellClicked,         this,       &StyleColorFillSet::slot_click);
+    connect(fillSetTable,  &QTableWidget::cellDoubleClicked,   this,       &StyleColorFillSet::slot_double_click);
+    connect(this,          &StyleColorFillSet::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
     vbox->addWidget(fillSetTable);
 }
 
@@ -308,7 +308,7 @@ void StyleColorFillSet::select(QPointF mpt)
         {
             if (face->getPolygon().containsPoint(mpt,Qt::OddEvenFill))
             {
-                qDebug() << "select row" << row;
+                //qDebug() << "select row" << row;
                 fillSetTable->setCurrentCell(row,0);
                 return;
             }

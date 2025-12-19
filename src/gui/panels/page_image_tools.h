@@ -5,16 +5,11 @@
 #include <QImage>
 #include "gui/panels/panel_page.h"
 #include "sys/engine/image_engine.h"
+#include "sys/enums/ecyclemode.h"
 #include "sys/sys/versioning.h"
 
 class MemoryCombo;
-
-enum eActionType
-{
-    ACT_GEN_MOSAIC_BMP,
-    ACT_GEN_TILING_BMP,
-    ACT_GEN_COMPARE_WLIST
-};
+class DirMemoryCombo;
 
 struct sAction
 {
@@ -65,15 +60,16 @@ private slots:
     void    slot_genBMPs();
     void    slot_startStepping();
     void    slot_opendir();
-    void    slot_compareDiffDirBMPs();
-    void    slot_startCompare();
-    void    slot_compareGen();
-    void    slot_use_worklist_compare(bool checked);
-    void    slot_compareView(bool checked);
+    void    slot_compareSelectedBMPs();
+    void    slot_startCompareCycle();
+    void    slot_generateComparisonWL();
+    void    slot_toggle_useWL(bool checked);
+    void    slot_toggle_loaded2nd(bool checked);
     void    slot_skipExisting(bool checked);
 
     void    slot_transparentClicked(bool checked);
     void    slot_popupClicked(bool checked);
+    void    slot_inPlaceClicked(bool checked);
 
     void    slot_firstDirChanged();
     void    slot_secondDirChanged();
@@ -94,25 +90,25 @@ private slots:
     void    slot_replaceBMP();
     void    slot_loadSecond();
     void    slot_viewSecond();
-    void    slot_createList();
+    void    slot_createWorkList();
 
-    void    slot_genTypeChanged(int id);
-    void    slot_gen_selectionChanged();
-    void    slot_view_selectionChanged();
-    void    slot_ver_selectionChanged();
+    void    slot_imageTypeChanged(int id);
+    void    slot_imgFilterChanged();
 
     void    slot_compareDiffVerBMPs();
     void    slot_cycleVersions();
 
     void    slot_nextImage();
-    void    slot_viewTypeChanged(int);
 
     void    slot_engineComplete();
     void    slot_engineProgress(int val);
 
 protected:
-    int createWorklistBox(int row);
+    int createImageSelectionBox(int row);
     int createCycleGenBox(int row);
+    int createViewImagesBox(int row);
+    int createWorklistBox(int row);
+    int createCompareOptionsBox(int row);
     int createCompareImagesBox(int row);
     int createCompareVersionsBox(int row);
     int createViewImageBox(int row);
@@ -126,11 +122,8 @@ protected:
     void setCombo( QComboBox * combo, QString name);
 
     void loadFileFilterCombo();
-    void loadViewFilterCombo();
-    void loadVersionFilterCombo();
-    void setImageDirectory();
 
-    QString getPixmapPath();
+    void worklistWrapup();
 
     // multi-threaded
     void setupActions();
@@ -148,13 +141,18 @@ private:
 
     QGridLayout * grid;
 
-    QButtonGroup* genBtnGroup;
+    QButtonGroup* imageBtnGroup;
     QButtonGroup* viewBtnGroup;
+    QButtonGroup* compareBtnGroup;
+    QButtonGroup* popupGroup;
 
     MemoryCombo * firstDir;
     MemoryCombo * secondDir;
-    QLineEdit   * directory;
     QLineEdit   * imageCompareResult;
+
+    DirMemoryCombo * directoryCombo;
+
+    QCheckBox   * chkPngs;
 
     MemoryCombo * viewFileCombo1;
     MemoryCombo * viewFileCombo2;
@@ -162,12 +160,10 @@ private:
     QComboBox   * firstBMPCompareCombo;
     QComboBox   * secondBMPCompareCombo;
 
-    QComboBox   * genFilterCombo;
-    QComboBox   * viewFilterCombo;
-    QComboBox   * versionFilterCombo;
+    QComboBox   * imageFilterCombo;
 
-    QCheckBox   * use_wlistForCompareChk;
-    QCheckBox   * compareView;
+    QCheckBox   * useCompareWL;
+    QCheckBox   * compareLoaded2nd;
 
     QLabel      * colorLabel;
     QLabel      * wlistLabel;
@@ -181,16 +177,16 @@ private:
     QComboBox   * versionsB;
 
     QCheckBox   * chkLock;
-    QRadioButton* radMosaic;
-    QRadioButton* radTile;
     QRadioButton* radImg;
     QRadioButton* radXML;
-    QButtonGroup* mediaGroup;
     QButtonGroup* typeGroup;
 
     QPushButton * generateBMPsBtn;
     QPushButton * viewImgesBtn;
     QPushButton * startBtn;
+
+    QRadioButton * bmpCompare;
+    QRadioButton * bmpView;
 
     QFutureWatcher<bool>  watcher;
     int                   totalEngineImages;
@@ -200,7 +196,6 @@ private:
     class AQElapsedTimer* etimer;
 
     ImageEngine     engine;
-
 };
 
 #endif

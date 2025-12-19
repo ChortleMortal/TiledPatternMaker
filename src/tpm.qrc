@@ -2,5 +2,11 @@
     <qresource prefix="/">
         <file>tpm.png</file>
         <file>LICENSE</file>
+        <file>txt/start-options.txt</file>
+        <file>txt/tilingmaker.txt</file>
+        <file>txt/legacy.txt</file>
+        <file>txt/mapeditor.txt</file>
+        <file>txt/mosaic.txt</file>
+        <file>txt/support.txt</file>
     </qresource>
 </RCC>

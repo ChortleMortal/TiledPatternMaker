@@ -22,6 +22,9 @@
 #include <QStack>
 #include <QTransform>
 #include <QPainter>
+#include <QPainterPathStroker>
+#include "sys/enums/edgetype.h"
+#include "sys/geometry/arcdata.h"
 
 class EdgePoly;
 
@@ -31,7 +34,6 @@ class GeoGraphics
 {
 public:
     GeoGraphics(QPainter * painter, QTransform  transform);
-    void set(QTransform t) {transform = t;}
 
     // Drawing functions.
     void drawEdge(const EdgePtr & e, const QPen & pen);                         // no brush
@@ -39,11 +41,13 @@ public:
 
     void drawLine(const QPointF & p1, const QPointF & p2, const QPen & pen);
     void drawLine(const QLineF  & line, const QPen & pen);
+    void drawThickCorner(const QPointF & from, const QPointF & mid, const QPointF & to, QPen &pen, qreal width, QPainterPathStroker &ps);
+    void drawThickCorner2(const EdgePtr &e1, const EdgePtr & e2, QPen & pen, qreal width);
+
     void drawLineDirect( const QPointF & v1, const QPointF & v2, const QPen & pen);
 
-    void drawArc(  QPointF V1, QPointF V2, QPointF ArcCenter, bool Convex, QPen pen);
-    void drawChord(QPointF V1, QPointF V2, QPointF ArcCenter, bool Convex, QPen pen);
-    void drawPie(  QPointF V1, QPointF V2, QPointF ArcCenter, bool Convex, QPen pen, QBrush brush);
+    void drawArc(ArcData & ad, QPen pen, bool outer);
+    void drawArc(QPointF p1, QPointF p2, QPointF center, eCurveType ctype, QPen pen, bool outer);
 
     void drawRect( QPointF topleft, qreal width, qreal height, QPen pen, QBrush brush);
     void drawRect( QRectF, QPen pen, QBrush brush);
@@ -51,10 +55,11 @@ public:
     void fillPolygon(const QPolygonF & pgon, const QPen &pen);
     void drawPolygon(const QPolygonF & pgon, QPen & pen);
 
-    void fillEdgePoly(const EdgePoly & epoly, QPen & pen);
-    void drawEdgePoly(const EdgePoly & epoly, QPen & pen);
+    void fillEdgePoly(const EdgePoly & epoly, const QPen & pen);
+    void drawEdgePoly(const EdgePoly & epoly, const QPen & pen);
 
     void fillPath(QPainterPath pp, QPen &pen) const;      // not a reference, not const
+    void fillStrokedPath(QPainterPath pp, QPen &pen, QPainterPathStroker & ps) const;      // not a reference, not const
 
     void drawArrow( QPointF from, QPointF to, qreal length, qreal half_width, QColor color);
     void drawLineArrow(QLineF line, QPen pen);
@@ -77,8 +82,7 @@ protected:
 
 private:
     void _drawThickLine( const QPointF & v1, const QPointF & v2, const QPen & pen);
-    void _drawThickArc(  const QPointF & V1, const QPointF & V2, const QPointF && ArcCenter, bool Conves, const QPen & pen);
-    void _drawThickChord(const QPointF & V1, const QPointF & V2, const QPointF && ArcCenter, bool Convex, const QPen & pen);
+    void _drawThickArc(  const QPointF & V1, const QPointF & V2, const QPointF && ArcCenter, eCurveType ctype, const QPen & pen);
 
     QPainter         * painter;
     QTransform         transform;

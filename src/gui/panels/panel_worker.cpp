@@ -2,30 +2,35 @@
 #include <QFile>
 
 #include "gui/panels/panel_worker.h"
-#include "sys/sys/fileservices.h"
+#include "model/settings/configuration.h"
 #include "sys/sys.h"
+#include "sys/sys/fileservices.h"
 
 PanelWorker::PanelWorker()
 {
 }
 
-void PanelWorker::sortTilings(bool worklist, bool backgrounds, bool sortByDate)
+void PanelWorker::sortTilings()
 {
-    //qDebug() << __FUNCTION__;
+    //qDebug() << "PanelWorker::sortTilings";
 
     eLoadType ltype = SELECTED_TILINGS;
-    if (worklist)
+    if (Sys::config->tilingWorklistCheck)
     {
         ltype = WORKLIST;
     }
+    else if (Sys::config->tilingWorklistXCheck)
+    {
+        ltype = ALL_TIL_EXCEPT_WL;
+    }
 
     VersionFileList vfl = FileServices::getTilingFiles(ltype);
-    if (backgrounds)
+    if (Sys::config->showWithBkgds)
     {
         vfl = findTilingsWithBkgds(vfl);
     }
 
-    if (sortByDate)
+    if (Sys::config->mosaicSortCheck)
     {
         vfl = sortTilingsByDate(vfl);
     }
@@ -35,30 +40,41 @@ void PanelWorker::sortTilings(bool worklist, bool backgrounds, bool sortByDate)
     }
 
     Sys::tilingsList = vfl;
-    Sys::tilingUses  = FileServices::getTilingUses();
 
-    //qDebug() << __FUNCTION__ << "- end";
+    //qInfo() << "PanelWorker::sortTilings" << "- end";
 
     emit tilingsSorted();
 }
 
-void PanelWorker::sortMosaics(bool worklist, bool backgrounds, bool sortByDate)
+void PanelWorker::getTilingUses()
 {
-    //qDebug() << __FUNCTION__;
+    //qInfo() << "PanelWorker::getTilingUses";
+    Sys::tilingUses  = FileServices::getTilingUses();
+    emit tilingsSorted();
+    //qInfo() << "PanelWorker::getTilingUses" << "- end";
+}
+
+void PanelWorker::sortMosaics()
+{
+    //qInfo() << "PanelWorker::sortMosaics";
 
     eLoadType ltype = SELECTED_MOSAICS;
-    if (worklist)
+    if (Sys::config->mosaicWorklistCheck)
     {
         ltype = WORKLIST;
     }
+    else if (Sys::config->mosaicWorklistXCheck)
+    {
+        ltype = ALL_MOS_EXCEPT_WL;
+    }
 
     VersionFileList vfl = FileServices::getMosaicFiles(ltype);
-    if (backgrounds)
+    if (Sys::config->showWithBkgds)
     {
         vfl = findMosaicsWithBkgds(vfl);
     }
 
-    if (sortByDate)
+    if (Sys::config->mosaicSortCheck)
     {
         vfl = sortMosaicsByDate(vfl);
     }
@@ -69,7 +85,7 @@ void PanelWorker::sortMosaics(bool worklist, bool backgrounds, bool sortByDate)
 
     Sys::mosaicsList = vfl;
 
-    //qDebug() << __FUNCTION__ << "- end";
+    //qDebug() << #PanelWorker::sortMosaics" << "- end";
 
     emit mosaicsSorted();
 }
@@ -128,23 +144,13 @@ VersionFileList PanelWorker::findMosaicsWithBkgds(VersionFileList & files)
     for (VersionedFile & file : files)
     {
         QFile afile(file.getPathedName());
-        afile.open(QIODevice::ReadOnly);
-        QTextStream in (&afile);
-        const QString content = in.readAll();
-        if (content.contains("<BackgroundImage"))
+        if (afile.open(QIODevice::ReadOnly))
         {
-            flist.push_back(file);
-        }
-        else
-        {
-            // could be in tiling
-            // find tiling
-            VersionedFile tilingFile = FileServices::getTileFileFromMosaicFile(file);
-            // is tiling in tiling list
-            auto qlist = Sys::tilingsList.filter(tilingFile.getVersionedName().get(),true);
-            if (qlist.count() > 0)
+            QTextStream in (&afile);
+            const QString content = in.readAll();
+            if (content.contains("<BackgroundImage"))
             {
-                flist.push_back(tilingFile);
+                flist.add(file);
             }
         }
     }
@@ -160,12 +166,14 @@ VersionFileList PanelWorker::findTilingsWithBkgds(VersionFileList & files)
         if (!file.isEmpty())
         {
             QFile afile(file.getPathedName());
-            afile.open(QIODevice::ReadOnly);
-            QTextStream in (&afile);
-            const QString content = in.readAll();
-            if (content.contains("<BackgroundImage"))
+            if (afile.open(QIODevice::ReadOnly))
             {
-                vfl.push_back(file);
+                QTextStream in (&afile);
+                const QString content = in.readAll();
+                if (content.contains("<BackgroundImage"))
+                {
+                    vfl.add(file);
+                }
             }
         }
     }

@@ -1,12 +1,19 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
-#include "model/tilings/backgroundimage.h"
-#include "model/settings/configuration.h"
+#include <QPainter>
 
-BackgroundImage::BackgroundImage()
+#include "model/settings/configuration.h"
+#include "model/tilings/backgroundimage.h"
+#include "sys/geometry/edge.h"
+#include "sys/geometry/transform.h"
+#include "sys/geometry/vertex.h"
+#include "sys/sys/debugflags.h"
+
+BackgroundImage::BackgroundImage() : LayerController(VIEW_BKGD_IMG,PRIMARY,"Bkgd Image View")
 {
     bkgdName = "Bkgd Image";
+    setZValue(BKGD_IMG_ZLEVEL);
 }
 
 void BackgroundImage::unload()
@@ -61,12 +68,12 @@ void BackgroundImage::createPixmap()
     if (bUseAdjusted && !adjustedImage.isNull())
     {
         qDebug() << "using adjusted image";
-        _pixmap = QPixmap::fromImage(adjustedImage);
+        pixmap = QPixmap::fromImage(adjustedImage);
     }
     else
     {
         qDebug() << "using regular background image";
-        _pixmap = QPixmap::fromImage(bkgdImage);
+        pixmap = QPixmap::fromImage(bkgdImage);
     }
 }
 
@@ -152,4 +159,136 @@ void BackgroundImage::correctPerspective(QPointF topLeft, QPointF topRight, QPoi
     }
 }
 
+void BackgroundImage::paint(QPainter *painter)
+{
+    if (!loaded)
+        return;
 
+    //qDebug() << "BackgroundImage::paint";
+
+    // Pre-scale only
+    qreal modelScale = xf_model.getScale();
+    QTransform scaleOnly;
+    scaleOnly.scale(modelScale, modelScale);
+    QPixmap scaledPixmap = pixmap.transformed(scaleOnly);
+
+    // Build layer transform but strip out scale (since pixmap is already scaled)
+    QTransform t = getLayerTransform();
+    t.scale(1.0/modelScale, 1.0/modelScale); // normalize out scale
+
+    painter->save();
+    painter->setWorldTransform(t, false);
+
+    // Draw centered
+    QSizeF sz = scaledPixmap.size();
+    QPointF topLeft(-sz.width()/2.0, -sz.height()/2.0);
+
+    painter->drawPixmap(topLeft, scaledPixmap);
+
+    painter->restore();
+
+    drawLayerModelCenter(painter);
+
+    if (getSkewMode())
+    {
+        drawSkew(painter);
+    }
+}
+
+void BackgroundImage::drawSkew(QPainter * painter)
+{
+    // draw accum
+    QColor construction_color(0, 128, 0,128);
+    if ( sAccum.size() > 0)
+    {
+        QPen pen(construction_color,3);
+        QBrush brush(construction_color);
+        painter->setPen(pen);
+        painter->setBrush(brush);
+        for (EdgePtr & edge : sAccum)
+        {
+            if (edge->getType() == EDGETYPE_LINE)
+            {
+                QPointF p1 = edge->v1->pt;
+                QPointF p2 = edge->v2->pt;
+                painter->drawEllipse(p1,6,6);
+                painter->drawEllipse(p2,6,6);
+                painter->drawLine(p1, p2);
+            }
+            else if (edge->getType() == EDGETYPE_POINT)
+            {
+                QPointF p = edge->v1->pt;
+                painter->drawEllipse(p,6,6);
+            }
+        }
+        drawPerspective(painter);
+    }
+}
+
+// this is perspective correction
+// for images where camera was not normal to the plane of the tiling
+void BackgroundImage::createBackgroundAdjustment(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
+{
+    QSize sz      = pixmap.size();
+    qreal offsetX = qreal(Sys::viewController->viewWidth() -  sz.width()) / 2.0;
+    qreal offsetY = qreal(Sys::viewController->viewHeight() - sz.height()) / 2.0;
+    QTransform t0 = QTransform::fromTranslate(offsetX,offsetY);
+
+    QTransform bkgdXform = t0 * getModelTransform();
+    QTransform t1        = bkgdXform.inverted();
+
+    correctPerspective(
+        t1.map(topLeft),
+        t1.map(topRight),
+        t1.map(botRight),
+        t1.map(botLeft));
+
+    setUseAdjusted(true);     // since we have just created it, let's use it
+
+    createAdjustedImage();
+}
+
+QTransform BackgroundImage::getCanvasTransform()
+{
+    QTransform t  = Layer::getCanvasTransform();
+    QPointF trans = Transform::trans(t);
+    QTransform t1;
+    t1.translate(trans.x(), trans.y());
+    return t1;
+}
+
+////////////////////////////////////////////////////////
+///
+/// Layer slots
+///
+////////////////////////////////////////////////////////
+
+void BackgroundImage::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
+{
+    Q_UNUSED(btn);
+
+    if (!viewControl()->isEnabled(VIEW_BKGD_IMG)) return;
+
+    if (startDragging(spt))
+        emit sig_updateView();
+}
+
+void BackgroundImage::slot_mouseDragged(QPointF spt)
+{
+    if (!viewControl()->isEnabled(VIEW_BKGD_IMG)) return;
+
+    if (updateDragging(spt))
+        emit sig_updateView();
+}
+void BackgroundImage::slot_mouseMoved(QPointF spt)
+{ Q_UNUSED(spt); }
+
+void BackgroundImage::slot_mouseReleased(QPointF spt)
+{
+    if (!viewControl()->isEnabled(VIEW_BKGD_IMG)) return;
+
+    if (endDragging(spt))
+        emit sig_updateView();
+}
+void BackgroundImage::slot_mouseDoublePressed(QPointF spt)
+{ Q_UNUSED(spt); }

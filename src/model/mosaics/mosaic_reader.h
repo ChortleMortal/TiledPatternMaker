@@ -3,7 +3,10 @@
 #define XMLLOADER_H
 
 #include <string>
-#include "model/mosaics/mosaic_reader_base.h"
+#include "gui/panels/page_debug.h"
+#include "model/mosaics/mosaic_manager.h"
+#include "model/mosaics/reader_base.h"
+#include "sys/engine/mosaic_bmp_generator.h"
 #include "sys/enums/efilltype.h"
 #include "sys/sys/pugixml.hpp"
 #include "model/styles/colorset.h"
@@ -38,7 +41,7 @@ typedef shared_ptr<class Star>             StarPtr;
 typedef shared_ptr<class Star2>            Star2Ptr;
 typedef shared_ptr<class Tiling>           TilingPtr;
 typedef shared_ptr<class Vertex>           VertexPtr;
-typedef shared_ptr<MosaicReaderBase>       MRBasePtr;
+typedef shared_ptr<ReaderBase>       MRBasePtr;
 
 class TileReader;
 class IrregularMotif;
@@ -49,12 +52,12 @@ using namespace pugi;
 class MosaicReader
 {
 public:
-    MosaicReader();
-    ~MosaicReader();
+    MosaicReader(SystemViewController * vc);
 
     MosaicPtr readXML(VersionedFile xfile);
-
     QString   getFailMessage() { return _failMessage; }
+
+    static QTransform getQTransform(QString txt);
 
 protected:
     void parseXML(xml_document & doc);
@@ -72,6 +75,7 @@ protected:
     void processSketch(xml_node & node);
     void processEmboss(xml_node & node);
     void processTileColors(xml_node & node);
+    void processBorder(xml_node & node);
 
     // design
     QSize   procViewSize(xml_node & node);
@@ -83,7 +87,7 @@ protected:
     qreal   procLength(xml_node & node);
 
     // styles
-    void    procesToolkitGeoLayer(xml_node & node, Xform & xf, int &zlevel);
+    void    procesToolkitGeoLayer(xml_node & node, Xform & xf, int &zlevel, QPointF & legacyCenter);
     void    processColorSet(xml_node & node, ColorSet & colorSet);
     void    processColorGroup(xml_node & node, ColorGroup & colorGroup);
     void    processsStyleThick(xml_node & node, eDrawOutline & draw_outline, qreal & width, qreal &outlineWidth, QColor &outlineColor, Qt::PenJoinStyle & pjs, Qt::PenCapStyle & pcs);
@@ -92,9 +96,10 @@ protected:
     void    processsStyleFilledFaces(xml_node & node, QVector<int> &paletteIndices);
     void    processsStyleEmboss(xml_node & node, qreal & angle);
     void    processStylePrototype(xml_node & node, ProtoPtr &proto);
+    void    processStyleBorder(xml_node & node);
 
     // tiles
-    TilePtr  getTile(TileReader & fr, xml_node & node);
+    TilePtr  getTile(TileReader & treader, xml_node & node);
 
     // motifs
     void                getMotifCommon(xml_node & node, MotifPtr motif,int tile_sides);
@@ -109,13 +114,13 @@ protected:
     void                getRosetteCommon( xml_node & node, int & n, qreal & q, int & s);
     void                getRosette2Common(xml_node & node, int & n, qreal & x, qreal & y, qreal & k, int & s, eTipType & tt, bool & constrain);
 
+    BkgdImagePtr    getBackgroundImage(xml_node & node);
     void            getExtendedData(xml_node & node, ExtenderPtr ep);
     void            getExtendedBoundary(xml_node & node, ExtendedBoundary & eb);
     ProtoPtr        getPrototype(xml_node & node);
     MapPtr          getMap(xml_node & node);
     EdgePtr         getEdge(xml_node & node);
     EdgePtr         getCurve(xml_node & node);
-    EdgePtr         getChord(xml_node & node);
     VertexPtr       getVertex(xml_node & node);
 
     PolyPtr         getPolygonV1(xml_node & node);
@@ -152,18 +157,18 @@ protected:
 
     TilingPtr       getFirstTiling() { return _tilings.first(); }
 
-protected:
-    QColor  processColor(xml_node & n);
-    void    procBorderPlain(xml_node & n);
-    void    procBorderTwoColor(xml_node & n);
-    void    procBorderBlocks(xml_node & n);
-    void    procCropV1(xml_node & n);
-    CropPtr procCropV2(xml_node & node, QString name);
-    bool    getAttributeTF(xml_node & node, const char_t *name);
-    uint    getAttributeUint(xml_node & node, const char_t *name);
+    QColor          processColor(xml_node & n);
+    void            procBorderPlain(xml_node & n);
+    void            procBorderTwoColor(xml_node & n);
+    void            procBorderBlocks(xml_node & n);
+    CropPtr         procCropV1(xml_node & n);
+    CropPtr         procCropV2(xml_node & node);
+    bool            getAttributeTF(xml_node & node, const char_t *name);
+    uint            getAttributeUint(xml_node & node, const char_t *name);
+
+    void            fixupIrregularTransform(DesignElementPtr del);
 
     [[noreturn]] void fail(QString a, QString b);
-    QTransform getQTransform(QString txt);
 
     QMap<int,ProtoPtr>      proto_ids;
     QMap<int,EdgePtr>       edge_ids;
@@ -195,12 +200,17 @@ protected:
     FillData                _fillData;
     uint                    _cleanseLevel;
     qreal                   _cleanseSensitivity;
-    BkgdImagePtr            _bip;
+    BkgdImagePtr            _mosbip;
     ColorGroup              _tilingColorGroup;
     Xform                   _firstStyleXform;   // used when _version < 23
+
+    bool                    _legacyCenterConverted;
     bool                    _debug;
 
-    MRBasePtr               base;
+    ReaderBase              mrbase;
+
+private:
+    SystemViewController * _vc;
 };
 
 #endif

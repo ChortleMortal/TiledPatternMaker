@@ -9,6 +9,7 @@
 
 #include "gui/panels/page_log.h"
 #include "gui/top/controlpanel.h"
+#include "gui/widgets/dlg_savename.h"
 #include "gui/widgets/dlg_textedit.h"
 #include "sys/qt/qtapplog.h"
 #include "model/settings/configuration.h"
@@ -86,7 +87,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
     savedText->setStyleSheet("selection-color: rgb(170, 255, 0);  selection-background-color: rgb(255, 0, 0);");
     viewingLog = true;
 
-    tew = new TextEditorWidget();
+    tew = new LogWidget();
     tew->set(logText);
     vbox->addWidget(tew);
 }
@@ -115,55 +116,15 @@ void page_log::onRefresh()
 
 void page_log::slot_copyLog()
 {
-    QString cdt    = QDateTime::currentDateTime().toString("yy.MM.dd-hh.mm.ss");
-    QString host   = QSysInfo::machineHostName();
-    QString branch = Sys::gitBranch;
-    QString sha    = Sys::gitSha;
-    QString mosaic = config->lastLoadedMosaic.get();
+    QString file = qtAppLog::getInstance()->logDir();
 
-    QString name   = cdt + "-" + host + + "-" + tpmVersion.trimmed();
-    if (!branch.isEmpty())
-    {
-        name += "-" + branch;
-    }
-    if (!sha.isEmpty())
-    {
-        name += "-" + sha;
-    }
-    if (!mosaic.isEmpty())
-    {
-        name += "-" + mosaic;
-    }
-#ifdef QT_DEBUG
-    name += "-DEB";
-#else
-    name += "-REL";
-#endif
+    DlgSaveName dlg(Sys::controlPanel);
+    auto rv = dlg.exec();
+    if (rv == QDialog::Accepted)
+        file += dlg._name;
+    else
+        return;     // do not save
 
-    QString path      = qtAppLog::getInstance()->logDir();
-    QString nameList  = "TXT (*.txt)";
-
-    QFileDialog dlg(this, "Save log as", path, nameList);
-    dlg.setFileMode(QFileDialog::AnyFile);
-    dlg.setOptions(QFileDialog::DontConfirmOverwrite);
-    dlg.setAcceptMode(QFileDialog::AcceptSave);
-    dlg.selectFile(name);
-
-    int retval = dlg.exec();
-    if (retval == QDialog::Rejected)
-    {
-        qDebug() << "Canceled";
-        return;
-    }
-    Q_ASSERT(retval == QDialog::Accepted);
-
-    QStringList fileList = dlg.selectedFiles();
-    if (fileList.isEmpty())
-    {
-        qDebug() << "No file selected";
-        return;
-    }
-    QString file = fileList.at(0);
     if (!file.contains(".txt"))
     {
         file = file + ".txt";

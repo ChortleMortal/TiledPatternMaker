@@ -61,6 +61,7 @@ public:
     void            removeTPColor(int idx);
 
     TPColor         getFirstTPColor();
+    TPColor         getLastTPColor();
     TPColor         getNextTPColor();
     TPColor         getTPColor(int index) { return at(index % size()); }
     QColor          getQColor(int index)  { if (!size()) return QColor(Qt::red); else return getTPColor(index).color;}

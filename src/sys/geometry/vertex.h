@@ -13,9 +13,6 @@
 #include <QPointF>
 #include <QVector>
 #include <QTransform>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 
 typedef std::weak_ptr<class Vertex>         WeakVertexPtr;
 typedef std::shared_ptr<class Edge>         EdgePtr;
@@ -25,19 +22,20 @@ class Vertex
 {
 public:
     Vertex(const QPointF & pos);
+
     ~Vertex();
 
     void inline setPt(QPointF p)   { pt = p; }
 
     qreal   getAngle(const EdgePtr & edge);
-    void    transform(QTransform T);
+    bool    equals(VertexPtr & other);
 
 public:
     QPointF         pt;
     bool            visited;    // used by interlace
     WeakVertexPtr   copy;       // Used when cloning the map.
 
-    QVector<WeakVertexPtr> adjacent_vertices;
+    QVector<WeakVertexPtr> adjacent_vertices;  //used by DCEL
 
     static int  refs;
 };

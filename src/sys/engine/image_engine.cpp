@@ -3,50 +3,57 @@
 #include <QThread>
 #include <QMessageBox>
 #include <QScreen>
-#include "sys/engine/image_engine.h"
-#include "sys/engine/mosaic_stepper.h"
-#include "sys/engine/tiling_stepper.h"
-#include "sys/engine/png_stepper.h"
-#include "sys/engine/version_stepper.h"
-#include "sys/engine/worklist_stepper.h"
-#include "sys/sys.h"
+
 #include "gui/top/controlpanel.h"
-#include "model/settings/configuration.h"
-#include "gui/top/view.h"
-#include "gui/top/view_controller.h"
-#include "gui/widgets/image_layer.h"
+#include "gui/top/system_view.h"
+#include "gui/top/system_view_controller.h"
+#include "gui/viewers/image_view.h"
 #include "gui/widgets/image_widget.h"
 #include "gui/widgets/memory_combo.h"
 #include "gui/widgets/transparent_widget.h"
+#include "model/settings/configuration.h"
+#include "sys/engine/image_engine.h"
+#include "sys/engine/mosaic_stepper.h"
+#include "sys/engine/png_stepper.h"
+#include "sys/engine/tiling_stepper.h"
+#include "sys/engine/version_stepper.h"
+#include "sys/engine/compare_bmp_stepper.h"
+#include "sys/engine/view_bmp_stepper.h"
+#include "sys/sys.h"
 
-typedef std::shared_ptr<ImageLayerView> ImgLayerPtr;
+qreal ImageEngine::popupScale = 1.0;
 
 ImageEngine::ImageEngine()
 {
     config          = Sys::config;
     _showA          = false;
+    _compareMode    = false;
     currentImgWidget = nullptr;
 
-    timer           = new QTimer();
-    wlStepper       = new WorklistBMPStepper(this);
-    verStepper      = new VersionStepper(this);
-    mosaicStepper   = new MosaicStepper(this);
-    tilingStepper   = new TilingStepper(this);
-    pngStepper      = new PNGStepper(this);
+    timer             = new QTimer();
+    compareBMPStepper = new CompareBMPStepper(this);  // steps thru list of BMPs and compares them
+    viewBMPStepper    = new ViewBMPStepper(this);     // steps thru list of BMPs and shows them
+    verStepper        = new VersionStepper(this);     // doesn't really step - but syncs versions for comparison or viewing
+    mosaicStepper     = new MosaicStepper(this);      // steps thru list and loads mosaic
+    tilingStepper     = new TilingStepper(this);      // steps thru list and loads tiling
+    pngStepper        = new PNGStepper(this);         // steps thru exisitsng pngs (with timer)
 
-    connect(this,      &ImageEngine::sig_ready,      this,   &ImageEngine::sig_next, Qt::QueuedConnection);
-    connect(this,      &ImageEngine::sig_reconstructView, Sys::viewController, &ViewController::slot_reconstructView);
-    connect(timer,     &QTimer::timeout,             this,   &ImageEngine::sig_tick);
-    connect(Sys::view, &View::sig_stepperEnd,        this,   &ImageEngine::sig_end);
-    connect(Sys::view, &View::sig_stepperPause,      this,   &ImageEngine::sig_pause);
-    connect(Sys::view, &View::sig_stepperKey,        this,   &ImageEngine::slot_stepperKey);
+    connect(this, &ImageEngine::sig_reconstructView, Sys::viewController, &SystemViewController::slot_reconstructView);
+    connect(this, &ImageEngine::sig_updateView,      Sys::viewController, &SystemViewController::slot_updateView);
+
+    connect(this,         &ImageEngine::sig_ready,            this,   &ImageEngine::sig_next, Qt::QueuedConnection);
+    connect(timer,        &QTimer::timeout,                   this,   &ImageEngine::sig_tick);
+    connect(Sys::sysview, &SystemView::sig_stepperEnd,        this,   &ImageEngine::sig_end);
+    connect(Sys::sysview, &SystemView::sig_stepperPause,      this,   &ImageEngine::sig_pause);
+    connect(Sys::sysview, &SystemView::sig_stepperKey,        this,   &ImageEngine::slot_stepperKey);
 
     timer->start(1000);
 }
 
 ImageEngine::~ImageEngine()
 {
-    delete wlStepper;
+    delete compareBMPStepper;
+    delete viewBMPStepper;
     delete verStepper;
     delete mosaicStepper;
     delete tilingStepper;
@@ -213,7 +220,7 @@ void ImageEngine::compareBMPs(VersionedFile & fileA, VersionedFile & fileB)
 
 void ImageEngine::compareBMPwithLoaded(VersionedName & name)
 {
-    QPixmap pixmap    = Sys::view->grab();  // do this first
+    QPixmap pixmap    = Sys::viewController->grabView();  // do this first
     QImage  img_right = pixmap.toImage();
 
     closeAllImageViewers();
@@ -229,6 +236,23 @@ void ImageEngine::compareBMPwithLoaded(VersionedName & name)
     fileB.updateFromVersionedName(nameB);
 
     compareImages(img_left,img_right,fileA,fileB);
+}
+
+void ImageEngine::showBMP(VersionedName & name)
+{
+    emit sig_image0(name.get());
+
+    VersionedFile file(MemoryCombo::getTextFor("leftDir")  + "/" + name.get()  + ".bmp");
+    QPixmap pm;
+    pm.load(file.getPathedName());
+    if (config->compare_popup)
+    {
+        currentImgWidget = popupPixmap(pm, file.getVersionedName().get());
+    }
+    else
+    {
+        viewPixmap(pm,file.getVersionedName().get());
+    }
 }
 
 QPixmap  ImageEngine::createTransparentPixmap(QImage img)
@@ -350,13 +374,20 @@ void ImageEngine::view_image(VersionedFile & file)
 
 void ImageEngine::viewPixmap(QPixmap& pixmap, QString title)
 {
-    ImgLayerPtr ilp = std::make_shared<ImageLayerView>(title);
-    ilp->setPixmap(pixmap);
-    connect(ilp.get(), &ImageLayerView::sig_keyPressed, this, &ImageEngine::slot_imageKeyPressed);
-    Sys::viewController->addImage(ilp);
-    Sys::controlPanel->delegateView(VIEW_IMAGE);
-    emit sig_reconstructView();
-    Sys::view->setWindowTitle(title);
+    Sys::imageViewer->load(pixmap);
+    Sys::viewController->setWindowTitle(title);
+    Sys::viewController->setSize(pixmap.size());
+
+    if (!Sys::viewController->isEnabled(VIEW_BMP_IMAGE))
+    {
+        Sys::controlPanel->deselectGangedViewers();
+        Sys::controlPanel->delegateView(VIEW_BMP_IMAGE,true);
+        emit sig_reconstructView();
+    }
+    else
+    {
+        emit sig_updateView();
+    }
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -365,16 +396,29 @@ void ImageEngine::viewPixmap(QPixmap& pixmap, QString title)
 ///
 /////////////////////////////////////////////////////////////////////
 
-ImageWidget *  ImageEngine::popupPixmap(QPixmap & pixmap,QString title)
+ImageWidget *  ImageEngine::popupPixmap(const QPixmap & pixmap,QString title)
 {
     qDebug() << "Popup pixmap" << title;
 
     ImageWidget * widget;
+    if (currentImgWidget)
+    {
+        if (currentImgWidget->gettypename() == "image")
+        {
+            widget = currentImgWidget;
+        }
+        else
+        {
+            currentImgWidget->slot_closeMe();
+            currentImgWidget = nullptr;
+        }
+    }
     if (currentImgWidget == nullptr)
     {
-        widget =  new ImageWidget();
 
+        widget =  new ImageWidget();
         connect(widget, &ImageWidget::sig_keyPressed,   this,   &ImageEngine::slot_imageKeyPressed);
+        connect(widget, &ImageWidget::sig_closed,       this,   &ImageEngine::slot_imageWidgetClosed);
         connect(this,   &ImageEngine::sig_closeAll,     widget, &ImageWidget::slot_closeMe);
 
         QSettings s;
@@ -386,34 +430,45 @@ ImageWidget *  ImageEngine::popupPixmap(QPixmap & pixmap,QString title)
             widget->move(pos);
         }
     }
-    else
-    {
-        widget = currentImgWidget;
-    }
 
-    widget->resize(pixmap.size());
 #ifdef __linux__
     widget->setPixmap(widget->removeAlphaChannel(pixmap));
 #else
-    widget->setPixmap(pixmap);
+    if (popupScale == 1.0)
+        widget->setPixmap(pixmap);
+    else
+        widget->setPixmap(pixmap,popupScale);
 #endif
     widget->setWindowTitle(title);
+    widget->setContentSize(pixmap.size());
     widget->show();
-
     return widget;
 }
 
-TransparentImageWidget * ImageEngine::popupTransparentPixmap(QPixmap & pixmap,QString title)
+ImageWidget * ImageEngine::popupTransparentPixmap(QPixmap & pixmap,QString title)
 {
     qDebug() << "Popup Transparent" << title;
 
-    TransparentImageWidget * widget;
+    ImageWidget * widget;
+    if (currentImgWidget)
+    {
+        if (currentImgWidget->gettypename() == "transp")
+        {
+            widget = currentImgWidget;
+        }
+        else
+        {
+            currentImgWidget->slot_closeMe();
+            currentImgWidget = nullptr;
+        }
+    }
     if (currentImgWidget == nullptr)
     {
         widget =  new TransparentImageWidget(title);
 
-        connect(widget, &TransparentImageWidget::sig_keyPressed, this,   &ImageEngine::slot_imageKeyPressed);
-        connect(this,   &ImageEngine::sig_closeAll,              widget, &TransparentImageWidget::slot_closeMe);
+        connect(widget, &ImageWidget::sig_keyPressed, this,   &ImageEngine::slot_imageKeyPressed);
+        connect(widget, &ImageWidget::sig_closed,     this,   &ImageEngine::slot_imageWidgetClosed);
+        connect(this,   &ImageEngine::sig_closeAll,   widget, &ImageWidget::slot_closeMe);
 
         QSettings s;
         QPoint pos = s.value("imageWidgetPos").toPoint();
@@ -424,14 +479,14 @@ TransparentImageWidget * ImageEngine::popupTransparentPixmap(QPixmap & pixmap,QS
             widget->move(pos);
         }
     }
-    else
-    {
-        widget = dynamic_cast<TransparentImageWidget*>(currentImgWidget);
-    }
 
-    widget->resize(pixmap.size());
+#ifdef __linux__
+    widget->setPixmap(widget->removeAlphaChannel(pixmap));
+#else
     widget->setPixmap(pixmap);
+#endif
     widget->setWindowTitle(title);
+    widget->setContentSize(pixmap.size());
     widget->show();
 
     return widget;
@@ -462,8 +517,8 @@ void ImageEngine::closeAllImageViewers(bool force)
         currentImgWidget = nullptr;
         emit sig_closeAll();
     }
-    Sys::viewController->removeAllImages();
-    Sys::controlPanel->unDelegateView(VIEW_IMAGE);
+    Sys::imageViewer->unloadLayerContent();
+    Sys::controlPanel->delegateView(VIEW_BMP_IMAGE,false);
     Sys::lastViewTitle.clear();
     Sys::controlPanel->slot_poll();
 }
@@ -474,66 +529,63 @@ void ImageEngine::closeAllImageViewers(bool force)
 ///
 /////////////////////////////////////////////////////////////////////
 
-bool ImageEngine::validViewKey(QKeyEvent * k)
+void ImageEngine::slot_imageWidgetClosed(ImageWidget * widget)
+{
+    delete widget;
+    if (widget == currentImgWidget)
+    {
+        currentImgWidget = nullptr;
+    }
+}
+
+bool ImageEngine::slot_imageKeyPressed(QKeyEvent * k)
 {
     int key = k->key();
 
     switch(key)
     {
-    case  Qt::Key_Space:    // next
-    case  'C':              // compare
-    case  'D':              // delete (from current worklist)
-    case  'Q':              // quit
-    case  'P':              // ping-pong
-    case  'L':              // log
+    case Qt::Key_Space:
+        if (k->modifiers() & Qt::ControlModifier)
+            emit sig_prev();
+        else
+            emit sig_next();
         return true;
 
-    default:
-        return false;
-    }
-}
-
-void ImageEngine::slot_imageKeyPressed(QKeyEvent * k)
-{
-    int key = k->key();
-
-    if (key == Qt::Key_Space)
-    {
-        closeAllImageViewers(false);
-        emit sig_next();
-    }
-    else if (key == 'C')
-    {
+    case 'C':
         // compare
-        closeAllImageViewers(false);
-        compareImages(_imageA,_imageB,_fileA,_fileB);
-    }
-    else if (key == 'D')
-    {
+        if (_compareMode)
+        {
+            compareImages(_imageA,_imageB,_fileA,_fileB);
+            return true;
+        }
+        break;
+
+    case  'D':
         // delete (from current worklist)
-        closeAllImageViewers();
         emit sig_deleteCurrentInWorklist(false);  // this sends a sig_ready()
-    }
-    else if (key == 'Q')
-    {
+        return true;
+
+    case 'Q':
         // quit
         closeAllImageViewers();
         Sys::localCycle = false;
         emit sig_end();
-    }
-    else if (key == 'P')
-    {
+        return true;
+
+    case'P':
         // ping-pong
-        closeAllImageViewers(false);
-        ping_pong_images();
+        if (_compareMode)
+        {
+            ping_pong_images();
+            return true;
+        }
+      break;
+
+    default:
+        break;
+
     }
-    else if (key == 'L')
-    {
-        // log
-        qWarning() << "FILE LOGGED (needs attention)";
-        closeAllImageViewers();
-        emit sig_next();
-    }
+    return false;  // return is ignored by popups
 }
 
 void ImageEngine::slot_stepperKey(int key )
@@ -547,4 +599,14 @@ void ImageEngine::slot_stepperKey(int key )
     }
 }
 
+void ImageEngine::setPopupScale(qreal scale)
+{
+    popupScale = scale;
+    if (currentImgWidget)
+    {
+        QPixmap p   = currentImgWidget->getPixmap();
+        QString txt = currentImgWidget->windowTitle();
+        popupPixmap(p,txt);
+    }
+}
 

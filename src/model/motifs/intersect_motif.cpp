@@ -4,7 +4,6 @@
 #include "sys/geometry/geo.h"
 #include "sys/geometry/map.h"
 #include "sys/geometry/intersect.h"
-#include "gui/viewers/debug_view.h"
 
 IntersectMotif::IntersectMotif() : IrregularGirihBranches()
 {
@@ -22,14 +21,9 @@ IntersectMotif::IntersectMotif(const Motif &other) : IrregularGirihBranches(othe
 {
     setMotifType(MOTIF_TYPE_INTERSECT);
 }
-
 void IntersectMotif::infer()
 {
     qDebug() << "Infer::inferIntersect";
-
-    debugMap = nullptr;
-    if (dbgVal > 0)
-        debugMap = Sys::debugView->getMap();
 
     motifMap = std::make_shared<Map>("Intersect Motifmap");
 
@@ -65,27 +59,30 @@ void IntersectMotif::infer()
     for ( int side = 0; side < sides; ++side )
     {
         QPointF sideHalf = buildGirihHalfBranch(side, true, requiredRotation);
-        if (debugMap && side==2)
+        if (motifDebug && side==2)
         {
-            debugMap->insertDebugMark(sideHalf,QString("%1t").arg(side));
-            debugMap->insertDebugLine(QLineF(mids[side],sideHalf));
+            Sys::debugMapCreate->insertDebugMark(sideHalf,QString("%1t").arg(side),Qt::red);
+            Sys::debugMapCreate->insertDebugLine(QLineF(mids[side],sideHalf),Qt::blue);
         }
         infos.append(buildIntersectEdgesLengthInfos(side, sideHalf, true, requiredRotation));
 
         sideHalf = buildGirihHalfBranch(side, false, requiredRotation);
-        if (debugMap && side==2)
+        if (motifDebug && side==2)
         {
-            debugMap->insertDebugMark(sideHalf,QString("%1f").arg(side));
-            debugMap->insertDebugLine(QLineF(mids[side],sideHalf));
+            Sys::debugMapCreate->insertDebugMark(sideHalf,QString("%1f").arg(side),Qt::red);
+            Sys::debugMapCreate->insertDebugLine(QLineF(mids[side],sideHalf),Qt::blue);
         }
         infos.append(buildIntersectEdgesLengthInfos(side, sideHalf, false, requiredRotation));
     }
 
-    for (auto & info : std::as_const(infos))
+    if (motifDebug)
     {
-        if (debugMap && info->side1 == 0)
+        for (auto & info : std::as_const(infos))
         {
-            debugMap->insertDebugMark(info->intersection,"isect");
+            if (info->side1 == 0)
+            {
+                Sys::Sys::debugMapCreate->insertDebugMark(info->intersection,"isect",Qt::red);
+            }
         }
     }
 
@@ -106,27 +103,29 @@ void IntersectMotif::infer()
         counts[i].push_back(0);
         counts[i].push_back(0);
     }
-
     // Build the map using the shortest edges first.
     for (auto & info : std::as_const(infos))
     {
-        info->dump();
+        //info->dump();
         int side1   = info->side1;
         int isLeft1 = info->isLeft1 ? 0 : 1;
         int side2   = info->side2;
         int isLeft2 = info->isLeft2 ? 0 : 1;
         if (counts[side1][isLeft1] < s && counts[side2][isLeft2] < s)
         {
-            QPointF from1 = mids[side1];
-            QPointF from2 = mids[side2];
+            QPointF from1    = mids[side1];
+            QPointF from2    = mids[side2];
+            VertexPtr vfrom1 = motifMap->insertVertex(from1);
+            VertexPtr vfrom2 = motifMap->insertVertex(from2);
             if ( !info->intersection.isNull() )
             {
-                motifMap->insertEdge(from1, info->intersection);
-                motifMap->insertEdge(info->intersection, from2);
+                VertexPtr vinfo  = motifMap->insertVertex(info->intersection);
+                motifMap->insertEdge(vfrom1, vinfo);
+                motifMap->insertEdge(vinfo, vfrom2);
             }
             else
             {
-                motifMap->insertEdge(from1, from2);
+                motifMap->insertEdge(vfrom1,vfrom2);
             }
             counts[side1][isLeft1]++;
             counts[side2][isLeft2]++;
@@ -188,7 +187,7 @@ void IntersectMotif::inferIntersectProgressive()
                     {
                         VertexPtr p1  = motifMap->insertVertex( from );
                         VertexPtr p2  = motifMap->insertVertex( info->intersection );
-                        motifMap->insertEdge( p1, p2 );
+                        motifMap->insertEdge(p1, p2);
                         from = info->intersection;
                         count++;
                     }
@@ -259,7 +258,6 @@ QList<EdgesLenPtr> IntersectMotif::buildIntersectEdgesLengthInfos(int side, QPoi
 
     return infos;
 }
-
 
 // Progressive intersect inferring.
 QList<IntersectionPtr> IntersectMotif::buildIntersectionInfos(int side, QPointF sideHalf, bool isLeftHalf, qreal requiredRotation)

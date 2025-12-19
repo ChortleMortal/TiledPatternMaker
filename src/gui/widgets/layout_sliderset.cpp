@@ -1,4 +1,5 @@
-﻿#include "gui/widgets/layout_sliderset.h"
+﻿#include <QPalette>
+#include "gui/widgets/layout_sliderset.h"
 #include "sys/sys.h"
 
 //
@@ -10,42 +11,36 @@ AQSpinBox::AQSpinBox() : QSpinBox()
     blocked = false;
     setAlignment(Qt::AlignRight);
     setKeyboardTracking(false);
+
+    QPalette palette             = this->palette();
+    QPalette::ColorRole role    = backgroundRole();
+    QColor backgroundColor      = palette.color(role);
+    QString backgroundColorName = backgroundColor.name(QColor::HexRgb);
 }
 
 void AQSpinBox::leaveEvent(QEvent *event)
 {
-    Q_UNUSED(event);
     if (isReadOnly()) return;
     blocked = false;
-    setStyleSheet("");
+
+    QString styleSheet = QString("background-color: %1;").arg(backgroundColorName);
+    setStyleSheet(styleSheet);
+
     QSpinBox::leaveEvent(event);
 }
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
 void  AQSpinBox::enterEvent(QEnterEvent *event)
 {
-    Q_UNUSED(event);
     if (isReadOnly()) return;
     blocked = true;
+
     if (Sys::isDarkTheme)
         setStyleSheet("background-color: #22b895");
     else
         setStyleSheet("background-color:yellow");
+
     QSpinBox::enterEvent(event);
 }
-#else
-void  AQSpinBox::enterEvent(QEvent *event)
-{
-    Q_UNUSED(event);
-    if (isReadOnly()) return;
-    blocked = true;
-    if (Sys::isDarkTheme)
-        setStyleSheet("background-color: #22b895");
-    else
-        setStyleSheet("background-color:yellow");
-    QSpinBox::enterEvent(event);
-}
-#endif
 
 void AQSpinBox::setValue(int val)
 {
@@ -60,51 +55,42 @@ void AQSpinBox::setValue(int val)
 // AQDoubleSpinBox
 //
 
-AQDoubleSpinBox::AQDoubleSpinBox() : QDoubleSpinBox()
+AQDoubleSpinBox::AQDoubleSpinBox(QWidget *parent) : QDoubleSpinBox(parent)
 {
     blocked = false;
     setDecimals(8);
     setAlignment(Qt::AlignRight);
     setKeyboardTracking(false);
+
+    QPalette palette             = this->palette();
+    QPalette::ColorRole role    = backgroundRole();
+    QColor backgroundColor      = palette.color(role);
+    QString backgroundColorName = backgroundColor.name(QColor::HexRgb);
 }
 
 void  AQDoubleSpinBox::leaveEvent(QEvent *event)
 {
-    Q_UNUSED(event);
     if (isReadOnly()) return;
     blocked = false;
-    //qDebug() << "unblocked";
-    setStyleSheet("");
+
+    QString styleSheet = QString("background-color: %1;").arg(backgroundColorName);
+    setStyleSheet(styleSheet);
+
     QDoubleSpinBox::leaveEvent(event);
 }
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
 void AQDoubleSpinBox::enterEvent(QEnterEvent *event)
 {
-    Q_UNUSED(event);
     if (isReadOnly()) return;
     blocked = true;
-    //qDebug() << "blocked";
+
     if (Sys::isDarkTheme)
         setStyleSheet("background-color: #22b895");
     else
         setStyleSheet("background-color:yellow");
+
     QDoubleSpinBox::enterEvent(event);
 }
-#else
-void  AQDoubleSpinBox::enterEvent(QEvent *event)
-{
-    Q_UNUSED(event);
-    if (isReadOnly()) return;
-    blocked = true;
-    //qDebug() << "blocked";
-    if (Sys::isDarkTheme)
-        setStyleSheet("background-color: #22b895");
-    else
-        setStyleSheet("background-color:yellow");
-    QDoubleSpinBox::enterEvent(event);
-}
-#endif
 
 void AQDoubleSpinBox::setValue(double val)
 {
@@ -115,12 +101,11 @@ void AQDoubleSpinBox::setValue(double val)
     blockSignals(false);
 }
 
-
 //
 // SpinSet
 //
 
-SpinSet::SpinSet(QString txt, int val, int min, int max)
+SpinSet::SpinSet(QString txt, int val, int min, int max, bool nostretch)
 {
     label = new QLabel(txt);
 
@@ -129,7 +114,10 @@ SpinSet::SpinSet(QString txt, int val, int min, int max)
     spin->setValue(val);
 
     addWidget(label);
+    addSpacing(4);
     addWidget(spin);
+    if (nostretch == false)
+        addStretch();
 
     connect(spin,   SIGNAL(valueChanged(int)), this,   SIGNAL(valueChanged(int)));
 }
@@ -147,7 +135,7 @@ void SpinSet::setValue(int val)
 // DoubleSpinSet
 //
 
-DoubleSpinSet::DoubleSpinSet(QString txt, qreal val, qreal min, qreal max)
+DoubleSpinSet::DoubleSpinSet(QString txt, qreal val, qreal min, qreal max, bool nostretch)
 {
     label = new QLabel(txt);
 
@@ -158,7 +146,8 @@ DoubleSpinSet::DoubleSpinSet(QString txt, qreal val, qreal min, qreal max)
     addWidget(label);
     addSpacing(4);
     addWidget(spin);
-    addStretch();
+    if (nostretch == false)
+        addStretch();
 
     connect(spin,   SIGNAL(valueChanged(qreal)), this,   SLOT(slot_valueChanged(qreal)));
 }

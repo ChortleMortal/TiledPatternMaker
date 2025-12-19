@@ -3,9 +3,7 @@
 #define CIRCLE_H
 
 #include <QDataStream>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
+
 #include "sys/geometry/loose.h"
 
 enum eQuad

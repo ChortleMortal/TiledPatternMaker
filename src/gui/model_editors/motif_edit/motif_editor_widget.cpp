@@ -152,7 +152,7 @@ void MotifEditorWidget::slot_motifTypeChanged(eMotifType type)
     }
 
     delegate(del,type,true);
-    Sys::prototypeMaker->select(MVD_DELEM,del,Sys::config->motifMultiView);
+    Sys::prototypeMaker->select(MVD_DELEM,del,(Sys::config->motifMakerView == MOTIF_VIEW_SELECTED));
 }
 
 void MotifEditorWidget::slot_addConnector()
@@ -207,7 +207,7 @@ void MotifEditorWidget::slot_cleanse()
     auto rv = dlg.exec();
     if (rv == QDialog::Accepted)
     {
-        level = dlg.getLevel();
+        level = dlg.fromCheckboxes();
         sens  = dlg.getSsnsitivity();
         motif->setCleanse(level);
         motif->setCleanseSensitivity(sens);

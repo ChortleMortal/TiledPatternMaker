@@ -14,26 +14,30 @@ class GuiModes : public QObject
 public:
     GuiModes();
 
-    void     setKbdMode(eKbdMode mode);
-    bool     getKbdMode(eKbdMode mode);
-    QString  getKbdModeStr();
-    void     resetKbdMode();
-    eKbdMode getValidKbdMode(eKbdMode mode);
+    void     setTMKbdMode(eTMMode mode);
+    bool     getTMKbdMode(eTMMode mode);
+    eTMMode  TMKbdMode() { return TMKeyboardMode; }
+    QString  getTMKbdModeStr();
+    void     resetTMKbdMode();
+
+    void     setLegacyKbdMode(eLegacyMode mode);
+    bool     getLegacyKbdMode(eLegacyMode mode);
+    eLegacyMode  LegacyKbdMode() { return LegacyKeyboardMode; }
+    QString  getLegacyKbdModeStr();
+    void     resetLegacyKbdMode();
 
     void     setMouseMode(eMouseMode newMode, bool set);
     bool     getMouseMode(eMouseMode mode);
 
 signals:
-    void sig_kbdMode(eKbdMode);
-
-protected:
-    eKbdMode getValidMosaicMode(eKbdMode mode);
-    eKbdMode getValidDesignMode(eKbdMode mode);
+    void    sig_TMKbdMode(eTMMode);
+    void    sig_LegacyKbdMode(eLegacyMode);
 
 private:
-    uint      iMouseMode;
-    uint      iLastMouseMode;
-    eKbdMode  keyboardMode;
+    uint        iMouseMode;
+    uint        iLastMouseMode;
+    eTMMode     TMKeyboardMode;
+    eLegacyMode LegacyKeyboardMode;
 };
 
 #endif // GUI_MODES_H

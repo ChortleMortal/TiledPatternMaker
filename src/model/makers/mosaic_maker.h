@@ -3,18 +3,17 @@
 #define MOSAICMAKER_H
 
 #include <QObject>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 
-#include "sys/enums/estyletype.h"
-#include "sys/enums/estatemachineevent.h"
 #include "model/settings/canvas_settings.h"
+#include "sys/enums/estatemachineevent.h"
+#include "sys/enums/estyletype.h"
 #include "sys/sys/versioning.h"
 
 typedef std::shared_ptr<class Mosaic>           MosaicPtr;
 typedef std::shared_ptr<class Prototype>        ProtoPtr;
 typedef std::shared_ptr<class Style>            StylePtr;
+
+class LoadUnit;
 
 class MosaicMaker : public QObject
 {
@@ -30,12 +29,15 @@ public:
 
     // state machine
     void        sm_takeDown(MosaicPtr mosaic);
-    void        sm_takeUp(QVector<ProtoPtr> prototypes, eMOSM_Event event);
+    void        sm_takeUp(MosaicEvent & mosEvent);
+    void        sm_resetStyles();
 
     // setters/getters
     MosaicPtr   getMosaic();
     void        resetMosaic();
-    
+    LoadUnit *  getLoadUnit()   {return loadUnit; }
+    void        reload();
+
     void        setCanvasSettings(CanvasSettings & ms);
     CanvasSettings & getCanvasSettings();
 
@@ -49,20 +51,15 @@ signals:
     void        sig_reconstructView();
 
 protected:
-    void        sm_resetStyles();
-    void        sm_createMosaic(const QVector<ProtoPtr> prototypes);
-    void        sm_addPrototype(const QVector<ProtoPtr> prototypes);
-    void        sm_removePrototype(const QVector<ProtoPtr> prototypes);
+    void        sm_createMosaic(ProtoPtr prototype);
+    void        sm_addPrototype(ProtoPtr prototype);
+    void        sm_removePrototype(ProtoPtr prototype);
     void        sm_replacePrototype(ProtoPtr prototype);
 
 private:
-    class PrototypeMaker * prototypeMaker;
-    class ViewController * viewControl;
-    class Configuration  * config;
-    class ControlPanel   * controlPanel;
-    class TilingMaker    * tilingMaker;
+    MosaicPtr   _mosaic;
 
-    MosaicPtr           _mosaic;
+    LoadUnit  * loadUnit;
 };
 
 #endif

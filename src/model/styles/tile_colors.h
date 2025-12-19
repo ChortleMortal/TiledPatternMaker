@@ -5,11 +5,11 @@
 #include <QColor>
 #include <QDebug>
 #include "model/styles/style.h"
-#include "sys/geometry/edgepoly.h"
+#include "sys/geometry/edge_poly.h"
 #include "model/styles/colorset.h"
 #include "model/tilings/placed_tile.h"
 
-typedef std::weak_ptr<Tile> WeakTilePtr;
+typedef std::weak_ptr<PlacedTile> wPlacedPtr;
 
 class ColoredPlacement
 {
@@ -23,9 +23,9 @@ public:
 class TileColorSet
 {
 public:
-    TileColorSet(TilePtr tile, ColorSet * colorset);
+    TileColorSet(PlacedTilePtr tile, ColorSet * colorset);
 
-    WeakTilePtr wtile;
+    wPlacedPtr  wtile;
     ColorSet *  cset;
 };
 
@@ -43,6 +43,7 @@ public:
 
     ColorGroup    & getTileColors() { return tileColors; }
     ColorSet *      getColorSet(TilePtr tile);
+    ColorSet *      getColorSet(PlacedTilePtr tile);
 
     void            setOutline(bool enable,QColor color = Qt::white, int width = 3);
     bool            getOutline(QColor & color, int & width);

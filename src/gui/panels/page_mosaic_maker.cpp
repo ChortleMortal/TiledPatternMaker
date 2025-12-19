@@ -2,19 +2,21 @@
 #include <QCheckBox>
 #include <QHeaderView>
 
-#include "gui/panels/page_mosaic_maker.h"
-#include "sys/geometry/map.h"
-#include "model/makers/mosaic_maker.h"
 #include "gui/model_editors/style_edit/style_editors.h"
-#include "model/prototypes/prototype.h"
-#include "model/makers/tiling_maker.h"
-#include "model/mosaics/mosaic.h"
+#include "gui/panels/page_mosaic_maker.h"
 #include "gui/panels/panel_misc.h"
-#include "model/styles/style.h"
-#include "model/tilings/tiling.h"
-#include "gui/top/view_controller.h"
+#include "gui/top/controlpanel.h"
+#include "gui/top/system_view_controller.h"
 #include "gui/widgets/dlg_cleanse.h"
 #include "gui/widgets/layout_sliderset.h"
+#include "gui/widgets/smx_widget.h"
+#include "model/makers/mosaic_maker.h"
+#include "model/makers/tiling_maker.h"
+#include "model/mosaics/mosaic.h"
+#include "model/prototypes/prototype.h"
+#include "model/styles/style.h"
+#include "model/tilings/tiling.h"
+#include "sys/geometry/map.h"
 
 Q_DECLARE_METATYPE(WeakStylePtr)
 
@@ -24,63 +26,74 @@ using std::make_shared;
 
 page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apanel,PAGE_MOSIAC_MAKER,"Mosaic Maker")
 {
-    styleTable = new AQTableWidget(this);
+    setFixedWidth(PANEL_RHS_WIDTH-40);
+
+    // top row
+    QHBoxLayout * fillBox = createFillDataRow();
+
+    // second row
+    delBtn      = new QPushButton("Delete");
+    upBtn       = new QPushButton("Move Up");
+    downBtn     = new QPushButton("MoveDown");
+    dupBtn      = new QPushButton ("Duplicate");
+    chk_notrans = new QCheckBox("Hide Transform");
+    chk_nolayer = new QCheckBox("Hide Layer Control");
+    chk_noaddr  = new QCheckBox("Hide Addr");
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(delBtn);
+    hbox->addSpacing(10);
+    hbox->addWidget(upBtn);
+    hbox->addSpacing(10);
+    hbox->addWidget(downBtn);
+    hbox->addSpacing(10);
+    hbox->addWidget(dupBtn);
+    hbox->addStretch();
+    hbox->addWidget(chk_nolayer);
+    hbox->addWidget(chk_notrans);
+    hbox->addWidget(chk_noaddr);
+
+    // third row - table
+    styleTable = new AQTableWidget();
     styleTable->setColumnCount(STYLE_COL_NUM_COLS);
     styleTable->setSelectionMode(QAbstractItemView::SingleSelection);
     styleTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     styleTable->setFocusPolicy(Qt::StrongFocus);
-
     QStringList qslH;
-    qslH << "" << "Tiling" << "Style type" << "Style" << "Transform";
+    qslH << "" << "Tiling" << "Style type" << "Layer Control" << "Transform" << "Style Addr";
     styleTable->setHorizontalHeaderLabels(qslH);
     styleTable->verticalHeader()->setVisible(false);
 
-    delBtn  = new QPushButton("Delete");
-    upBtn   = new QPushButton("Move Up");
-    downBtn = new QPushButton("MoveDown");
-    dupBtn  = new QPushButton ("Duplicate");
-    analyzeBtn  = new QPushButton ("Analyze");
+    // fourth row - style editor
+    AQHBoxLayout * hbox2 = new AQHBoxLayout();
+    currentEditor = new StyleEditor();
+    hbox2->addWidget(currentEditor);
 
-    QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addWidget(delBtn);
-    hbox->addWidget(upBtn);
-    hbox->addWidget(downBtn);
-    hbox->addWidget(dupBtn);
-    hbox->addWidget(analyzeBtn);
-    hbox->addStretch();
+    lowerWidget   = new QWidget();
+    lowerWidget->setContentsMargins(0,0,0,0);
+    lowerWidget->setLayout(hbox2);
 
-    QHBoxLayout * fillBox = createFillDataRow();
-
-    lowerWidget = new QWidget();
-    emptyWidget = new StyleEditor();
-    QVBoxLayout * evbox = new QVBoxLayout();
-    evbox->addWidget(emptyWidget);
-    lowerWidget->setLayout(evbox);
-
-    currentEditor = emptyWidget;
-
-    QVBoxLayout * wvbox = new AQVBoxLayout;
+    AQVBoxLayout * wvbox = new AQVBoxLayout;
     wvbox->addLayout(fillBox);
-    wvbox->addSpacing(3);
-    wvbox->addWidget(styleTable);
-    wvbox->addSpacing(3);
+    wvbox->addSpacing(10);
     wvbox->addLayout(hbox);
     wvbox->addSpacing(5);
+    wvbox->addWidget(styleTable);
+    wvbox->addSpacing(5);
     wvbox->addWidget(lowerWidget);
+    wvbox->addSpacing(5);
+    wvbox->addLayout(createBackgroundInfo());
     wvbox->addStretch();
 
-    QWidget * w = new QWidget;
-    w->setContentsMargins(0,0,0,0);
-    w->setFixedWidth(PANEL_RHS_WIDTH-40);
-    w->setLayout(wvbox);
+    vbox->addLayout(wvbox);
 
-    vbox->addWidget(w);
-
-    connect(delBtn,  &QPushButton::clicked, this, &page_mosaic_maker::slot_deleteStyle);
-    connect(upBtn,   &QPushButton::clicked, this, &page_mosaic_maker::slot_moveStyleUp);
-    connect(downBtn, &QPushButton::clicked, this, &page_mosaic_maker::slot_moveStyleDown);
-    connect(dupBtn,  &QPushButton::clicked, this, &page_mosaic_maker::slot_duplicateStyle);
-    connect(analyzeBtn,  &QPushButton::clicked, this, &page_mosaic_maker::slot_analyzeStyleMap);
+    connect(delBtn,      &QPushButton::clicked, this, &page_mosaic_maker::slot_deleteStyle);
+    connect(upBtn,       &QPushButton::clicked, this, &page_mosaic_maker::slot_moveStyleUp);
+    connect(downBtn,     &QPushButton::clicked, this, &page_mosaic_maker::slot_moveStyleDown);
+    connect(dupBtn,      &QPushButton::clicked, this, &page_mosaic_maker::slot_duplicateStyle);
+    connect(chk_notrans, &QCheckBox::clicked,   this, &page_mosaic_maker::slot_notrans);
+    connect(chk_nolayer, &QCheckBox::clicked,   this, &page_mosaic_maker::slot_nolayer);
+    connect(chk_noaddr,  &QCheckBox::clicked,   this, &page_mosaic_maker::slot_noaddr);
 
     QItemSelectionModel * selectModel = styleTable->selectionModel();
     connect(selectModel, &QItemSelectionModel::selectionChanged, this, &page_mosaic_maker::slot_styleSelected);
@@ -93,12 +106,12 @@ QHBoxLayout * page_mosaic_maker::createFillDataRow()
 
     chkSingle = new QCheckBox("Singleton");
 
-    xRepMin = new SpinSet("xMin",0,rmin,rmax);
-    xRepMax = new SpinSet("xMax",0,rmin,rmax);
-    yRepMin = new SpinSet("yMin",0,rmin,rmax);
-    yRepMax = new SpinSet("yMax",0,rmin,rmax);
+    xRepMin = new SpinSet("xMin ",0,rmin,rmax);
+    xRepMax = new SpinSet("xMax ",0,rmin,rmax);
+    yRepMin = new SpinSet("yMin ",0,rmin,rmax);
+    yRepMax = new SpinSet("yMax ",0,rmin,rmax);
 
-    QPushButton * pbRender = new QPushButton("Render");
+    QPushButton * pbRender = new QPushButton("Render Styles");
     pbRender->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
     pbClean       = new QPushButton("Cleanse");
@@ -115,19 +128,37 @@ QHBoxLayout * page_mosaic_maker::createFillDataRow()
     hbox->addWidget(pbRender);
     hbox->addSpacing(9);
     hbox->addWidget(pbClean);
+    hbox->addSpacing(7);
     hbox->addWidget(cleanseStatus);
-    hbox->addStretch();
 
     connect(chkSingle,&QCheckBox::clicked,   this, &page_mosaic_maker::singleton_changed);
     connect(xRepMin, &SpinSet::valueChanged, this, &page_mosaic_maker::slot_set_reps);
     connect(xRepMax, &SpinSet::valueChanged, this, &page_mosaic_maker::slot_set_reps);
     connect(yRepMin, &SpinSet::valueChanged, this, &page_mosaic_maker::slot_set_reps);
     connect(yRepMax, &SpinSet::valueChanged, this, &page_mosaic_maker::slot_set_reps);
-    connect(pbRender,&QPushButton::clicked,  this, &panel_page::sig_render);
+    connect(pbRender,&QPushButton::clicked,  this, [] {Sys::render(RENDER_RESET_STYLES);} );
     connect(pbClean, &QPushButton::clicked,  this, &page_mosaic_maker::slot_setCleanse);
 
     return hbox;
 }
+
+QVBoxLayout * page_mosaic_maker::createBackgroundInfo()
+{
+    chkBkgd = new QCheckBox("Has Background Image");
+    pbExam  = new QPushButton("Examine or Load Background Image");
+
+    QHBoxLayout * hb1 = new QHBoxLayout();
+    hb1->addWidget(chkBkgd);
+    hb1->addWidget(pbExam);
+    hb1->addStretch();
+
+    QVBoxLayout * vb1 = new QVBoxLayout;
+    vb1->addLayout(hb1);
+
+    connect (pbExam, &QPushButton::pressed, this, [this] { panel->setCurrentPage("Backgrounds");} );
+    return vb1;
+}
+
 void  page_mosaic_maker::onRefresh()
 {
     static WeakMosaicPtr wmp;
@@ -172,13 +203,42 @@ void  page_mosaic_maker::onRefresh()
 
     blockSignals(false);
 
-    uint level = mosaic->getCleanseLevel();
-    if (level > 0)
+    if (mosaic->getBkgdImage())
     {
-        pbClean->setText("Cleanse : ON ");
-        qreal sensitivity = mosaic->getCleanseSensitivity();
-        QString str = QString("0x%1 : %2").arg(QString::number(level,16)).arg(sensitivity);
-        cleanseStatus->setText(str);
+        chkBkgd->setChecked(true);
+        pbExam->setText("Examine Background Image");
+    }
+    else
+    {
+        chkBkgd->setChecked(false);
+        pbExam->setText("Add Background Image");
+    }
+
+    StylePtr style = getStyleRow(styleTable->currentRow());
+    if (style)
+    {
+        ProtoPtr proto = style->getPrototype();
+        if (proto)
+        {
+            uint level     = proto->getCleanseLevel();
+            if (level > 0)
+            {
+                pbClean->setText("Cleanse : ON ");
+                qreal sensitivity = proto->getCleanseSensitivity();
+                QString str = QString("0x%1 : %2").arg(QString::number(level,16)).arg(sensitivity);
+                cleanseStatus->setText(str);
+            }
+            else
+            {
+                pbClean->setText("Cleanse : OFF");
+                cleanseStatus->setText(" ");
+            }
+        }
+        else
+        {
+            pbClean->setText("Cleanse : OFF");
+            cleanseStatus->setText(" ");
+        }
     }
     else
     {
@@ -192,12 +252,18 @@ void  page_mosaic_maker::onRefresh()
         const StyleSet & sset = mosaic->getStyleSet();
         for (auto & style : std::as_const(sset))
         {
-            QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANS);
+            QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANSFORM);
             if (item)
             {
                 Xform xf = style->getModelXform();
                 item->setText(xf.info(8));
             }
+
+            QWidget * w = styleTable->cellWidget(row,STYLE_COL_LAYER_CONTROL);
+            SMXWidget * smx = dynamic_cast<SMXWidget*>(w);
+            if (smx)
+                smx->refresh();
+
             row++;
         }
 
@@ -221,111 +287,113 @@ void  page_mosaic_maker::onEnter()
 
 void  page_mosaic_maker::reEnter()
 {
-    int sel = styleTable->currentRow();
-
-    blockPage(true);
-    styleTable->clearContents();
-    styleTable->setRowCount(0);
-    blockPage(false);
-
     displayStyles();
-    styleTable->adjustTableSize();
-
-    blockPage(true);
-    if (sel == -1)
-        styleTable->selectRow(0);
-    else
-        styleTable->selectRow(sel);
-    blockPage(false);
-
     displayStyleParams();
-
     lowerWidget->setFocus();
-
-    //updateGeometry();
-
-    //qDebug() << "row count   =" << styleTable->rowCount();
-    //qDebug() << "current row =" << styleTable->currentRow();
 }
 
 void page_mosaic_maker::displayStyles()
 {
+    blockPage(true);
+
+    int sel = styleTable->currentRow();
+    styleTable->clearContents();
+    styleTable->setRowCount(0);
+
     int row = 0;
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if (mosaic && mosaic->hasContent())
     {
-        blockPage(true);
-
         const QVector<TilingPtr> & tilings = tilingMaker->getTilings();  // this is tilings to choose from not tilings used
 
         const StyleSet & sset = mosaic->getStyleSet();
         for (auto & style : std::as_const(sset))
         {
+            // build structure
             styleTable->setRowCount(row+1);
 
-            // build structure
+            // enable
             QCheckBox * cbShow = new QCheckBox();
-            styleTable->setCellWidget(row,STYLE_COL_CHECK_SHOW,cbShow);
-            styleTable->setColumnWidth(STYLE_COL_CHECK_SHOW,25);
+            styleTable->setCellWidget(row,STYLE_COL_ENABLE,cbShow);
+            styleTable->setColumnWidth(STYLE_COL_ENABLE,25);
 
             cbShow->setChecked(style->isVisible());
 
+            // style type
             QComboBox * qcbStyle = new QComboBox();
             qcbStyle->setEditable(false);
             qcbStyle->setFrame(false);
-            styleTable->setCellWidget(row,STYLE_COL_STYLE,qcbStyle);
+            styleTable->setCellWidget(row,STYLE_COL_STYLE_TYPE,qcbStyle);
 
+            qcbStyle->addItem("Sketched",STYLE_SKETCHED);
             qcbStyle->addItem("Plain",STYLE_PLAIN);
             qcbStyle->addItem("Thick Lines",STYLE_THICK);
-            qcbStyle->addItem("Filled",STYLE_FILLED);
             qcbStyle->addItem("Outlined",STYLE_OUTLINED);
-            qcbStyle->addItem("Interlaced",STYLE_INTERLACED);
             qcbStyle->addItem("Embossed",STYLE_EMBOSSED);
-            qcbStyle->addItem("Sketched",STYLE_SKETCHED);
+            qcbStyle->addItem("Interlaced",STYLE_INTERLACED);
+            qcbStyle->addItem("Filled",STYLE_FILLED);
             qcbStyle->addItem("Tile Colors",STYLE_TILECOLORS);
+            qcbStyle->addItem("Border",STYLE_BORDER);
 
             QString stylename = style->getStyleDesc();
             int index = qcbStyle->findText(stylename);
             Q_ASSERT(index != -1);
             qcbStyle->setCurrentIndex(index);
 
+            // tiling
             QComboBox * qcbTiling = new QComboBox();
             styleTable->setCellWidget(row,STYLE_COL_TILING,qcbTiling);
 
             for (auto & tiling : std::as_const(tilings))
             {
-                qcbTiling->addItem(tiling->getName().get());
+                qcbTiling->addItem(tiling->getVName().get());
             }
 
-            TilingPtr tp = style->getPrototype()->getTiling();
-            if (tp)
+            ProtoPtr pp  = style->getPrototype();
+            if (pp)
             {
-                int index = qcbTiling->findText(tp->getName().get());
-                qcbTiling->setCurrentIndex(index);
+                TilingPtr tp = pp->getTiling();
+                if (tp)
+                {
+                    int index = qcbTiling->findText(tp->getVName().get());
+                    qcbTiling->setCurrentIndex(index);
+                }
             }
 
+            // style address
             QTableWidgetItem * addrtxt = new QTableWidgetItem(addr(style.get()));
-            styleTable->setItem(row,STYLE_COL_ADDR,addrtxt);
+            styleTable->setItem(row,STYLE_COL_STYLE_ADDR,addrtxt);
             addrtxt->setData(Qt::UserRole,QVariant::fromValue(WeakStylePtr(style)));     // tiling name also stores Style address
 
+            // style transform
             QTableWidgetItem * xftext = new QTableWidgetItem("Xform");
-            styleTable->setItem(row,STYLE_COL_TRANS,xftext);
+            styleTable->setItem(row,STYLE_COL_TRANSFORM,xftext);
             
             Xform xf = style->getModelXform();
             xftext->setText(xf.info(8));
 
+            // layer control
+            SMXWidget * smx = new SMXWidget(style.get(),true,false);
+            styleTable->setCellWidget(row,STYLE_COL_LAYER_CONTROL,smx);
+
             // these three connects all pas the row not the index
-            connect(qcbStyle,  QOverload<int>::of(&QComboBox::currentIndexChanged), this,  [this,row] { styleChanged(row); });
-            connect(qcbTiling, QOverload<int>::of(&QComboBox::currentIndexChanged), this,  [this,row] { tilingChanged(row); });
-            connect(cbShow,    &QCheckBox::clicked,                                 this,  [this,row] { styleVisibilityChanged(row); });
+            connect(qcbStyle,  &QComboBox::currentIndexChanged, this,  [this,row] { styleChanged(row); });
+            connect(qcbTiling, &QComboBox::currentIndexChanged, this,  [this,row] { tilingChanged(row); });
+            connect(cbShow,    &QCheckBox::clicked,             this,  [this,row] (bool checked){ styleVisibilityChanged(row, checked); });
 
             row++;
         }
-
-        blockPage(false);
     }
 
     styleTable->resizeColumnsToContents();
+    styleTable->adjustTableSize();
+
+    if (sel == -1)
+        styleTable->selectRow(0);
+    else
+        styleTable->selectRow(sel);
+
+    blockPage(false);
 }
 
 void  page_mosaic_maker::slot_styleSelected(const QItemSelection &selected, const QItemSelection &deselected)
@@ -345,38 +413,18 @@ void  page_mosaic_maker::slot_styleSelected(const QItemSelection &selected, cons
 
 void page_mosaic_maker::displayStyleParams()
 {
-    static StylePtr selectedStyle;
-
     int row = styleTable->currentRow();  // can be -1
     qDebug() << "displayStyleParams row =" << row;
 
     StylePtr style = getStyleIndex(row);
-    if (style == selectedStyle)
-    {
-        // no need to redisplay
-        return;
-    }
-    // the style can be null - it's handled
-
-    setCurrentEditor(style);
-
-    //updateGeometry();
-
-//    parmsTable->resizeColumnsToContents();
-//    parmsTable->adjustTableSize();
-}
-
-void page_mosaic_maker::setCurrentEditor(StylePtr style)
-{
     if (!style)
-    {
         return;
-    }
 
-    currentEditor->onExit();
+    if (currentEditor)
+        currentEditor->onExit();
 
-
-    StyleEditor * newEditor = emptyWidget;
+    // set current editor
+    StyleEditor * newEditor = nullptr;
     switch (style->getStyleType())
     {
     case STYLE_PLAIN:
@@ -403,17 +451,21 @@ void page_mosaic_maker::setCurrentEditor(StylePtr style)
     case STYLE_TILECOLORS:
         newEditor =  new TileColorsEditor(style);
         break;
-    case STYLE_STYLE:
     case STYLE_BORDER:
+        newEditor = new StyleEditor();  // does nothing
+        break;
+    case STYLE_STYLE:
         qCritical("unexpected style");
         break;
     }
 
     lowerWidget->layout()->replaceWidget(currentEditor,newEditor);
-    delete currentEditor;
-    currentEditor = newEditor;
+    if (currentEditor)
+        delete currentEditor;
 
-    currentEditor->onEnter();
+    currentEditor = newEditor;
+    if (currentEditor)
+        currentEditor->onEnter();
 }
 
 void page_mosaic_maker::tilingChanged(int row)
@@ -425,23 +477,24 @@ void page_mosaic_maker::tilingChanged(int row)
         return;
 
     StylePtr style  = getStyleRow(row);
-    ProtoPtr pp = style->getPrototype();
-    pp->replaceTiling(tp);
-
+    if (style)
+    {
+        ProtoPtr pp = style->getPrototype();
+        if (pp)
+            pp->replaceTiling(tp);
+    }
     emit sig_reconstructView();
 
     reEnter();
 }
 
-void page_mosaic_maker::styleVisibilityChanged(int row)
+void page_mosaic_maker::styleVisibilityChanged(int row, bool checked)
 {
     qDebug() << "visibility changed: row=" << row;
 
-    QCheckBox * cb = dynamic_cast<QCheckBox*>(styleTable->cellWidget(row,STYLE_COL_CHECK_SHOW));
-    bool visible   = cb->isChecked();
-
     StylePtr style = getStyleRow(row);
-    style->setVisible(visible);
+    Q_ASSERT(style);
+    style->setVisible(checked);
     emit sig_reconstructView();
 }
 
@@ -452,7 +505,7 @@ void page_mosaic_maker::styleChanged(int row)
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if (mosaic)
     {
-        QComboBox * qcb = dynamic_cast<QComboBox*>(styleTable->cellWidget(row,STYLE_COL_STYLE));
+        QComboBox * qcb = dynamic_cast<QComboBox*>(styleTable->cellWidget(row,STYLE_COL_STYLE_TYPE));
         eStyleType esc  = static_cast<eStyleType>(qcb->currentData().toUInt());
 
         StylePtr oldStyle = getStyleRow(row);
@@ -471,15 +524,19 @@ StylePtr page_mosaic_maker::getStyleRow(int row)
 {
     StylePtr sp;
 
-    QTableWidgetItem * twi = styleTable->item(row,STYLE_COL_STYLE_DATA);
-    QVariant var = twi->data(Qt::UserRole);
+    QTableWidgetItem * twi = styleTable->item(row,STYLE_COL_STYLE_ADDR);
+    if (!twi)
+    {
+        return sp;
+    }
 
+    QVariant var = twi->data(Qt::UserRole);
     if (var.canConvert<WeakStylePtr>())
     {
         WeakStylePtr wsp = var.value<WeakStylePtr>();
         sp = wsp.lock();
-        Q_ASSERT(sp);
     }
+
     return sp;
 }
 
@@ -540,6 +597,8 @@ void page_mosaic_maker::slot_moveStyleUp()
 
     emit sig_reconstructView();
 
+    if (row > 0)
+        row--;
     styleTable->selectRow(row);
     styleTable->setFocus();
 }
@@ -558,6 +617,9 @@ void  page_mosaic_maker::slot_moveStyleDown()
 
     emit sig_reconstructView();
 
+    int rows = styleTable->rowCount();
+    if (row < (rows-1))
+        row++;
     styleTable->selectRow(row);
     styleTable->setFocus();
 }
@@ -582,20 +644,6 @@ void  page_mosaic_maker::slot_duplicateStyle()
     styleTable->setFocus();
 }
 
-void  page_mosaic_maker::slot_analyzeStyleMap()
-{
-    int row = styleTable->currentRow();
-    if (row == -1) return;
-    qDebug() << "page_mosaic_maker::slot_analyzeStyleMap()" << row;
-    StylePtr style = getStyleRow(row);
-    //style->setStyleMap();
-    MapPtr map = style->getExistingProtoMap();
-    if (map)
-    {
-        qDebug().noquote() << map->displayVertexEdgeCounts();
-    }
-}
-
 StylePtr page_mosaic_maker::copyStyle(const StylePtr style)
 {
     return mosaicMaker->makeStyle(style->getStyleType(),style);
@@ -612,18 +660,18 @@ void page_mosaic_maker::slot_set_reps()
     CanvasSettings & cs = mosaic->getCanvasSettings();
     cs.setFillData(fd);
 
-    emit sig_render();
+    Sys::render(RENDER_RESET_PROTOTYPES);
 }
 
 void page_mosaic_maker::slot_setCleanse()
 {
-    MosaicPtr mosaic = mosaicMaker->getMosaic();
-    if (!mosaic) return;
-
-    auto map   = mosaic->getFirstExistingPrototypeMap();
-    uint level = mosaic->getCleanseLevel();
-    qreal sens = mosaic->getCleanseSensitivity();
-
+    StylePtr style = getStyleRow(styleTable->currentRow());
+    if (!style) return;
+    ProtoPtr proto = style->getPrototype();
+    if (!proto) return;
+    uint level     = proto->getCleanseLevel();
+    qreal sens     = proto->getCleanseSensitivity();
+    auto map       = proto->getExistingProtoMap();
     DlgCleanse dlg(map,level,sens,this);
 
     connect(&dlg, &DlgCleanse::sig_cleansed,this,&page_mosaic_maker::slot_cleansed, Qt::QueuedConnection);
@@ -631,14 +679,12 @@ void page_mosaic_maker::slot_setCleanse()
     if (rv != QDialog::Accepted)
         return;
 
-    level = dlg.getLevel();
+    level = dlg.fromCheckboxes();
     sens  = dlg.getSsnsitivity();
-    mosaic->setCleanseLevel(level);
-    mosaic->setCleanseSensitivity(sens);
+    proto->setCleanseLevel(level);
+    proto->setCleanseSensitivity(sens);
 
-    mosaic->resetProtoMaps();
-
-    emit sig_render();
+    Sys::render(RENDER_RESET_PROTOTYPES);
 }
 
 void page_mosaic_maker::slot_cleansed()
@@ -646,8 +692,7 @@ void page_mosaic_maker::slot_cleansed()
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if (!mosaic) return;
 
-    mosaic->resetProtoMaps();
-    emit sig_render();
+    Sys::render(RENDER_RESET_PROTOTYPES);
 }
 
 void page_mosaic_maker::singleton_changed(bool checked)
@@ -665,5 +710,20 @@ void page_mosaic_maker::singleton_changed(bool checked)
         cs.setFillData(fd);
     }
 
-    emit sig_render();
+    Sys::render(RENDER_RESET_PROTOTYPES);
+}
+
+void page_mosaic_maker::slot_noaddr(bool checked)
+{
+    styleTable->setColumnHidden(STYLE_COL_STYLE_ADDR,checked);
+}
+
+void page_mosaic_maker::slot_notrans(bool checked)
+{
+    styleTable->setColumnHidden(STYLE_COL_TRANSFORM,checked);
+}
+
+void page_mosaic_maker::slot_nolayer(bool checked)
+{
+    styleTable->setColumnHidden(STYLE_COL_LAYER_CONTROL,checked);
 }

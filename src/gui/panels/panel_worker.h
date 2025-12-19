@@ -14,8 +14,9 @@ public:
     static VersionFileList findTilingsWithBkgds(VersionFileList &files);
 
 public slots:
-    void    sortTilings(bool worklist, bool backgrounds, bool sortByDate);
-    void    sortMosaics(bool worklist, bool backgrounds, bool sortByDate);
+    void    sortTilings();
+    void    sortMosaics();
+    void    getTilingUses();
 
 signals:
     void    tilingsSorted();

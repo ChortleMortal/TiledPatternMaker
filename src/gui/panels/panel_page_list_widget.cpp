@@ -6,16 +6,6 @@
 #include "gui/panels/panel_page_list_widget.h"
 #include "gui/top/controlpanel.h"
 
-#define E2STR(x) #x
-
-QString  sPageState[] =
-{
-    E2STR(PAGE_ATTACHED),
-    E2STR(PAGE_SUB_ATTACHED),
-    E2STR(PAGE_DETACHED)
-};
-
-
 //////////////////////////////////////////////////////////
 ///
 /// PageListWidget
@@ -28,9 +18,12 @@ PageListWidget::PageListWidget(ControlPanel * parent) : QListWidget((QWidget*)pa
 
     separators = 0;
     setSelectionMode(QAbstractItemView::SingleSelection);
-    setSizeAdjustPolicy(QListWidget::AdjustToContents);
-    setResizeMode(QListWidget::Adjust);
+    //setSizeAdjustPolicy(QListWidget::AdjustToContents);
+    //setResizeMode(QListWidget::Adjust);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    //setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+
 
     // determine default colors
     QListWidgetItem * item = new QListWidgetItem("");
@@ -62,7 +55,7 @@ void PageListWidget::refreshPages()
     //	Update pages
     for (const PageData & pdata : std::as_const(pageData))
     {
-        if (pdata.page == selectedPage || pdata.pageState == PAGE_DETACHED || pdata.pageState == PAGE_SUB_ATTACHED)
+        if (pdata.page == selectedPage || pdata.page->getState() == PAGE_DETACHED || pdata.page->getState() == PAGE_SUB_ATTACHED)
         {
             refreshPage(pdata.page);
         }
@@ -78,8 +71,7 @@ void PageListWidget::refreshPage(panel_page * wp)
 
     if (wp->isNewlySelected())
     {
-        controlPanel->setStatus(wp->getPageStatus());
-        wp->onEnter();          // on enter can now detect
+        wp->onEnter();
         wp->setNewlySelected(false);
         wp->repaint();
     }
@@ -94,7 +86,7 @@ bool PageListWidget::isVisiblyDetached(panel_page * page)
     if (selectedPage == page)
         return true;
 
-    ePageState state = getPageData(page).pageState;
+    ePageState state = getPageData(page).page->getState();
     if (state == PAGE_DETACHED || state == PAGE_SUB_ATTACHED)
     {
         return true;
@@ -109,7 +101,7 @@ bool PageListWidget::isVisiblyDetached(ePanelPage page)
     {
         if (data.page->getPageType() == page)
         {
-            ePageState state = data.pageState;
+            ePageState state = data.page->getState();
             if (state == PAGE_DETACHED || state == PAGE_SUB_ATTACHED)
             {
                 return true;
@@ -127,8 +119,7 @@ void PageListWidget::closePages()
 {
     for (const PageData & pdata : std::as_const(pageData))
     {
-        bool detached = (pdata.pageState == PAGE_DETACHED);
-        pdata.page->closePage(detached);
+        pdata.page->closePage();
     }
 }
 
@@ -160,11 +151,10 @@ void PageListWidget::addPage(panel_page * page)
 
 void PageListWidget::setState(QString name, ePageState state)
 {
+    PageData & data = getPageData(name);
     qDebug().noquote() << name << sPageState[state];
 
-    PageData & data = getPageData(name);
-
-    data.pageState = state;
+    data.page->setState(state);
 
     auto item = data.pageItem;
     switch (state)
@@ -189,12 +179,7 @@ void PageListWidget::mousePressEvent(QMouseEvent * event)
     //qDebug() << "PanelListWidget::mousePressEvent";
     if (event->button() == Qt::RightButton)
     {
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-        QPoint pt = event->localPos().toPoint();
-#else
-        QPoint pt = event->position().toPoint();
-#endif
-
+        QPoint pt    = event->position().toPoint();
         auto item    = itemAt(pt);
         pageToDetach = item->text();
         if (pageToDetach.isEmpty())
@@ -206,11 +191,7 @@ void PageListWidget::mousePressEvent(QMouseEvent * event)
         QMenu menu(this);
         menu.addSection(pageToDetach);
         menu.addAction("Float",this,&PageListWidget::slot_floatAction);
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-        menu.exec(event->screenPos().toPoint());
-#else
         menu.exec(event->globalPosition().toPoint());
-#endif
     }
     else
     {
@@ -230,6 +211,19 @@ QStringList PageListWidget::wereFloated()
         }
     }
     return names;
+}
+
+QString PageListWidget::wasSubAttached()
+{
+    for (const PageData & pdata : std::as_const(pageData))
+    {
+        if (pdata.page->wasSubAttached())
+        {
+            qDebug() << "sub-attached" << pdata.pageName;
+            return pdata.pageName;
+        }
+    }
+    return QString();
 }
 
 void PageListWidget::slot_floatAction()
@@ -262,7 +256,8 @@ void PageListWidget::addSeparator()
 void PageListWidget::establishSize()
 {
     int rowCount = count() - separators;
-    setFixedSize(sizeHintForColumn(0) + (2 * frameWidth()), (sizeHintForRow(0) * rowCount) + (10 * separators) + (2 * frameWidth()) + 5);   // 5 is a little pad
+    //setFixedWidth(sizeHintForColumn(0) + (2 * frameWidth()));
+    setFixedHeight((sizeHintForRow(0) * rowCount) + (10 * separators) + (2 * frameWidth()) + 5);   // 5 is a little pad
 }
 
 PageData & PageListWidget::getPageData(QString name)
@@ -275,7 +270,7 @@ PageData & PageListWidget::getPageData(QString name)
         }
     }
 
-    qCritical("Invalid page name");
+    qWarning() << "page" << name << "not found - defaulting";
     return pageData[0];
 }
 
@@ -289,14 +284,14 @@ PageData & PageListWidget::getPageData(panel_page * page)
         }
     }
 
-    qCritical("Invalid page address");
+    qWarning() << "pagenot found - defaulting";
     return pageData[0];
 }
 
 ePageState PageListWidget::getState(panel_page * page)
 {
     PageData & data = getPageData(page);
-    return data.pageState;
+    return data.page->getState();
 }
 
 int  PageListWidget::getIndex(panel_page * page)
@@ -315,8 +310,8 @@ int  PageListWidget::getIndex(panel_page * page)
 
 PageData::PageData(panel_page * ppage, QListWidgetItem * item)
 {
-    pageState   = PAGE_ATTACHED;
     page        = ppage;
+    page->setState(PAGE_ATTACHED);
     pageItem    = item;
     pageName    = page->getName();
     selected    = false;
@@ -324,7 +319,6 @@ PageData::PageData(panel_page * ppage, QListWidgetItem * item)
 
 PageData::PageData(const PageData & other)
 {
-    pageState   = other.pageState;
     page        = other.page;
     pageItem    = other.pageItem;
     pageName    = other.pageName;

@@ -1,18 +1,14 @@
+#include <QRadioButton>
+#include <QButtonGroup>
+
 #include "gui/widgets/crop_widget.h"
-#include "gui/viewers/crop_view.h"
+#include "gui/viewers/crop_viewer.h"
 #include "gui/widgets/layout_qrectf.h"
 #include "gui/widgets/layout_sliderset.h"
 #include "sys/enums/eborder.h"
 #include "sys/geometry/crop.h"
 #include "sys/sys.h"
 #include "gui/panels/panel_misc.h"
-
-#include <QVBoxLayout>
-#include <QRadioButton>
-#include <QButtonGroup>
-#include <QCheckBox>
-#include <QPushButton>
-#include <QDebug>
 
 CropWidget::CropWidget()
 {

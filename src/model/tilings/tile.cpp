@@ -28,54 +28,38 @@ int Tile::refs = 0;
 
 using std::make_shared;
 
-Tile::Tile(EdgePoly ep, qreal rotate, qreal scale)
+Tile::Tile(EdgePoly ep) : EdgePoly(ep)
 {
     // createas irregular tile
-    base        = ep;
-    n           = ep.size();
-    rotation    = rotate;
-    this->scale = scale;
+    n          = ep.epoly.size();
     regular    = false;
     refs++;
-
-    compose();
 }
 
-Tile::Tile(int n, qreal rotate, qreal scale)
+Tile::Tile(int n, qreal rotate, qreal scale) : EdgePoly()
 {
     // Create an n-sided regular polygon with a vertex at (1,0).
     this->n     = n;
-    rotation    = rotate;
-    this->scale = scale;
-    regular    = true;
+    regular     = true;
     refs++;
 
     createRegularBase();
+    rotation    = rotate;
+    this->scale = scale;
     compose();
 }
 
-
-Tile::Tile(const TilePtr other )
+Tile::Tile(const TilePtr other ) : EdgePoly(*other.get())
 {
     n           = other->n;
-    rotation    = other->rotation;
-    scale       = other->scale;
     regular     = other->regular;
-    base        = other->base;
-    epoly       = other->epoly;
-
     refs++;
 }
 
-Tile::Tile(const Tile & other ) : QObject(this)
+Tile::Tile(const Tile & other ) : EdgePoly(other)
 {
-    n           = other.n;
-    rotation    = other.rotation;
-    scale       = other.scale;
-    regular     = other.regular;
-    base        = other.base;
-    epoly       = other.epoly;
-
+    n       = other.n;
+    regular = other.regular;
     refs++;
 }
 
@@ -86,91 +70,76 @@ Tile::~Tile()
 
 bool Tile::operator == (const Tile & other) const
 {
-    if (n        != other.n)
+    if (n != other.n)
         return false;
-    if (rotation != other.rotation)
-        return false;
-    if (scale    != other.scale)
-        return false;
+
     if (regular  != other.regular)
         return false;
-    if (base     != other.base)
+
+    const EdgePoly & myp  = getEdgePoly();
+    const EdgePoly & othp = other.getEdgePoly();
+
+    if (myp != othp)
         return false;
-    if (epoly    != other.epoly)
-        return false;;
+
     return true;
 }
 
-void Tile::compose()
+bool Tile::isSimilar(const TilePtr other)
 {
-    epoly.clear();
-    epoly = base.recreate();
-
-    if (!Loose::zero(rotation))
-        epoly.rotate(rotation);
-    if (!Loose::equals(scale,1.0))
-        epoly.scale(scale);
+    if (regular != other->regular)
+        return false;
+    if (numEdges() != other->numEdges())
+        return false;
+    if (!Loose::equals(rotation, other->rotation))
+        return false;
+    if (!Loose::equals(scale, other->scale))
+        return false;
+    return true;
 }
 
-void Tile::decompose()
-{
-    base.clear();
-    base = epoly.recreate();
-
-    if (!Loose::zero(rotation))
-        base.rotate(-rotation);
-    if (!Loose::equals(scale,1.0))
-        base.scale(1.0/scale);
-}
-
+// creates new base and composes
 TilePtr Tile::recreate()
 {
-    TilePtr f;
+    TilePtr tp;
     if (regular)
-        f = make_shared<Tile>(n,rotation,scale);
+    {
+        tp = make_shared<Tile>(n,rotation,scale);
+    }
     else
-        f = make_shared<Tile>(base,rotation,scale);
-    return  f;
+    {
+        tp = make_shared<Tile>(EdgePoly::recreate());
+    }
+    return  tp;
 }
 
+// stright copy of base and does not compose
 TilePtr Tile::copy()
 {
-    if (isRegular())
+    TilePtr tp;
+    if ( regular)
     {
-        TilePtr fp = make_shared<Tile>(n,rotation,scale);
-        return fp;
+        tp = make_shared<Tile>(n,rotation,scale);
     }
     else
     {
-        EdgePoly ep = base.recreate();
-        TilePtr fp = make_shared<Tile>(ep,rotation,scale);
-        return fp;
+        EdgePoly ep(*this);;
+        tp = make_shared<Tile>(ep);
     }
+    return tp;
 }
 
-void Tile::setN(int n)
+void Tile::setN(uint n)
 {
+    if (n==0 || n==2)
+        return;
+
     this->n = n;
     if (regular)
     {
         createRegularBase();
         compose();
     }
-    emit sig_tileChanged();
-}
-
-void Tile::setRotation(qreal rotate)
-{
-    rotation = rotate;
-    compose();
-    emit sig_tileChanged();
-}
-
-void Tile::setScale(qreal scale)
-{
-    this->scale = scale;
-    compose();
-    emit sig_tileChanged();
 }
 
 void Tile::deltaScale(qreal delta)
@@ -180,105 +149,31 @@ void Tile::deltaScale(qreal delta)
 
 void Tile::deltaRotation(qreal delta)
 {
-    setRotation(rotation + delta);
+    setRotate(rotation + delta);
 }
 
 void Tile::setRegular(bool enb)
 {
-    if (enb == regular)
-        return;
-
-    if (enb)
-    {
-        regular =  true;
-        createRegularBase();
-        compose();
-    }
-    else
-    {
-        regular = false;
-        compose();
-    }
-    emit sig_tileChanged();
+    regular = enb;
 }
 
 void Tile::flipRegularity()
 {
-    if (regular)
+    if (!regular)
     {
-        // converting regular to irregular
-        if (conversion.converted && !conversion.wasRegular)
-        {
-            setRegular(false);
-            epoly    = conversion.ep;
-            rotation = conversion.rotate;
-            scale    = conversion.scale;
-            conversion.converted = false;
-        }
-        else
-        {
-            conversion.rotate     = rotation;
-            conversion.scale      = scale;
-            conversion.wasRegular = true;
-            conversion.converted  = true;
-            setRegular(false);
-            rotation = 0.0;
-            scale    = 1.0;
-        }
+        regular =  true;
+        createRegularBase();
     }
     else
     {
-        //converting irregular to to regular
-        if (conversion.converted && conversion.wasRegular)
-        {
-            rotation = conversion.rotate;
-            scale    = conversion.scale;
-            conversion.converted = false;
-            setRegular(true);
-        }
-        else
-        {
-            conversion.rotate     = rotation;
-            conversion.scale      = scale;
-            conversion.ep         = epoly;
-            conversion.wasRegular = false;
-            conversion.converted  = true;
-            setRegular(true);
-        }
+        regular = false;
     }
-    emit sig_tileChanged();
 }
 
 void Tile::createRegularBase()
 {
-    QPolygonF p = Geo::getCircumscribedPolygon(n);
-    base = EdgePoly(p);
-}
-
-bool Tile::equals(const TilePtr other)
-{
-    if (regular != other->regular)
-        return false;
-    if (!base.equals(other->base))
-        return false;
-    if (!Loose::equals(rotation, other->rotation))
-        return false;
-    if (!Loose::equals(scale, other->scale))
-        return false;
-    return true;
-}
-
-bool Tile::isSimilar(const TilePtr other)
-{
-    if (regular != other->regular)
-        return false;
-    if (numSides() != other->numSides())
-        return false;
-    if (!Loose::equals(rotation, other->rotation))
-        return false;
-    if (!Loose::equals(scale, other->scale))
-        return false;
-    return true;
+    QPolygonF poly = Geo::getCircumscribedPolygon(n);
+    EdgePoly::set(poly);
 }
 
 QString Tile::toString() const
@@ -288,7 +183,7 @@ QString Tile::toString() const
     int i=0;
 
     str << "{ ";
-    for (auto & edge : std::as_const(epoly))
+    for (auto & edge : epoly)
     {
         str << i+1 << ":" << edge->v1->pt.x() << " " << edge->v1->pt.y() << " , ";
         i++;
@@ -303,7 +198,7 @@ QString Tile::toBaseString() const
     QTextStream str(&text);
 
     str << "{ ";
-    for (auto & edge : std::as_const(base))
+    for (auto & edge : base)
     {
         str << "point: " << edge->v1->pt.x() << " " << edge->v1->pt.y() << " , ";
     }
@@ -329,42 +224,32 @@ QString Tile::info()
 
 QString Tile::summary()
 {
-    return QString("%1%2 ").arg(numSides()).arg((regular) ? 'r' : 'i' );
+    return QString("%1%2 ").arg(numEdges()).arg((regular) ? 'r' : 'i' );
 }
 
 QPointF Tile::getCenter()
 {
     if (regular)
-        return epoly.calcCenter();
+        return calcCenter();
     else
-        return epoly.calcIrregularCenter();
+        return calcIrregularCenter();
 }
 
-QLineF Tile::getEdge(int side)
+QLineF Tile::getEdge(uint side)
 {
-    if (numSides() > side)
-        return epoly[side]->getLine();
+    if (numEdges() > side)
+        return epoly.at(side)->getLine();
     else
         return QLineF();
 }
 
-qreal Tile::edgeLen(int side)
+qreal Tile::edgeLen(uint side)
 {
-    if (numSides() > side)
-        return epoly[side]->getLine().length();
+    if (numEdges() > side)
+        return epoly.at(side)->getLine().length();
     else
         return 0.0;
 }
 
-void Tile::legacyDecompose()
-{
-    epoly.clear();
-    epoly = base.recreate();
-
-    if (!Loose::zero(rotation))
-        base.rotate(-rotation);
-    if (!Loose::equals(scale,1.0))
-        base.scale(1.0/scale);
-}
 
 

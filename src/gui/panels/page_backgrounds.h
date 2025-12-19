@@ -8,6 +8,7 @@
 class AQPushButton;
 class AQTableWidget;
 class BackgroundImageView;
+class SMXWidget;
 
 class page_backgrounds : public panel_page
 {
@@ -17,11 +18,12 @@ public:
     page_backgrounds(ControlPanel *apanel);
 
     QGroupBox     * createBackgroundImageGroup();
+    QGroupBox     * createBackgroundViewGroup();
     QGroupBox     * createBackgroundColorGroup();
 
     void onRefresh() override;
     void onEnter() override;
-    void onExit() override {}
+    void onExit() override;
 
 private slots:
     void slot_loadBackground();
@@ -37,18 +39,24 @@ private slots:
 
 protected:
     void setupBackground(Xform xform);
-    void displayBackgroundStatus(bool force);
+    void displayBackgroundImageStatus(bool force);
     void selectColor(int row);
     void reInitBkgdColors(QColor bcolor);
 
 private:
-    BackgroundImageView * bview;
     LayoutTransform       bkgdLayout;
     AQPushButton        * startAdjustBtn;
     QCheckBox           * chk_useAdjusted;
     QLineEdit           * imageName;
-    QCheckBox           * chkShowBkgd;
+    QGroupBox           * bkgdViewGroup;
     AQTableWidget       * viewTable;
+    SMXWidget           * smxWidget;
+
+    QRadioButton * btnNone;
+    QRadioButton * btnMosaic;
+    QRadioButton * btnTiling;
+    QRadioButton * btnMaped;
+    QRadioButton * btnDefine;
 };
 
 #endif // PAGE_BACKGROUNDS

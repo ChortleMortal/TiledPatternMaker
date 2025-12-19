@@ -4,38 +4,51 @@
 
 #include "gui/viewers/layer_controller.h"
 #include "sys/geometry/debug_map.h"
+#include "sys/geometry/measurement.h"
+
+class GeoGraphics;
+
+typedef std::shared_ptr<class DebugViewMeasure> Measure3Ptr;
 
 class DebugView : public LayerController
 {
+    Q_OBJECT
+
 public:
     DebugView();
     ~DebugView();
 
-    DebugMap * getMap() { return  &dMap; }
-
-    void clear();
+    void unloadLayerContent() override   { Sys::debugMapCreate->wipeout(); Sys::debugMapPaint->wipeout(); measurements.clear(); }
+    void clearMeasurements() { measurements.clear(); }
 
     void paint(QPainter * painter ) override;
 
-    void setTransform(const QTransform & t);
+    bool canMeasure()            { return _canMeasure; }
+    void setCanMeasure(bool set) { _canMeasure = set; measurePt = QPointF(); }
 
-    bool getShow()          { return _viewEnable; }
+    bool getShowLines()     { return _showLines; }
     bool getShowDirection() { return _showDirection; }
-    bool getShowVertices()  { return _showVertices; }
     bool getShowArcCentres(){ return _showArcCentres; }
+    bool getShowPoints()    { return _showPoints; }
+    bool getShowMarks()     { return _showMarks; }
+    bool getShowCurves()    { return _showCurves; }
+    bool getShowCircles()   { return _showCircles; }
 
+    void showLines(bool show)     { _showLines      = show;  writeConfig(); }
     void showDirection(bool show) { _showDirection  = show;  writeConfig(); }
-    void showVertices(bool show)  { _showVertices   = show;  writeConfig(); }
     void showArcCentres(bool show){ _showArcCentres = show;  writeConfig(); }
-    void show(bool show)          { _viewEnable     = show;  writeConfig(); }
+    void showPoints(bool show)    { _showPoints     = show;  writeConfig(); }
+    void showMarks(bool show)     { _showMarks      = show;  writeConfig(); }
+    void showCurves(bool show)    { _showCurves     = show;  writeConfig(); }
+    void showCircles(bool show)   { _showCircles    = show;  writeConfig(); }
 
-    const Xform &   getModelXform() override;
-     void           setModelXform(const Xform & xf, bool update) override;
+    void do_testA(bool enb);
+    void do_testB(bool enb);
+
+    void execTestA(QPainter * painter, QTransform tr);
+    void execTestB(QPainter * painter, QTransform tr);
 
 protected:
-    void draw(QPainter * painter);
-
-    eViewType iamaLayer() override { return VIEW_GRID; }
     void iamaLayerController() override {}
 
     void readConfig();
@@ -44,36 +57,54 @@ protected:
     static int refs;
 
 public slots:
-     void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
-     void slot_mouseDragged(QPointF spt)       override;
-     void slot_mouseTranslate(QPointF pt)      override;
-     void slot_mouseMoved(QPointF spt)         override;
-     void slot_mouseReleased(QPointF spt)      override;
-     void slot_mouseDoublePressed(QPointF spt) override;
-     void slot_setCenter(QPointF spt)          override;
-
-     void slot_wheel_scale(qreal delta)  override;
-     void slot_wheel_rotate(qreal delta) override;
-
-     void slot_scale(int amount)  override;
-     void slot_rotate(int amount) override;
-     void slot_moveX(qreal amount)  override;
-     void slot_moveY(qreal amount)  override;
+    void slot_mousePressed(QPointF spt, Qt::MouseButton btn) override;
+    void slot_mouseDragged(QPointF spt)       override;
+    void slot_mouseMoved(QPointF spt)         override;
+    void slot_mouseReleased(QPointF spt)      override;
+    void slot_mouseDoublePressed(QPointF spt) override;
 
 private:
-     QTransform  _transform;
+    Measure3Ptr           measurement;
+    QVector<Measurement*> measurements;
+    QPointF               measurePt;
 
-#define DVenable    0x01
-#define DVvertices  0x02
-#define DVcentres   0x04
-#define DVdirn      0x08
+    bool _canMeasure;
+    bool doTestA;
+    bool doTestB;
 
-    Configuration    * config;
-    DebugMap          dMap;
+#define DVlines     0x01
+#define DVcentres   0x02
+#define DVdirn      0x04
+#define DVpoints    0x08
+#define DVmarks     0x10
+#define DVcircles   0x20
+#define DVcurves    0x40
 
-    bool _showVertices;
+    bool _showLines;
     bool _showDirection;
     bool _showArcCentres;
-    bool _viewEnable;
+    bool _showPoints;
+    bool _showMarks;
+    bool _showCircles;
+    bool _showCurves;
 };
+
+class DebugViewMeasure
+{
+public:
+    DebugViewMeasure(Layer * layer, QPointF spt, Measurement * m);
+    void updateDragging(QPointF spt );
+    void draw( GeoGraphics * g2d );
+    void endDragging(QPointF spt );
+
+protected:
+    QLineF normalVectorA(QLineF line);
+    QLineF normalVectorB(QLineF line);
+
+private:
+    Measurement * m;
+    Layer       * layer;
+    QLineF        sPerpLine; // perpendicular line
+};
+
 #endif

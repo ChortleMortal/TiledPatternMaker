@@ -1,12 +1,12 @@
 #include <QDebug>
 
 #include "gui/model_editors/motif_edit/design_element_button.h"
-#include "sys/geometry/map.h"
-#include "sys/geometry/vertex.h"
 #include "gui/viewers/geo_graphics.h"
+#include "gui/viewers/viewer_services.h"
+#include "model/motifs/motif.h"
 #include "model/prototypes/design_element.h"
 #include "model/tilings/tile.h"
-#include "gui/viewers/viewer_services.h"
+#include "sys/geometry/map.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -25,35 +25,28 @@
 // This class is also used to show the large DesignElement being edited
 // in the main editing window.  Nice!
 
-QColor DesignElementButton::tileBorder   = QColor( 140, 140, 160 );
+QColor DesignElementButton::tileBorder    = QColor( 140, 140, 160 );
 QColor DesignElementButton::tileIinterior = QColor( 240, 240, 255 );
 
-DesignElementButton::DesignElementButton(int index)
-{
-    construct(nullptr,index);
-}
-
-DesignElementButton::DesignElementButton(DesignElementPtr dep, int index)
-{
-    construct(dep,index);
-}
-
-void DesignElementButton::construct(DesignElementPtr del, int index)
+DesignElementButton::DesignElementButton(int index, DesignElementPtr del, QTransform t)
 {
     selected            = false;
     delegated           = false;
     this->designElement = del;
     this->index         = index;
+    placement           = t;
 
+#if 0
     if (del)
     {
-        qDebug().noquote() << __FUNCTION__ << "index:" << index << "del:" << del.get();
+        qDebug().noquote() << "DesignElementButton::DesignElementButton" << "index:" << index << "del:" << del.get();
         del->describe();
     }
     else
     {
-        qDebug().noquote() << __FUNCTION__ << "index:" << index << "del: 0";
+        qDebug().noquote() << "DesignElementButton::DesignElementButton" << "index:" << index << "del: 0";
     }
+#endif
 
     setSize(310,310);
     setStyleSheet("background-color: white;");
@@ -69,13 +62,21 @@ QSizeF DesignElementButton::getMinimumSize()
 void DesignElementButton::setSize(QSize d )
 {
     setFixedSize(d);
-    transform = resetViewport(index, designElement.lock(), frameRect());
+    setViewTransform();
 }
 
 void DesignElementButton::setSize( int w, int h )
 {
     setFixedSize(w,h);
-    transform = resetViewport(index, designElement.lock(),frameRect());
+    setViewTransform();
+}
+
+void DesignElementButton::setViewTransform()
+{
+    //QRect rect = placement.mapRect(frameRect());
+    QRect rect = frameRect();
+    transform = resetViewport(index, designElement.lock(),rect);
+    update();
 }
 
 DesignElementPtr DesignElementButton::getDesignElement()
@@ -102,29 +103,20 @@ void DesignElementButton::setDesignElement(DesignElementPtr del)
     setViewTransform();
 }
 
-void DesignElementButton::setViewTransform()
+QTransform DesignElementButton::resetViewport(int index, DesignElementPtr del, QRect frameRect)
 {
-    transform = resetViewport(index, designElement.lock(),frameRect());
-    update();
-}
+    qDebug() << "DesignElementButton::resetViewport" << index;
 
-QTransform DesignElementButton::resetViewport(int index, DesignElementPtr dep, QRect frameRect)
-{
-    //qDebug() << "reset viewport" << index;
-
-    // Reset the viewport to look at the design element.
-    // We can't do this until the Component is mapped and
-    // the design element is set.  So we do it really lazily --
-    // set a flag to reset the viewport whenever the current
-    // DesignElement changes and recompute the viewport from
-    // the paint function when the flag is set.
+    // Reset the viewport to frame the design element.
 
     QTransform transform;
 
-    if(!dep)  return transform;
+    if (!del)
+        return transform;
 
-    MotifPtr motif = dep->getMotif();
-    if (!motif) return transform;
+    MotifPtr motif = del->getMotif();
+    if (!motif)
+        return transform;
 
     // Get the bounding box of all the figure's vertices and all the
     // tile's vertices.  Then show that region in the viewport.
@@ -135,13 +127,9 @@ QTransform DesignElementButton::resetViewport(int index, DesignElementPtr dep, Q
     double ymin = 999.0;
     double ymax = -999.0;
 
-    // This is a cheesy way to string together two streams of points.
-
-    QPolygonF pts = dep->getTile()->getPoints();
-    int pidx = 0;
-    while ( pidx < pts.size())
+    QPolygonF pts = del->getTile()->getPoints();
+    for (QPointF p : std::as_const(pts))
     {
-        QPointF p = pts[pidx++];
         qreal x = p.x();
         qreal y = p.y();
 
@@ -151,26 +139,13 @@ QTransform DesignElementButton::resetViewport(int index, DesignElementPtr dep, Q
         ymax = qMax( ymax, y );
     }
 
-#if 0
-    MapPtr map = motif->getFigureMap();
-    for (auto& vert : map->getVertices())
-    {
-        QPointF p = vert->getPosition();
-        qreal x = p.x();
-        qreal y = p.y();
-
-        xmin = qMin( xmin, x );
-        xmax = qMax( xmax, x );
-        ymin = qMin( ymin, y );
-        ymax = qMax( ymax, y );
-    }
-
-    map = motif->useDebugMap();
+    auto map = motif->getMotifMap();
     if (map)
     {
-        for (auto& vert : map->getVertices())
+        auto & vertices = map->getVertices();
+        for (auto & v : vertices)
         {
-            QPointF p = vert->getPosition();
+            auto p = v->pt;
             qreal x = p.x();
             qreal y = p.y();
 
@@ -180,52 +155,9 @@ QTransform DesignElementButton::resetViewport(int index, DesignElementPtr dep, Q
             ymax = qMax( ymax, y );
         }
     }
-#endif
-    transform = lookAt(index,QRectF(xmin, ymin, xmax-xmin, ymax-ymin),frameRect);
-    //qDebug().noquote() << "MotifButton::resetViewport() index:" << index << "del" << dep.get() << Transform::toInfoString(transform);
-
-    return transform;
-}
-
-QTransform DesignElementButton::resetViewport(int index, MapPtr map, QRect frameRect)
-{
-    //qDebug() << "reset viewport" << index;
-
-    // Reset the viewport to look at the design element.
-    // We can't do this until the Component is mapped and
-    // the design element is set.  So we do it really lazily --
-    // set a flag to reset the viewport whenever the current
-    // DesignElement changes and recompute the viewport from
-    // the paint function when the flag is set.
-
-    QTransform transform;
-
-    if(!map)  return transform;
-
-    // Get the bounding box of all the figure's vertices and all the
-    // tile's vertices.  Then show that region in the viewport.
-    // In other words, scale the view to show the DesignElement.
-
-    double xmin = 999.0;
-    double xmax = -999.0;
-    double ymin = 999.0;
-    double ymax = -999.0;
-
-    // This is a cheesy way to string together two streams of points.
-
-    for (auto & vert : std::as_const(map->getVertices()))
-    {
-        QPointF p = vert->pt;
-        qreal x = p.x();
-        qreal y = p.y();
-
-        xmin = qMin( xmin, x );
-        xmax = qMax( xmax, x );
-        ymin = qMin( ymin, y );
-        ymax = qMax( ymax, y );
-    }
 
     transform = lookAt(index,QRectF(xmin, ymin, xmax-xmin, ymax-ymin),frameRect);
+    //qDebug().noquote() << "DesignElementButton::resetViewport" <<  "index:" << index << "del" << dep.get() << Transform::toInfoString(transform);
 
     return transform;
 }
@@ -239,7 +171,7 @@ QTransform DesignElementButton::lookAt(int index, QRectF rect, QRect frameRect)
     //qDebug() << "lookAt:" << index << rect;
 
     QSizeF d         = rect.size();
-    d *= 1.25;
+    d *= 1.20;
     QPointF center   = rect.center();
     QRectF paintRect = QRectF(center.x()-(d.width()/2), center.y()-(d.height()/2), d.width(), d.height());
 
@@ -247,7 +179,6 @@ QTransform DesignElementButton::lookAt(int index, QRectF rect, QRect frameRect)
     if ( d.width() > 0 && d.height() > 0 )
     {
         t = centerInside(index,paintRect,frameRect);
-        //forceRedraw();
     }
     return t;
 }
@@ -296,9 +227,11 @@ void DesignElementButton::paintEvent(QPaintEvent * event)
         return;
     }
 
+    //qDebug() << "DesignElementButton::paintEven" << "placement" << Transform::info(placement);
     //qDebug() << "MotifButton::paintEvent() index ="  << index;
-    QPainter painter(this);
+    //qDebug().noquote() << "paint btn:" << index << Transform::toInfoString(transform);
 
+    QPainter painter(this);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
 #ifdef INVERT_VIEW
@@ -307,8 +240,16 @@ void DesignElementButton::paintEvent(QPaintEvent * event)
     painter.scale(1.0, -1.0);
 #endif
 
-    //qDebug().noquote() << "paint btn:" << index << Transform::toInfoString(transform);
-    GeoGraphics gg(&painter, transform);
+    QTransform t;
+    if (index >= 0)
+    {
+        t = transform;
+    }
+    else
+    {
+        t = transform *placement;
+    }
+    GeoGraphics gg(&painter, t);
 
     ViewerServices::drawTile(&gg,del->getTile(),QBrush(tileIinterior),QPen(tileBorder,3));
 

@@ -4,7 +4,7 @@
 
 /* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
- *  Copyright (c) 2016-2023 David A. Casper  email: david.casper@gmail.com
+ *  Copyright (c) 2016-2025 David A. Casper  email: david.casper@gmail.com
  *
  *  This file is part of TiledPatternMaker
  *
@@ -27,16 +27,14 @@ public:
     TiledPatternMaker();
     ~TiledPatternMaker();
 
-    SplitScreen * getSplitter() { return splitter; }
-
     void    testMemoryManagement();
 
-    static void      appDebugBreak();
     static int const EXIT_CODE_REBOOT;
 
 signals:
     void sig_start();
     void sig_floatPages();
+    void sig_subAttachPage();
 
     void sig_reconstructView();
 
@@ -44,22 +42,19 @@ signals:
     void sig_workListChanged();
 
     void sig_primaryDisplay();
+    void sig_imageToPrimary();
 
 public slots:
     void slot_start();
     void slot_stop();
-    void slot_render();
     void slot_bringToPrimaryScreen();
     
 protected:
     void init();
-    void splitScreen();
     void setPaletteColors();
 
 private:
     Sys         * sys;
-    SplitScreen * splitter;
-
 };
 
 extern TiledPatternMaker * theApp;

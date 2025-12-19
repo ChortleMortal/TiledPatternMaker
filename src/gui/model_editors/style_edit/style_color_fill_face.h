@@ -18,28 +18,25 @@ class StyleColorFillFace : public QObject
     enum eCol
     {
         COL_STATUS      = 0,
-        COL_COLOR       = 1,
-        COL_EDIT        = 2
+        COL_COLOR       = 1
     };
 
 public:
     StyleColorFillFace(FilledEditor * parent, FilledPtr style, QVBoxLayout * vbox);
 
     void onRefresh();
-
     void display();
-
     void select(QPointF mpt, Qt::MouseButton btn);
 
-protected:
-    void editPalette();
-
 signals:
-    void  sig_updateView();
+    void sig_updateView();
 
 private slots:
     void slot_cellClicked(int row,int column);
     void slot_reset();
+    void slot_add();
+    void slot_modify();
+    void slot_delete();
 
 private:
     FilledEditor *  parent;

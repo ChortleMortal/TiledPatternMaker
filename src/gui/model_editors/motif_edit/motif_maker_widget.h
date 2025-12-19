@@ -33,7 +33,7 @@ class MotifMakerWidget : public QWidget
 public:
     MotifMakerWidget();
 
-    void selectPrototype();
+    void refreshMotifMakerWidget();
 
     void delegate(DELBtnPtr btn, bool add, bool set);
 

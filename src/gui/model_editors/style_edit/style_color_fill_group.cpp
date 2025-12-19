@@ -4,7 +4,7 @@
 #include "gui/model_editors/style_edit/style_color_fill_group.h"
 #include "gui/widgets/dlg_colorSet.h"
 #include "sys/sys.h"
-#include "gui/top/view.h"
+#include "gui/top/system_view.h"
 #include "model/styles/filled.h"
 
 StyleColorFillGroup::StyleColorFillGroup(FilledPtr style, QVBoxLayout *vbox) : filled(style)
@@ -56,17 +56,17 @@ StyleColorFillGroup::StyleColorFillGroup(FilledPtr style, QVBoxLayout *vbox) : f
 
     vbox->addWidget(fillGroupTable);
 
-    connect(this, &StyleColorFillGroup::sig_updateView, Sys::view, &View::slot_update);
+    connect(this, &StyleColorFillGroup::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
 }
 
-void StyleColorFillGroup::display()
+void StyleColorFillGroup::display(int crow)
 {
     Q_ASSERT(fillGroupTable);
     qDebug() << "table is" << fillGroupTable;
 
     ColorMaker * cm = filled->getColorMaker();
     //QModelIndex selected = fillGroupTable->currentIndex();
-    int crow = fillGroupTable->currentRow();
+    //int crow = fillGroupTable->currentRow();
 
     fillGroupTable->clearContents();
 
@@ -117,7 +117,7 @@ void StyleColorFillGroup::display()
     {
         crow = 0;
     }
-    fillGroupTable->setCurrentCell(crow,0);
+    fillGroupTable->setCurrentCell(crow,1);
 }
 
 void StyleColorFillGroup::edit(int row)
@@ -130,6 +130,7 @@ void StyleColorFillGroup::edit(int row)
     ColorSet * colorSet = filled->getColorGroup()->getColorSet(row);
 
     DlgColorSet dlg(colorSet);
+    dlg.setWindowTitle(QString("Row = %1").arg(QString::number(row)));
 
     connect(&dlg, &DlgColorSet::sig_dlg_colorsChanged, this, &StyleColorFillGroup::sig_colorsChanged);
 
@@ -246,7 +247,8 @@ void StyleColorFillGroup::slot_click(int row, int col)
 
     emit sig_updateView();
 
-    display();
+    int crow = fillGroupTable->currentRow();
+    display(crow);
 }
 
 void StyleColorFillGroup::slot_double_click(int row, int col)

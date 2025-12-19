@@ -30,24 +30,23 @@ PlacedTile::PlacedTile()
     _show       = true;
     _included   = true;
 }
-
 PlacedTile::PlacedTile(TilePtr tile, QTransform T)
 {
     this->tile  = tile;
-    this->T     = T;
+    this->placement     = T;
     clearViewState();
     _show       = true;
     _included   = true;
     //qDebug() << "setTransform1=" << Transform::toInfoString(T);
 }
 
-bool PlacedTile::operator == (const PlacedTile other)
+bool PlacedTile::operator == (const PlacedTile & other)
 {
     if (_included != other._included)
         return false;
     if (_show != other._show)
         return false;
-    if (T != other.T)
+    if (placement != other.placement)
         return false;
 
     Tile & thisTile = *tile.get();
@@ -62,31 +61,34 @@ PlacedTilePtr PlacedTile::copy()
 {
     PlacedTilePtr pfp    = make_shared<PlacedTile>();
     pfp->girihShapeName  = girihShapeName;
-    pfp->T               = T;
+    pfp->placement       = placement;
     pfp->tile            = tile->copy();
     pfp->_show           = _show;
     pfp->_included       = _included;
     return pfp;
 }
 
-void PlacedTile::setTransform(QTransform newT)
+void PlacedTile::setPlacement(QTransform newT)
 {
     //qDebug() << "setTransform3 before =" << Transform::toInfoString(T);
-    T = newT;
+    placement = newT;
     //qDebug() << "setTransform3 after =" << Transform::toInfoString(T);
-    Sys::setTilingChange();
+    TilingPtr tiling = Sys::tilingMaker->getSelected();
+    tiling->setTilingViewChanged();
 }
 
 void PlacedTile::setTile(TilePtr tile)
 {
     this->tile = tile;
-    Sys::setTilingChange();
+    TilingPtr tiling = Sys::tilingMaker->getSelected();
+    tiling->setTilingViewChanged();
 }
 
 void PlacedTile::setShow(bool show)
 {
     _show = show;
-    Sys::setTilingChange();
+    TilingPtr tiling = Sys::tilingMaker->getSelected();
+    tiling->setTilingViewChanged();
 }
 
 bool PlacedTile::loadFromGirihShape(VersionedName vname)
@@ -140,8 +142,11 @@ bool PlacedTile::loadFromGirihShape(VersionedName vname)
     }
     girihShapeName = vname;
 
-    Sys::setTilingChange();
-
+    TilingPtr tiling = Sys::tilingMaker->getSelected();
+    if (tiling)
+    {
+        tiling->setTilingViewChanged();
+    }
     return true;
 }
 
@@ -150,15 +155,20 @@ TilePtr PlacedTile::getTile()
     return tile;
 }
 
-QTransform PlacedTile::getTransform()
+QTransform PlacedTile::getPlacement()
 {
-    return T;
+    return placement;
+}
+
+QPolygonF  PlacedTile::getPlacedPoints()
+{
+    return placement.map(tile->getPoints());
 }
 
 EdgePoly PlacedTile::getPlacedEdgePoly()
 {
     const EdgePoly & ep = tile->getEdgePoly();
-    EdgePoly ep2        = ep.map(T);
+    EdgePoly ep2        = ep.map(placement);
     return ep2;
 }
 
@@ -207,23 +217,25 @@ void PlacedTile::saveGirihShape(QTextStream & ts, VersionedName vname)
         ts << str << endl;
         fw.setEdgePoly(ts,tile->getEdgePoly());
     }
-    fw.setTransform(ts,T);
+    fw.setTransform(ts,placement);
     ts << "</Poly>" << endl;
 }
 
 void PlacedTile::loadGirihShape(xml_node & poly_node)
 {
-    TileReader tr;
-    EdgePoly ep = tr.getEdgePoly(poly_node);
-    tile        = make_shared<Tile>(ep,0);
-    T           = tr.getTransform(poly_node);
+    ReaderBase mrbase;
+    TileReader tr(&mrbase);
+    EdgeSet eset = tr.getEdgeSet(poly_node);
+    tile         = make_shared<Tile>(eset);
+    placement    = tr.getTransform(poly_node);
 }
 
 void PlacedTile::loadGirihShape(int sides, pugi::xml_node & poly_node)
 {
-    TileReader tr;
-    tile     = make_shared<Tile>(sides,0);
-    T        = tr.getTransform(poly_node);
+    ReaderBase mrbase;
+    TileReader tr(&mrbase);
+    tile        = make_shared<Tile>(sides,0);
+    placement   = tr.getTransform(poly_node);
 }
 
 void PlacedTile::loadGirihShapeOld(xml_node & poly_node)
@@ -241,30 +253,11 @@ void PlacedTile::loadGirihShapeOld(xml_node & poly_node)
     }
 
     EdgePoly epoly(poly);
-    tile = make_shared<Tile>(epoly,0);
-}
-
-const EdgePoly & PlacedTile::getTileEdgePoly()
-{
-    return tile->getEdgePoly();
-}
-
-EdgePoly & PlacedTile::getTileEdgePolyRW()
-{
-    return tile->getEdgePolyRW();
-}
-
-QPolygonF  PlacedTile::getTilePoints()
-{
-    return tile->getPoints();
-}
-
-QPolygonF  PlacedTile::getPlacedPoints()
-{
-    return T.map(tile->getPoints());
+    tile = make_shared<Tile>(epoly);
 }
 
 void PlacedTile::dump()
 {
-    qDebug().noquote() << tile->summary()  << Transform::info(T);
+    qDebug().noquote() << tile->summary()  << Transform::info(placement);
+    getTile()->dumpPts();
 }

@@ -2,7 +2,6 @@
 #include <QtMath>
 
 #include "model/motifs/motif_connector.h"
-#include "sys/geometry/map.h"
 #include "sys/geometry/debug_map.h"
 #include "model/motifs/radial_motif.h"
 #include "sys/geometry/intersect.h"
@@ -25,12 +24,10 @@ qreal MotifConnector::build(RadialMotif * motif)
     QLineF line2 = set2.ray1.getRay();
     QLineF line2a = Geo::extendLine(line2,10.0);
 
-    DebugMap * debugMap = motif->getDebugMap();
-    uint dbgval = motif->getDbgVal();
-    if (dbgval & 0x08)
+    if (motif->getMotifDebug() & 0x08)
     {
-        debugMap->insertDebugLine(line1a);
-        debugMap->insertDebugLine(line2a);
+        Sys::debugMapCreate->insertDebugLine(line1a,Qt::blue);
+        Sys::debugMapCreate->insertDebugLine(line2a,Qt::blue);
     }
 
     // Find intersection and add this to the tips
@@ -39,9 +36,9 @@ qreal MotifConnector::build(RadialMotif * motif)
     {
         set1.ray2.addTip(isect);
         set2.ray1.addTip(isect);
-        if (dbgval & 0x02)
+        if (motif->getMotifDebug() & 0x02)
                                                                                                                                                                                                                                                                                                                        {
-            debugMap->insertDebugMark(isect,"isect");
+            Sys::debugMapCreate->insertDebugMark(isect,"isect",Qt::red);
             set1.debug();
             set2.debug();
         }

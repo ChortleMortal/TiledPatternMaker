@@ -1,19 +1,21 @@
-﻿#include <QGroupBox>
-#include <QTextEdit>
-#include <QMessageBox>
-#include <QCheckBox>
+﻿#include <QCheckBox>
 #include <QFileDialog>
+#include <QGroupBox>
+#include <QMessageBox>
+#include <QPrinter>
+#include <QSvgGenerator>
+#include <QTextEdit>
 
+#include "gui/panels/page_save.h"
+#include "gui/top/controlpanel.h"
+#include "gui/top/system_view.h"
+#include "gui/widgets/dlg_print.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/tiling_maker.h"
 #include "model/mosaics/mosaic.h"
-#include "gui/panels/page_save.h"
-#include "gui/top/controlpanel.h"
 #include "model/settings/configuration.h"
 #include "model/styles/style.h"
 #include "model/tilings/tiling.h"
-#include "gui/top/view_controller.h"
-#include <QSvgGenerator>
 
 page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_SAVE, "Save")
 {
@@ -47,9 +49,10 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_SAVE, "Sav
     connect(mosaicMaker,    &MosaicMaker::sig_mosaicLoaded,     this,   &page_save::setup);
     connect(tilingMaker,    &TilingMaker::sig_tilingLoaded,     this,   &page_save::setup);
     connect(pbSaveMenu,     &QPushButton::clicked,              this,   &page_save::slot_saveMenu);
-    connect(Sys::view,      &View::sig_saveMenu,                this,   &page_save::slot_saveMenu);
-    connect(Sys::view,      &View::sig_saveImage,               this,   &page_save::slot_saveImage);
-    connect(Sys::view,      &View::sig_saveSVG,                 this,   &page_save::slot_saveSvg);
+    connect(Sys::sysview,   &SystemView::sig_saveMenu,          this,   &page_save::slot_saveMenu);
+    connect(Sys::sysview,   &SystemView::sig_saveImage,         this,   &page_save::slot_saveImage);
+    connect(Sys::sysview,   &SystemView::sig_print,             this,   &page_save::slot_print);
+    connect(Sys::sysview,   &SystemView::sig_saveSVG,           this,   &page_save::slot_saveSvg);
     connect(pbSaveImage,    &QPushButton::clicked,              this,   &page_save::slot_saveImage);
     connect(pbSaveSVG,      &QPushButton::clicked,              this,   &page_save::slot_saveSvg);
 }
@@ -97,7 +100,6 @@ void page_save::createTilingSave()
 {
     requiresSave = new QLabel;
     requiresSave->setStyleSheet("color: red");
-    requiresSave->setFixedWidth(91);
     requiresSave->setAlignment(Qt::AlignRight);
 
     QHBoxLayout * hbox = new QHBoxLayout;
@@ -110,7 +112,11 @@ void page_save::createTilingSave()
     QLabel * label        = new QLabel("Name");
     QLabel * label2       = new QLabel("Author");
     QLabel * label3       = new QLabel("Description");
-    tile_name             = new QLineEdit();
+
+    tile_names            = new QComboBox();
+    tile_names->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    tile_names->setEditable(true);
+
     tile_author           = new QLineEdit();
 
     QCheckBox * chkSaveTest = new QCheckBox("Test");
@@ -118,7 +124,7 @@ void page_save::createTilingSave()
 
     QHBoxLayout * hbox2 = new QHBoxLayout;
     hbox2->addWidget(label);
-    hbox2->addWidget(tile_name);
+    hbox2->addWidget(tile_names);
     hbox2->addWidget(label2);
     hbox2->addWidget(tile_author);
     hbox2->addWidget(chkSaveTest);
@@ -140,8 +146,9 @@ void page_save::createTilingSave()
     saveBox->setLayout(vlayout);
     vbox->addWidget(saveBox);
 
-    connect(pbSave,     &QPushButton::clicked,      this,   &page_save::slot_saveTiling);
-    connect(chkSaveTest,&QCheckBox::clicked,        this,   [this](bool checked) {config->saveTilingTest = checked; });
+    connect(pbSave,     &QPushButton::clicked,           this, &page_save::slot_saveTiling);
+    connect(tile_names, &QComboBox::currentIndexChanged, this, &page_save::slot_tilingChanged);
+    connect(chkSaveTest,&QCheckBox::clicked,             this, [this](bool checked) {config->saveTilingTest = checked; });
 }
 
 void page_save::onEnter()
@@ -163,31 +170,59 @@ void page_save::setup()
         designNotes->setText("");
     }
 
-    TilingPtr tiling =  tilingMaker->getSelected();
-    blockSignals(true);
+    auto tilings = tilingMaker->getTilings();
+    Q_ASSERT(!tilings.isEmpty());
+
+    tile_names->blockSignals(true);
+
+    tile_names->clear();
+    for (auto & tiling : tilings)
+    {
+        WeakTilingPtr wtp = tiling;
+        QVariant qv = QVariant::fromValue(wtp);
+        tile_names->addItem(tiling->getVName().get(),qv);
+    }
+
+    TilingPtr selected = tilingMaker->getSelected();
+    int idx = 0;
+    if (selected)
+    {
+        idx = tile_names->findText(selected->getVName().get());
+    }
+    if (idx == -1) idx = 0;
+
+    auto tiling = tilings[idx];
+    selectTiling(tiling);
+
+    tile_names->blockSignals(false);
+}
+
+void page_save::selectTiling(TilingPtr tiling)
+{
     if (tiling)
     {
         tile_desc->setText(tiling->getDescription());
-        tile_name->setText(tiling->getName().get());
         tile_author->setText(tiling->getAuthor());
     }
     else
     {
         tile_desc->setText("");
-        tile_name->setText("");
         tile_author->setText("");
     }
-    blockSignals(false);
-
-    onRefresh();;
 }
 
 void page_save::onRefresh()
 {
-    if (tilingMaker->tilingChanged())
-        requiresSave->setText("HAS CHANGED");
-    else
-        requiresSave->setText("");
+    QString txt;
+
+    auto tilings = tilingMaker->getTilings();
+    for (auto & tiling : tilings)
+    {
+        if (tiling->requiresSaving())
+            txt += QString("  <%1> HAS CHANGED").arg(tiling->getVName().get());
+    }
+
+    requiresSave->setText(txt);
 }
 
 void page_save::slot_saveMosaic()
@@ -220,7 +255,7 @@ void page_save::slot_saveMosaic()
     QVector<TilingPtr> tilings = mosaic->getTilings();
     for (const auto & tiling : std::as_const(tilings))
     {
-        if (tilingMaker->tilingChanged() || (tiling->getName().get()  == Sys::defaultTilingName))
+        if (tiling->requiresSaving() || (tiling->getVName().get()  == Sys::defaultTilingName))
         {
             QMessageBox box(panel);
             box.setIcon(QMessageBox::Warning);
@@ -254,26 +289,47 @@ void page_save::slot_saveMosaic()
     mosaicMaker->saveMosaic(mosaic,false);
 }
 
-
-void page_save::slot_designSourceChanged()
+void page_save::slot_tilingChanged(int idx)
 {
-    setup();
-}
-
-void page_save::slot_tilingSourceChanged()
-{
-    setup();
+    auto tilings = tilingMaker->getTilings();
+    auto tiling  = tilings[idx];
+    selectTiling(tiling);
 }
 
 void page_save::slot_saveTiling()
 {
-    TilingPtr tiling = tilingMaker->getSelected();
+    // name to be saved overwrites name currently in tile
+    VersionedName vname(tile_names->currentText());
+    if (vname.isEmpty() || vname.get().contains(Sys::defaultTilingName))
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle("Save Tiling");
+        box.setText("There is no tiling name. A tiling name is required.");
+        box.exec();
+        return;
+    }
 
-    QString name = tile_name->text();
+    // the tiling selectet in this page is saved, irregardless
+    // of what is selected in the tiling
+    QVariant       qv = tile_names->currentData();
+    WeakTilingPtr wtp = qv.value<WeakTilingPtr>();
+    TilingPtr  tiling = wtp.lock();
 
-    VersionedName vname(name);
+    if (!tiling)
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle("Save Tiling");
+        QString str = QString("Tiling <%1> not available for saving").arg(vname.get());
+        box.setText(str);
+        box.exec();
 
-    if (tiling->numIncluded() == 0)
+        setup();
+        return;
+    }
+
+    if (tiling->unit().numIncluded() == 0)
     {
         QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);
@@ -283,7 +339,7 @@ void page_save::slot_saveTiling()
         return;
     }
 
-    int count = tiling->getUniqueTiles().count();
+    int count = tiling->unit().getUniqueTiles().count();
     if (count >= MAX_UNIQUE_TILE_INDEX)
     {
         QMessageBox box(panel);
@@ -300,30 +356,30 @@ void page_save::slot_saveTiling()
         }
     }
 
-    if (vname.isEmpty() || vname.get().contains(Sys::defaultTilingName))
-    {
-        QMessageBox box(panel);
-        box.setIcon(QMessageBox::Warning);
-        box.setWindowTitle("Save Tiling");
-        box.setText("There is no tiling name. A tiling name is required.");
-        box.exec();
-        return;
-    }
-    
-    tiling->setName(vname);
+    // perform the save
+    tiling->setVName(vname);
     tiling->setAuthor(tile_author->text());
     tiling->setDescription(tile_desc->toPlainText());
 
-    tilingMaker->saveTiling(tiling);
+    tilingMaker->saveTiling(tiling,false);
+
+    setup();
 }
 
 void page_save::slot_saveImage()
 {
     VersionedName name = config->lastLoadedMosaic;
 
-    QPixmap pixmap = Sys::view->grab();
+    QPixmap pixmap = Sys::viewController->grabView();
 
     savePixmap(pixmap, name.get());
+}
+
+void page_save::slot_print()
+{
+    auto printer = new QPrinter;
+    auto dlg     = new DlgPrint(printer, Sys::sysview);
+    dlg->show();
 }
 
 void page_save::slot_saveMenu()
@@ -344,7 +400,11 @@ void page_save::savePixmap(QPixmap & pixmap, QString name)
     QSettings s;
     if (firstTime)
     {
-        path = config->rootMediaDir;
+        path = Sys::config->rootImageDir + "snaps/";
+        QDir adir(path);
+        if (!adir.exists())
+            adir.mkdir(path);
+        Q_ASSERT(adir.exists());
         firstTime = false;
     }
     qDebug() << "path=" << path;
@@ -474,8 +534,8 @@ void page_save::slot_saveSvg()
 
     QSvgGenerator generator;
     generator.setFileName(path);
-    generator.setSize(Sys::view->size());
-    generator.setViewBox(Sys::view->rect());
+    generator.setSize(Sys::viewController->viewSize());
+    generator.setViewBox(Sys::viewController->viewRect());
     generator.setTitle(QString("SVG Image: %1").arg(name));
     generator.setDescription("Created using Tiled Pattern Maker (David Casper)");
 

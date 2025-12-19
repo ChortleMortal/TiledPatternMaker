@@ -3,10 +3,11 @@
 #define DLG_CLEANSE_H
 
 #include <QDialog>
-#include <QLabel>
-#include <QComboBox>
 
+class QLabel;
 class QCheckBox;
+class DoubleSpinSet;
+class QComboBox;
 
 typedef std::shared_ptr<class Map> MapPtr;
 
@@ -17,11 +18,12 @@ class DlgCleanse : public QDialog
 public:
     DlgCleanse(MapPtr map, uint cleanseLevel, qreal sensitivity, QWidget * parent = nullptr);
 
-    uint  getLevel();
+    uint  fromCheckboxes();
     qreal getSsnsitivity() { return sensitivity; }
 
 protected:
     void toCheckboxes(uint level);
+    void setStatus(QLabel * label);
 
 signals:
     void  sig_cleansed();
@@ -41,11 +43,10 @@ private:
     QCheckBox * nearPoints;
     QCheckBox * joinEdges;
     QCheckBox * divEdges;
-    QCheckBox * cleanNeigh;
-    QCheckBox * buildNeigh;
+    QCheckBox * cleanEdges;
 
-    class DoubleSpinSet * sen;
-    QLabel        * status;
+    DoubleSpinSet * sen;
+    QLabel        * status1;
     QLabel        * status2;
 
     MapPtr      map;
@@ -57,14 +58,15 @@ class QuicksetCleanse : public QDialog
     Q_OBJECT
 
 public:
-    QuicksetCleanse(QWidget * parent);
+    QuicksetCleanse(QWidget * parent,qreal existing);
 
-    qreal sensitivity;
+    qreal qs_sensitivity;
 
 protected slots:
-    void slot_mergeSensitivity(int sens);
+    void slot_sensitivitySelected(uint sens);
 
 private:
+    static qreal rvals[16];
     QComboBox  * box;
 };
 

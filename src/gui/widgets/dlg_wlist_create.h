@@ -21,8 +21,10 @@ public:
 
     QRadioButton * selMosaic;
     QRadioButton * selTiling;
+    QCheckBox    * useWorklist;
+    QCheckBox    * inverseMosaicWorklist;
 
-    QCheckBox * chkLoadFilter;
+    QCheckBox    * chkLoadFilter;
     QRadioButton * radStyle;
     QRadioButton * radMotif;
     QRadioButton * radText;

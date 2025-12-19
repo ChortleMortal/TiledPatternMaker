@@ -1,9 +1,12 @@
 #include <QPainter>
+#include <QPainterPath>
+#include <QDebug>
+
+#include "model/settings/configuration.h"
+#include "qpainterpath.h"
 #include "sys/geometry/crop.h"
 #include "sys/geometry/geo.h"
 #include "sys/geometry/transform.h"
-#include "model/settings/configuration.h"
-#include <QDebug>
 
 /*
     A crop is a an adjustable data structure which is used to perform
@@ -178,6 +181,43 @@ void  Crop::transform(QTransform t)
 
     _circle.centre = t.map(_circle.centre);
     _circle.radius = Transform::scalex(t) * _circle.radius;
+}
+
+void Crop::setPainterClip(QPainter * painter, QTransform transform)
+{
+    switch (getCropType())
+    {
+    case CROP_RECTANGLE:
+    {
+        auto rect = getRect();
+        rect = transform.mapRect(rect);
+        qInfo() << "Painter Clip:" << rect;
+        painter->setClipRect(rect);
+    }   break;
+
+    case CROP_POLYGON:
+    {
+        QPolygonF p  = getAPolygon().get();
+        QPolygonF p2 = transform.map(p);
+        //painter.setClipRegion(p2);
+        QPainterPath pp;
+        pp.addPolygon(p2);
+        painter->setClipPath(pp);
+    }   break;
+
+    case CROP_CIRCLE:
+    {
+        Circle c    = getCircle();
+        QRectF rect = c.boundingRect();
+        rect = transform.mapRect(rect);
+        QPainterPath p;
+        p.addEllipse(rect.x(),rect.y(),rect.width(),rect.height());
+        painter->setClipPath(p);
+    }   break;
+
+    case CROP_UNDEFINED:
+        break;
+    }
 }
 
 void Crop::draw(QPainter * painter, QTransform t, bool active)

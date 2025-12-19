@@ -9,8 +9,9 @@
 #include "model/tilings/tiling.h"
 #include "sys/geometry/crop.h"
 #include "sys/geometry/dcel.h"
-#include "sys/geometry/fill_region.h"
 #include "sys/geometry/map.h"
+#include "sys/geometry/map_cleanser.h"
+#include "sys/geometry/map_verifier.h"
 #include "sys/qt/timers.h"
 #include "sys/sys.h"
 
@@ -42,7 +43,6 @@ Prototype::Prototype(TilingPtr t, MosaicPtr m)
     cleanseSensitivity = 0;
     refs++;
 }
-
 
  // for use only by PrototypeMaker
 Prototype::Prototype(TilingPtr t)
@@ -89,10 +89,10 @@ bool Prototype::operator==(const Prototype & other)
         DesignElementPtr ele  = _designElements[i];
         DesignElementPtr eleo = other._designElements[i];
 
-        if ( !(ele->getTile()->equals(eleo->getTile())))
+        if (ele->getTile() != eleo->getTile())
             return  false;
 
-        if ( !(ele->getMotif()->equals(eleo->getMotif())))
+        if (ele->getMotif() != eleo->getMotif())
             return  false;
     }
     return  true;
@@ -100,7 +100,7 @@ bool Prototype::operator==(const Prototype & other)
 
 void Prototype::wipeoutProtoMap()
 {
-    _dcel.reset();                  // dcel is subordinate so must be erased too.
+    _filledDCEL.reset();                  // dcel is subordinate so must be erased too.
     _protoMap->clear();
     Q_ASSERT(_protoMap->isEmpty());
 }
@@ -119,7 +119,8 @@ void Prototype::createProtoMap(bool splash)
 {
     QMutexLocker locker(&protoMutex);
 
-    wipeoutProtoMap();
+    Q_ASSERT(_protoMap);
+    Q_ASSERT(_protoMap->isEmpty());
 
     if (_designElements.size() == 0)
     {
@@ -134,7 +135,7 @@ void Prototype::createProtoMap(bool splash)
     AQElapsedTimer timer;
 
     qDebug() << "PROTOTYPE CONSTRUCT MAP";
-    QString astring = QString("Constructing prototype map for tiling: %1").arg(_tiling->getName().get());
+    QString astring = QString("Constructing prototype map for tiling: %1").arg(_tiling->getVName().get());
     qDebug().noquote() << astring;
 
     _createMap();
@@ -151,6 +152,7 @@ void Prototype::createProtoMap(bool splash)
 void Prototype::_createMap()
 {
     Q_ASSERT(_tiling);
+    Q_ASSERT(_protoMap->isEmpty());
 
     // Use FillRegion to get a list of translations for this tiling.
     // Note that the fill data could be from the mosaic rather than the tiling
@@ -158,18 +160,19 @@ void Prototype::_createMap()
     // each motif point is placed with a relative transform from the tiling when the map is constructed
 
     MosaicPtr mosaic = wMosaic.lock();
+
     FillData fillData;
     if (mosaic)
         fillData = mosaic->getCanvasSettings().getFillData();
     else
-        fillData = _tiling->getCanvasSettings().getFillData();
+        fillData = _tiling->hdr().getCanvasSettings().getFillData();
     FillRegion flood(_tiling.get(),fillData);
     Placements fillPlacements = flood.getPlacements(Sys::config->repeatMode);
 
     if (_designElements.size() == 1 && fillPlacements.size() == 1 && fillPlacements[0].isIdentity())
     {
         auto tile = _designElements[0]->getTile();
-        if (_tiling->getPlacements(tile).size() == 0)
+        if (_tiling->unit().getPlacements(tile).size() == 0)
         {
             // This is a special edge case and seems a kludge, fighting the system.
             // With more thought a better implementation of this idea could be made
@@ -183,41 +186,12 @@ void Prototype::_createMap()
     {
         buildMotifMaps();
 
-        for (const auto & designElement : std::as_const(_designElements))
-        {
-            // Now, for each different tile, build a submap corresponding
-            // to all translations of that tile.
-            TilePtr tile              = designElement->getTile();
-            Placements tilePlacements = _tiling->getPlacements(tile);
-            if (!tilePlacements.size()) tilePlacements.push_back(QTransform());   // dummy tilings have no placements
+        buildPrototypeMap(fillPlacements);
 
-            MotifPtr motif  = designElement->getMotif();
-            motif->dump();
-            MapPtr motifMap = motif->getMotifMap();
-            if (!motifMap)
-            {
-                qWarning("empty motif map");
-                motifMap = make_shared<Map>("Kludge map");
-            }
-            qDebug().noquote() << "MOTIF:" << motif->getMotifDesc() << motifMap->summary() << "Tile-sides:" << tile->numSides();
-
-            // Within a single translational unit, assemble the different
-            // transformed figures corresponding to the given feature into a map.
-            MapPtr unitMap =  make_shared<Map>("proto unit map");
-            unitMap->mergeMany(motifMap, tilePlacements);
-            qDebug().noquote() << "unit map" << unitMap->summary();
-
-            // Now put all the translations together into a single map for this feature.
-            MapPtr tileMap = make_shared<Map>("proto tile map");
-            tileMap->mergeMany(unitMap, fillPlacements);
-            qDebug().noquote() << "tile map" << tileMap->summary();
-
-            // And do a slow merge to add this map to the finished design.
-            qDebug().noquote() << "proto map before:" << _protoMap->summary();
-            _protoMap->mergeMap(tileMap);
-            qDebug().noquote() << "proto map end: figure - " << motif->getMotifDesc() << _protoMap->summary();
-        }
-        if (!_protoMap->isEmpty()) qDebug() << "PROTOTYPE merged";
+        if (!_protoMap->isEmpty())
+            qDebug() << "PROTOTYPE merged";
+        else
+            qDebug() << "PROTOTYPE emptu";
     }
 
     if (_crop)
@@ -268,22 +242,23 @@ void Prototype::_createMap()
 
     if (!_protoMap->isEmpty())
     {
-        qDebug() << "cleanse level=" << cleanseLevel;
         if (cleanseLevel)
         {
             qDebug() << "cleanse level (hex)" << Qt::hex << cleanseLevel;
             qDebug().noquote() << "pre proto map cleanse:" << _protoMap->summary();
-            _protoMap->cleanse(cleanseLevel,cleanseSensitivity);
+            MapCleanser mc(_protoMap);
+            mc.cleanse(cleanseLevel,cleanseSensitivity);
             qDebug().noquote() << "post proto map cleanse:" << _protoMap->summary();
         }
     }
 
-    _protoMap->verifyAndFix(Sys::config->verifyProtos);
+    MapVerifier mv(_protoMap);
+    mv.verifyAndFix(Sys::config->forceVerifyProtos);
 }
 
 void Prototype::resetMotifMaps()
 {
-    for (const auto & del : std::as_const(_designElements))
+    for (auto & del : _designElements)
     {
         auto motif = del->getMotif();
         motif->resetMotifMap();
@@ -298,12 +273,12 @@ void Prototype::buildMotifMaps()
 
     // pass 1 - build all motif maps
     int num_inferred = 0;
-    for (const auto & del : std::as_const(_designElements))
+    for (auto & del : _designElements)
     {
         auto motif = del->getMotif();
-        if (motif->getMotifType() == MOTIF_TYPE_INFERRED) num_inferred++;
+        if (motif->getMotifType() == MOTIF_TYPE_INFERRED)
+            num_inferred++;
         motif->cleanExtenders();
-        motif->dump();
         motif->buildMotifMap();
     }
 
@@ -315,25 +290,54 @@ void Prototype::buildMotifMaps()
             auto motif = del->getMotif();
             if (motif->getMotifType() == MOTIF_TYPE_INFERRED)
             {
-                motif->resetMotifMap();
-                motif->dump();
                 motif->buildMotifMap();
             }
         }
     }
 }
 
-DCELPtr Prototype::getDCEL()
+void Prototype::buildPrototypeMap(Placements & fillPlacements)
 {
-    if (!_dcel)
+    for (auto & designElement : _designElements)
+    {
+        TilePtr tile              = designElement->getTile();
+        Placements tilePlacements = _tiling->unit().getPlacements(tile);
+        if (!tilePlacements.size())
+            tilePlacements.push_back(QTransform());   // dummy tilings have no placements
+
+        MotifPtr motif  = designElement->getMotif();
+        MapPtr motifMap = motif->getMotifMap();
+        if (!motifMap)
+        {
+            qWarning("empty motif map");
+            motifMap = make_shared<Map>("Kludge map");
+        }
+
+        MapPtr unitMap =  make_shared<Map>("proto unit map");
+        unitMap->mergeMany(motifMap, tilePlacements);
+
+        MapPtr tileMap = make_shared<Map>("proto tile map");
+        tileMap->mergeMany(unitMap, fillPlacements);
+
+        _protoMap->mergeMap(tileMap);
+    }
+}
+
+const FilledDCELPtr & Prototype::getFilledDCEL()
+{
+    if (!_filledDCEL)
     {
         QMutexLocker locker(&dcelMutex);
 
         auto protomap = getProtoMap();
-        _dcel = std::make_shared<DCEL>(protomap.get());
-        protomap->setDerivedDCEL(_dcel);
+        auto dcel     = std::make_shared<FilledDCEL>(protomap.get());
+        if (dcel->build())
+        {
+            _filledDCEL = dcel;
+            protomap->setDerivedDCEL(dcel);
+        }
     }
-    return _dcel;
+    return _filledDCEL;
 }
 
 void Prototype::replaceTiling(const TilingPtr & newTiling)
@@ -353,7 +357,7 @@ void Prototype::replaceTiling(const TilingPtr & newTiling)
     QVector<DesignElementPtr> usedElements;
 
     // match elements to tiles
-    const QVector<TilePtr> uniqueTiles = newTiling->getUniqueTiles();
+    const QVector<TilePtr> uniqueTiles = newTiling->unit().getUniqueTiles();
     for (auto & newTile : std::as_const(uniqueTiles))
     {
         bool used = false;
@@ -363,7 +367,7 @@ void Prototype::replaceTiling(const TilingPtr & newTiling)
             {
                 continue;
             }
-            if (newTile->equals(del->getTile()))
+            if (newTile == del->getTile())
             {
                 // replace
                 del->replaceTile(newTile);
@@ -401,9 +405,39 @@ void Prototype::replaceTiling(const TilingPtr & newTiling)
     }
 }
 
+void Prototype::exactReplaceTiling(const TilingPtr & newTiling)
+{
+    // exact replacement of tiling where tiles match
+    _tiling = newTiling;
+
+    _protoMap->clear();
+
+    QVector<DesignElementPtr> usedElements;
+
+    // match elements to tiles
+    const QVector<TilePtr> uniqueTiles = newTiling->unit().getUniqueTiles();
+    for (auto & newTile : std::as_const(uniqueTiles))
+    {
+        for (auto & del : std::as_const(_designElements))
+        {
+            if (usedElements.contains(del))
+            {
+                continue;
+            }
+            if (newTile == del->getTile())
+            {
+                // replace
+                del->exactReplaceTile(newTile);
+                usedElements.push_back(del);
+                break;
+            }
+        }
+    }
+}
+
 void Prototype::analyze(TilingPtr newTiling)
 {
-    QVector<TilePtr> tiles = newTiling->getUniqueTiles();
+    QVector<TilePtr> tiles = newTiling->unit().getUniqueTiles();
     QString line = "elements: ";
     for (const auto & designElement : std::as_const(_designElements))
     {
@@ -431,25 +465,9 @@ void Prototype::removeDesignElement(const DesignElementPtr & element)
 
 QString Prototype::info() const
 {
-    return QString("elements=%1 tiling=%2").arg(_designElements.size()).arg(_tiling->getName().get());
+    return QString("elements=%1 tiling=%2").arg(_designElements.size()).arg(_tiling->getVName().get());
 }
 
-#if 0
-DesignElementPtr Prototype::getDesignElement(const TilePtr & tile)
-{
-    for (const auto & designElement : std::as_const(_designElements))
-    {
-        if (designElement->getTile() == tile)
-        {
-            return designElement;
-        }
-    }
-
-    //qDebug() << __FUNCTION__ "- not found";
-    DesignElementPtr del;
-    return del;
-}
-#endif
 
 DesignElementPtr Prototype::getDesignElement(int index)
 {
@@ -458,7 +476,7 @@ DesignElementPtr Prototype::getDesignElement(int index)
         return _designElements[index];
     }
 
-    //qDebug() << __FUNCTION__ "- not found";
+    //qDebug() << "Prototype::getDesignElement" << "- not found";
     DesignElementPtr del;
     return del;
 }
@@ -535,7 +553,7 @@ void Prototype::walk()
     qDebug() << "num design elements=" << _designElements.size();
     if (_designElements.size() == 0)
     {
-        qWarning() << "There are no design elements in the prototype for tiling" << _tiling->getName().get();
+        qWarning() << "There are no design elements in the prototype for tiling" << _tiling->getVName().get();
     }
 
     qDebug() << "start Prototype walk.... num motifs=" << _designElements.size();

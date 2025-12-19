@@ -5,34 +5,41 @@
 #include <QElapsedTimer>
 #include "sys/sys/versioning.h"
 
-enum eLoadState
+enum eLoadUnitType
 {
-    LOADING_NONE,
-    LOADING_TILING,
-    LOADING_MOSAIC,
-    LOADING_LEGACY
+    LT_LEGACY,
+    LT_MOSAIC,
+    LT_TILING,
+    LT_UNDEFINED
+};
+
+enum eLoadUnitState
+{
+    LS_READY,
+    LS_LOADING,
+    LS_LOADED,
+    LS_FAILED
 };
 
 class LoadUnit
 {
 public:
-    LoadUnit();
+    LoadUnit(eLoadUnitType type);
 
-    eLoadState      getLoadState()      { return loadState; }
+    eLoadUnitState  getLoadState()      { return loadState; }
     VersionedFile   getLoadFile()       { return loadFile; }
-    eLoadState      getLastLoadState()  { return lastState; }
-    VersionedFile   getLastLoadFile()   { return lastFile; }
 
-    void            setLoadState(eLoadState state, VersionedFile name);
-    void            resetLoadState() { loadState = LOADING_NONE; }
+    void            start(VersionedFile name);
+    void            end(eLoadUnitState state);
+    void            declareLoaded(VersionedFile name);
+    void            ready();
 
     QElapsedTimer   loadTimer;
 
 private:
-    eLoadState      loadState;
+    eLoadUnitType   loadType;
+    eLoadUnitState  loadState;
     VersionedFile   loadFile;
-    VersionedFile   lastFile;
-    eLoadState      lastState;
 };
 
 #endif // LOAD_UNIT_H

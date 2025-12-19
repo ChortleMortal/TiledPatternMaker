@@ -6,16 +6,15 @@
 #include <QColor>
 #include <QRectF>
 #include <QSettings>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 
 #include "sys/enums/ecyclemode.h"
-#include "sys/enums/edesign.h"
 #include "sys/enums/efillmode.h"
 #include "sys/enums/efilesystem.h"
 #include "sys/enums/elogmode.h"
 #include "sys/enums/emapeditor.h"
+#include "sys/enums/emotiftype.h"
+#include "sys/enums/etilingmaker.h"
+#include "sys/sys/load_unit.h"
 #include "sys/sys/versioning.h"
 #include "model/settings/worklist.h"
 
@@ -37,7 +36,8 @@ enum eGridUnits
     GRID_UNITS_SCREEN,
     GRID_UNITS_MODEL,
     GRID_UNITS_TILE,
-    GRID_UNITS_MAX = GRID_UNITS_TILE
+    GRID_UNITS_OFF,
+	GRID_UNITS_MAX = GRID_UNITS_OFF
 };
 
 enum  eGridType
@@ -103,7 +103,7 @@ public:
     QString diffTool;
     QString BMPCompare0;
     QString BMPCompare1;
-    QString panelName;
+    QString pageName;
     QString mosaicFilter;
     QString tileFilter;
     QString rootImageDir;
@@ -114,6 +114,7 @@ public:
     VersionedName lastLoadedTiling;      // used on startup
     VersionedName lastLoadedMosaic;      // used on startup
     VersionedName lastLoadedLegacy;      // used on startup
+    eLoadUnitType lastLoadedType;
 
     QStringList protoViewColors;
     QStringList viewColors;
@@ -124,14 +125,12 @@ public:
     eGridUnits      gridUnits;
     eGridType       gridType;
 
-    eCycleMode      viewCycle2;
-
-    eLoadType       genFileFilter;
-    eLoadType       viewFileFilter;
-    eLoadType       versionFilter;
+    eLoadType       imageFileFilter;
 
     eGridTilingAlgo gridTilingAlgo;
     eColorTheme     colorTheme;
+    eMotifView      motifMakerView;
+    eTileColorModes tm_tileColorMode;
 
     int     cycleInterval;
     int     polySides;    // used by tiling maker
@@ -144,10 +143,11 @@ public:
 
     uint    debugViewConfig;
     uint    mapedCleanseLevel;
+    uint    debugTabIndex;
 
-    bool    autoLoadStyles;
-    bool    autoLoadTiling;
-    bool    autoLoadDesigns;
+    bool    firstBirthday;
+
+    bool    autoLoadLast;
     bool    scaleToView;
     bool    logToStderr;
     bool    logToDisk;
@@ -155,24 +155,27 @@ public:
     bool    logToPanel;
     bool    logNumberLines;
     bool    logDebug;
+    bool    enableLog2;
     bool    mapedStatusBox;
     bool    mapedLoadCopies;
-    bool    showBackgroundImage;
+    bool    mapedOldTemplates;
     bool    insightMode;
-    bool    motifMultiView;
-    bool    motifEnlarge;
     bool    limitViewSize;
+    bool    disableSplash;
+    bool    disableResizeNotify;
 
     bool    verifyPopup;         // false pops up errors
-    bool    verifyProtos;
+    bool    forceVerifyProtos;
     bool    verifyMaps;
     bool    verifyDump;         // TODO - make sure this flag work
     bool    verifyVerbose;      // TODO - make sure this flag work
     bool    buildEmptyNmaps;    // rebuild empty neighbour maps
-    bool    unDuplicateMerge;   // de-duplicates edges after merge
+    bool    slowCleanseMapMerges;   // de-duplicates edges after merge
 
     bool    mosaicFilterCheck;
     bool    mosaicWorklistCheck;
+    bool    mosaicFilterXCheck;
+    bool    mosaicWorklistXCheck;
     bool    mosaicOrigCheck;
     bool    mosaicNewCheck;
     bool    mosaicTestCheck;
@@ -183,7 +186,9 @@ public:
     bool    tilingTestCheck;
     bool    tileFilterCheck;
     bool    tilingWorklistCheck;
+    bool    tilingWorklistXCheck;
     bool    lockView;
+    bool    multiView;
     bool    splitScreen;
     bool    bigScreen;
 
@@ -195,11 +200,11 @@ public:
     bool    showTileCenter;
 
     bool    tm_showExcludes;
-    bool    tm_hideTable;
     bool    tm_hideTranslations;
     bool    tm_showDebug;
     bool    tm_loadFill;
-    bool    tm_showOverlaps;
+    bool    tm_snapToGrid;
+    bool    tm_snapOnly;
 
     bool    compare_transparent;
     bool    compare_popup;
@@ -209,17 +214,14 @@ public:
     bool    skipExisting;
     bool    cs_showBkgds;
     bool    showCenterDebug;
-    bool    showGrid;
-    bool    lockGridToView;
-    bool    showGridLayerCenter;
     bool    showGridModelCenter;
     bool    showGridViewCenter;
-    bool    genCycleMosaic;
+    eImageType    imageType;
     bool    multithreadedGeneration;
+    bool    includeBkgdGeneration;
 
     bool    gridModelCenter;
     bool    gridScreenCenter;
-    bool    snapToGrid;
     bool    defaultImageRoot;
     bool    defaultMediaRoot;
     bool    saveMosaicTest;
@@ -227,7 +229,8 @@ public:
 
     bool    vCompLock;
     bool    vCompXML;
-    bool    vCompTile;
+
+    bool    sysinfo_all;
 
     QColor  transparentColor;            // used by some menus
     QString  gridColorTiling;

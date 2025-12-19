@@ -30,8 +30,7 @@ class DesignElementButton : public QFrame
     Q_OBJECT
 
 public:
-    DesignElementButton(int index);
-    DesignElementButton(DesignElementPtr designElement, int index);
+    DesignElementButton(int index, DesignElementPtr del = nullptr, QTransform t = QTransform());
 
     void    setDesignElement(DesignElementPtr del);
     DesignElementPtr getDesignElement();
@@ -46,7 +45,7 @@ public:
     void    setViewTransform();
 
     static QTransform resetViewport(int index, DesignElementPtr designElement, QRect frameRect);
-    static QTransform resetViewport(int index, MapPtr map, QRect frameRect);
+    static QTransform lookAt(int index, QRectF rect, QRect frameRect);
 
     void    tally();
     void    setTallyString(QString str) { tallyStr = str; }
@@ -58,8 +57,6 @@ public:
     bool    isDelegated() { return delegated; }
 
 protected:
-    void   construct(DesignElementPtr del, int index);
-    static QTransform lookAt(int index, QRectF rect, QRect frameRect);
     static QTransform centerInside(int index, QRectF first, QRectF other);
 
 private:
@@ -68,7 +65,10 @@ private:
     int              index;
     bool             selected;      // in multi more than one can be selected
     bool             delegated;     // only one has the current delgation to match the editor
+
     QTransform       transform;
+    QTransform       placement;
+
     static QColor    tileIinterior;
     static QColor    tileBorder;
     QString          tallyStr;

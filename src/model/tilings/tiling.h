@@ -17,31 +17,52 @@
 #include <QStack>
 #include <QObject>
 #include "gui/viewers/layer_controller.h"
+#include "model/styles/colorset.h"
 #include "model/settings/tristate.h"
-#include "model/tilings/tiling_data.h"
+#include "model/tilings/tiling_header.h"
+#include "model/tilings/tiling_unit.h"
 
 #define MAX_UNIQUE_TILE_INDEX 7
 
 class GeoGraphics;
 
-typedef std::shared_ptr<class Tile>          TilePtr;
-typedef std::shared_ptr<class PlacedTile>    PlacedTilePtr;
-typedef std::shared_ptr<class Map>           MapPtr;
+typedef std::shared_ptr<class Tile>             TilePtr;
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class PlacedTile>       PlacedTilePtr;
+typedef std::shared_ptr<class Map>              MapPtr;
 typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
+
+class SaveStatus
+{
+public:
+    SaveStatus(Tiling * parent);
+
+    void    init();             // initialises from parent
+    bool    needsSaving();      // compares with parents current state
+
+    TilingHeader    header;
+    TilingUnit      unit;
+
+private:
+    Tiling *        parent;
+};
+
 
 // Translations to tile the plane. Two needed for two-dimensional plane.
 // (Of course, more complex tiling exists with rotations and mirrors.)
 // (They are not supported.)
 
-class Tiling : public LayerController, public std::enable_shared_from_this<Tiling>
+class Tiling : public LayerController
 {
     Q_OBJECT
 
 public:
     Tiling();
+    Tiling(Tiling * other);
     ~Tiling();
 
     void                copy(TilingPtr other);  // makes a unique duplicate
+
     bool                isEmpty();
     bool                hasIntrinsicOverlaps();
     bool                hasTiledOverlaps();
@@ -49,8 +70,8 @@ public:
     void                paint(QPainter *painter) override;
     void                draw(GeoGraphics * gg);
 
-    VersionedName       getName()        const              { return name; }
-    void                setName(VersionedName & name)       { this->name = name; }
+    VersionedName       getVName()        const             { return name; }
+    void                setVName(VersionedName & name)      { this->name = name; }
     QString             getDescription() const              { return desc; }
     void                setDescription(QString descrip )    { desc = descrip; }
     QString             getAuthor()      const              { return author; }
@@ -58,42 +79,13 @@ public:
     int                 getVersion();
     void                setVersion(int ver);
 
-    void                setTranslationVectors(QPointF t1, QPointF t2, QPointF origin) { db.setTranslationVectors(t1,t2, origin); }
-    QPointF             getTranslateOrigin()                                          { return db.getTranslateOrigin(); }
-    void                setCanvasSettings(const CanvasSettings & settings)            { db.setCanvasSettings(settings); }
-
-    void                addPlacedTile(const PlacedTilePtr pfm);
-    void                removePlacedTile(PlacedTilePtr pf);
-    void                removeExcludeds();
-    void                replaceTilingUnit(TilingUnit & tilingUnit);
-    void                clearPlacedTiles();
-
-    void                creaateViewablePlacedTiles();
-    TilingPlacements  & getViewablePlacements() { return _viewable; }
-    TilingPlacements    getTilingUnitPlacements(bool all = false) const;
-    TilingPlacements    getExcluded() const  { return db.getExcluded(); };
-
-    int                 numUnique()   { return getUniqueTiles().count(); }
-    int                 numExcluded() { return db.getTilingUnit2().numExcluded(); }
-    int                 numIncluded() { return db.getTilingUnit2().numIncluded(); }
-    int                 numAll()      { return db.getTilingUnit2().numAll(); }
-    int                 numViewable() { return _viewable.count(); }
-
-    int                 numPlacements(TilePtr tile);
-    Placements          getPlacements(TilePtr tile);
-    QTransform          getFirstPlacement(TilePtr tile);
-    QVector<TilePtr>    getUniqueTiles();
-
-    const Xform &       getModelXform() override;
-    void                setModelXform(const Xform & xf, bool update) override;
-
     // Data
-    const TilingData &  getData()  const                    { return db; }
-    const TilingData    getDataCopy()                       { return db.copy(); }
-    void                setData(TilingData td)              { db = td; }
+    inline TilingHeader & hdr()   { return _header; }
+    inline TilingUnit   & unit()  { return _tilingUnit;}
 
-    TilingUnit &        getTilingUnit()                     { return db.getTilingUnit2(); }
-    const CanvasSettings& getCanvasSettings() const         { return db.getCanvasSettings(); }
+    void                createViewablePlacedTiles();
+    int                 numViewable()                       { return _viewable.count(); }
+    PlacedTiles &       getViewablePlacements()             { return _viewable; }
 
     BkgdImagePtr        getBkgdImage()                      { return bip; }
     void                setBkgdImage(BkgdImagePtr bp)       { bip = bp; }
@@ -108,31 +100,47 @@ public:
     MapPtr              debug_createFilledMap();
     MapPtr              debug_createProtoMap();
 
-    eViewType           iamaLayer() override { return VIEW_TILING; }
+    // for tiling maker view and tiling view
+    void                setViewable(bool enb)   { _view = enb; }
+    bool                isViewable()            { return _view; }
+
+    void                setTilingViewChanged()  { _tilingViewChange = true;  }
+    bool                isTilingViewChanged()   { return _tilingViewChange;  }
+    void                resetTilingViewChanged(){ _tilingViewChange = false; }
+
+    SaveStatus *        getSaveStatus()          { return  _saveStatus; }
+    bool                requiresSaving();
+
+    ColorGroup &        legacyTileColors()      { return _legacyTileColors; }
+
     void                iamaLayerController() override {}
 
-    QString             info() const;
+    QString             info();
+
+    void                setLegacyModelConverted(bool set) { _legacyCenterConverted = set; }
+    bool                legacyModelConverted()            { return _legacyCenterConverted; }
+    void                correctBackgroundAlignment(BkgdImagePtr bip);
 
     static int          refs;
 
 public slots:
-     void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+     void slot_mousePressed(QPointF spt, Qt::MouseButton btn) override;
      void slot_mouseDragged(QPointF spt)       override;
-     void slot_mouseTranslate(QPointF spt)     override;
      void slot_mouseMoved(QPointF spt)         override;
      void slot_mouseReleased(QPointF spt)      override;
      void slot_mouseDoublePressed(QPointF spt) override;
 
-     void slot_wheel_scale(qreal delta)  override;
-     void slot_wheel_rotate(qreal delta) override;
+     void slot_mouseTranslate(uint sigid, QPointF spt)     override;
+     void slot_wheel_scale(uint sigid, qreal delta)  override;
+     void slot_wheel_rotate(uint sigid, qreal delta) override;
 
-     void slot_scale(int amount)  override;
-     void slot_rotate(int amount) override;
-     void slot_moveX(qreal amount)  override;
-     void slot_moveY(qreal amount)  override;
+     void slot_scale(uint sigid, int amount)  override;
+     void slot_rotate(uint sigid, int amount) override;
+     void slot_moveX(uint sigid, qreal amount)  override;
+     void slot_moveY(uint sigid, qreal amount)  override;
 
 protected:
-    void    drawPlacedTile(GeoGraphics * g2d, PlacedTilePtr pf);
+     void drawPlacedTile(GeoGraphics * g2d, PlacedTilePtr ptp);
 
 private:
     int                 version;
@@ -140,14 +148,21 @@ private:
     QString             desc;
     QString             author;
 
-    TilingData          db;
+    TilingHeader        _header;
+    TilingUnit          _tilingUnit;
+    ColorGroup          _legacyTileColors;   // tile colors now stored in style  - TileColors
 
-    TilingPlacements    _viewable;
+    PlacedTiles         _viewable;
+    bool                _tilingViewChange;
+    bool                _view;          // view in TilingMakerView
+
+    SaveStatus *        _saveStatus;
 
     BkgdImagePtr        bip;
-
     Tristate            intrinsicOverlaps;
     Tristate            tiledOverlaps;
+
+    bool                _legacyCenterConverted;
 };
 
 #endif

@@ -2,8 +2,8 @@
 #ifndef FACES_H
 #define FACES_H
 
-#include "sys/geometry/edgepoly.h"
 #include "model/styles/colorset.h"
+#include "sys/geometry/edge_poly.h"
 
 typedef std::shared_ptr<class Face>         FacePtr;
 typedef std::shared_ptr<class FaceSet>      FaceSetPtr;
@@ -32,7 +32,7 @@ enum eFaceState
 
 class dcelEdge;
 
-class Face : public EdgePoly
+class Face : public EdgeSet
 {
 public:
     Face();
@@ -40,8 +40,9 @@ public:
     ~Face() { refs--; }
 
     int         getNumSides() { return size(); }
-    QPolygonF   getPolygon();
+
     QPointF     center();
+    QPolygonF   getPolygon();
 
     bool        overlaps(FacePtr other);
 

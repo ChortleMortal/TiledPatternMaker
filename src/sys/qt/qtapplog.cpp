@@ -13,12 +13,10 @@
 #include "model/settings/configuration.h"
 #include "sys/sys.h"
 
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <QDebug>
-#endif
+qtAppLog  *      qtAppLog::mpThis          = nullptr;
+QMutex    *      qtAppLog::pLogLock        = nullptr;
+QtMessageHandler qtAppLog::originalHandler = nullptr;
 
-qtAppLog  * qtAppLog::mpThis   = nullptr;
-QMutex    * qtAppLog::pLogLock = nullptr;
 TextEditPtr qtAppLog::ted;
 
 QString     qtAppLog::currentLogName;
@@ -32,9 +30,9 @@ bool qtAppLog::_logToPanel  = true;
 bool qtAppLog::_logLines    = false;
 bool qtAppLog::_logDebug    = false;
 bool qtAppLog::_active      = false;
+bool qtAppLog::_active2     = false;
 bool qtAppLog::_suspended   = false;
 bool qtAppLog::_trapping    = false;
-
 int  qtAppLog::_line        = 1;
 
 std::string qtAppLog::str1 = "\033[32m";
@@ -77,11 +75,18 @@ qtAppLog::qtAppLog()
     ted->setLineWrapMode(QTextEdit::NoWrap);
     ted->setReadOnly(true);
     ted->setStyleSheet("selection-color: rgb(170, 255, 0);  selection-background-color: rgb(255, 0, 0);");
+
+    originalHandler = nullptr;
 }
 
 qtAppLog::~qtAppLog()
 {
-    mCurrentFile.close();
+    mLogFile.close();
+    mLogFile2.close();
+    if (originalHandler)
+    {
+        qInstallMessageHandler(originalHandler);
+    }
     if (pLogLock)
     {
         delete pLogLock;
@@ -90,6 +95,8 @@ qtAppLog::~qtAppLog()
 
 void qtAppLog:: init()
 {
+    originalHandler = qInstallMessageHandler(&crashMessageOutput);
+
 #if defined(Q_OS_WINDOWS)
     QString root = qApp->applicationDirPath();
     QStringList rootpath = root.split("/");
@@ -131,14 +138,25 @@ void qtAppLog:: init()
 
 #ifdef QT_DEBUG
     currentLogName = _logDir + baseLogName + "D.txt";
+#if defined(Q_OS_WINDOWS)
+    if (Sys::appInstance == 1)
+    {
+        currentLogName = _logDir + baseLogName + "D1.txt";
+    }
+#endif
 #else
     currentLogName = _logDir + baseLogName + "R.txt";
+#if defined(Q_OS_WINDOWS)
+    if (Sys::appInstance == 1)
+    {
+        currentLogName = _logDir + baseLogName + "R1.txt";
+    }
+#endif
 #endif
 
-    mCurrentFile.setFileName(currentLogName);
-
-    _active = mCurrentFile.open(QIODevice::ReadWrite | QIODevice::Truncate |  QIODevice::Text);
-
+    // open the main log file
+    mLogFile.setFileName(currentLogName);
+    _active = mLogFile.open(QIODevice::ReadWrite | QIODevice::Truncate |  QIODevice::Text);
     if (!_active)
     {
         QMessageBox box;
@@ -146,18 +164,32 @@ void qtAppLog:: init()
         box.exec();
         return;
     }
+
+    // open secondary log file
+    if (Sys::config->enableLog2)
+    {
+        mLogFile2.setFileName(_logDir + "tpmlog2.txt");
+        _active2 = mLogFile2.open(QIODevice::ReadWrite | QIODevice::Truncate |  QIODevice::Text);
+        if (!_active2)
+        {
+            QMessageBox box;
+            box.setText(QString("Failed to open logfile2: %1").arg(_logDir + "tpmlog2.txt"));
+            box.exec();
+            return;
+        }
+    }
 }
 
 void qtAppLog::clear()
 {
     if (_active)
     {
-        mCurrentFile.reset();
+        mLogFile.reset();
     }
     ted->clear();
     _line = 1;
     qDebug() << "Log cleared";
-    mCurrentFile.resize(mCurrentFile.pos());
+    mLogFile.resize(mLogFile.pos());
 }
 
 void qtAppLog::logTimer(eLogTimer val)
@@ -174,9 +206,15 @@ void qtAppLog::logTimer(eLogTimer val)
     }
 }
 
-void qtAppLog::log(QString & msg)
+void qtAppLog::logToFile(QString & msg)
 {
-    QTextStream str(&mCurrentFile);
+    QTextStream str(&mLogFile);
+    str << msg;
+}
+
+void qtAppLog::logToFile2(QString & msg)
+{
+    QTextStream str(&mLogFile2);
     str << msg;
 }
 
@@ -187,7 +225,7 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
         return;
     }
     
-    if (_trapping && !Sys::usingImgGenerator)
+    if (_trapping && !Sys::imgGeneratorInUse)
     {
         sTrapMsg stm;
         stm.type = type;
@@ -233,28 +271,28 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
         {
             return;
         }
-        msg2 = QString("%3%2Debug   : %1").arg(msg).arg(sDelta).arg(number);
+        msg2 = QString("%3%2Debug   : %1").arg(msg,sDelta,number);
         break;
 
     case QtInfoMsg:
-        msg2 = QString("%3%2Info    : %1").arg(msg).arg(sDelta).arg(number);
+        msg2 = QString("%3%2Info    : %1").arg(msg,sDelta,number);
         break;
 
     case QtWarningMsg:
-        msg2 = QString("%3%2Warning : %1").arg(msg).arg(sDelta).arg(number);
+        msg2 = QString("%3%2Warning : %1").arg(msg,sDelta,number);
         break;
 
     case QtCriticalMsg:
-        msg2 = QString("%3%2Critical: %1").arg(msg).arg(sDelta).arg(number);
+        msg2 = QString("%3%2Critical: %1").arg(msg,sDelta,number);
         break;
 
     case QtFatalMsg:
-        msg2 = QString("%3%2Fatal   : %1").arg(msg).arg(sDelta).arg(number);
+        msg2 = QString("%3%2Fatal   : %1").arg(msg,sDelta,number);
         break;
     }
 
 #if 0
-    msg2 += QString(" (%1:%2, %3)\n").arg(context.file).arg(context.line).arg(context.function);
+    msg2 += QString(" (%1:%2, %3)").arg(context.file).arg(context.line).arg(context.function);
 #else
     Q_UNUSED(context)
 #endif
@@ -329,7 +367,12 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
 
     if (_active && _logToDisk)
     {
-        mpThis->log(msg2);
+        mpThis->logToFile(msg2);
+    }
+
+    if (_active2 && _logToDisk && msg2.contains("LOG2"))
+    {
+        mpThis->logToFile2(msg2);
     }
 
 #if defined(Q_OS_WINDOWS) && defined(QT_DEBUG)

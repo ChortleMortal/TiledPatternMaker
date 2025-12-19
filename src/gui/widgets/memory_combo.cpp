@@ -1,5 +1,36 @@
-#include "gui/widgets/memory_combo.h"
 #include <QSettings>
+#include "gui/widgets/memory_combo.h"
+#include "sys/sys.h"
+
+//////////////////////////////////////////////////////////////////
+///
+///  DirMemoryCombo
+///
+//////////////////////////////////////////////////////////////////
+
+DirMemoryCombo::DirMemoryCombo(QString name) : MemoryCombo(name)
+{
+    connect(this, &QComboBox::editTextChanged, this, &DirMemoryCombo::slot_text_Changed);
+}
+
+void DirMemoryCombo::slot_text_Changed(QString txt)
+{
+    qDebug() << "DMC" << txt;
+    Sys::setWorkingBMPDirectory(txt);
+    QComboBox::setItemText(QComboBox::currentIndex(),txt);
+}
+
+void DirMemoryCombo::setCurrentText(const QString text)
+{
+    MemoryCombo::setCurrentText(text);
+    Sys::setWorkingBMPDirectory(text);
+}
+
+//////////////////////////////////////////////////////////////////
+///
+///  MemoryCombo
+///
+//////////////////////////////////////////////////////////////////
 
 MemoryCombo::MemoryCombo(QString name)
 {
@@ -9,8 +40,14 @@ MemoryCombo::MemoryCombo(QString name)
     setMaxCount(10);
 }
 
+MemoryCombo::~MemoryCombo()
+{
+    persistItems();
+}
+
 void MemoryCombo::initialise()
 {
+    blockSignals(true);
     clear(); // erase the combo
 
     unsigned int index =0;
@@ -20,10 +57,11 @@ void MemoryCombo::initialise()
     {
         if (!file.isEmpty())
         {
-            insertItem(index++,file);
+            QComboBox::insertItem(index++,file);
         }
     }
-    setCurrentIndex(0);
+    QComboBox::setCurrentIndex(0);
+    blockSignals(false);
 }
 
 QString MemoryCombo::getTextFor(QString name)
@@ -33,38 +71,37 @@ QString MemoryCombo::getTextFor(QString name)
     return itemList[0];
 }
 
-
 QString MemoryCombo::getCurrentText()
 {
-    return itemText(0);
+    return QComboBox::itemText(0);
 }
 
-void MemoryCombo::setCurrentText(const QString &text)
+void MemoryCombo::setCurrentText(const QString text)
 {
     blockSignals(true);
-    auto items = getItems();
+    QStringList items = getItems();
     if (!items.contains(text))
     {
-        insertItem(0,text);
+        QComboBox::insertItem(0,text);
     }
     else
     {
         clear(); // erase the combo
-
-        insertItem(0,text);
+        QComboBox::insertItem(0,text);
+        // push down previous list
         auto index = 1;
         for (int i=0;  i< items.count(); i++)
         {
-            auto item = items.at(i);
+            QString item = items.at(i);
             if (item != text && !item.isEmpty())
             {
-                insertItem(index++,item);
+                QComboBox::insertItem(index++,item);
             }
         }
         // this could exceed max count
     }
     persistItems();
-    setCurrentIndex(0);
+    QComboBox::setCurrentIndex(0);
     blockSignals(false);
 }
 

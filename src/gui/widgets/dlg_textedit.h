@@ -2,19 +2,19 @@
 #ifndef DLGTEXTEDIT_H
 #define DLGTEXTEDIT_H
 
-class QVBoxLayout;
-
 #include <QDialog>
-#include <QTextEdit>
+
 #include "sys/qt/qtapplog.h"
 
-// The TextEditorWidget is a container which holds the current log or a
+class QVBoxLayout;
+
+// The LogWidget is a container which holds the current log or a
 // saved log which is loaded from disk
-class TextEditorWidget : public QWidget
+class LogWidget : public QWidget
 {
 public:
-    TextEditorWidget();
-    virtual ~TextEditorWidget();
+    LogWidget();
+    virtual ~LogWidget();
 
     void        set(TextEditPtr te);
     TextEditPtr get() { return ted; }
@@ -35,6 +35,7 @@ public:
 
     void append(QString msg) { txt.append(msg); }
     void set(QString msg)    { txt.setPlainText(msg); }
+    void setHtml(QString msg){ txt.setHtml(msg); }
     void set(const QVector<sTrapMsg> &msgs);
 
     QTextEdit txt;
@@ -56,6 +57,27 @@ class DlgAbout : public DlgTextEdit
 {
 public:
     DlgAbout(QWidget * parent = nullptr);
+
+};
+
+class DlgStartOptions : public DlgTextEdit
+{
+public:
+    DlgStartOptions(QWidget * parent = nullptr);
+
+};
+
+class DlgSupport : public DlgTextEdit
+{
+public:
+    DlgSupport(QWidget * parent = nullptr);
+
+};
+
+class DlgKbdOpts : public QDialog
+{
+public:
+    DlgKbdOpts(QWidget * parent = nullptr);
 
 };
 #endif // DLGTEXTEDIT_H

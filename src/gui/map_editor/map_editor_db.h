@@ -91,6 +91,7 @@ public:
 
     BkgdImagePtr        getBackgroundImage()        { return bimage; }
     void                setBackgroundImage(BkgdImagePtr bip) { bimage = bip; }
+    void                removeBackgroundImage()     { bimage.reset(); }
 
     MapPtr              getFirstDrawMap();
     QVector<MapPtr>     getDrawMaps();

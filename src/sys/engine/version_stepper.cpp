@@ -9,7 +9,7 @@
 #include "model/mosaics/mosaic.h"
 #include "gui/top/controlpanel.h"
 #include "model/settings/configuration.h"
-#include "gui/top/view.h"
+#include "gui/top/system_view.h"
 
 ////////////////////////////////////////////
 ///
@@ -44,14 +44,14 @@ bool VersionStepper::begin()
 
     // get root names
     QString rootDir;
-    if (config->vCompTile)
+    if (config->imageType == IMAGE_TILINGS)
     {
-        mediaNames = FileServices::getTilingRootNames(config->versionFilter);
+        mediaNames = FileServices::getTilingRootNames(config->imageFileFilter);
         rootDir    = Sys::rootTileDir;
     }
     else
     {
-        mediaNames = FileServices::getMosaicRootNames(config->versionFilter);
+        mediaNames = FileServices::getMosaicRootNames(config->imageFileFilter);
         rootDir    = Sys::rootMosaicDir;
     }
 
@@ -64,7 +64,7 @@ bool VersionStepper::begin()
     mediaB->setCurrentIndex(index);
 
     // get versions
-    bool use_wlist = (config->versionFilter == WORKLIST);
+    bool use_wlist = (config->imageFileFilter == WORKLIST);
     versions = FileServices::getFileVersions(mediaName,rootDir,use_wlist);
     imgListVerA_it = versions.begin();
     imgListVerB_it = imgListVerA_it;
@@ -118,8 +118,8 @@ bool VersionStepper::next()
         mediaA->setCurrentIndex(index);
         mediaB->setCurrentIndex(index);
 
-        bool use_wlist = (config->versionFilter == WORKLIST);
-        if (config->vCompTile)
+        bool use_wlist = (config->imageFileFilter == WORKLIST);
+        if (config->imageType == IMAGE_TILINGS)
         {
             versions = FileServices::getFileVersions(mediaName,Sys::rootTileDir,use_wlist);
         }
@@ -193,7 +193,7 @@ void VersionStepper::compareVersions()
     QString nameB = versionsB->currentText();
     VersionedName vnb(nameB);
 
-    if (config->vCompTile)
+    if (config->imageType == IMAGE_TILINGS)
     {
         // tiling
         if (config->vCompXML)
@@ -209,11 +209,11 @@ void VersionStepper::compareVersions()
             auto maker = Sys::tilingMaker;
             VersionedFile vfa = FileServices::getFile(vna,FILE_TILING);
             maker->loadTiling(vfa,TILM_LOAD_SINGLE);
-            auto pixA = Sys::view->grab();
+            auto pixA = Sys::viewController->grabView();
 
             VersionedFile vfb = FileServices::getFile(vnb,FILE_TILING);
             maker->loadTiling(vfb,TILM_LOAD_SINGLE);
-            auto pixB = Sys::view->grab();
+            auto pixB = Sys::viewController->grabView();
 
             imgA = pixA.toImage();
             imgB = pixB.toImage();
@@ -242,11 +242,11 @@ void VersionStepper::compareVersions()
 
             VersionedFile vfa = FileServices::getFile(vna,FILE_MOSAIC);
             MosaicPtr mosaicA = maker->loadMosaic(vfa);
-            QPixmap pixA      = Sys::view->grab();
+            QPixmap pixA      = Sys::viewController->grabView();
 
             VersionedFile vfb = FileServices::getFile(vnb,FILE_MOSAIC);
             MosaicPtr mosaicB = maker->loadMosaic(vfb);
-            QPixmap pixB      = Sys::view->grab();
+            QPixmap pixB      = Sys::viewController->grabView();
 
             if (mosaicA)
             {
@@ -286,7 +286,7 @@ void VersionStepper::compareNextVersions()
     VersionedFile vfb = FileServices::getFile(vnb,FILE_MOSAIC);
     maker->loadMosaic(vfb);
 
-    QPixmap pixB = Sys::view->grab();
+    QPixmap pixB = Sys::viewController->grabView();
 
     MosaicPtr mosaicB = maker->getMosaic();
 
@@ -306,7 +306,7 @@ void VersionStepper::compareNextVersions()
 
 void VersionStepper::loadVersionCombos()
 {
-    eLoadType loadType = config->versionFilter;
+    eLoadType loadType = config->imageFileFilter;
 
     mediaA->blockSignals(true);
     mediaB->blockSignals(true);
@@ -314,7 +314,7 @@ void VersionStepper::loadVersionCombos()
     mediaA->clear();
     mediaB->clear();
 
-    if (config->vCompTile)
+    if (config->imageType == IMAGE_TILINGS)
     {
         mediaNames = FileServices::getTilingRootNames(loadType);
     }
@@ -351,8 +351,8 @@ void VersionStepper::mediaAChanged()
 
     config->lastCompareName = name;
 
-    bool use_wlist = (config->versionFilter == WORKLIST);
-    if (config->vCompTile)
+    bool use_wlist = (config->imageFileFilter == WORKLIST);
+    if (config->imageType == IMAGE_TILINGS)
     {
         versions = FileServices::getFileVersions(name,Sys::rootTileDir,use_wlist);
     }
@@ -388,8 +388,8 @@ void VersionStepper::mediaBChanged()
     QString name = mediaB->currentText();
 
     VersionList vl;
-    bool use_wlist = (config->versionFilter == WORKLIST);
-    if (config->vCompTile)
+    bool use_wlist = (config->imageFileFilter == WORKLIST);
+    if (config->imageType == IMAGE_TILINGS)
     {
         vl = FileServices::getFileVersions(name,Sys::rootTileDir,use_wlist);
     }

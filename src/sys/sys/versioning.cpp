@@ -12,7 +12,7 @@
 QStringList VersionFileList::getPathedNames()
 {
     QStringList qsl;
-    for (const VersionedFile & file : *this)
+    for (VersionedFile & file : list)
     {
         qsl << file.getPathedName();
     }
@@ -22,22 +22,32 @@ QStringList VersionFileList::getPathedNames()
 VersionList VersionFileList::getVersionList()
 {
     VersionList vl;
-    for (VersionedFile & file : *this)
+    for (VersionedFile & file : list)
     {
         vl.add(file.getVersionedName());
     }
     return vl;
 }
 
+void VersionFileList::add(const VersionedFile & vf)
+{
+    list.push_back(vf);
+}
+
+void VersionFileList::prepend(const VersionedFile & vf)
+{
+    list.push_front(vf);
+}
+
 void VersionFileList::sort()
 {
-    std::sort(begin(),end(),CompareVersionName);
+    std::sort(list.begin(),list.end(),CompareVersionName);
 }
 
 QStringList VersionFileList::getNames()
 {
     QStringList qsl;
-    for (VersionedFile & file : *this)
+    for (VersionedFile & file : list)
     {
         qsl << file.getVersionedName().get();
     }
@@ -56,7 +66,7 @@ VersionFileList VersionFileList::filter(QString filter, bool lowerCase)
         filter = filter.toLower();
 
     VersionFileList filtered;
-    for (VersionedFile & file : *this)
+    for (VersionedFile & file : list)
     {
         QString name = file.getVersionedName().get();
         if (lowerCase)
@@ -65,10 +75,24 @@ VersionFileList VersionFileList::filter(QString filter, bool lowerCase)
         }
         if (name.contains(filter))
         {
-            filtered.push_back(file);
+            filtered.add(file);
         }
     }
     return filtered;
+}
+
+void VersionFileList::remove(const VersionedFile &vf)
+{
+
+    QVector<VersionedFile> vfl = list;
+    list.clear();
+    for (VersionedFile & vf2 : vfl)
+    {
+        if (vf2 != vf)
+        {
+            add(vf2);
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////
@@ -100,6 +124,13 @@ QString VersionedFile::stripPath(QString path)
     return info.fileName();
 }
 
+QString VersionedFile::getPathDir()
+{
+    QStringList qls = path.split('/');
+    return qls[qls.size() - 2];
+}
+
+
 ///////////////////////////////////////////////////////////
 //
 // Version List
@@ -111,6 +142,27 @@ bool VersionList::add(const VersionedName &name)
     if (!name.isEmpty())
     {
         list.push_back(name);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool VersionList::remove(const VersionedName &name)
+{
+    if (!name.isEmpty())
+    {
+        QVector<VersionedName> vnl = list;
+        list.clear();
+        for (auto vn : vnl)
+        {
+            if (vn != name)
+            {
+                add(vn);
+            }
+        }
         return true;
     }
     else

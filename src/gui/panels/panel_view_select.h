@@ -7,7 +7,7 @@
 
 class QCheckBox;
 class Configuration;
-class ViewController;
+class SystemViewController;
 class ControlPanel;
 
 class PanelViewSelect : public QGroupBox
@@ -15,10 +15,10 @@ class PanelViewSelect : public QGroupBox
     Q_OBJECT
 
 public:
-    explicit PanelViewSelect(ControlPanel *parent);
+    explicit PanelViewSelect();
 
-    void    refresh();
     void    selectViewer(eViewType vtype, bool enable = true);
+    void    deselectGangedViewers();
 
 protected slots:
     void    slot_Viewer_pressed(int id, bool enable);
@@ -34,8 +34,6 @@ protected:
     void    createGUI();
     void    restoreViewEnables();
 
-    bool          exclusiveViews;
-
     QCheckBox   * cbRawDesignView;
     QCheckBox   * cbMosaicView;
     QCheckBox   * cbPrototypeView;
@@ -46,18 +44,19 @@ protected:
     QCheckBox   * cbBackgroundImage;
     QCheckBox   * cbBMPImage;
     QCheckBox   * cbGrid;
-    QCheckBox   * cbMeasure;
-    QCheckBox   * cbCenter;
+    QCheckBox   * cbDebug;
+    QCheckBox   * cbCrop;
 
-    QCheckBox   * cbLockView;
+    QCheckBox   * cbLockSelect;
     QCheckBox   * cbMultiSelect;
 
     QButtonGroup  viewerGroup;
 
 private:
-    ControlPanel   * panel;
+    eViewType     soloType;
+
     Configuration  * config;
-    ViewController * viewController;
+    SystemViewController * viewController;
 };
 
 #endif // PANELVIEWSELECT_H

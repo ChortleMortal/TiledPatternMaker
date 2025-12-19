@@ -14,8 +14,11 @@
 #include <QtMath>
 #include <QDebug>
 #include "model/motifs/radial_motif.h"
+#include "model/tilings/tile.h"
 #include "sys/geometry/map.h"
 #include "sys/geometry/map.h"
+#include "sys/geometry/map_cleanser.h"
+#include "sys/geometry/map_verifier.h"
 
 using std::make_shared;
 
@@ -183,13 +186,14 @@ void RadialMotif::buildMotifMap()
 
     if (cleanseVal > 0)
     {
-        motifMap->cleanse(cleanseVal,sensitivity);
+        MapCleanser mc(motifMap);
+        mc.cleanse(cleanseVal,sensitivity);
     }
 }
 
 MapPtr RadialMotif::createUnitMapFromRays(RaySet & set)
 {
-    if (dbgVal & 0x04) set.debug();
+    if (motifDebug & 0x04) set.debug();
 
     MapPtr map;
     if (set.ray1.valid())
@@ -224,13 +228,25 @@ void RadialMotif::replicate()
         }
     }
 
-    motifMap->verify();
+    MapVerifier mv(motifMap);
+    mv.verify();
 }
 
 void RadialMotif::setupRadialTransform()
 {
     don               = 1.0 / qreal(getN());
     radialRotationTr  = QTransform().rotateRadians(2.0 * M_PI * don);
+}
+
+QTransform RadialMotif::getMotifTransform()
+{
+    return QTransform::fromScale(motifScale,motifScale).rotate(motifRotate);
+}
+
+QTransform RadialMotif::getDELTransform()
+{
+    Q_ASSERT(getTile());
+    return getTile()->getTransform() * getMotifTransform();
 }
 
 qreal RadialMotif::computeConnectScale()

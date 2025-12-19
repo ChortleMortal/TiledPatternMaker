@@ -1,19 +1,35 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.21)
 
 project(TiledPatternMaker LANGUAGES CXX)
 
+# Enable Qt features
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+# C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Svg Concurrent)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Svg Concurrent)
+# Enable Unity builds globally
+set(CMAKE_UNITY_BUILD ON)
 
+# Try to find ccache (with fallback path hint)
+find_program(CCACHE_PROGRAM ccache  PATHS "C:/ProgramData/chocolatey/bin")
+
+if(CCACHE_PROGRAM)
+    message(STATUS "Using ccache: ${CCACHE_PROGRAM}")
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+else()
+    message(WARNING "ccache not found, continuing without compiler cache.")
+endif()
+
+# Find Qt
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg Concurrent PrintSupport)
+
+# Project sources
 set(PROJECT_SOURCES
     gui/map_editor/map_editor.cpp
     gui/map_editor/map_editor.h
@@ -79,6 +95,8 @@ set(PROJECT_SOURCES
     gui/panels/page_image_tools.h
     gui/panels/page_layers.cpp
     gui/panels/page_layers.h
+    gui/panels/page_layer_alignmentl.cpp
+    gui/panels/page_layer_alignmentl.h
     gui/panels/page_loaders.cpp
     gui/panels/page_loaders.h
     gui/panels/panel_worker.cpp
@@ -125,14 +143,14 @@ set(PROJECT_SOURCES
     gui/top/splash_screen.h
     gui/top/split_screen.cpp
     gui/top/split_screen.h
-    gui/top/view.cpp
-    gui/top/view.h
-    gui/top/view_controller.cpp
-    gui/top/view_controller.h
-    gui/viewers/backgroundimageview.cpp
-    gui/viewers/backgroundimageview.h
-    gui/viewers/crop_view.cpp
-    gui/viewers/crop_view.h
+    gui/top/system_view.cpp
+    gui/top/system_view.h
+    gui/top/system_view_accessor.cpp
+    gui/top/system_view_accessor.h
+    gui/top/system_view_controller.cpp
+    gui/top/system_view_controller.h
+    gui/viewers/crop_viewer.cpp
+    gui/viewers/crop_viewer.h
     gui/viewers/debug_view.cpp
     gui/viewers/debug_view.h
     gui/viewers/geo_graphics.cpp
@@ -141,18 +159,18 @@ set(PROJECT_SOURCES
     gui/viewers/grid_view.h
     gui/viewers/gui_modes.cpp
     gui/viewers/gui_modes.h
+    gui/viewers/image_view.cpp
+    gui/viewers/image_view.cpp
+    gui/viewers/image_view.h
+    gui/viewers/image_view.h
     gui/viewers/layer.cpp
     gui/viewers/layer.h
     gui/viewers/layer_controller.cpp
     gui/viewers/layer_controller.h
     gui/viewers/map_editor_view.cpp
     gui/viewers/map_editor_view.h
-    gui/viewers/mark_x.cpp
-    gui/viewers/mark_x.h
-    gui/viewers/measure_view.cpp
-    gui/viewers/measure_view.h
-    gui/viewers/motif_view.cpp
-    gui/viewers/motif_view.h
+    gui/viewers/motif_maker_view.cpp
+    gui/viewers/motif_maker_view.h
     gui/viewers/prototype_view.cpp
     gui/viewers/prototype_view.h
     gui/viewers/shape_view.cpp
@@ -169,8 +187,6 @@ set(PROJECT_SOURCES
     gui/widgets/dlg_colorSet.h
     gui/widgets/dlg_edgepoly_edit.cpp
     gui/widgets/dlg_edgepoly_edit.h
-    gui/widgets/dlg_line_edit.cpp
-    gui/widgets/dlg_line_edit.h
     gui/widgets/dlg_listnameselect.cpp
     gui/widgets/dlg_listnameselect.h
     gui/widgets/dlg_listselect.cpp
@@ -179,20 +195,28 @@ set(PROJECT_SOURCES
     gui/widgets/dlg_magnitude.h
     gui/widgets/dlg_name.cpp
     gui/widgets/dlg_name.h
+    gui/widgets/dlg_point_edit.cpp
+    gui/widgets/dlg_point_edit.h
+    gui/widgets/dlg_print.cpp
+    gui/widgets/dlg_print.h
     gui/widgets/dlg_push_select.cpp
     gui/widgets/dlg_push_select.h
     gui/widgets/dlg_rebase.cpp
     gui/widgets/dlg_rebase.h
     gui/widgets/dlg_rename.cpp
     gui/widgets/dlg_rename.h
+    gui/widgets/dlg_savename.cpp
+    gui/widgets/dlg_savename.h
     gui/widgets/dlg_textedit.cpp
     gui/widgets/dlg_textedit.h
     gui/widgets/dlg_trim.cpp
     gui/widgets/dlg_trim.h
     gui/widgets/dlg_wlist_create.cpp
     gui/widgets/dlg_wlist_create.h
-    gui/widgets/image_layer.cpp
-    gui/widgets/image_layer.h
+    gui/widgets/flash_msgbox.h
+    gui/widgets/flash_msgbox.cpp
+    gui/widgets/floatable_tab.cpp
+    gui/widgets/floatable_tab.h
     gui/widgets/image_widget.cpp
     gui/widgets/image_widget.h
     gui/widgets/layout_qrectf.cpp
@@ -207,6 +231,8 @@ set(PROJECT_SOURCES
     gui/widgets/mouse_mode_widget.h
     gui/widgets/rounded_polygon.cpp
     gui/widgets/rounded_polygon.h
+    gui/widgets/smx_widget.cpp
+    gui/widgets/smx_widget.h
     gui/widgets/transparent_widget.cpp
     gui/widgets/transparent_widget.h
     gui/widgets/version_dialog.cpp
@@ -239,6 +265,8 @@ set(PROJECT_SOURCES
     model/makers/mosaic_maker.h
     model/makers/prototype_maker.cpp
     model/makers/prototype_maker.h
+    model/makers/prototype_maker_data.cpp
+    model/makers/prototype_maker_data.h
     model/makers/tiling_maker.cpp
     model/makers/tiling_maker.h
     model/mosaics/border.cpp
@@ -251,12 +279,12 @@ set(PROJECT_SOURCES
     model/mosaics/mosaic_manager.h
     model/mosaics/mosaic_reader.cpp
     model/mosaics/mosaic_reader.h
-    model/mosaics/mosaic_reader_base.cpp
-    model/mosaics/mosaic_reader_base.h
     model/mosaics/mosaic_writer.cpp
     model/mosaics/mosaic_writer.h
-    model/mosaics/mosaic_writer_base.cpp
-    model/mosaics/mosaic_writer_base.h
+    model/mosaics/reader_base.cpp
+    model/mosaics/reader_base.h
+    model/mosaics/writer_base.cpp
+    model/mosaics/writer_base.h
     model/motifs/explicit_map_motif.cpp
     model/motifs/explicit_map_motif.h
     model/motifs/extended_boundary.cpp
@@ -306,8 +334,6 @@ set(PROJECT_SOURCES
     model/prototypes/design_element.h
     model/prototypes/prototype.cpp
     model/prototypes/prototype.h
-    model/prototypes/prototype_data.cpp
-    model/prototypes/prototype_data.h
     model/settings/canvas.cpp
     model/settings/canvas.h
     model/settings/canvas_settings.cpp
@@ -319,6 +345,15 @@ set(PROJECT_SOURCES
     model/settings/tristate.h
     model/settings/worklist.cpp
     model/settings/worklist.h
+    model/styles/casing.cpp
+    model/styles/casing.h
+    model/styles/casing_data.h
+    model/styles/casing_neighbours.cpp
+    model/styles/casing_neighbours.h
+    model/styles/casing_set.cpp
+    model/styles/casing_set.h
+    model/styles/casing_side.cpp
+    model/styles/casing_side.h
     model/styles/colored.cpp
     model/styles/colored.h
     model/styles/colormaker.cpp
@@ -331,8 +366,14 @@ set(PROJECT_SOURCES
     model/styles/filled.h
     model/styles/interlace.cpp
     model/styles/interlace.h
+    model/styles/interlace_casing.cpp
+    model/styles/interlace_casing.h
+    model/styles/interlace_side.cpp
+    model/styles/interlace_side.h
     model/styles/outline.cpp
     model/styles/outline.h
+    model/styles/outline_casing.cpp
+    model/styles/outline_casing.h
     model/styles/plain.cpp
     model/styles/plain.h
     model/styles/sketch.cpp
@@ -345,6 +386,8 @@ set(PROJECT_SOURCES
     model/styles/tile_colors.h
     model/tilings/backgroundimage.cpp
     model/tilings/backgroundimage.h
+    model/tilings//backgroundimage_perspective.cpp
+    model/tilings//backgroundimage_perspective.h
     model/tilings/placed_tile.cpp
     model/tilings/placed_tile.h
     model/tilings/tile.cpp
@@ -355,12 +398,16 @@ set(PROJECT_SOURCES
     model/tilings/tile_writer.h
     model/tilings/tiling.cpp
     model/tilings/tiling.h
-    model/tilings/tiling_data.cpp
-    model/tilings/tiling_data.h
+    model/tilings/tiling_header.cpp
+    model/tilings/tiling_header.h
     model/tilings/tiling_manager.cpp
     model/tilings/tiling_manager.h
     model/tilings/tiling_reader.cpp
     model/tilings/tiling_reader.h
+    model/tilings/tiling_unit.cpp
+    model/tilings/tiling_unit.cpp
+    model/tilings/tiling_unit.h
+    model/tilings/tiling_unit.h
     model/tilings/tiling_writer.cpp
     model/tilings/tiling_writer.h
 
@@ -368,25 +415,28 @@ set(PROJECT_SOURCES
     sys/engine/compare_bmp_engine.h
     sys/engine/image_engine.cpp
     sys/engine/image_engine.h
-    sys/engine/mosaic_bmp_engine.cpp
-    sys/engine/mosaic_bmp_engine.h
+    sys/engine/mosaic_bmp_generator.cpp
+    sys/engine/mosaic_bmp_generator.h
     sys/engine/mosaic_stepper.cpp
     sys/engine/mosaic_stepper.h
     sys/engine/png_stepper.cpp
     sys/engine/png_stepper.h
     sys/engine/stepping_engine.cpp
     sys/engine/stepping_engine.h
-    sys/engine/tiling_bmp_engine.cpp
-    sys/engine/tiling_bmp_engine.h
+    sys/engine/tiling_bmp_generator.cpp
+    sys/engine/tiling_bmp_generator.h
     sys/engine/tiling_stepper.cpp
     sys/engine/tiling_stepper.h
     sys/engine/version_stepper.cpp
     sys/engine/version_stepper.h
-    sys/engine/worklist_stepper.cpp
-    sys/engine/worklist_stepper.h
+    sys/engine/compare_bmp_stepper.cpp
+    sys/engine/compare_bmp_stepper.h
+    sys/engine/view_bmp_stepper.cpp
+    sys/engine/view_bmp_stepper.h
+    sys/enums/ebkgdimage.cpp
+    sys/enums/ebkgdimage.h
     sys/enums/eborder.cpp
     sys/enums/eborder.h
-    sys/enums/ecyclemode.cpp
     sys/enums/ecyclemode.h
     sys/enums/edesign.cpp
     sys/enums/edesign.h
@@ -404,18 +454,18 @@ set(PROJECT_SOURCES
     sys/enums/emotiftype.cpp
     sys/enums/emotiftype.h
     sys/enums/emousemode.h
+    sys/enums/epanelpage.cpp
     sys/enums/epanelpage.h
+    sys/enums/erender.h
     sys/enums/estatemachineevent.cpp
     sys/enums/estatemachineevent.h
     sys/enums/estyletype.h
-    sys/enums/etilingmakermousemode.cpp
-    sys/enums/etilingmakermousemode.h
+    sys/enums/etilingmaker.cpp
+    sys/enums/etilingmaker.h
     sys/enums/eviewtype.cpp
     sys/enums/eviewtype.h
     sys/geometry/arcdata.cpp
     sys/geometry/arcdata.h
-    sys/geometry/belowandaboveedge.cpp
-    sys/geometry/belowandaboveedge.h
     sys/geometry/bounds.cpp
     sys/geometry/bounds.h
     sys/geometry/circle.cpp
@@ -428,8 +478,8 @@ set(PROJECT_SOURCES
     sys/geometry/debug_map.h
     sys/geometry/edge.cpp
     sys/geometry/edge.h
-    sys/geometry/edgepoly.cpp
-    sys/geometry/edgepoly.h
+    sys/geometry/edge_poly.cpp
+    sys/geometry/edge_poly.h
     sys/geometry/faces.cpp
     sys/geometry/faces.h
     sys/geometry/fill_region.cpp
@@ -444,8 +494,10 @@ set(PROJECT_SOURCES
     sys/geometry/map.h
     sys/geometry/map_base.cpp
     sys/geometry/map_base.h
-    sys/geometry/map_cleanse.cpp
-    sys/geometry/map_verify.cpp
+    sys/geometry/map_cleanser.cpp
+    sys/geometry/map_cleanser.h
+    sys/geometry/map_verifier.cpp
+    sys/geometry/map_verifier.h
     sys/geometry/measurement.cpp
     sys/geometry/measurement.h
     sys/geometry/neighbour_map.cpp
@@ -470,6 +522,8 @@ set(PROJECT_SOURCES
     sys/qt/unique_qvector.h
     sys/qt/utilities.cpp
     sys/qt/utilities.h
+    sys/sys/debugflags.h
+    sys/sys/debugflags.cpp
     sys/sys/fileservices.cpp
     sys/sys/fileservices.h
     sys/sys/load_unit.cpp
@@ -524,19 +578,35 @@ add_custom_target(Xtra-files SOURCES ${OTHER_FILES})
 
 qt_add_resources(PROJECT_SOURCES tpm.qrc)
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    set(CMAKE_UNITY_BUILD ON)
-    if (WIN32)
-        qt_add_executable(TiledPatternMaker WIN32 ${PROJECT_SOURCES} icon.rc )   # don't delete the WIN32
-    else()
-        qt_add_executable(TiledPatternMaker ${PROJECT_SOURCES} icon.rc)
-    endif()
+set(CMAKE_UNITY_BUILD ON)
+if(WIN32)
+    qt_add_executable(TiledPatternMaker WIN32 ${PROJECT_SOURCES} icon.rc)   # don't delete the WIN32
+    target_link_options(TiledPatternMaker PRIVATE /STACK:32000000)
 else()
-    add_executable(TiledPatternMaker ${PROJECT_SOURCES} icon.rc)
+    qt_add_executable(TiledPatternMaker ${PROJECT_SOURCES} icon.rc)
 endif()
 
+# Link Qt libraries
 target_link_libraries(TiledPatternMaker PRIVATE
-    Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::Svg
-    Qt${QT_VERSION_MAJOR}::Concurrent
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Svg
+    Qt6::Concurrent
+    Qt6::PrintSupport
 )
+
+# Optional: Unity batch size for better parallelism
+set_target_properties(TiledPatternMaker PROPERTIES UNITY_BUILD_BATCH_SIZE 8)
+
+message(STATUS "----------------------------------------")
+message(STATUS "Generator: ${CMAKE_GENERATOR}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Unity build enabled: ${CMAKE_UNITY_BUILD}")
+get_target_property(UNITY_BATCH_SIZE TiledPatternMaker UNITY_BUILD_BATCH_SIZE)
+message(STATUS "Unity batch size: ${UNITY_BATCH_SIZE}")
+if(CCACHE_PROGRAM)
+    message(STATUS "ccache: ${CCACHE_PROGRAM}")
+else()
+    message(STATUS "ccache: NOT FOUND")
+endif()
+message(STATUS "----------------------------------------")

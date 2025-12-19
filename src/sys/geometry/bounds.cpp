@@ -8,6 +8,7 @@ Bounds::Bounds()
     width =  20.0;
 }
 
+#ifdef VARIABLE_BOUNDS
 Bounds::Bounds(const Bounds & other)
 {
     left  = other.left;
@@ -38,3 +39,4 @@ Bounds  Bounds::operator+(const Bounds & other)
     b.width += other.width;
     return b;
 }
+#endif

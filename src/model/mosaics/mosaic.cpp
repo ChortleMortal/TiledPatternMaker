@@ -1,23 +1,26 @@
 #include <QDebug>
 #include <QPainterPath>
 
-#include "model/mosaics/mosaic.h"
-#include "sys/geometry/crop.h"
-#include "sys/geometry/xform.h"
-#include "sys/geometry/map.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/mosaics/border.h"
-#include "sys/qt/unique_qvector.h"
+#include "model/mosaics/mosaic.h"
+#include "model/mosaics/mosaic_writer.h"
 #include "model/prototypes/prototype.h"
+#include "model/settings/configuration.h"
 #include "model/styles/style.h"
+#include "model/tilings/backgroundimage.h"
+#include "sys/geometry/crop.h"
+#include "sys/geometry/map.h"
+#include "sys/geometry/transform.h"
+#include "sys/qt/unique_qvector.h"
 
 int Mosaic::refs = 0;
 
 Mosaic::Mosaic()
 {
     name.set(Sys::defaultMosaicName);
-    _cleanseLevel       = 0;
-    _cleanseSensitivity = 1e-4;
+    _loadedXML_version     = MosaicWriter::currentXMLVersion; // default
+    _legacyCenterConverted = false;
     refs++;
 }
 
@@ -29,49 +32,35 @@ Mosaic::~Mosaic()
     refs--;
 }
 
+bool Mosaic::isBuilt()
+{
+    for (auto & style : std::as_const(styleSet))
+    {
+        if (!style->isCreated())
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 void Mosaic::build()
 {
-    setupCleansing();
-
     for (auto & style : std::as_const(styleSet))
     {
         style->createStyleRepresentation();
     }
-    if (_border)
-    {
-        _border->createStyleRepresentation();
-    }
 }
 
-void Mosaic::build(ViewController * vc)
-{
-    setViewController(vc);
-    build();
-}
-
-void Mosaic::setupCleansing()
-{
-    // cleanse information is copied into prototypes for use by BMPEngine
-    // BMPEngine cannot access mosasic settings from prototype using Sys::
-    auto protos = getPrototypes();
-    for (auto & proto : protos)
-    {
-        proto->setCleanseLevel(_cleanseLevel);
-        proto->setCleanseSensitivity(_cleanseSensitivity);
-    }
-}
-
-void Mosaic::setViewController(ViewController * vc)
+void Mosaic::setViewController(SystemViewController * vc)
 {
     for (const auto & style : std::as_const(styleSet))
     {
-        ProtoPtr pp = style->getPrototype();
-        pp->setViewController(vc);
         style->setViewController(vc);
-    }
-    if (_border)
-    {
-        _border->setViewController(vc);
+        style->forceLayerRecalc(false);
+        ProtoPtr pp = style->getPrototype();
+        if (pp)
+            pp->setViewController(vc);
     }
 }
 
@@ -84,19 +73,13 @@ void Mosaic::enginePaint(QPainter * painter)
         layers.push_back(style.get());
     }
 
-    auto firststyle  = styleSet.first();
-
-    if (_border)
+    BkgdImagePtr bip = getBkgdImage();
+    if (bip && Sys::config->includeBkgdGeneration)
     {
-        Xform xf = firststyle->getModelXform();
-        _border->setModelXform(xf,false);
-
-        if (!_border->getRequiresConstruction())
-        {
-            _border->createStyleRepresentation();       // construct now rather than later
-        }
-
-        layers.push_back(_border.get());
+        bip->setViewController(getFirstRegularStyle()->viewControl());
+        Sys::definedBkImage  = bip;
+        Sys::currentBkgImage = BKGD_IMAGE_DEFINED;
+        layers.push_front(bip.get());
     }
 
     std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevelP);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
@@ -106,40 +89,9 @@ void Mosaic::enginePaint(QPainter * painter)
     auto crop = getPainterCrop();
     if (crop)
     {
+        auto firststyle = getFirstRegularStyle();
         auto transform = firststyle->getLayerTransform();
-        switch (crop->getCropType())
-        {
-        case CROP_RECTANGLE:
-        {
-            auto rect = crop->getRect();
-            rect = transform.mapRect(rect);
-            qInfo() << "Painter Clip:" << rect;
-            painter->setClipRect(rect);
-        }   break;
-
-        case CROP_POLYGON:
-        {
-            QPolygonF p = crop->getAPolygon().get();
-            QPolygonF p2 = transform.map(p);
-            //painter.setClipRegion(p2);
-            QPainterPath pp;
-            pp.addPolygon(p2);
-            painter->setClipPath(pp);
-        }   break;
-
-        case CROP_CIRCLE:
-        {
-            Circle c = crop->getCircle();
-            QRectF rect = c.boundingRect();
-            rect = transform.mapRect(rect);
-            QPainterPath p;
-            p.addEllipse(rect.x(),rect.y(),rect.width(),rect.height());
-            painter->setClipPath(p);
-        }   break;
-
-        case CROP_UNDEFINED:
-            break;
-        }
+        crop->setPainterClip(painter,transform);
     }
 
     for (auto const & layer : std::as_const(layers))
@@ -153,11 +105,16 @@ void Mosaic::enginePaint(QPainter * painter)
 
 void  Mosaic::addStyle(StylePtr style)
 {
-    qDebug() << "Mosaic adding style: old count=" << styleSet.size();
+    //qDebug() << "Mosaic adding style: old count=" << styleSet.size();
     styleSet.push_front(style);
-    CropPtr cp = style->getPrototype()->getCrop();
-    if (cp)
-        setCrop(cp);
+    auto proto = style->getPrototype();
+    if (proto)
+    {
+        // borders don't have protos
+        CropPtr crop = proto->getCrop();
+        if (crop)
+            setCrop(crop);
+    }
 }
 
 void Mosaic::replaceStyle(StylePtr oldStyle, StylePtr newStyle)
@@ -169,9 +126,15 @@ void Mosaic::replaceStyle(StylePtr oldStyle, StylePtr newStyle)
         {
             *it = newStyle;
 
-            CropPtr cp = newStyle->getPrototype()->getCrop();
-            if (cp)
-                setCrop(cp);
+            ProtoPtr pp = newStyle->getPrototype();
+            if (pp)
+            {
+                CropPtr cp = pp->getCrop();
+                if (cp)
+                {
+                    setCrop(cp);
+                }
+            }
             return;
         }
     }
@@ -197,10 +160,21 @@ StylePtr  Mosaic::getFirstStyle()
     return sp;
 }
 
+StylePtr  Mosaic::getFirstRegularStyle()
+{
+    for (auto & style: styleSet)
+    {
+        if (style->getStyleType() != STYLE_BORDER)
+            return style;
+    }
+    StylePtr sp;
+    return sp;
+}
+
 QVector<TilingPtr> Mosaic::getTilings()
 {
     UniqueQVector<TilingPtr> tilings;
-    for (const auto & proto : getPrototypes())
+    for (auto & proto : getPrototypes())
     {
         TilingPtr tp = proto->getTiling();
         if (tp)
@@ -211,12 +185,36 @@ QVector<TilingPtr> Mosaic::getTilings()
     return static_cast<QVector<TilingPtr>>(tilings);
 }
 
+void Mosaic::setBorder(BorderPtr bp)
+{
+    auto border = getBorder();
+    if (border)
+    {
+        styleSet.removeOne(border);
+    }
+    addStyle(bp);
+}
+
+BorderPtr Mosaic::getBorder()
+{
+    for (auto & style : styleSet)
+    {
+        if (style->getStyleType() == STYLE_BORDER)
+        {
+            BorderPtr bp = std::dynamic_pointer_cast<Border>(style);
+            return bp;
+        }
+    }
+    BorderPtr bp;
+    return bp;
+}
+
 void Mosaic::setCrop(CropPtr crop)
 {
     Q_ASSERT(crop);
     _crop = crop;
 
-    for (const auto & proto : getPrototypes())
+    for (auto & proto : getPrototypes())
     {
         proto->setCrop(crop);       // resets proto map
     }
@@ -228,7 +226,7 @@ void Mosaic::resetCrop()
     _crop.reset();
 
     auto vec = getPrototypes();
-    for (const auto & proto : vec)
+    for (auto & proto : vec)
     {
         proto->resetCrop();       // resets proto map
     }
@@ -248,11 +246,6 @@ void Mosaic::resetPainterCrop()
     _painterCrop.reset();
 }
 
-void Mosaic::setBorder(BorderPtr border)
-{
-    _border = border;
-}
-
 VersionedName Mosaic::getName()
 {
     return name;
@@ -269,7 +262,8 @@ QVector<ProtoPtr> Mosaic::getPrototypes()
     for (const auto & style : std::as_const(styleSet))
     {
         ProtoPtr pp = style->getPrototype();
-        vec.push_back(pp);
+        if (pp)
+            vec.push_back(pp);
     }
     return static_cast<QVector<ProtoPtr>>(vec);
 }
@@ -303,7 +297,10 @@ void Mosaic::resetProtoMaps()
     for (const auto & style : std::as_const(styleSet))
     {
         auto proto = style->getPrototype();
-        proto->wipeoutProtoMap();
+        if (proto)
+        {
+            proto->wipeoutProtoMap();
+        }
         style->resetStyleRepresentation();
     }
 }
@@ -345,14 +342,34 @@ int Mosaic::moveDown(StylePtr style)
     return 0;
 }
 
+void Mosaic::correctBorderAlignment(BorderPtr border)
+{
+    // correction for legacy XML files
+    auto style           = getFirstRegularStyle();
+    const Xform & xf_mos = style->getModelXform();
+    QPointF mos_trans    = xf_mos.getTranslate();
+
+    if (!mos_trans.isNull())
+    {
+        qInfo() << "Mosaic::correctBorderAlignment";
+        Xform xf_bkgd       = border->getModelXform();
+        QPointF bkgd_trans  = xf_bkgd.getTranslate();
+        bkgd_trans         -= mos_trans;            // FIXME - should this be scaled
+        xf_bkgd.setTranslate(bkgd_trans);
+
+        border->setModelXform(xf_bkgd,false,Sys::nextSigid());
+    }
+}
+
 void Mosaic::dump()
 {
     qDebug() << "Mosaic" << name.get();
-    for (const auto & style : styleSet)
+    for (auto & style : styleSet)
     {
         MapPtr map;
         QString str;
-        if (auto proto = style->getPrototype())
+        auto proto = style->getPrototype();
+        if (proto)
         {
               map = proto->getExistingProtoMap();
               if (map)
@@ -368,7 +385,7 @@ void Mosaic::dumpMotifs()
 {
     qDebug() << "==== Mosaic Motifs" << name.get();
     auto protos = getPrototypes();
-    for (const auto & proto : protos)
+    for (auto & proto : protos)
     {
         proto->dumpMotifs();
     }
@@ -382,6 +399,19 @@ void Mosaic::dumpStyles()
     for (const auto & style : std::as_const(styleSet))
     {
         style->dump();
+    }
+    qDebug() << "=====";
+}
+
+void Mosaic::dumpTransforms()
+{
+    qDebug() << "==== Mosaic Styles" << name.get();
+    for (const auto & style : std::as_const(styleSet))
+    {
+        auto t1 = style->getCanvasTransform();
+        auto t2 = style->getModelTransform();
+        auto t3 = style->getLayerTransform();
+        qDebug() << Transform::info(t1) << Transform::info(t2) << Transform::info(t3);
     }
     qDebug() << "=====";
 }

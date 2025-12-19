@@ -5,46 +5,46 @@
 #include <QRadioButton>
 #include <QFileDialog>
 #include <QMessageBox>
-#include <QtConcurrent>
+#include <QtConcurrentMap>
 #include <QFuture>
 
 #include "gui/panels/page_image_tools.h"
 #include "gui/panels/panel_misc.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/splash_screen.h"
-#include "gui/top/view_controller.h"
-#include "gui/viewers/debug_view.h"
+#include "gui/top/system_view.h"
+#include "gui/top/system_view_controller.h"
 #include "gui/widgets/dlg_wlist_create.h"
+#include "gui/widgets/image_widget.h"
 #include "gui/widgets/layout_sliderset.h"
 #include "gui/widgets/memory_combo.h"
 #include "gui/widgets/worklist_widget.h"
 #include "model/makers/mosaic_maker.h"
+#include "model/makers/tiling_maker.h"
 #include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_manager.h"
 #include "model/settings/configuration.h"
 #include "sys/engine/compare_bmp_engine.h"
 #include "sys/engine/image_engine.h"
-#include "sys/engine/mosaic_bmp_engine.h"
+#include "sys/engine/mosaic_bmp_generator.h"
 #include "sys/engine/mosaic_stepper.h"
 #include "sys/engine/png_stepper.h"
 #include "sys/engine/stepping_engine.h"
-#include "sys/engine/tiling_bmp_engine.h"
+#include "sys/engine/tiling_bmp_generator.h"
 #include "sys/engine/tiling_stepper.h"
 #include "sys/engine/version_stepper.h"
-#include "sys/engine/worklist_stepper.h"
+#include "sys/engine/compare_bmp_stepper.h"
+#include "sys/engine/view_bmp_stepper.h"
 #include "sys/qt/qtapplog.h"
 #include "sys/qt/timers.h"
 #include "sys/sys.h"
+#include "sys/sys/debugflags.h"
 #include "sys/sys/fileservices.h"
 #include "sys/tiledpatternmaker.h"
 #include "sys/tiledpatternmaker.h"
 #include "sys/tiledpatternmaker.h"
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
 using Qt::endl;
-#else
-#define endl Qt::endl
-#endif
 
 QMutex      page_image_tools::comparisonMutex;
 VersionList page_image_tools::comparisonList;
@@ -57,13 +57,20 @@ page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,
     etimer            = new AQElapsedTimer(false);
     Sys::imageEngine  = &engine;
 
-    int row = 0;
     grid = new QGridLayout();
+
+    int row = 0;
+    addHSeparator(row);
+    row++;
+    row = createImageSelectionBox(row);
     row = createCycleGenBox(row);
+    row = createViewImagesBox(row);
     row = createWorklistBox(row);
+    row = createCompareOptionsBox(row);
     row = createCompareImagesBox(row);
     row = createCompareVersionsBox(row);
-          createViewImageBox(row);
+    row = createViewImageBox(row);
+    addHSeparator(row);
 
     vbox->addLayout(grid);
     vbox->addStretch();
@@ -87,68 +94,56 @@ page_image_tools::~page_image_tools()
     watcher.waitForFinished();
 }
 
-int  page_image_tools::createCycleGenBox(int row)
+int  page_image_tools::createImageSelectionBox(int row)
 {
-    directory                  = new QLineEdit("");
-    QPushButton  * saveDirBtn  = new QPushButton("Dir");
     QRadioButton * rSavMosaics = new QRadioButton("Mosaics");
     QRadioButton * rSavTiles   = new QRadioButton("Tilings");
-    genFilterCombo             = new QComboBox();
-    QCheckBox    * skip        = new QCheckBox("Skip Existing");
-    generateBMPsBtn            = new QPushButton("Generate BMPs");
 
-    genFilterCombo->setFixedWidth(121);
-    skip->setFixedWidth(97);
-    generateBMPsBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+    imageFilterCombo             = new QComboBox();
+    imageFilterCombo->setFixedWidth(121);
 
-    directory->setMinimumWidth(151);
-    setImageDirectory();
+    imageBtnGroup = new QButtonGroup;
+    imageBtnGroup->addButton(rSavMosaics,IMAGE_MOSAICS);
+    imageBtnGroup->addButton(rSavTiles,  IMAGE_TILINGS);
 
-    skip->setChecked(config->skipExisting);
-
-    genBtnGroup = new QButtonGroup;
-    genBtnGroup->addButton(rSavMosaics,ACT_GEN_MOSAIC_BMP);
-    genBtnGroup->addButton(rSavTiles,  ACT_GEN_TILING_BMP);
-    if (config->genCycleMosaic)
+    if (config->imageType == IMAGE_MOSAICS)
         rSavMosaics->setChecked(true);
     else
         rSavTiles->setChecked(true);
 
-    connect(generateBMPsBtn,    &QPushButton::clicked,     this,  &page_image_tools::slot_genBMPs);
-    connect(saveDirBtn,         &QPushButton::clicked,     this,  &page_image_tools::slot_opendir);
-    connect(skip,               &QCheckBox::clicked,       this,  &page_image_tools::slot_skipExisting);
-    connect(genBtnGroup,        &QButtonGroup::idClicked,  this,  &page_image_tools::slot_genTypeChanged);
-    connect(genFilterCombo,   QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_gen_selectionChanged);
-
     loadFileFilterCombo();
 
-    SpinSet * spCycleInterval = new SpinSet("Cycle Interval",0,0,9);
-    QRadioButton * rStyles    = new QRadioButton("Mosaics");
-    QRadioButton * rTiles     = new QRadioButton("Tilings");
-    viewFilterCombo           = new QComboBox();
-    QRadioButton * rPngs      = new QRadioButton("Original PNGs");
-    viewImgesBtn              = new QPushButton("View Images");
+    QLabel * l1 = new  QLabel("Image Select :");
+    l1->setStyleSheet("font-weight : bold");
 
-    viewImgesBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+    grid->addWidget(l1,row,0);
 
-    spCycleInterval->setValue(config->cycleInterval);
-    viewFilterCombo->setFixedWidth(121);
-    rPngs->setFixedWidth(97);
+    QHBoxLayout * hb1 = new QHBoxLayout;
+    hb1->addStretch();
+    hb1->addWidget(rSavMosaics );
+    hb1->addWidget(rSavTiles);
+    hb1->addWidget(imageFilterCombo);
+    hb1->addStretch();
 
-    viewBtnGroup = new QButtonGroup;
-    viewBtnGroup->addButton(rStyles,CYCLE_VIEW_MOSAICS);
-    viewBtnGroup->addButton(rTiles, CYCLE_VIEW_TILINGS);
-    viewBtnGroup->addButton(rPngs,  CYCLE_VIEW_ORIGINAL_PNGS);
+    grid->addLayout(hb1,row,1);
+    row ++;
 
-    viewBtnGroup->button(config->viewCycle2)->setChecked(true);
+    addHSeparator(row);
+    row++;
 
-    loadViewFilterCombo();
+    connect(imageBtnGroup,      &QButtonGroup::idClicked,        this, &page_image_tools::slot_imageTypeChanged);
+    connect(imageFilterCombo,   &QComboBox::currentIndexChanged, this, &page_image_tools::slot_imgFilterChanged);
 
+    return row;
+}
+
+int  page_image_tools::createCycleGenBox(int row)
+{
     // title row
     QLabel * l1 = new  QLabel("Generate BMPs :");
     l1->setStyleSheet("font-weight : bold");
-    QCheckBox   * chkMultiThread  = new QCheckBox("Multi-thread");
 
+    QCheckBox   * chkMultiThread  = new QCheckBox("Multi-thread");
     chkMultiThread->setChecked(config->multithreadedGeneration);
 
     QHBoxLayout * hb0 = new QHBoxLayout();
@@ -157,53 +152,91 @@ int  page_image_tools::createCycleGenBox(int row)
 
     grid->addLayout(hb0,row,0,1,2);
     grid->addWidget(chkMultiThread,row,2);
+    row++;
+
+    // second row
+    QPushButton  * saveDirBtn  = new QPushButton("Dir");
+    saveDirBtn->setMaximumWidth(51);
+
+    directoryCombo             = new DirMemoryCombo("DirCombo");
+    directoryCombo->initialise();
+    QString text = Sys::getSysBMPDirectory();
+    directoryCombo->setCurrentText(text);
+
+    QFontMetrics fm(directoryCombo->font());
+    auto rect = fm.boundingRect(text);
+    int width = rect.width() + 7;
+    if (width < 161)
+    {
+        width = 161;
+    }
+    directoryCombo->setFixedWidth(width);    // this width seems to set th whole page width
+
+    QCheckBox   * includeBkgds    = new QCheckBox("Include Background Images");
+    includeBkgds->setChecked(config->includeBkgdGeneration);
+
+    QCheckBox    * skip        = new QCheckBox("Skip Existing");
+    skip->setFixedWidth(97);
+    skip->setChecked(config->skipExisting);
+
+    generateBMPsBtn            = new QPushButton("Generate BMPs");
+    generateBMPsBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
     // generation
     QHBoxLayout * hb1 = new QHBoxLayout;
-    hb1->addWidget(directory);
+    hb1->addWidget(saveDirBtn,row);
+    hb1->addWidget(directoryCombo);
     hb1->addStretch();
-    hb1->addWidget(rSavMosaics );
-    hb1->addWidget(rSavTiles);
-    hb1->addWidget(genFilterCombo);
+    hb1->addWidget(includeBkgds);
     hb1->addWidget(skip);
 
-    row++;
-    grid->addWidget(saveDirBtn,row,0);
-    grid->addLayout(hb1,row,1);
+    grid->addLayout(hb1,row,0,1,2);
     grid->addWidget(generateBMPsBtn,row,2);
+    row++;
 
     // separator
-    row++;
     addHSeparator(row);
+    row++;
 
-    // title
+    connect(includeBkgds,    &QCheckBox::clicked,       this,  [this](bool checked) { config->includeBkgdGeneration = checked; });
+    connect(chkMultiThread,  &QCheckBox::clicked,       this,  [this](bool checked) { config->multithreadedGeneration = checked; });
+    connect(generateBMPsBtn, &QPushButton::clicked,     this,  &page_image_tools::slot_genBMPs);
+    connect(saveDirBtn,      &QPushButton::clicked,     this,  &page_image_tools::slot_opendir);
+    connect(skip,            &QCheckBox::clicked,       this,  &page_image_tools::slot_skipExisting);
+
+    return row;
+}
+
+int  page_image_tools::createViewImagesBox(int row)
+{
     QLabel * l2 = new  QLabel("View Images :");
     l2->setStyleSheet("font-weight : bold");
-    QHBoxLayout * hb5 = new QHBoxLayout();
-    hb5->addWidget(l2);
-    hb5->addStretch();
-    row++;
-    grid->addLayout(hb5,row,0,1,3);
 
-    QHBoxLayout * hb3 = new QHBoxLayout;
-    hb3->addLayout(spCycleInterval);
-    hb3->addStretch();
-    hb3->addWidget(rStyles);
-    hb3->addWidget(rTiles);
-    hb3->addWidget(viewFilterCombo);
-    hb3->addWidget(rPngs);
+    SpinSet * spCycleInterval = new SpinSet("Cycle Interval",0,0,9,true);
+    spCycleInterval->setValue(config->cycleInterval);
 
-    row++;
-    grid->addLayout(hb3,row,0,1,2);
+    chkPngs = new QCheckBox("Original PNGs");
+
+    viewImgesBtn = new QPushButton("View Images");
+    viewImgesBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+
+    QHBoxLayout * hb = new QHBoxLayout();
+    hb->addStretch();
+    hb->addLayout(spCycleInterval);
+    hb->addWidget(chkPngs);
+
+    grid->addWidget(l2,row,0);
+    grid->addLayout(hb,row,1);
     grid->addWidget(viewImgesBtn,row,2);
+    row++;
+
+    addHSeparator(row);
+    row++;
 
     connect(spCycleInterval, &SpinSet::valueChanged,    this,  &page_image_tools::slot_cycleIntervalChanged);
     connect(viewImgesBtn,    &QPushButton::clicked,     this,  &page_image_tools::slot_startStepping);
-    connect(viewBtnGroup,    &QButtonGroup::idClicked,  this,  &page_image_tools::slot_viewTypeChanged);
-    connect(chkMultiThread,  &QCheckBox::clicked,       this,  [this](bool checked) { config->multithreadedGeneration = checked; });
-    connect(genFilterCombo,  QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_view_selectionChanged);
 
-    return ++row;
+    return row;
 }
 
 int page_image_tools::createWorklistBox(int row)
@@ -221,29 +254,95 @@ int page_image_tools::createWorklistBox(int row)
     hbox->addWidget(editListBtn);
     hbox->addWidget(delBtn);
 
-    wlistLabel = new QLabel("Work List operations");
+    wlistLabel = new QLabel("Work List operations ");
     wlistLabel->setStyleSheet("font-weight : bold");
 
     QHBoxLayout * hbox0 = new QHBoxLayout;
     hbox0->addWidget(wlistLabel);
     hbox0->addStretch();
 
-    addHSeparator(row);
-
-    row++;
     grid->addLayout(hbox0,row,0,1,3);
-
     row++;
+
     grid->addLayout(hbox,row,1);
+    row++;
+
+    addHSeparator(row);
+    row++;
 
     connect(loadListBtn,  &QPushButton::clicked,     this,  &page_image_tools::slot_loadWorkListFromFile);
     connect(saveListBtn,  &QPushButton::clicked,     this,  &page_image_tools::slot_saveWorkListToFile);
     connect(editListBtn,  &QPushButton::clicked,     this,  &page_image_tools::slot_editWorkList);
     connect(delBtn,       &QPushButton::clicked,     this,  [this] () { slot_deleteCurrentWLEntry(true);} );
-    connect(createListBtn,&QPushButton::clicked,     this,  &page_image_tools::slot_createList);
+    connect(createListBtn,&QPushButton::clicked,     this,  &page_image_tools::slot_createWorkList);
     connect(&engine,      &ImageEngine::sig_deleteCurrentInWorklist, this, &page_image_tools::slot_deleteCurrentWLEntry);
 
-    return ++row;
+    return row;
+}
+
+int page_image_tools::createCompareOptionsBox(int row)
+{
+    QLabel * label = new QLabel("Comparison Options :");
+    label->setStyleSheet("font-weight : bold");
+
+    QHBoxLayout * hbox3 = new QHBoxLayout;
+    hbox3->addWidget(label);
+    hbox3->addStretch();
+
+    grid->addLayout(hbox3,row,0,1,3);
+    row++;
+
+    QRadioButton  * rInPlace     = new QRadioButton("In-place");
+    QRadioButton  * rPopup       = new QRadioButton("Pop-up");
+    popupGroup = new QButtonGroup();
+    popupGroup->addButton(rInPlace);
+    popupGroup->addButton(rPopup);
+
+    DoubleSpinSet * popupScale   = new DoubleSpinSet("Pop-up Scale",1.0,0.1,9.0);
+    popupScale->setSingleStep(0.1);
+    popupScale->setDecimals(1);
+
+    QCheckBox   * transparent    = new QCheckBox("Transparent");
+    QPushButton * colorEdit      = new QPushButton("Set Filter Color");
+    colorLabel                   = new QLabel();
+    colorLabel->setFixedWidth(51);
+    QCheckBox  * chkUseFilter    = new QCheckBox("Use Filter Color");
+
+    QHBoxLayout * hbox4 = new QHBoxLayout();
+    hbox4->addWidget(rInPlace);
+
+    hbox4->addStretch();
+    hbox4->addWidget(rPopup);
+    hbox4->addLayout(popupScale);
+    hbox4->addSpacing(5);
+    hbox4->addWidget(transparent);
+    hbox4->addWidget(chkUseFilter);
+    hbox4->addWidget(colorLabel);
+    hbox4->addSpacing(3);
+    hbox4->addWidget(colorEdit);
+    hbox4->addStretch();
+
+    grid->addLayout(hbox4,row,0,1,3);
+    row++;
+
+    addHSeparator(row);
+    row++;
+
+    transparent->setChecked(config->compare_transparent);
+    if (config->compare_popup)
+        rPopup->setChecked(true);
+    else
+        rInPlace->setChecked(true);
+    chkUseFilter->setChecked(config->compare_filterColor);
+
+    connect(colorEdit,              &QPushButton::clicked,  this,   &page_image_tools::slot_colorEdit);
+    connect(chkUseFilter,           &QCheckBox::clicked,    this,   &page_image_tools::slot_useFilter);
+    connect(transparent,            &QCheckBox::clicked,    this,   &page_image_tools::slot_transparentClicked);
+    connect(rPopup,                 &QRadioButton::clicked, this,   &page_image_tools::slot_popupClicked);
+    connect(rInPlace,               &QRadioButton::clicked, this,   &page_image_tools::slot_inPlaceClicked);
+    connect(popupScale,       &DoubleSpinSet::valueChanged, this,   [this](qreal val) { engine.setPopupScale(val); } );
+
+    return row;
 }
 
 int page_image_tools::createCompareImagesBox(int row)
@@ -265,126 +364,96 @@ int page_image_tools::createCompareImagesBox(int row)
     startBtn                    = new QPushButton("Start");
     QPushButton * swapBtn       = new QPushButton("Swap Dirs");
 
+    bmpView    = new QRadioButton("View");
+    bmpCompare = new QRadioButton("Compare");
+    compareBtnGroup = new QButtonGroup();
+    compareBtnGroup->addButton(bmpCompare);
+    compareBtnGroup->addButton(bmpView);
+    bmpCompare->setChecked(true);       // always start in compare mode
+
     firstBMPCompareCombo->setMinimumWidth(461);
     imageCompareResult->setReadOnly(true);
 
     genCompareBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
-    startBtn->setStyleSheet(     "QPushButton { background-color: yellow; color: red;}");
     compareDirBMP->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    QCheckBox   * chkPopup     = new QCheckBox("Pop-up");
-    QCheckBox   * transparent  = new QCheckBox("Transparent");
-    use_wlistForCompareChk     = new QCheckBox("Use WorkList");
-
-    compareView                = new QCheckBox("2nd use loaded");
-
+    useCompareWL               = new QCheckBox("Use WorkList");
+    compareLoaded2nd           = new QCheckBox("2nd use loaded");
     QPushButton * replBtn      = new QPushButton("Replace Second BMP");
                  loadSecondBtn = new QPushButton("Load Second");
                  viewSecondBtn = new QPushButton("View Second");
 
     QHBoxLayout * hbox2 = new QHBoxLayout;
     hbox2->addWidget(imageCompareResult);
-    hbox2->addWidget(compareView);
+    hbox2->addWidget(compareLoaded2nd);
 
-    QLabel * label = new QLabel("Comparison Options :");
+    QLabel * label = new QLabel("Compare BMP Dirs :");
     label->setStyleSheet("font-weight : bold");
 
     QHBoxLayout * hbox3 = new QHBoxLayout;
     hbox3->addWidget(label);
     hbox3->addStretch();
-
-    addHSeparator(row);
-
-    row++;
-    grid->addLayout(hbox3,row,0,1,3);
-
-    QPushButton * colorEdit      = new QPushButton("Set Filter Color");
-    colorLabel                   = new QLabel();
-    colorLabel->setFixedWidth(51);
-    QCheckBox  * chkUseFilter    = new QCheckBox("Use Filter Color");
-
-    QHBoxLayout * hbox4 = new QHBoxLayout();
-    hbox4->addWidget(chkPopup);
-    hbox4->addStretch();
-    hbox4->addWidget(transparent);
-    hbox4->addWidget(chkUseFilter);
-    hbox4->addWidget(colorLabel);
-    hbox4->addWidget(colorEdit);
-    hbox4->addStretch();
-
-    row++;
-    grid->addLayout(hbox4,row,1);
-    grid->addWidget(use_wlistForCompareChk,row,2);
-
-    row++;
-    addHSeparator(row);
-
-    row++;
-    label = new QLabel("Directory BMP comparisons :");
-    label->setStyleSheet("font-weight : bold");
-    hbox3 = new QHBoxLayout;
-    hbox3->addWidget(label);
+    hbox3->addWidget(bmpCompare);
+    hbox3->addWidget(bmpView);
     hbox3->addStretch();
     hbox3->addWidget(viewSecondBtn);
     hbox3->addWidget(loadSecondBtn);
     hbox3->addWidget(replBtn);
-    grid->addLayout(hbox3,row,0,1,2);
-    grid->addWidget(genCompareBtn,row,2);
 
+    grid->addLayout(hbox3,row,0,1,2);
+    grid->addWidget(useCompareWL,row,2);
     row++;
+
     grid->addWidget(firstDirBtn,row,0);
     grid->addWidget(firstDir,row,1);
-    grid->addWidget(startBtn,row,2);
-
+    grid->addWidget(genCompareBtn,row,2);
     row++;
+
     grid->addWidget(secondDirBtn,row,0);
     grid->addWidget(secondDir,row,1);
-    grid->addWidget(previousBtn,row,2);
-
+    grid->addWidget(startBtn,row,2);
     row++;
+
     grid->addWidget(viewImage0,row,0);
     grid->addWidget(firstBMPCompareCombo,row,1);
     grid->addWidget(nextBtn,row,2);
-
     row++;
+
     grid->addWidget(viewImage1,row,0);
     grid->addWidget(secondBMPCompareCombo,row,1);
-
+    grid->addWidget(previousBtn,row,2);
     row++;
+
     grid->addWidget(swapBtn,row,0);
     grid->addLayout(hbox2,row,1);
     grid->addWidget(compareDirBMP,row,2);
+    row++;
+
+    addHSeparator(row);
+    row++;
 
     firstDir->initialise();
     loadCombo(firstBMPCompareCombo,firstDir->getCurrentText());
     secondDir->initialise();
     loadCombo(secondBMPCompareCombo,secondDir->getCurrentText());
 
-    transparent->setChecked(config->compare_transparent);
-    chkPopup->setChecked(config->compare_popup);
-    use_wlistForCompareChk->setChecked(config->use_workListForCompare);
-    chkUseFilter->setChecked(config->compare_filterColor);
-
-    connect(colorEdit,              &QPushButton::clicked,  this,   &page_image_tools::slot_colorEdit);
-    connect(chkUseFilter,           &QCheckBox::clicked,    this,   &page_image_tools::slot_useFilter);
+    useCompareWL->setChecked(config->use_workListForCompare);
 
     connect(firstDirBtn,            &QPushButton::clicked,  this,   &page_image_tools::slot_selectDir0);
     connect(secondDirBtn,           &QPushButton::clicked,  this,   &page_image_tools::slot_selectDir1);
     connect(swapBtn,                &QPushButton::clicked,  this,   &page_image_tools::slor_swapDirs);
 
-    connect(genCompareBtn,          &QPushButton::clicked,  this,   &page_image_tools::slot_compareGen);
-    connect(startBtn,               &QPushButton::clicked,  this,   &page_image_tools::slot_startCompare);
+    connect(genCompareBtn,          &QPushButton::clicked,  this,   &page_image_tools::slot_generateComparisonWL);
+    connect(startBtn,               &QPushButton::clicked,  this,   &page_image_tools::slot_startCompareCycle);
     connect(nextBtn,                &QPushButton::clicked,  this,   &page_image_tools::slot_next);
     connect(previousBtn,            &QPushButton::clicked,  this,   &page_image_tools::slot_previous);
-    connect(compareDirBMP,          &QPushButton::clicked,  this,   &page_image_tools::slot_compareDiffDirBMPs);
+    connect(compareDirBMP,          &QPushButton::clicked,  this,   &page_image_tools::slot_compareSelectedBMPs);
 
     connect(viewImage0,             &QPushButton::clicked,  this,   &page_image_tools::slot_viewImageLeft);
     connect(viewImage1,             &QPushButton::clicked,  this,   &page_image_tools::slot_viewImageRight);
 
-    connect(transparent,            &QCheckBox::clicked,    this,   &page_image_tools::slot_transparentClicked);
-    connect(chkPopup,               &QCheckBox::clicked,    this,   &page_image_tools::slot_popupClicked);
-    connect(use_wlistForCompareChk, &QCheckBox::clicked,    this,   &page_image_tools::slot_use_worklist_compare);
-    connect(compareView,            &QCheckBox::clicked,    this,   &page_image_tools::slot_compareView);
+    connect(useCompareWL,           &QCheckBox::toggled,    this,   &page_image_tools::slot_toggle_useWL);
+    connect(compareLoaded2nd,       &QCheckBox::toggled,    this,   &page_image_tools::slot_toggle_loaded2nd);
 
     connect(replBtn,                &QPushButton::clicked,  this,   &page_image_tools::slot_replaceBMP);
     connect(loadSecondBtn,          &QPushButton::clicked,  this,   &page_image_tools::slot_loadSecond);
@@ -393,8 +462,8 @@ int page_image_tools::createCompareImagesBox(int row)
     connect(firstDir,  &MemoryCombo::editTextChanged,       this,   &page_image_tools::slot_firstDirChanged);
     connect(secondDir, &MemoryCombo::editTextChanged,       this,   &page_image_tools::slot_secondDirChanged);
 
-    connect(firstDir,  QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_firstDirChanged);
-    connect(secondDir, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_secondDirChanged);
+    connect(firstDir,  &QComboBox::currentIndexChanged,     this,   &page_image_tools::slot_firstDirChanged);
+    connect(secondDir, &QComboBox::currentIndexChanged,     this,   &page_image_tools::slot_secondDirChanged);
 
     connect(firstBMPCompareCombo,  SIGNAL(currentIndexChanged(int)), this,   SLOT(slot_BMPCompare0_changed(int)));
     connect(secondBMPCompareCombo, SIGNAL(currentIndexChanged(int)), this,   SLOT(slot_BMPCompare1_changed(int)));
@@ -402,18 +471,13 @@ int page_image_tools::createCompareImagesBox(int row)
     setCombo(firstBMPCompareCombo,config->BMPCompare0);
     setCombo(secondBMPCompareCombo,config->BMPCompare1);
 
-    return ++row;
+    return row;
 }
 
 int page_image_tools::createCompareVersionsBox(int row)
 {
-    versionFilterCombo = new QComboBox();
-
-    radMosaic  = new QRadioButton("Mosaics");
-    radTile    = new QRadioButton("Tiles");
-    mediaGroup = new QButtonGroup();
-    mediaGroup->addButton(radMosaic);
-    mediaGroup->addButton(radTile);
+    QLabel * label = new QLabel("Compare Versions :");
+    label->setStyleSheet("font-weight : bold");
 
     radImg    = new QRadioButton("Images");
     radXML    = new QRadioButton("XML");
@@ -437,82 +501,56 @@ int page_image_tools::createCompareVersionsBox(int row)
     dummyLabel->setMinimumWidth(79);
 
     QHBoxLayout * hbox = new QHBoxLayout();
+    hbox->addWidget(label);
     hbox->addStretch();
-    hbox->addWidget(radMosaic);
-    hbox->addWidget(radTile);
-    hbox->addSpacing(9);
-    hbox->addWidget(versionFilterCombo);
-    hbox->addSpacing(9);
     hbox->addWidget(radImg);
     hbox->addWidget(radXML);
-    hbox->addSpacing(9);
-    hbox->addWidget(chkLock);
+    hbox->addStretch();
 
     QHBoxLayout * hbox2 = new QHBoxLayout();
     hbox2->addWidget(mediaA);
     hbox2->addWidget(versionsA);
 
-    QLabel * label = new QLabel("Load Version comparisons :");
-    label->setStyleSheet("font-weight : bold");
-
-    QHBoxLayout * hbox3 = new QHBoxLayout;
-    hbox3->addWidget(label);
-    hbox3->addStretch();
-
-    addHSeparator(row);
-
-    row++;
-    grid->addLayout(hbox3,row,0,1,3);
-
-    row++;
-    grid->addWidget(viewImageBtn3,row,0);
-    grid->addLayout(hbox2,row,1);
-
-    row++;
     QHBoxLayout * hbox4 = new QHBoxLayout();
     hbox4->addWidget(mediaB);
     hbox4->addWidget(versionsB);
+
+    grid->addLayout(hbox,row,0,1,2);
+    grid->addWidget(chkLock,row,2);
+    row++;
+
+    grid->addWidget(viewImageBtn3,row,0);
+    grid->addLayout(hbox2,row,1);
+    row++;
+
     grid->addWidget(viewImageBtn4,row,0);
     grid->addLayout(hbox4,row,1);
-
-    row++;
-    grid->addWidget(dummyLabel,row,0);
-    grid->addLayout(hbox,row,1);
     grid->addWidget(compareVerBMP,row,2);
+    row++;
+
+    addHSeparator(row);
+    row++;
 
     chkLock->setChecked(config->vCompLock);
     if (config->vCompXML)
         radXML->setChecked(true);
     else
         radImg->setChecked(true);
-    if (config->vCompTile)
-        radTile->setChecked(true);
-    else
-        radMosaic->setChecked(true);
 
-    loadVersionFilterCombo();
-
-    connect(versionFilterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_ver_selectionChanged);
-    connect(mediaA,             QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() { engine.verStepper->mediaAChanged(); });
-    connect(mediaB,             QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() { engine.verStepper->mediaBChanged(); });
+    connect(mediaA,  &QComboBox::currentIndexChanged, this, [this]() { engine.verStepper->mediaAChanged(); });
+    connect(mediaB,  &QComboBox::currentIndexChanged, this, [this]() { engine.verStepper->mediaBChanged(); });
 
     connect(compareVerBMP,  &QPushButton::clicked,   this,  &page_image_tools::slot_compareDiffVerBMPs);
     connect(chkLock,        &QCheckBox::clicked,     this,  [this](bool checked) { config->vCompLock = checked; });
     connect(radXML,         &QRadioButton::clicked,  this,  [this](bool checked) { config->vCompXML  = checked; });
     connect(radImg,         &QRadioButton::clicked,  this,  [this](bool checked) { config->vCompXML  = !checked; });
-    connect(radMosaic,      &QRadioButton::clicked,  this,  [this](bool checked) { config->vCompTile = !checked;
-                                                                                   loadVersionFilterCombo();
-                                                                                   engine.verStepper->loadVersionCombos(); });
-    connect(radTile,        &QRadioButton::clicked,  this,  [this](bool checked) { config->vCompTile = checked;
-                                                                                   loadVersionFilterCombo();
-                                                                                   engine.verStepper->loadVersionCombos(); });
 
     connect(&engine,        &ImageEngine::sig_ready, this,  &page_image_tools::slot_nextImage, Qt::QueuedConnection);
 
     connect(viewImageBtn3,  &QPushButton::clicked,   this,  &page_image_tools::slot_viewImage3);
     connect(viewImageBtn4,  &QPushButton::clicked,   this,  &page_image_tools::slot_viewImage4);
 
-    return  ++row;
+    return row;
 }
 
 int page_image_tools::createViewImageBox(int row)
@@ -526,30 +564,26 @@ int page_image_tools::createViewImageBox(int row)
 
     viewFileCombo1               = new MemoryCombo("viewFileCombo1");
     viewFileCombo2               = new MemoryCombo("viewFileCombo2");
-    viewFileCombo1->setMinimumWidth(540);
-    viewFileCombo2->setMinimumWidth(540);
 
-    QLabel * label = new QLabel("Image File comparisons :");
+    QLabel * label = new QLabel("Compare Image Files :");
     label->setStyleSheet("font-weight : bold");
     QHBoxLayout * hbox3 = new QHBoxLayout;
     hbox3->addWidget(label);
     hbox3->addStretch();
 
-    addHSeparator(row);
-
-    row++;
     grid->addLayout(hbox3,row,0,1,2);
     grid->addWidget(compareFileBMP,row,2);
-
     row++;
-    grid->addWidget(selectImgBtn1,row,0);
+
+    grid->addWidget(viewImageBtn1,row,0);
     grid->addWidget(viewFileCombo1,row,1);
-    grid->addWidget(viewImageBtn1,row,2);
-
+    grid->addWidget(selectImgBtn1,row,2);
     row++;
-    grid->addWidget(selectImgBtn2,row,0);
+
+    grid->addWidget(viewImageBtn2,row,0);
     grid->addWidget(viewFileCombo2,row,1);
-    grid->addWidget(viewImageBtn2,row,2);
+    grid->addWidget(selectImgBtn2,row,2);
+    row++;
 
     viewFileCombo1->initialise();
     viewFileCombo2->initialise();
@@ -564,10 +598,10 @@ int page_image_tools::createViewImageBox(int row)
     connect(viewImageBtn2,  &QPushButton::clicked,   this,   &page_image_tools::slot_viewImage2);
     connect(compareFileBMP, &QPushButton::clicked,   this,   &page_image_tools::slot_compareFileBMPs);
 
-    connect(viewFileCombo1, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_imageSelectionChanged1);
-    connect(viewFileCombo2, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_imageSelectionChanged2);
+    connect(viewFileCombo1, &QComboBox::currentIndexChanged, this, &page_image_tools::slot_imageSelectionChanged1);
+    connect(viewFileCombo2, &QComboBox::currentIndexChanged, this, &page_image_tools::slot_imageSelectionChanged2);
 
-    return ++row;
+    return row;
 }
 
 void page_image_tools::bump(int row, int stretch)
@@ -589,19 +623,22 @@ void page_image_tools::addHSeparator(int row)
 void  page_image_tools::onEnter()
 {
     imageCompareResult->setText("");
+    engine.verStepper->loadVersionCombos();
+
+    // I'm not sure what the original intention of this code was
+    // but now it aligns the right to the left
     QString left  = firstBMPCompareCombo->currentText();
-    QString right = secondBMPCompareCombo->currentText();
     loadCombo(firstBMPCompareCombo,firstDir->getCurrentText());
     loadCombo(secondBMPCompareCombo,secondDir->getCurrentText());
     slot_setImageLeftCombo(left);
-    slot_setImageRightCombo(right);
-    engine.verStepper->loadVersionCombos();
+    slot_setImageRightCombo(left);
 }
 
 void page_image_tools::onExit()
 {
+    clearPageStatus();
     viewControl->clearLayout();   // removes any cycler pngs
-    Sys::view->show();
+    Sys::viewController->showView();
 }
 
 void  page_image_tools::onRefresh()
@@ -615,322 +652,58 @@ void  page_image_tools::onRefresh()
     else
         viewImgesBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    if (engine.wlStepper->isStarted())
-        startBtn->setStyleSheet("QPushButton { background-color: red; color: yellow;}");
+    if (bmpCompare->isChecked())
+    {
+        if (engine.compareBMPStepper->isStarted())
+            startBtn->setStyleSheet("QPushButton { background-color: red; color: yellow;}");
+        else
+            startBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+    }
     else
-        startBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+    {
+        if (engine.viewBMPStepper->isStarted())
+            startBtn->setStyleSheet("QPushButton { background-color: red; color: yellow;}");
+        else
+            startBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////
 ///
-///  Slots
+///  Worklist slots
 ///
 ///////////////////////////////////////////////////////////////////////////
 
-void page_image_tools::slot_genTypeChanged(int id)
+void page_image_tools::worklistWrapup()
 {
-    // switches between mosaics and tilings
-    qDebug() << "page_image_tools::slot_genTypeChanged" << id;
-    config->genCycleMosaic = (id == ACT_GEN_MOSAIC_BMP);
-    loadFileFilterCombo();
-}
+    int sz = config->worklist.count();
 
-void page_image_tools::slot_gen_selectionChanged()
-{
-    // triggered when filter combo is loaded or its selection changes
-    config->genFileFilter = static_cast<eLoadType>(genFilterCombo->currentData().toInt());
-    qDebug() << "generate BMP file filter" << config->genFileFilter;
-}
-
-void page_image_tools::slot_viewTypeChanged(int id)
-{
-    config->viewCycle2 = static_cast<eCycleMode>(id);
-    loadViewFilterCombo();
-}
-
-void page_image_tools::slot_view_selectionChanged()
-{
-    config->viewFileFilter = static_cast<eLoadType>(viewFilterCombo->currentData().toInt());
-    qDebug() << "view BMP file filter" << config->viewFileFilter;
-}
-
-void page_image_tools::slot_cycleIntervalChanged(int value)
-{
-    config->cycleInterval = value;
-}
-
-void page_image_tools::slot_firstDirChanged()
-{
-    firstDir->select(firstDir->currentIndex());
-    loadCombo(firstBMPCompareCombo,firstDir->getCurrentText());
-}
-
-void page_image_tools::slot_secondDirChanged()
-{
-    secondDir->select(secondDir->currentIndex());
-    loadCombo(secondBMPCompareCombo,secondDir->getCurrentText());
-}
-
-void page_image_tools::slot_selectDir0()
-{
-    QString  dir = firstDir->getCurrentText();
-    QString fdir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), dir,
-                                                 QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    if (fdir.isEmpty())
-            return;
-
-    firstDir->setCurrentText(fdir);
-    slot_firstDirChanged();
-}
-
-void page_image_tools::slot_selectDir1()
-{
-    QString  dir = secondDir->getCurrentText();
-    QString fdir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), dir,
-                                                 QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    if (fdir.isEmpty())
-            return;
-
-    secondDir->setCurrentText(fdir);
-    slot_secondDirChanged();
-}
-
-void page_image_tools::slor_swapDirs()
-{
-    QString a = firstDir->getCurrentText();
-    QString b = secondDir->getCurrentText();
-    firstDir->setCurrentText(b);
-    secondDir->setCurrentText(a);
-    loadCombo(firstBMPCompareCombo,firstDir->getCurrentText());
-    loadCombo(secondBMPCompareCombo,secondDir->getCurrentText());
-}
-
-void page_image_tools::slot_viewImageLeft()
-{
-    qDebug() << "slot_viewImageLeft";
-    VersionedName name(firstBMPCompareCombo->currentText());
-    if (name.isEmpty())
+    if (sz)
     {
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Warning);
-        box.setText("No filename");
-        box.exec();
-        return;
+        slot_editWorkList();
     }
-    config->BMPCompare0 = name.get();
-    VersionedFile file(firstDir->getCurrentText() + "/" + name.get() + ".bmp");
-    viewImage(file);
-}
 
-void page_image_tools::slot_viewImageRight()
-{
-    qDebug() << "slot_viewImageRight";
-
-    if (compareView->isChecked())
+    if (useCompareWL->isChecked())
     {
-        panel->unDelegateView(VIEW_IMAGE);
-        panel->delegateView(VIEW_MOSAIC);
-        emit sig_reconstructView();
+        slot_toggle_useWL(true);
     }
-    else
-    {
-        VersionedName name(secondBMPCompareCombo->currentText());
-        if (name.isEmpty())
-        {
-            QMessageBox box(this);
-            box.setIcon(QMessageBox::Warning);
-            box.setText("No filename");
-            box.exec();
-            return;
-        }
 
-        config->BMPCompare1 = name.get();
-        VersionedFile file(secondDir->getCurrentText() + "/" + name.get() + ".bmp");
-        viewImage(file);
-    }
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Information);
+    box.setText(QString("%1 filenames loaded into Work List").arg(sz));
+    box.exec();
 }
 
-void page_image_tools::slot_transparentClicked(bool checked)
+void page_image_tools::slot_toggle_useWL(bool checked)
 {
-    config->compare_transparent = checked;
-}
-
-void page_image_tools::slot_popupClicked(bool checked)
-{
-    config->compare_popup = checked;
-}
-
-void page_image_tools::slot_use_worklist_compare(bool checked)
-{
-    use_wlistForCompareChk->blockSignals(true);
-    use_wlistForCompareChk->setChecked(checked);
-    use_wlistForCompareChk->blockSignals(false);
+    useCompareWL->blockSignals(true);
+    useCompareWL->setChecked(checked);
+    useCompareWL->blockSignals(false);
 
     config->use_workListForCompare = checked;
 
     slot_firstDirChanged();
     slot_secondDirChanged();
-}
-
-void page_image_tools::slot_compareView(bool checked)
-{
-    if (checked)
-    {
-        loadSecondBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
-        viewSecondBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
-    }
-    else
-    {
-        loadSecondBtn->setStyleSheet("");
-        viewSecondBtn->setStyleSheet("");
-    }
-}
-
-void page_image_tools::slot_compareResult(QString result)
-{
-    imageCompareResult->setText(result);
-}
-
-void  page_image_tools::slot_skipExisting(bool checked)
-{
-    config->skipExisting = checked;
-}
-
-void page_image_tools::loadCombo(QComboBox * combo, QString dir)
-{
-    QStringList names;
-    if (!config->use_workListForCompare)
-    {
-        names = FileServices::getDirBMPFiles(dir).getNames();
-    }
-    else
-    {
-        names = config->worklist.get().getNames();
-    }
-
-    combo->blockSignals(true);
-    combo->clear();
-    combo->addItems(names);
-    combo->blockSignals(false);
-}
-
-void page_image_tools::setCombo(QComboBox * combo, QString name)
-{
-    combo->blockSignals(true);
-    int index = combo->findText(name);
-    if (index == -1) index = 0;
-    combo->setCurrentIndex(index);
-    combo->blockSignals(false);
-}
-
-void page_image_tools::slot_setImageLeftCombo(QString name)
-{
-    int index = firstBMPCompareCombo->findText(name);
-    firstBMPCompareCombo->blockSignals(true);
-    firstBMPCompareCombo->setCurrentIndex(index);
-    firstBMPCompareCombo->blockSignals(false);
-}
-
-void page_image_tools::slot_setImageRightCombo(QString name)
-{
-    int index = secondBMPCompareCombo->findText(name);
-    secondBMPCompareCombo->blockSignals(true);
-    secondBMPCompareCombo->setCurrentIndex(index);
-    secondBMPCompareCombo->blockSignals(false);
-}
-
-void page_image_tools::slot_BMPCompare0_changed(int index)
-{
-    Q_UNUSED(index);
-    QString current = firstBMPCompareCombo->currentText();
-    config->BMPCompare0 = current;
-
-    if (!current.isEmpty())
-    {
-
-        // special case for ibox1 - not symmetric
-        slot_setImageRightCombo(current);  // makes it the same
-
-        VersionedName vn(current);
-        engine.wlStepper->resync(current);
-    }
-}
-
-void page_image_tools::slot_BMPCompare1_changed(int index)
-{
-    Q_UNUSED(index);
-    QString current = secondBMPCompareCombo->currentText();
-    config->BMPCompare1 = current;
-}
-
-void page_image_tools::slot_loadSecond()
-{
-    QMessageBox box(this);
-    box.setWindowTitle("Reload Mosaic");
-    box.setIcon(QMessageBox::Warning);
-    box.setText("Are yoiu sure");
-    box.setInformativeText("This will overwrite all recent changes");
-    box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-    box.setDefaultButton(QMessageBox::Cancel);
-    int rv2 = box.exec();
-    if (rv2 == QMessageBox::Cancel)
-    {
-        return;
-    }
-
-    engine.closeAllImageViewers();
-    QString mos = secondBMPCompareCombo->currentText();
-    VersionedName vn(mos);
-    VersionedFile vf = FileServices::getFile(vn,FILE_MOSAIC);
-    mosaicMaker->loadMosaic(vf);
-}
-
-void page_image_tools::slot_viewSecond()
-{
-    engine.closeAllImageViewers();
-    panel->delegateView(VIEW_MOSAIC);
-}
-
-void page_image_tools::slot_opendir()
-{
-    QString old = getPixmapPath();
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Image Directory"),
-                                                    old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-    if (dir.isEmpty())
-    {
-        qDebug() << "Cancel Pressed";
-        setImageDirectory();
-        return;
-    }
-
-    if (dir != old)
-    {
-        qDebug() << "Selected image dir" << dir;
-        auto i  = dir.lastIndexOf("/");
-        auto front = dir.size() - i;
-#if (QT_VERSION >= QT_VERSION_CHECK(6,5,0))
-        dir = dir.last(front-1);
-#else
-        dir = dir.right(front-1);
-#endif
-        qDebug() << "Image dir" << dir;
-
-        directory->setText(dir);
-    }
-
-#ifdef Q_OS_WINDOWS
-    QString path = getPixmapPath();
-    qDebug() <<  "Path:" << path;
-
-    QString path2 = QDir::toNativeSeparators(path);
-    qDebug() <<  "Path2:" << path2;
-
-    QStringList args;
-    args << path2;
-
-    QProcess::startDetached("explorer",args);
-#endif
 }
 
 void page_image_tools::slot_loadWorkListFromFile()
@@ -963,24 +736,48 @@ void page_image_tools::slot_loadWorkListFromFile()
         return;
     }
 
+    // The basic list is a list names e.g. Tes1.v3
+    // More sophisticated processing extracts from a string containing a double quoted name
+    // e.g.  "This is the name of the file "Test1.v3.xml" OK"
+
     QTextStream textStream(&file);
 
-    VersionList versionList;
+    VersionList newVersionList;
     while (!textStream.atEnd())
     {
-        QString name = textStream.readLine();
-        name = name.trimmed();
-        name.remove(".xml");
-        VersionedName vn(name);
-        versionList.add(vn);
+        QString line = textStream.readLine();
+        qDebug().noquote() << line;
+        line = line.trimmed();
+
+        int pos = line.indexOf(".xml");
+        if (pos != -1)
+        {
+            line.truncate(pos);
+        }
+
+        if (line.contains("\""))
+        {
+            QStringList qsl = line.split('"');
+            line = qsl[1];
+        }
+        else
+        {
+#ifdef Q_OS_WINDOWS
+            QStringList qsl = line.split('/');
+            int n = qsl.size();
+            line = qsl[n-1];
+#endif
+        }
+        VersionedName vn(line);
+        newVersionList.add(vn);
     }
     file.close();
 
-    versionList.removeDuplicates();
-    versionList.sort();
+    newVersionList.removeDuplicates();
+    newVersionList.sort();
 
-    qDebug() << "file list: " << versionList.getNames();
-    if (versionList.isEmpty())
+    qDebug() << "file list: " << newVersionList.getNames();
+    if (newVersionList.isEmpty())
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
@@ -993,17 +790,39 @@ void page_image_tools::slot_loadWorkListFromFile()
     QString fname = fi.fileName();
     fname.remove(".txt");
 
-    config->worklist.set(fname,versionList);
+    // list is prepared, add or replace
+    bool replace = true;
+    if (config->worklist.count() > 0)
+    {
+        QMessageBox box2(this);
+        box2.setIcon(QMessageBox::Question);
+        box2.setText(QString("Replace Worklist or Add to existing worklist"));
+        auto b1 = box2.addButton("Add", QMessageBox::YesRole);
+        auto b2 = box2.addButton("Replace", QMessageBox::NoRole);
+        box2.setDefaultButton(b2);
+        box2.exec();
+        if (box2.clickedButton() == b1)
+            replace = false;
+    }
 
-    int sz = versionList.count();
+    if (replace)
+    {
+        // replace
+        config->worklist.set(fname,newVersionList);
+    }
+    else
+    {
+        // add
+        VersionList oldList = config->worklist.get();
+        oldList += newVersionList;
 
-    QMessageBox box(this);
-    box.setIcon(QMessageBox::Information);
-    box.setText(QString("%1 filenames loaded into Work List - OK").arg(sz));
-    box.exec();
+        oldList.removeDuplicates();
+        oldList.sort();
 
-    use_wlistForCompareChk->setChecked(true);
-    slot_use_worklist_compare(true);    // do both
+        config->worklist.set(fname,oldList);
+    }
+
+    worklistWrapup();
 }
 
 void page_image_tools::slot_saveWorkListToFile()
@@ -1083,6 +902,450 @@ void page_image_tools::slot_editWorkList()
     ewl->exec();
 }
 
+void page_image_tools::slot_createWorkList()
+{
+#define QT_NO_USE_NODISCARD_FILE_OPEN   // for Qt 6.10
+
+    DlgWorklistCreate dlg(this);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted)
+        return;
+
+    VersionList vlist;
+    VersionList wlist;
+    QString     listName;
+
+    if (dlg.selMosaic->isChecked())
+    {
+        listName = "mosaic_list";
+        QStringList targetStringList;
+        if (dlg.chkLoadFilter->isChecked())
+        {
+            vlist = FileServices::getMosaicNames(SELECTED_MOSAICS);
+        }
+        else
+        {
+            vlist = FileServices::getMosaicNames(ALL_MOSAICS);
+        }
+
+        if (!dlg.inverseMosaicWorklist->isChecked())
+        {
+            if (dlg.radText->isChecked())
+            {
+                targetStringList << dlg.text->text();
+            }
+            else if (dlg.radMotif->isChecked())
+            {
+                targetStringList << dlg.selectedMotifNames();
+            }
+            else if (dlg.radStyle->isChecked())
+            {
+                targetStringList << dlg.styleNames->currentText();
+            }
+
+            if (targetStringList.isEmpty())
+                return;
+
+            for (VersionedName & name : vlist)
+            {
+                VersionedFile mosaic = FileServices::getFile(name,FILE_MOSAIC);
+
+                QFile file(mosaic.getPathedName());
+                if (file.open(QIODevice::ReadOnly))
+                {
+                    QTextStream in (&file);
+                    const QString content = in.readAll();
+                    for (auto & target : std::as_const(targetStringList))
+                    {
+                        if (content.contains(target))
+                        {
+                            wlist.add(name);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            listName = "inverse_mosaic_list";
+        }
+    }
+    else
+    {
+        listName = "tiling_list";
+        QString target;
+        if (dlg.chkLoadFilter->isChecked())
+        {
+            vlist = FileServices::getTilingNames(SELECTED_TILINGS);
+        }
+        else
+        {
+            vlist = FileServices::getTilingNames(ALL_TILINGS);
+        }
+
+        if (!dlg.inverseMosaicWorklist->isChecked())
+        {
+            if (dlg.radText->isChecked())
+            {
+                target = dlg.text->text();
+            }
+
+            if (target.isEmpty())
+                return;
+
+            for (VersionedName & name : vlist)
+            {
+                VersionedFile tiling = FileServices::getFile(name,FILE_TILING);
+
+                QFile file(tiling.getPathedName());
+                if (file.open(QIODevice::ReadOnly))
+                {
+                    QTextStream in (&file);
+                    const QString content = in.readAll();
+                    if (content.contains(target))
+                    {
+                        wlist.add(name);
+                    }
+                }
+            }
+        }
+        else
+        {
+            listName = "inverse_tiling_list";
+        }
+    }
+
+    if (dlg.inverseMosaicWorklist->isChecked())
+    {
+        // remove currebt worklist from vlist (ignores wlist)
+        for (VersionedName & vname : config->worklist.get())
+        {
+            vlist.remove(vname);
+        }
+        config->worklist.clear();
+        config->worklist.set(listName,vlist);
+    }
+    else if (dlg.useWorklist->isChecked())
+    {
+        // eliminate worklist items not in current selection
+        VersionList oldvl = config->worklist.get();
+        VersionList newvl;
+        for (auto & vn : oldvl)
+        {
+            if (wlist.contains(vn))
+            {
+                newvl.add(vn);
+            }
+        }
+        config->worklist.clear();
+        config->worklist.set(listName,newvl);
+    }
+    else
+    {
+        config->worklist.clear();
+        config->worklist.set(listName,wlist);
+    }
+
+    worklistWrapup();
+}
+
+///////////////////////////////////////////////////////////////////////////
+///
+///  Slots
+///
+///////////////////////////////////////////////////////////////////////////
+
+void page_image_tools::slot_imageTypeChanged(int id)
+{
+    // switches between mosaics and tilings
+    //qDebug() << "page_image_tools::slot_genTypeChanged" << id;
+    config->imageType = (eImageType)id;
+    loadFileFilterCombo();
+
+    engine.verStepper->loadVersionCombos();
+}
+
+void page_image_tools::slot_imgFilterChanged()
+{
+    // triggered when filter combo is loaded or its selection changes
+    config->imageFileFilter = static_cast<eLoadType>(imageFilterCombo->currentData().toInt());
+    //qDebug() << "generate BMP file filter" << config->imageFileFilter;
+
+    engine.verStepper->loadVersionCombos();
+}
+
+void page_image_tools::slot_cycleIntervalChanged(int value)
+{
+    config->cycleInterval = value;
+}
+
+void page_image_tools::slot_firstDirChanged()
+{
+    firstDir->select(firstDir->currentIndex());
+    loadCombo(firstBMPCompareCombo,firstDir->getCurrentText());
+}
+
+void page_image_tools::slot_secondDirChanged()
+{
+    secondDir->select(secondDir->currentIndex());
+    loadCombo(secondBMPCompareCombo,secondDir->getCurrentText());
+}
+
+void page_image_tools::slot_selectDir0()
+{
+    QString  dir = firstDir->getCurrentText();
+    QString fdir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), dir,
+                                                 QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if (fdir.isEmpty())
+            return;
+
+    firstDir->setCurrentText(fdir);
+    slot_firstDirChanged();
+}
+
+void page_image_tools::slot_selectDir1()
+{
+    QString  dir = secondDir->getCurrentText();
+    QString fdir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), dir,
+                                                 QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if (fdir.isEmpty())
+            return;
+
+    secondDir->setCurrentText(fdir);
+    slot_secondDirChanged();
+}
+
+void page_image_tools::slor_swapDirs()
+{
+    QString a = firstDir->getCurrentText();
+    QString b = secondDir->getCurrentText();
+    firstDir->setCurrentText(b);
+    secondDir->setCurrentText(a);
+    loadCombo(firstBMPCompareCombo,firstDir->getCurrentText());
+    loadCombo(secondBMPCompareCombo,secondDir->getCurrentText());
+}
+
+void page_image_tools::slot_viewImageLeft()
+{
+    qDebug() << "slot_viewImageLeft";
+    VersionedName name(firstBMPCompareCombo->currentText());
+    if (name.isEmpty())
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("No filename");
+        box.exec();
+        return;
+    }
+    config->BMPCompare0 = name.get();
+    VersionedFile file(firstDir->getCurrentText() + "/" + name.get() + ".bmp");
+    viewImage(file);
+}
+
+void page_image_tools::slot_viewImageRight()
+{
+    qDebug() << "slot_viewImageRight";
+
+    if (compareLoaded2nd->isChecked())
+    {
+        panel->delegateView(VIEW_BMP_IMAGE,false);
+        panel->delegateView(VIEW_MOSAIC,true);
+        emit sig_reconstructView();
+    }
+    else
+    {
+        VersionedName name(secondBMPCompareCombo->currentText());
+        if (name.isEmpty())
+        {
+            QMessageBox box(this);
+            box.setIcon(QMessageBox::Warning);
+            box.setText("No filename");
+            box.exec();
+            return;
+        }
+
+        config->BMPCompare1 = name.get();
+        VersionedFile file(secondDir->getCurrentText() + "/" + name.get() + ".bmp");
+        viewImage(file);
+    }
+}
+
+void page_image_tools::slot_transparentClicked(bool checked)
+{
+    config->compare_transparent = checked;
+}
+
+void page_image_tools::slot_popupClicked(bool checked)
+{
+    if (checked)
+        config->compare_popup = true;
+}
+
+void page_image_tools::slot_inPlaceClicked(bool checked)
+{
+    if (checked)
+    {
+        engine.closeAllImageViewers();
+        config->compare_popup = false;
+    }
+}
+
+void page_image_tools::slot_toggle_loaded2nd(bool checked)
+{
+    if (checked)
+    {
+        loadSecondBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+        viewSecondBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+    }
+    else
+    {
+        loadSecondBtn->setStyleSheet("");
+        viewSecondBtn->setStyleSheet("");
+    }
+}
+
+void page_image_tools::slot_compareResult(QString result)
+{
+    imageCompareResult->setText(result);
+}
+
+void  page_image_tools::slot_skipExisting(bool checked)
+{
+    config->skipExisting = checked;
+}
+
+void page_image_tools::loadCombo(QComboBox * combo, QString dir)
+{
+    QStringList names;
+    if (!config->use_workListForCompare)
+    {
+        names = FileServices::getDirBMPFiles(dir).getNames();
+    }
+    else
+    {
+        names = config->worklist.get().getNames();
+    }
+
+    combo->blockSignals(true);
+    combo->clear();
+    combo->addItems(names);
+    combo->blockSignals(false);
+}
+
+void page_image_tools::setCombo(QComboBox * combo, QString name)
+{
+    combo->blockSignals(true);
+    int index = combo->findText(name);
+    if (index == -1) index = 0;
+    combo->setCurrentIndex(index);
+    combo->blockSignals(false);
+}
+
+void page_image_tools::slot_setImageLeftCombo(QString name)
+{
+    int index = firstBMPCompareCombo->findText(name);
+    firstBMPCompareCombo->blockSignals(true);
+    firstBMPCompareCombo->setCurrentIndex(index);
+    firstBMPCompareCombo->blockSignals(false);
+}
+
+void page_image_tools::slot_setImageRightCombo(QString name)
+{
+    int index = secondBMPCompareCombo->findText(name);
+    secondBMPCompareCombo->blockSignals(true);
+    secondBMPCompareCombo->setCurrentIndex(index);
+    secondBMPCompareCombo->blockSignals(false);
+}
+
+void page_image_tools::slot_BMPCompare0_changed(int index)
+{
+    Q_UNUSED(index);
+    QString current = firstBMPCompareCombo->currentText();
+    config->BMPCompare0 = current;
+
+    if (!current.isEmpty())
+    {
+        // special case for ibox1 - not symmetric
+        slot_setImageRightCombo(current);  // makes it the same
+
+        VersionedName vn(current);
+        engine.compareBMPStepper->resync(current);
+    }
+}
+
+void page_image_tools::slot_BMPCompare1_changed(int index)
+{
+    Q_UNUSED(index);
+    QString current = secondBMPCompareCombo->currentText();
+    config->BMPCompare1 = current;
+}
+
+void page_image_tools::slot_loadSecond()
+{
+    engine.closeAllImageViewers();
+    QString mos = secondBMPCompareCombo->currentText();
+    VersionedName vn(mos);
+
+    if (config->imageType == IMAGE_MOSAICS)
+    {
+        VersionedFile vf = FileServices::getFile(vn,FILE_MOSAIC);
+        mosaicMaker->loadMosaic(vf);
+    }
+    else
+    {
+        VersionedFile vf = FileServices::getFile(vn,FILE_TILING);
+        tilingMaker->loadTiling(vf,TILM_LOAD_SINGLE);
+    }
+}
+
+void page_image_tools::slot_viewSecond()
+{
+    engine.closeAllImageViewers();
+    panel->delegateView(VIEW_MOSAIC,true);
+}
+
+void page_image_tools::slot_opendir()
+{
+    QString old = Sys::getBMPPath(generatorType);
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Image Directory"),
+                                                    old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    if (dir.isEmpty())
+    {
+        qDebug() << "Cancel Pressed";
+        //directoryCombo->setCurrentText(Sys::getWorkingBMPDirectory());
+        return;
+    }
+
+    if (dir != old)
+    {
+        qDebug() << "Selected image dir" << dir;
+        auto i  = dir.lastIndexOf("/");
+        auto front = dir.size() - i;
+#if (QT_VERSION >= QT_VERSION_CHECK(6,5,0))
+        dir = dir.last(front-1);
+#else
+        dir = dir.right(front-1);
+#endif
+        qDebug() << "Image dir" << dir;
+
+        directoryCombo->setCurrentText(dir);    // this sets Sys:: too
+    }
+
+#ifdef Q_OS_WINDOWS
+    QString path = Sys::getBMPPath(generatorType);
+    qDebug() <<  "Path:" << path;
+
+    QString path2 = QDir::toNativeSeparators(path);
+    qDebug() <<  "Path2:" << path2;
+
+    QStringList args;
+    args << path2;
+
+    QProcess::startDetached("explorer",args);
+#endif
+}
+
 void page_image_tools::slot_replaceBMP()
 {
     // replace bitmp in second dir
@@ -1094,7 +1357,7 @@ void page_image_tools::slot_replaceBMP()
     MosaicPtr mosaic = mosaicMaker->loadMosaic(vf);
     if (mosaic)
     {
-        QPixmap pixmap = Sys::view->grab();
+        QPixmap pixmap = Sys::viewController->grabView();
         QString path   = secondDir->getCurrentText();
         QString file   = path + "/" + name + ".bmp";
         qDebug() << "saving" << file;
@@ -1166,7 +1429,7 @@ void page_image_tools::slot_deleteCurrentWLEntry(bool confirm)
     auto existingName = config->worklist.getName();
     config->worklist.set(existingName,newList);
     emit engine.sig_next(); // immediate
-    engine.wlStepper->setWorklist(newList);
+    engine.compareBMPStepper->setWorklist(newList);
 }
 
 void page_image_tools::slot_useFilter(bool checked)
@@ -1275,119 +1538,6 @@ void page_image_tools::slot_imageSelectionChanged2()
     viewFileCombo2->select(viewFileCombo2->currentIndex());
 }
 
-void page_image_tools::slot_createList()
-{
-    DlgWorklistCreate dlg(this);
-    int rv = dlg.exec();
-    if (rv != QDialog::Accepted)
-        return;
-
-    config->worklist.clear();
-
-    VersionList list;
-    VersionList wlist;
-    QString     listName;
-
-    if (dlg.selMosaic->isChecked())
-    {
-        listName = "mosaic_list";
-        QStringList targetList;
-        if (dlg.chkLoadFilter->isChecked())
-        {
-            list = FileServices::getMosaicNames(SELECTED_MOSAICS);
-        }
-        else
-        {
-            list = FileServices::getMosaicNames(ALL_MOSAICS);
-        }
-
-        if (dlg.radText->isChecked())
-        {
-            targetList << dlg.text->text();
-        }
-        else if (dlg.radMotif->isChecked())
-        {
-            targetList << dlg.selectedMotifNames();
-        }
-        else if (dlg.radStyle->isChecked())
-        {
-            targetList << dlg.styleNames->currentText();
-        }
-
-        if (targetList.isEmpty())
-            return;
-
-        for (const VersionedName & name : std::as_const(list))
-        {
-            VersionedFile mosaic = FileServices::getFile(name,FILE_MOSAIC);
-
-            QFile file(mosaic.getPathedName());
-            file.open(QIODevice::ReadOnly);
-            QTextStream in (&file);
-            const QString content = in.readAll();
-            bool found = false;
-            for (auto & target : std::as_const(targetList))
-            {
-                if (content.contains(target))
-                {
-                   found = true;
-                }
-            }
-            if (found)
-            {
-                wlist.add(name);
-            }
-        }
-    }
-    else
-    {
-        listName = "tiling_list";
-        QString target;
-        if (dlg.chkLoadFilter->isChecked())
-        {
-            list = FileServices::getTilingNames(SELECTED_TILINGS);
-        }
-        else
-        {
-            list = FileServices::getTilingNames(ALL_TILINGS);
-        }
-
-        if (dlg.radText->isChecked())
-        {
-            target = dlg.text->text();
-        }
-
-        if (target.isEmpty())
-            return;
-
-        for (const VersionedName & name : std::as_const(list))
-        {
-            VersionedFile tiling = FileServices::getFile(name,FILE_TILING);
-
-            QFile file(tiling.getPathedName());
-            file.open(QIODevice::ReadOnly);
-            QTextStream in (&file);
-            const QString content = in.readAll();
-            if (content.contains(target))
-            {
-               wlist.add(name);
-            }
-        }
-    }
-
-    config->worklist.set(listName,wlist);
-}
-
-void page_image_tools::slot_ver_selectionChanged()
-{
-    config->versionFilter = static_cast<eLoadType>(versionFilterCombo->currentData().toInt());
-    qDebug() << "load version filter" << config->genFileFilter;
-    if (created)
-    {
-        engine.verStepper->loadVersionCombos();
-    }
-}
-
 void page_image_tools::slot_viewImage3()
 {
     qDebug() << "slot_viewImage3";
@@ -1424,11 +1574,23 @@ void page_image_tools::slot_viewImage4()
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
-void page_image_tools::slot_compareDiffDirBMPs()
+void page_image_tools::slot_compareSelectedBMPs()
 {
+    if (bmpView->isChecked())
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Notihng to compare in View mode");
+        box.exec();
+        return;
+    }
+
+    engine.setCompareMode(true);
+
     imageCompareResult->setText("");
-    panel->setStatus("Spacebar=next C=compare P=ping-pong L=log Q=quit D=delete-from-worklist");
-    if (!compareView->isChecked())
+    pageStatusString = "Spacebar=next C=compare P=ping-pong L=log Q=quit D=delete-from-worklist";
+    setPageStatus();
+    if (!compareLoaded2nd->isChecked())
     {
         VersionedName nameA(firstBMPCompareCombo->currentText());
         VersionedName nameB(secondBMPCompareCombo->currentText());
@@ -1451,17 +1613,18 @@ void page_image_tools::slot_compareDiffDirBMPs()
 
 void  page_image_tools::slot_compareDiffVerBMPs()
 {
-    if (config->vCompTile)
-        panel->delegateView(VIEW_TILING);
+    if (config->imageType == IMAGE_TILINGS)
+        panel->delegateView(VIEW_TILING,true);
     else
-        panel->delegateView(VIEW_MOSAIC);
+        panel->delegateView(VIEW_MOSAIC,true);
 
     engine.verStepper->compareVersions();
 }
 
 void page_image_tools::slot_compareFileBMPs()
 {
-    panel->setStatus("Spacebar=next C=compare P=ping-pong L=log Q=quit D=delete-from-worklist");
+    pageStatusString = "Spacebar=next C=compare P=ping-pong L=log Q=quit D=delete-from-worklist";
+    setPageStatus();
 
     VersionedFile fileA(viewFileCombo1->currentText());
     VersionedFile fileB(viewFileCombo2->currentText());
@@ -1480,10 +1643,10 @@ void  page_image_tools::slot_cycleVersions()
     // if cycling versios musts force a lock
     chkLock->setChecked(true);
 
-    if (config->vCompTile)
-        panel->delegateView(VIEW_TILING);
+    if (config->imageType == IMAGE_TILINGS)
+        panel->delegateView(VIEW_TILING,true);
     else
-        panel->delegateView(VIEW_MOSAIC);
+        panel->delegateView(VIEW_MOSAIC,true);
 
     engine.verStepper->loadVersionCombos();
     engine.verStepper->begin();
@@ -1497,32 +1660,43 @@ void page_image_tools::slot_nextImage()
 
 void page_image_tools::slot_startStepping()
 {
-    switch (config->viewCycle2)
+    if (chkPngs->isChecked())
     {
-    case CYCLE_VIEW_MOSAICS:
-        panel->setStatus("Press P to Pause/unPause - press Q to Quit" );
-        panel->delegateView(VIEW_MOSAIC);
-        engine.mosaicStepper->begin();
-        break;
-
-    case CYCLE_VIEW_TILINGS:
-        panel->setStatus("Press P to Pause/unPause - press Q to Quit" );
-        panel->delegateView(VIEW_TILING);
-        engine.tilingStepper->begin();
-        break;
-
-    case CYCLE_VIEW_ORIGINAL_PNGS:
         engine.pngStepper->begin();
-        break;
-
-    default:
-        break;
+    }
+    else if (config->imageType == IMAGE_MOSAICS)
+    {
+        pageStatusString = "Press P to Pause/unPause - press Q to Quit";
+        setPageStatus();
+        panel->delegateView(VIEW_MOSAIC,true);
+        engine.mosaicStepper->setImmediat((config->cycleInterval == 0));
+        engine.mosaicStepper->begin();
+    }
+    else
+    {
+        Q_ASSERT(config->imageType == IMAGE_TILINGS);
+        pageStatusString = "Press P to Pause/unPause - press Q to Quit";
+        setPageStatus();
+        panel->delegateView(VIEW_TILING,true);
+        engine.tilingStepper->begin();
     }
 }
 
-void page_image_tools::slot_startCompare()
+void page_image_tools::slot_startCompareCycle()
 {
-    panel->setStatus("Spacebar=next C=compare P=ping-pong L=log Q=quit D=delete-from-worklist");
+    // could be compare or view
+
+    if (bmpCompare->isChecked())
+    {
+        pageStatusString = "Spacebar=next alt-Spacebar=previous C=compare P=ping-pong Q=quit D=delete-from-worklist";
+        setPageStatus();
+    }
+    else
+    {
+        Q_ASSERT(bmpView->isChecked());
+        pageStatusString = "Spacebar=next alt-Spacebar=previous Q=quit D=delete-from-worklist";
+        setPageStatus();
+    }
 
     engine.closeAllImageViewers(true);
 
@@ -1541,22 +1715,73 @@ void page_image_tools::slot_startCompare()
         }
     }
 
-    engine.wlStepper->setWorklist(vlist);
-    engine.wlStepper->begin();
+    bool rv = false;
+    if (bmpCompare->isChecked())
+    {
+        engine.compareBMPStepper->setWorklist(vlist);
+
+        rv = engine.compareBMPStepper->begin();
+    }
+    else
+    {
+        Q_ASSERT(bmpView->isChecked());
+
+        engine.viewBMPStepper->setWorklist(vlist);
+
+        rv = engine.viewBMPStepper->begin();
+    }
+    if (rv)
+    {
+        if (config->compare_popup)
+        {
+            auto img = Sys::imageEngine->currentPopup();
+            if (img)
+            {
+                img->activateWindow();
+                int X = img->width() / 2;
+                int Y = img->height() / 2;
+                QPoint globalCenter = img->mapToGlobal(QPoint(X,Y));
+                QCursor::setPos(globalCenter.x(), globalCenter.y());
+            }
+        }
+        else
+        {
+            Sys::viewController->activateWindow();
+            int X = Sys::viewController->viewWidth() / 2;
+            int Y = Sys::viewController->viewHeight() / 2;
+            QPoint globalCenter = Sys::viewController->mapToGlobal(QPoint(X,Y));
+            QCursor::setPos(globalCenter.x(), globalCenter.y());
+        }
+    }
 }
 
 void page_image_tools::slot_previous()
 {
     engine.closeAllImageViewers(false);
-    engine.wlStepper->prev();
+    if (bmpCompare->isChecked())
+    {
+        engine.compareBMPStepper->prev();
+    }
+    else
+    {
+        Q_ASSERT(bmpView->isChecked());
+        engine.viewBMPStepper->prev();
+    }
 }
 
 void page_image_tools::slot_next()
 {
     engine.closeAllImageViewers(false);
-    engine.wlStepper->next();
+    if (bmpCompare->isChecked())
+    {
+        engine.compareBMPStepper->next();
+    }
+    else
+    {
+        Q_ASSERT(bmpView->isChecked());
+        engine.viewBMPStepper->next();
+    }
 }
-
 
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -1566,17 +1791,17 @@ void page_image_tools::slot_next()
 
 bool takeAction(sAction action)
 {
-    if (Sys::usingImgGenerator)
+    if (Sys::imgGeneratorInUse)
     {
         if (action.type ==  ACT_GEN_MOSAIC_BMP)
         {
-            MosaicBMPEngine engine;
+            MosaicBMPGenerator engine;
             bool rv = engine.saveBitmap(action.name,action.path);
             return rv;
         }
         else if (action.type == ACT_GEN_TILING_BMP)
         {
-            TilingBMPEngine engine;
+            TilingBMPGenerator engine;
             bool rv = engine.saveBitmap(action.name,action.path);
             return rv;
         }
@@ -1611,22 +1836,22 @@ void page_image_tools::processActionList(QList<sAction> &actions)
     }
     else
     {
-        Q_ASSERT(Sys::usingImgGenerator);
+        Q_ASSERT(Sys::imgGeneratorInUse);
         for (const auto & action : std::as_const(actions))
         {
             QString astring = "Processing : " + action.name.get();
-            Sys::splash->display(astring);
+            Sys::splash->display(astring,true);
             takeAction(action);
-            Sys::splash->remove();
+            Sys::splash->remove(true);
         }
 
-        Sys::usingImgGenerator = false;
+        Sys::imgGeneratorInUse = false;
         log->logDebug(logDebug);
 
         if (generatorType == ACT_GEN_MOSAIC_BMP)
-            panel->delegateView(VIEW_MOSAIC);
+            panel->delegateView(VIEW_MOSAIC,true);
         else if (generatorType == ACT_GEN_TILING_BMP)
-            panel->delegateView(VIEW_TILING);
+            panel->delegateView(VIEW_TILING,true);
 
         QString str = QString("Pocesses took %1 seconds").arg(etimer->getElapsed().trimmed());
         QString str2 =        "Cycle complete";
@@ -1647,7 +1872,7 @@ void page_image_tools::slot_engineComplete()
 
     qInfo() << "Image Engine completed";
 
-    Sys::usingImgGenerator = false;
+    Sys::imgGeneratorInUse = false;
     Sys::localCycle        = false;
 
     QString str = QString("Concurrent processes took %1 seconds").arg(etimer->getElapsed().trimmed());
@@ -1658,20 +1883,20 @@ void page_image_tools::slot_engineComplete()
     switch(generatorType)
     {
     case ACT_GEN_MOSAIC_BMP:
-        panel->delegateView(VIEW_MOSAIC);
+        panel->delegateView(VIEW_MOSAIC,true);
         break;
 
     case ACT_GEN_TILING_BMP:
-        panel->delegateView(VIEW_TILING);
+        panel->delegateView(VIEW_TILING,true);
         break;
 
     case ACT_GEN_COMPARE_WLIST:
-        Sys::view->appSuspendPaint(false);
+        Sys::viewController->appSuspendPaint(false);
         auto size = comparisonList.count();
         if (size)
         {
             config->worklist.set("generated",comparisonList);
-            slot_use_worklist_compare(true);
+            slot_toggle_useWL(true);
         }
         str2 += QString(" - %1 differences put into worklist").arg(size);
         break;
@@ -1691,10 +1916,14 @@ void page_image_tools::slot_engineProgress(int val)
 {
     float perc = (qreal(val) / qreal(totalEngineImages)) * 100.0;
     QString txt = QString("%1% files processed (%2 out of %3)").arg(floor(perc)).arg(val).arg(totalEngineImages);
-    Sys::splash->remove();
-    Sys::splash->display(txt);
+    Sys::splash->replace(txt,true);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// BMPs
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void page_image_tools::saveMosaicBitmaps()
 {
@@ -1702,7 +1931,7 @@ void page_image_tools::saveMosaicBitmaps()
 
     etimer->start();
 
-    eLoadType id = config->genFileFilter;
+    eLoadType id = config->imageFileFilter;
 
     VersionList files;
     if (id == SINGLE_MOSAIC)
@@ -1716,7 +1945,7 @@ void page_image_tools::saveMosaicBitmaps()
         files = FileServices::getMosaicNames(id);
     }
 
-    QString pixmapPath  = getPixmapPath();
+    QString pixmapPath  = Sys::getBMPPath(generatorType);
 
     QList<sAction> actions;
     for (const VersionedName & name : std::as_const(files))
@@ -1747,9 +1976,9 @@ void page_image_tools::saveTilingBitmaps()
 
     etimer->start();
 
-    auto id            = config->genFileFilter;
+    auto id            = config->imageFileFilter;
     VersionList files  = FileServices::getTilingNames(id);
-    QString pixmapPath = getPixmapPath();
+    QString pixmapPath = Sys::getBMPPath(generatorType);
 
     QList<sAction> actions;
     for (const VersionedName & name : std::as_const(files))
@@ -1821,22 +2050,37 @@ void page_image_tools::createComparedWorklist()
     if (!config->multithreadedGeneration && comparisonList.count())
     {
         config->worklist.set("generated",comparisonList);
-        slot_use_worklist_compare(true);
+        slot_toggle_useWL(true);
     }
 }
 
 void page_image_tools::slot_genBMPs()
 {
-    if (config->genCycleMosaic)
+    qDebug() << Sys::getWorkingBMPDirectory();
+
+    Sys::flags->enable(false); // turn off debug
+
+    if (config->imageType == IMAGE_MOSAICS)
         generatorType = ACT_GEN_MOSAIC_BMP;
     else
         generatorType = ACT_GEN_TILING_BMP;
 
     setupActions();
+
+    secondDir->setCurrentText(Sys::getBMPPath(generatorType));
 }
 
-void page_image_tools::slot_compareGen()
+void page_image_tools::slot_generateComparisonWL()
 {
+    if (bmpView->isChecked())
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Cannot generate worklist in View mode");
+        box.exec();
+        return;
+    }
+
     generatorType = ACT_GEN_COMPARE_WLIST;
 
     setupActions();
@@ -1844,7 +2088,7 @@ void page_image_tools::slot_compareGen()
 
 void page_image_tools::setupActions()
 {
-    if (Sys::usingImgGenerator)
+    if (Sys::imgGeneratorInUse)
     {
         // this is a cancel
         watcher.cancel();
@@ -1855,7 +2099,7 @@ void page_image_tools::setupActions()
         watcher.waitForFinished();
 
         Sys::localCycle        = false;
-        Sys::usingImgGenerator = false;
+        Sys::imgGeneratorInUse = false;
         qInfo() << "Generate Mosaic bitmaps : Finished";
         Sys::splash->remove();
         Sys::splash->display("CANCELLED - Finished");
@@ -1863,12 +2107,12 @@ void page_image_tools::setupActions()
         return;
     }
 
-    Sys::debugView->show(false);
+    panel->delegateView(VIEW_DEBUG,false);
 
     if (generatorType == ACT_GEN_MOSAIC_BMP)
     {
-        Q_ASSERT(!Sys::usingImgGenerator);
-        Sys::usingImgGenerator = true;
+        Q_ASSERT(!Sys::imgGeneratorInUse);
+        Sys::imgGeneratorInUse = true;
         Sys::localCycle        = true;
         Sys::viewController->disableAllViews();
         emit sig_reconstructView();
@@ -1876,8 +2120,8 @@ void page_image_tools::setupActions()
     }
     else if (generatorType == ACT_GEN_TILING_BMP)
     {
-        Q_ASSERT(!Sys::usingImgGenerator);
-        Sys::usingImgGenerator = true;
+        Q_ASSERT(!Sys::imgGeneratorInUse);
+        Sys::imgGeneratorInUse = true;
         Sys::localCycle        = true;
         Sys::viewController->disableAllViews();
         emit sig_reconstructView();
@@ -1885,14 +2129,13 @@ void page_image_tools::setupActions()
     }
     else if (generatorType == ACT_GEN_COMPARE_WLIST)
     {
-        Q_ASSERT(!Sys::usingImgGenerator);
-        Sys::usingImgGenerator = true;
+        Q_ASSERT(!Sys::imgGeneratorInUse);
+        Sys::imgGeneratorInUse = true;
         Sys::localCycle        = true;
-        Sys::view->appSuspendPaint(true);
+        Sys::viewController->appSuspendPaint(true);
         createComparedWorklist();
     }
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 ///
@@ -1902,98 +2145,35 @@ void page_image_tools::setupActions()
 
 void page_image_tools::loadFileFilterCombo()
 {
-    genFilterCombo->blockSignals(true);
-    genFilterCombo->clear();
+    imageFilterCombo->blockSignals(true);
+    imageFilterCombo->clear();
     eLoadType defaultType;
-    if (config->genCycleMosaic)
+    if (config->imageType == IMAGE_MOSAICS)
     {
-        genFilterCombo->addItem("All Mosaics",      ALL_MOSAICS);
-        genFilterCombo->addItem("Loader mosaics",   SELECTED_MOSAICS);
-        genFilterCombo->addItem("Worklist Mosaics", WORKLIST);
-        genFilterCombo->addItem("Single Mosaic",    SINGLE_MOSAIC);
+        imageFilterCombo->addItem("All Mosaics",          ALL_MOSAICS);
+        imageFilterCombo->addItem("Loader mosaics",       SELECTED_MOSAICS);
+        imageFilterCombo->addItem("Worklist Mosaics",     WORKLIST);
+        imageFilterCombo->addItem("All except worklist",  ALL_MOS_EXCEPT_WL);
+        imageFilterCombo->addItem("View 1st name only",   SINGLE_MOSAIC);
         defaultType = ALL_MOSAICS;
     }
     else
     {
-        genFilterCombo->addItem("All Tilings",      ALL_TILINGS);
-        genFilterCombo->addItem("Loader Tilings",   SELECTED_TILINGS);
-        genFilterCombo->addItem("Worklist Tilings", WORKLIST);
+        imageFilterCombo->addItem("All Tilings",      ALL_TILINGS);
+        imageFilterCombo->addItem("Loader Tilings",   SELECTED_TILINGS);
+        imageFilterCombo->addItem("Worklist Tilings", WORKLIST);
         defaultType = ALL_TILINGS;
     }
-    genFilterCombo->blockSignals(false);
+    imageFilterCombo->blockSignals(false);
 
-    int index = genFilterCombo->findData(config->genFileFilter);
+    int index = imageFilterCombo->findData(config->imageFileFilter);
     if (index < 0)
     {
-        config->genFileFilter = defaultType;
-        index = genFilterCombo->findData(defaultType);
+        config->imageFileFilter = defaultType;
+        index = imageFilterCombo->findData(defaultType);
         Q_ASSERT(index >=0);
     }
-    genFilterCombo->setCurrentIndex(index);
-}
-
-void page_image_tools::loadViewFilterCombo()
-{
-    viewFilterCombo->blockSignals(true);
-    viewFilterCombo->clear();
-    eLoadType defaultType;
-    if (config->viewCycle2 == CYCLE_VIEW_MOSAICS)
-    {
-        viewFilterCombo->addItem("All Mosaics",     ALL_MOSAICS);
-        viewFilterCombo->addItem("Selected mosaics",SELECTED_MOSAICS);
-        viewFilterCombo->addItem("Worklist Mosaics",WORKLIST);
-        defaultType = ALL_MOSAICS;
-    }
-    else
-    {
-        viewFilterCombo->addItem("All Tilings",     ALL_TILINGS);
-        viewFilterCombo->addItem("Selected Tilings",SELECTED_TILINGS);
-        viewFilterCombo->addItem("Worklist Tilings",WORKLIST);
-        defaultType = ALL_TILINGS;
-    }
-    viewFilterCombo->blockSignals(false);
-
-    int index = viewFilterCombo->findData(config->viewFileFilter);
-    if (index < 0)
-    {
-        config->viewFileFilter = defaultType;
-        index = viewFilterCombo->findData(defaultType);
-        Q_ASSERT(index >=0);
-    }
-    viewFilterCombo->setCurrentIndex(index);
-}
-
-void page_image_tools::loadVersionFilterCombo()
-{
-    versionFilterCombo->blockSignals(true);
-    versionFilterCombo->clear();
-
-    eLoadType defaultType;
-    if (config->vCompTile)
-    {
-        versionFilterCombo->addItem("All Tilings",     ALL_TILINGS);
-        versionFilterCombo->addItem("Selected Tilings",SELECTED_TILINGS);
-        versionFilterCombo->addItem("Worklist Tilings",WORKLIST);
-        defaultType = ALL_TILINGS;
-    }
-    else
-    {
-        versionFilterCombo->addItem("All Mosaics",     ALL_MOSAICS);
-        versionFilterCombo->addItem("Selected mosaics",SELECTED_MOSAICS);
-        versionFilterCombo->addItem("Worklist Mosaics",WORKLIST);
-        defaultType = ALL_MOSAICS;
-    }
-
-    versionFilterCombo->blockSignals(false);
-
-    int index = versionFilterCombo->findData(config->versionFilter);
-    if (index < 0)
-    {
-        config->versionFilter = defaultType;
-        index = versionFilterCombo->findData(defaultType);
-        Q_ASSERT(index >=0);
-    }
-    versionFilterCombo->setCurrentIndex(index);
+    imageFilterCombo->setCurrentIndex(index);
 }
 
 bool page_image_tools::viewImage(VersionedFile &file)
@@ -2012,51 +2192,6 @@ bool page_image_tools::viewImage(VersionedFile &file)
 
     engine.view_image(file);
     return true;
-}
-
-void page_image_tools::setImageDirectory()
-{
-    QDateTime d = QDateTime::currentDateTime();
-    QString date = d.toString("yyyy-MM-dd");
-    if (!Sys::gitBranch.isEmpty())
-        directory->setText(date + "-" + Sys::gitBranch);
-    else
-        directory->setText(date);
-}
-
-QString page_image_tools::getPixmapPath()
-{
-    QString subdir;
-    switch (config->repeatMode)
-    {
-    case REPEAT_SINGLE:
-        subdir = "single/";
-        break;
-    case REPEAT_PACK:
-        subdir = "pack/";
-        break;
-    case REPEAT_DEFINED:
-        subdir = "defined/";
-        break;
-    }
-
-    QString date = directory->text();
-
-    QString path = config->rootImageDir;
-    if (generatorType == ACT_GEN_TILING_BMP)
-        path += "tilings/" + subdir + date;
-    else
-        path += subdir + date;
-
-    QDir adir(path);
-    if (!adir.exists())
-    {
-        if (!adir.mkpath(path))
-        {
-            qFatal("could not make path");
-        }
-    }
-    return path;
 }
 
 void page_image_tools::addToComparisonWorklist(VersionedName name)

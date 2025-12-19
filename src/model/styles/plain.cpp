@@ -1,9 +1,17 @@
 #include <QPainter>
 #include <QDebug>
 
-#include "model/styles/plain.h"
-#include "sys/geometry/map.h"
 #include "gui/viewers/geo_graphics.h"
+#include "model/styles/plain.h"
+#include "sys/geometry/debug_map.h"
+#include "sys/geometry/map.h"
+#include "sys/sys/debugflags.h"
+
+#undef DEBUG_PLAIN
+
+#ifdef DEBUG_PLAIN
+#include "sys/sys/debugflags.h"
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -19,10 +27,12 @@
 
 Plain::Plain(ProtoPtr proto) : Colored(proto)
 {
+    created = false;
 }
 
 Plain::Plain(StylePtr other) : Colored(other)
 {
+    created = false;
 }
 
 Plain::~Plain()
@@ -33,7 +43,29 @@ Plain::~Plain()
 #endif
 }
 
-// Data.
+void Plain::createStyleRepresentation()
+{
+    if (created)
+        return;
+
+    MapPtr map = prototype->getProtoMap();
+    if (!map)
+    {
+        return;
+    }
+
+#ifdef DEBUG_PLAIN
+    if (Sys::flags->debugFlag("dbg_plain"))
+    {
+        Sys::debugMap->wipeout();
+        for (auto & edge : std::as_const(map->getEdges()))
+        {
+            Sys::debugMap->insertDebugMark(edge->getMidPoint(),QString::number(map->edgeIndex(edge)),Qt::red);
+        }
+    }
+#endif
+    created = true;
+}
 
 void Plain::draw(GeoGraphics *gg)
 {

@@ -3,9 +3,6 @@
 #define MOTIF_CONNECTOR_H
 
 #include <QObject>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <memory>
-#endif
 #include <QTransform>
 
 class RadialMotif;

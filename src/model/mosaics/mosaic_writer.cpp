@@ -1,24 +1,18 @@
-#include "model/mosaics/mosaic_writer.h"
-#include "model/prototypes/design_element.h"
+#include "gui/map_editor/map_editor.h"
+#include "gui/top/system_view_controller.h"
+#include "model/mosaics/border.h"
 #include "model/mosaics/mosaic.h"
-#include "model/prototypes/prototype.h"
+#include "model/mosaics/mosaic_writer.h"
 #include "model/motifs/explicit_map_motif.h"
 #include "model/motifs/irregular_motif.h"
+#include "model/motifs/irregular_rosette.h"
+#include "model/motifs/irregular_star.h"
 #include "model/motifs/rosette.h"
 #include "model/motifs/rosette2.h"
 #include "model/motifs/star.h"
 #include "model/motifs/star2.h"
-#include "model/motifs/irregular_rosette.h"
-#include "model/motifs/irregular_star.h"
-#include "sys/geometry/crop.h"
-#include "sys/geometry/edge.h"
-#include "sys/geometry/map.h"
-#include "sys/geometry/vertex.h"
-#include "gui/map_editor/map_editor.h"
-#include "model/mosaics/border.h"
-#include "sys/sys/fileservices.h"
-#include "sys/sys.h"
-#include "sys/qt/tpm_io.h"
+#include "model/prototypes/design_element.h"
+#include "model/prototypes/prototype.h"
 #include "model/settings/canvas_settings.h"
 #include "model/styles/emboss.h"
 #include "model/styles/filled.h"
@@ -31,12 +25,22 @@
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
 #include "model/tilings/tiling_writer.h"
-#include "gui/top/view_controller.h"
+#include "sys/geometry/crop.h"
+#include "sys/geometry/edge.h"
+#include "sys/geometry/map.h"
+#include "sys/geometry/map_verifier.h"
+#include "sys/geometry/vertex.h"
+#include "sys/qt/tpm_io.h"
+#include "sys/sys.h"
+#include "sys/sys/fileservices.h"
 
 using std::dynamic_pointer_cast;
 
-MosaicWriter::MosaicWriter() : MosaicWriterBase()
+int MosaicWriter::currentXMLVersion = 0;
+
+MosaicWriter::MosaicWriter()
 {
+    debug = false;
     //currentXMLVersion = 3;
     //currentXMLVersion = 4;  // 05OCT19 use ColorSets in Colored
     //currentXMLVersion = 5;  // 25OCT19 revised way of defining maps
@@ -59,7 +63,11 @@ MosaicWriter::MosaicWriter() : MosaicWriterBase()
     //currentXMLVersion = 22; // 12JUN24 better extended motifs
     //currentXMLVersion = 23; // 18JUN24 add 'Geotoolkit' (aka model XForm) for borders
     //currentXMLVersion = 24; // 25JUN24 refactored ExtendedBoundary and Extender class
-      currentXMLVersion = 25; // 28JUL24 connect Rays now has a mode variable
+    //currentXMLVersion = 25; // 28JUL24 connect Rays now has a mode variable
+    //currentXMLVersion = 26; // 18MAR25 cleanse level and sensitivity stored in prototype
+    //currentXMLVersion = 27; // 14APR25 fixes double multiply for irregular sale and rotate
+    //currentXMLVersion = 28; // 30SEP25 does not save rotate centres and legacy center conversion
+      currentXMLVersion = 29; // 30OCT25 has background alignment conversion
 }
 
 MosaicWriter::~MosaicWriter()
@@ -122,12 +130,12 @@ bool MosaicWriter::generateDesignNotes(QTextStream & ts)
 
 bool MosaicWriter::generateVector(QTextStream & ts)
 {
-    refId    = 0;
+    mwbase.refId    = 0;
     qDebug() << "XML Writer - start generation";
 
     qDebug() << "version=" << currentXMLVersion;
     QString qs = QString(" version=\"%1\"").arg(currentXMLVersion);
-    ts << "<vector" << nextId() << qs << ">" << endl;
+    ts << "<vector" << mwbase.nextId() << qs << ">" << endl;
 
     bool rv = processVector(ts);
     if (!rv) return false;
@@ -171,47 +179,52 @@ bool MosaicWriter::processVector(QTextStream &ts)
         {
         case STYLE_THICK:
             str = "style.Thick";
-            ts << "<" << str << nextId() << " >" << endl;
+            ts << "<" << str << mwbase.nextId() << " >" << endl;
             processThick(ts,s);
             break;
         case STYLE_FILLED:
             str = "style.Filled";
-            ts << "<" << str << nextId() << " >" << endl;
+            ts << "<" << str << mwbase.nextId() << " >" << endl;
             processFilled(ts,s);
             break;
         case STYLE_INTERLACED:
             str = "style.Interlace";
-            ts << "<" << str << nextId() << ">" << endl;
+            ts << "<" << str << mwbase.nextId() << ">" << endl;
             processInterlace(ts,s);
             break;
         case STYLE_OUTLINED:
             str = "style.Outline";
-            ts << "<" << str << nextId() << ">" << endl;
+            ts << "<" << str << mwbase.nextId() << ">" << endl;
             processOutline(ts,s);
             break;
         case STYLE_EMBOSSED:
             str = "style.Emboss";
-            ts << "<" << str << nextId() << ">" << endl;
+            ts << "<" << str << mwbase.nextId() << ">" << endl;
             processEmboss(ts,s);
             break;
         case STYLE_PLAIN:
             str = "style.Plain";
-            ts << "<" << str << nextId() << ">" << endl;
+            ts << "<" << str << mwbase.nextId() << ">" << endl;
             processPlain(ts,s);
             break;
         case STYLE_SKETCHED:
             str = "style.Sketch";
-            ts << "<" << str << nextId() << " >" << endl;
+            ts << "<" << str << mwbase.nextId() << " >" << endl;
             processSketch(ts,s);
             break;
         case STYLE_TILECOLORS:
             str = "style.TileColors";
-            ts << "<" << str << nextId() << " >" << endl;
+            ts << "<" << str << mwbase.nextId() << " >" << endl;
             processTileColors(ts,s);
             break;
-        case STYLE_STYLE:
         case STYLE_BORDER:
+            str = "style.Border";
+            ts << "<" << str <<  mwbase.nextId() << " >" << endl;
+            procBorder(ts,s);
+            break;
+        case STYLE_STYLE:
             qCritical() << "Unexpected style" << est;
+            break;
         }
         ts << "</" << str << ">" << endl;
     }
@@ -222,26 +235,25 @@ bool MosaicWriter::processVector(QTextStream &ts)
 
 void MosaicWriter::processMosaic(QTextStream &ts)
 {
+    ts << "<design>" << endl;
+
     auto & info         = _mosaic->getCanvasSettings();
-    QColor bkgdColor    = info.getBackgroundColor();
     QSize  viewSize     = info.getViewSize();
     QSize canvasSize    = info.getCanvasSize();
-    FillData fd         = info.getFillData();
-
-    BorderPtr border    = _mosaic->getBorder();
-    CropPtr crop        = _mosaic->getCrop();
-    CropPtr painterCrop = _mosaic->getPainterCrop();
-    uint cleanseLevel   = _mosaic->getCleanseLevel();
-    qreal sensitivity   = _mosaic->getCleanseSensitivity();
-
-    ts << "<design>" << endl;
     procSize(ts,viewSize,canvasSize);
+
+    QColor bkgdColor    = info.getBackgroundColor();
     procBackground(ts,bkgdColor);
-    procBorder(ts,border);
+
+    CropPtr crop  = _mosaic->getCrop();
     procCrop(ts,crop,"Crop");
+
+    CropPtr painterCrop = _mosaic->getPainterCrop();
     procCrop(ts,painterCrop,"PainterCrop");
+
     int minX,minY,maxX,maxY;
     bool singleton;
+    FillData fd = info.getFillData();
     fd.get(singleton,minX,maxX,minY,maxY);
     if (!singleton)
     {
@@ -251,17 +263,20 @@ void MosaicWriter::processMosaic(QTextStream &ts)
     {
         ts << "<Fill singleton = \"t\">0,0,0,0</Fill>";
     }
-    TilingWriter::writeBackgroundImage(ts);
 
-    if (cleanseLevel > 0)
+    auto bip = _mosaic->getBkgdImage();
+    if (!bip)
     {
-        ts << "<Cleanse>" << QString::number(cleanseLevel,16) << "</Cleanse>" << endl;
-        ts << "<Sensitivity>" << sensitivity << "</Sensitivity>" << endl;
+        auto tiling = _mosaic->getTilings().first();
+        bip = tiling->getBkgdImage();
+    }
+    if (bip)
+    {
+        TilingWriter::writeBackgroundImage(ts,bip);
     }
 
     ts << "</design>" << endl;
 }
-
 
 void MosaicWriter::procBackground(QTextStream &ts,QColor color)
 {
@@ -283,11 +298,12 @@ void MosaicWriter::procColor(QTextStream & ts, TPColor tpcolor)
     ts << qs << tpcolor.color.name(QColor::HexArgb) << "</color>" << endl;
 }
 
-void MosaicWriter::procBorder(QTextStream &ts,BorderPtr border)
+void MosaicWriter::procBorder(QTextStream &ts, StylePtr style)
 {
-    if (!border)
+    BorderPtr border = dynamic_pointer_cast<Border>(style);
+    if (border == nullptr)
     {
-        return;
+        fail("Style error","dynamic cast of Border");
     }
 
     QString stype  = border->getBorderTypeString();
@@ -409,6 +425,7 @@ bool MosaicWriter::processThick(QTextStream &ts, StylePtr s)
     QColor  outline_color   = th->getOutlineColor();
     ProtoPtr proto          = th->getPrototype();
     Xform   xf              = th->getModelXform();
+
     QString str;
 
     str = "toolkit.GeoLayer";
@@ -431,7 +448,7 @@ bool MosaicWriter::processThick(QTextStream &ts, StylePtr s)
     processsStyleThick(ts,outline,width,outline_width,outline_color,pjs,pcs);
     ts << "</" << str << ">" << endl;
 
-    qDebug() << "end thick";
+    if (debug) qDebug() << "end thick";
     return true;
 }
 
@@ -484,7 +501,7 @@ bool MosaicWriter::processInterlace(QTextStream & ts, StylePtr s)
     processsStyleInterlace(ts,gap,shadow,includeTipVerts,startUnder);
     ts << "</" << str << ">" << endl;
 
-    qDebug() << "end interlace";
+    if (debug) qDebug() << "end interlace";
     return true;
 }
 
@@ -528,7 +545,7 @@ bool MosaicWriter::processOutline(QTextStream &ts, StylePtr s)
     processsStyleThick(ts,outline,width,outline_width,outline_color,pjs,pcs);
     ts << "</" << str << ">" << endl;
 
-    qDebug() << "end outline";
+    if (debug) qDebug() << "end outline";
     return true;
 }
 
@@ -597,7 +614,7 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
     }
     ts << "</" << str << ">" << endl;
 
-    qDebug() << "end filled";
+    if (debug) qDebug() << "end filled";
     return true;
 }
 
@@ -630,7 +647,7 @@ bool MosaicWriter::processPlain(QTextStream &ts, StylePtr s)
     procColorSet(ts,cset);
     ts << "</" << str << ">" << endl;
 
-    qDebug() << "end plain";
+    if (debug) qDebug() << "end plain";
     return true;
 }
 
@@ -712,7 +729,7 @@ bool MosaicWriter::processEmboss(QTextStream &ts, StylePtr s)
     processsStyleEmboss(ts,angle);
     ts << "</" << str << ">" << endl;
 
-    qDebug() << "end emboss";
+    if (debug) qDebug() << "end emboss";
     return true;
 }
 
@@ -778,8 +795,6 @@ void MosaicWriter::procesToolkitGeoLayer(QTextStream & ts, const Xform & xf, int
     ts << "<top__delta>"   << xf.getTranslateY()      << "</top__delta>"   << endl;
     ts << "<width__delta>" << xf.getScale()           << "</width__delta>" << endl;
     ts << "<theta__delta>" << xf.getRotateRadians()   << "</theta__delta>" << endl;
-    QPointF pt = xf.getModelCenter();
-    ts << "<center>" << pt.x() << "," << pt.y()       << "</center>"        << endl;
     ts << "<Z>"            << zlevel                  << "</Z>"        << endl;
 }
 
@@ -868,7 +883,7 @@ void MosaicWriter::processsStyleFilled(QTextStream &ts, bool draw_inside, bool d
 
 void MosaicWriter::processsStyleFilledFaces(QTextStream &ts, class Filled * filled)
 {
-    DCELPtr dcel = filled->getPrototype()->getDCEL();
+    FilledDCELPtr dcel = filled->getPrototype()->getFilledDCEL();
     if (!dcel)
     {
         qWarning() << "DCEL not found - cannot save face data";
@@ -910,8 +925,8 @@ void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
         return;
     }
 
-    qsid = nextId();
-    setProtoReference(getRef(),pp);
+    qsid = mwbase.nextId();
+    setProtoReference(mwbase.getRef(),pp);
     ts << "<prototype" << qsid << " >" << endl;
 
     QString str = "app.Prototype";
@@ -920,11 +935,20 @@ void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
     auto tiling = pp->getTiling();
     if (tiling)
     {
-        ts << "<Tiling>" << pp->getTiling()->getName().get() << "</Tiling>" << endl;
+        ts << "<Tiling>" << pp->getTiling()->getVName().get() << "</Tiling>" << endl;
     }
     else
     {
         qWarning("Saving mosiaic with no tiling");
+    }
+
+    uint cleanseLevel   = pp->getCleanseLevel();
+    qreal sensitivity   = pp->getCleanseSensitivity();
+
+    if (cleanseLevel > 0)
+    {
+        ts << "<Cleanse>" << QString::number(cleanseLevel,16) << "</Cleanse>" << endl;
+        ts << "<Sensitivity>" << sensitivity << "</Sensitivity>" << endl;
     }
 
     QVector<DesignElementPtr>  dels = pp->getDesignElements();
@@ -985,7 +1009,7 @@ void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
 
     ts << "</" << str << ">" << endl;
     ts << "</prototype>" << endl;
-    qDebug() << "Proto created";
+    if (debug) qDebug() << "Proto created";
 }
 
 void MosaicWriter::setTile(QTextStream & ts, TilePtr tile)
@@ -999,8 +1023,8 @@ void MosaicWriter::setTile(QTextStream & ts, TilePtr tile)
     }
     else
     {
-        qsid = nextId();
-        setTileReference(getRef(),tile);
+        qsid = mwbase.nextId();
+        setTileReference(mwbase.getRef(),tile);
     }
 
     ts << "<" << str << qsid << ">" << endl;
@@ -1015,9 +1039,9 @@ void MosaicWriter::setTile(QTextStream & ts, TilePtr tile)
     ts << "<rotation>" << tile->getRotation() << "</rotation>" << endl;
     ts << "<scale>" << tile->getScale() << "</scale>" << endl;
 
-    ts << "<edges" << nextId() << ">" << endl;
+    ts << "<edges" << mwbase.nextId() << ">" << endl;
 
-    const EdgePoly & ep  = tile->getBase();
+    const EdgeSet & ep  = tile->getBase();
     setEdgePoly(ts,ep);
 
     ts << "</edges>" << endl;
@@ -1096,8 +1120,8 @@ void MosaicWriter::setExplicitMotif(QTextStream & ts, QString name, MotifPtr mot
         return;
    }
 
-    qsid = nextId();
-    setExplicitReference(getRef(),ep);
+    qsid = mwbase.nextId();
+    setExplicitReference(mwbase.getRef(),ep);
     ts << "<" << name << qsid << " type=\"" << motif->getMotifTypeString() << "\"" << ">" << endl;
 
     setMotifCommon(ts,motif);
@@ -1176,8 +1200,8 @@ void MosaicWriter::setStar(QTextStream & ts, QString name, MotifPtr fp)
     }
     else
     {
-        qsid = nextId();
-        setStarReference(getRef(),sp);
+        qsid = mwbase.nextId();
+        setStarReference(mwbase.getRef(),sp);
     }
 
     ts << "<" << name << qsid;
@@ -1210,8 +1234,8 @@ void MosaicWriter::setStar2(QTextStream & ts, QString name, MotifPtr fp)
     }
     else
     {
-        qsid = nextId();
-        setStar2Reference(getRef(),sp);
+        qsid = mwbase.nextId();
+        setStar2Reference(mwbase.getRef(),sp);
     }
 
     ts << "<" << name << qsid;
@@ -1244,8 +1268,8 @@ void MosaicWriter::setRosette(QTextStream & ts, QString name, MotifPtr motif)
     }
     else
     {
-        qsid = nextId();
-        setRosetteReference(getRef(),rp);
+        qsid = mwbase.nextId();
+        setRosetteReference(mwbase.getRef(),rp);
     }
 
     ts << "<" << name << qsid;
@@ -1278,8 +1302,8 @@ void MosaicWriter::setRosette2(QTextStream & ts, QString name, MotifPtr motif)
     }
     else
     {
-        qsid = nextId();
-        setRosette2Reference(getRef(),rp);
+        qsid = mwbase.nextId();
+        setRosette2Reference(mwbase.getRef(),rp);
     }
 
     QString  constrain = (rp->getConstrain()) ? "\"t\"" : "\"f\"";
@@ -1365,13 +1389,14 @@ void  MosaicWriter::setRosette2Common(QTextStream & ts, Rosette2Ptr rose)
 
 bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
 {
-    qDebug().noquote() << "Writing map" << map->summary();
+    if (debug) qDebug().noquote() << "Writing map" << map->summary();
 
-    bool rv = map->verifyAndFix(true,true);
+    MapVerifier mv(map);
+    bool rv = mv.verifyAndFix(true,true);
     if (!rv)
         return false;
     
-    qDebug().noquote() << "Writing map" << map->summary();
+    if (debug) qDebug().noquote() << "Writing map" << map->summary();
 
     QString qsid;
 
@@ -1382,8 +1407,8 @@ bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
         return true;
     }
 
-    qsid = nextId();
-    setMapReference(getRef(),map);
+    qsid = mwbase.nextId();
+    setMapReference(mwbase.getRef(),map);
     ts << "<map" << qsid << ">" << endl;
 
     // vertices
@@ -1391,7 +1416,7 @@ bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
     setVertices(ts,vertices);
 
     // Edges
-    const QVector<EdgePtr> & edges = map->getEdges();
+    const EdgeSet & edges = map->getEdges();
     setEdges(ts,edges);
 
     ts << "</map>" << endl;
@@ -1401,7 +1426,7 @@ bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
 
 void MosaicWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices)
 {
-    ts << "<vertices" << nextId() <<  ">" << endl;
+    ts << "<vertices" << mwbase.nextId() <<  ">" << endl;
     for (const auto & v : std::as_const(vertices))
     {
         setVertex(ts,v);
@@ -1409,9 +1434,9 @@ void MosaicWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> & vert
     ts << "</vertices>" << endl;
 }
 
-void MosaicWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> & edges)
+void MosaicWriter::setEdges(QTextStream & ts, const EdgeSet & edges)
 {
-    ts << "<edges" << nextId() <<  ">" << endl;
+    ts << "<edges" << mwbase.nextId() <<  ">" << endl;
     for (const auto & edge : std::as_const(edges))
     {
         setEdge(ts,edge);
@@ -1419,7 +1444,7 @@ void MosaicWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> & edges)
     ts << "</edges>" << endl;
 }
 
-void MosaicWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
+void MosaicWriter::setEdgePoly(QTextStream & ts, const EdgeSet & epoly)
 {
     for (auto & ep : std::as_const(epoly))
     {
@@ -1436,7 +1461,7 @@ void MosaicWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
         }
         else if (ep->getType() == EDGETYPE_CURVE)
         {
-            QString str = QString("<Curve convex=\"%1\">").arg(ep->isConvex() ? "t" : "f");
+            QString str = QString("<Curve convex=\"%1\">").arg((ep->getCurveType() == CURVE_CONVEX) ? "t" : "f");
             ts << str << endl;
             QPointF p3 = ep->getArcCenter();
             setVertexEP(ts,v1,"Point");
@@ -1444,31 +1469,21 @@ void MosaicWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
             setPoint(ts,p3,"Center");
             ts << "</Curve>" << endl;
         }
-        else if (ep->getType() == EDGETYPE_CHORD)
-        {
-            QString str = QString("<Chord convex=\"%1\">").arg(ep->isConvex() ? "t" : "f");
-            ts << str << endl;
-            QPointF p3 = ep->getArcCenter();
-            setVertexEP(ts,v1,"Point");
-            setVertexEP(ts,v2,"Point");
-            setPoint(ts,p3,"Center");
-            ts << "</Chord>" << endl;
-        }
     }
 }
 
 void MosaicWriter::setVertexEP(QTextStream & ts,VertexPtr v, QString name)
 {
     QString qsid;
-    if (MosaicWriterBase::hasReference(v))
+    if (mwbase.hasReference(v))
     {
-        qsid = getVertexReference(v);
+        qsid = mwbase.getVertexReference(v);
         ts << "<" << name << qsid << "/>" << endl;
         return;
     }
 
-    qsid = nextId();
-    setVertexReference(getRef(),v);
+    qsid = mwbase.nextId();
+    mwbase.setVertexReference(mwbase.getRef(),v);
 
     QPointF pt = v->pt;
 
@@ -1480,15 +1495,15 @@ void MosaicWriter::setVertexEP(QTextStream & ts,VertexPtr v, QString name)
 void MosaicWriter::setVertex(QTextStream & ts, VertexPtr v, QString name)
 {
     QString qsid;
-    if (MosaicWriterBase::hasReference(v))
+    if (mwbase.hasReference(v))
     {
-        qsid = getVertexReference(v);
+        qsid = mwbase.getVertexReference(v);
         ts << "<" << name << qsid << "/>" << endl;
         return;
     }
 
-    qsid = nextId();
-    setVertexReference(getRef(),v);
+    qsid = mwbase.nextId();
+    mwbase.setVertexReference(mwbase.getRef(),v);
     ts << "<" << name << qsid << ">" << endl;
 
     // pos
@@ -1497,7 +1512,7 @@ void MosaicWriter::setVertex(QTextStream & ts, VertexPtr v, QString name)
     ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
+void MosaicWriter::setEdges(QTextStream & ts, EdgeSet & qvec)
 {
     ts << "<edges>" << endl;
 
@@ -1512,7 +1527,7 @@ void MosaicWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
 
 void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
 {
-    qDebug() << "Edge" << e.get();
+    if (debug) qDebug() << "Edge" << e.get();
     QString qsid;
     if (hasReference(e))
     {
@@ -1522,18 +1537,13 @@ void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
 
     auto type = e->getType();
 
-    qsid = nextId();
-    qDebug() << "new edge ref=" << getRef();
-    setEdgeReference(getRef(),e);
+    qsid = mwbase.nextId();
+    if (debug) qDebug() << "new edge ref=" << mwbase.getRef();
+    setEdgeReference(mwbase.getRef(),e);
 
     if (type == EDGETYPE_CURVE)
     {
-        QString str = QString("<curve %1 convex=\"%2\">").arg(qsid).arg(e->isConvex() ? "t" : "f");
-        ts << str << endl;
-    }
-    else if (type == EDGETYPE_CHORD)
-    {
-        QString str = QString("<chord %1 convex=\"%2\">").arg(qsid).arg(e->isConvex() ? "t" : "f");
+        QString str = QString("<curve %1 convex=\"%2\">").arg(qsid).arg((e->getCurveType() == CURVE_CONVEX) ? "t" : "f");
         ts << str << endl;
     }
     else
@@ -1549,7 +1559,7 @@ void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
     VertexPtr v2 = e->v2;
     setVertex(ts,v2,"v2");
 
-    if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
+    if (type == EDGETYPE_CURVE)
     {
         QPointF p = e->getArcCenter();
         setPos(ts,p);
@@ -1558,10 +1568,6 @@ void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
     if (type == EDGETYPE_CURVE)
     {
         ts << "</curve>" << endl;
-    }
-    else if (type == EDGETYPE_CHORD)
-    {
-        ts << "</chord>" << endl;
     }
     else
     {
@@ -1833,7 +1839,7 @@ QString MosaicWriter::getStar2Reference(Star2Ptr ptr)
 QString MosaicWriter::getEdgeReference(EdgePtr ptr)
 {
     int id =  edge_ids.value(ptr);
-    qDebug() << "edge ref" << id;
+    if (debug) qDebug() << "edge ref" << id;
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }

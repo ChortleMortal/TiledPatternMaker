@@ -1,28 +1,35 @@
 #include <QPainter>
-#include "gui/viewers/layer.h"
-#include "sys/sys.h"
-#include "sys/geometry/transform.h"
-#include "model/settings/configuration.h"
+
 #include "gui/top/controlpanel.h"
+#include "gui/viewers/layer.h"
+#include "model/settings/configuration.h"
+#include "sys/geometry/transform.h"
+#include "sys/sys.h"
 
 int Layer::refs = 0;
 
-Layer::Layer(QString name, bool unique)
+Layer::Layer(eViewType viewType,eModelType modelType, QString name)
 {
-    _name   = name;
-    _unique = unique;
-    visible = true;
-    zlevel  = STANDARD_ZLEVEL;
-    debug   = 0;    // DEBUG_LAYER | DEBUG_TFORM | DEBUG_XFORM;
+    _viewType    = viewType;
+    _modelType   = modelType;
+    _name        = name;
+    visible      = true;
+    _viewControl = Sys::viewController;
+    zlevel       = STANDARD_ZLEVEL;
+    debug        = 0; //DEBUG_LAYER | DEBUG_TFORM | DEBUG_XFORM;
 
+    initLayer();
     connectSignals();
     refs++;
 }
 
 Layer::Layer(const Layer & other) : QObject()
 {
+    _viewType       = other._viewType;
+    _modelType      = other._modelType;
     _name           = other._name;
-    _unique         = other._unique;
+    _useSMX         = other._useSMX;
+    _viewControl    = other._viewControl;
     visible         = other.visible;
     layerTransform  = other.layerTransform;
     invertedLayer   = other.invertedLayer;
@@ -31,14 +38,18 @@ Layer::Layer(const Layer & other) : QObject()
     xf_model        = other.xf_model;
     debug           = other.debug;
 
+    initLayer();
     connectSignals();
     refs++;
 }
 
 Layer::Layer(LayerPtr other)
 {
+    _viewType       = other->_viewType;
+    _modelType      = other->_modelType;
     _name           = other->_name;
-    _unique         = other->_unique;
+    _useSMX         = other->_useSMX;
+    _viewControl    = other->_viewControl;
     visible         = other->visible;
     layerTransform  = other->layerTransform;
     invertedLayer   = other->invertedLayer;
@@ -47,6 +58,7 @@ Layer::Layer(LayerPtr other)
     xf_model        = other->xf_model;
     debug           = other->debug;
 
+    initLayer();
     connectSignals();
     refs++;
 }
@@ -56,15 +68,30 @@ Layer::~Layer()
     refs--;
 }
 
+void Layer::initLayer()
+{
+    _solo      = false;
+    _lockState = 0;
+    if (modelType() == PRIMARY)
+    {
+        _useSMX = false;
+    }
+    else
+    {
+        Q_ASSERT(modelType() == DERIVED);
+        _useSMX = true;
+    }
+}
+
 void Layer::connectSignals()
 {
-    config      = Sys::config;
-    viewControl = Sys::viewController;
-    
-    connect(this, &Layer::sig_reconstructView, viewControl, &ViewController::slot_reconstructView);
-    connect(this, &Layer::sig_updateView,      Sys::view,   &View::slot_update);
-    //auto panel = ControlPanel::getInstance();
-    //connect(panel, &ControlPanel::sig_id_layers,  this,  &Layer::id_layer);
+    connect(this, &Layer::sig_reconstructView, _viewControl, &SystemViewController::slot_reconstructView);
+    connect(this, &Layer::sig_updateView,      _viewControl, &SystemViewController::slot_updateView);
+
+    connect(_viewControl, &SystemViewController::sig_resetLayers, this, &Layer::initLayer);
+
+
+    connect(Sys::controlPanel, &ControlPanel::sig_id_layers, this, &Layer::id_layer);
 }
 
 bool Layer::sortByZlevel(LayerPtr s1, LayerPtr s2)
@@ -111,19 +138,73 @@ bool Layer::isSelected()
     return (lp == this);
 }
 
+const Xform & Layer::getModelXform()
+{
+    if (isBreakaway() == false)
+    {
+        if (debug & DEBUG_XFORM) qDebug().noquote() << "GET" << layerName() <<  "SMX  " << xf_model.info();
+        return viewControl()->getSystemModelXform();
+    }
+    else
+    {
+        if (debug & DEBUG_XFORM) qDebug().noquote() << "GET" << layerName() <<  "local" << xf_model.info();
+        return xf_model;
+    }
+}
+
+void  Layer::setModelXform(const Xform & xf, bool update, uint sigid)
+{
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << layerName() << xf.info();
+
+    if (isPrimary() && (this == viewControl()->getSelectedPrimaryLayer().get()))
+    {
+        // set the selected primary and SMX
+        if (debug & DEBUG_XFORM) qDebug().noquote() << "SET" << layerName() << "local" << xf.info();
+        xf_model = xf;
+        if (debug & DEBUG_XFORM) qDebug().noquote() << "SET" << layerName() << "SMX  " << xf.info();
+        viewControl()->setSystemModelXform(xf,sigid);
+    }
+    else if (isBreakaway() == false)
+    {
+        // all the other viewers
+        if (debug & DEBUG_XFORM) qDebug().noquote() << "SET" << layerName() << "SMX  " << xf.info();
+        viewControl()->setSystemModelXform(xf,sigid);
+    }
+    else
+    {
+        // breakaway
+        if (debug & DEBUG_XFORM) qDebug().noquote() << "SET" << layerName() << "local" << xf.info();
+        xf_model = xf;
+    }
+    if (update)
+    {
+        forceLayerRecalc(update);
+    }
+}
+
 QTransform  Layer::getCanvasTransform()
 {
-    Canvas & canvas  = viewControl->getCanvas();
-    QTransform t     = canvas.getCanvasTransform();
-    if (debug & DEBUG_TFORM) qDebug().noquote() << "Canvas transform:" << getLayerName() << Transform::info(t);
+    Canvas & canvas  = viewControl()->getCanvas();
+    QTransform t     = canvas.getTransform();
+    if (debug & DEBUG_TFORM) qDebug().noquote() << "Canvas transform:" << layerName() << Transform::info(t);
     return t;
 }
 
 QTransform  Layer::getModelTransform()
 {
-    QTransform t =  getModelXform().toQTransform(getCanvasTransform());
-    if (debug & DEBUG_TFORM) qDebug().noquote() << "Model transform:" << getLayerName() << Transform::info(t);
+    QPointF center        = viewControl()->getCanvas().getCenter();
+    const Xform & modelXf = getModelXform();
+    QPointF trans         = modelXf.getTranslate();
+    QTransform t          = modelXf.getTransform(center - trans);  // NOTE - 24APR25 this is a major change
+    if (debug & DEBUG_TFORM) qDebug().noquote() << "Model transform:" << layerName() << Transform::info(t);
     return t;
+}
+
+void Layer::computeLayerTransform()
+{
+    layerTransform              = getCanvasTransform() * getModelTransform();
+    invertedLayer               = layerTransform.inverted();
+    if (debug & DEBUG_TFORM) qDebug().noquote() << "Comput transfrom:" << layerName() << Transform::info(layerTransform);
 }
 
 QTransform Layer::getLayerTransform()
@@ -133,41 +214,51 @@ QTransform Layer::getLayerTransform()
         // compute Transform
         computeLayerTransform();
     }
-    if (debug & DEBUG_LAYER) qDebug().noquote() << "Layer transform:" << getLayerName() << Transform::info(layerTransform);
+    if (debug & DEBUG_LAYER) qDebug().noquote() << "Layer transform:" << layerName() << Transform::info(layerTransform);
     return layerTransform;
 }
 
-void Layer::computeLayerTransform()
+bool Layer::correctLegacyLayer(QPointF mpt)
 {
-    layerTransform   = getCanvasTransform() * getModelTransform();
-    invertedLayer  = layerTransform.inverted();
-    if (debug & DEBUG_TFORM) qDebug().noquote() << "Computed Layer:" << getLayerName() << Transform::info(layerTransform);
-}
+    qInfo() << "Layer::correctLegacyLayer" << mpt << _name;
 
-void Layer::setCenterScreenUnits(QPointF spt)
-{
-    qDebug().noquote() << "Layer::setCenterScreenUnits" << getLayerName() << spt;
+    bool rv = false;
+    Xform xf = getModelXform();
 
-    if (layerTransform.isIdentity())
+    if (!mpt.isNull())
     {
-        computeLayerTransform();
+        // one time conversion after loading for previous use of 'center'
+        qreal canvasScale = Transform::scalex(getCanvasTransform());
+        //qreal modelScale  = Transform::scalex(getModelTransform());
+        qreal layerScale  = Transform::scalex(getLayerTransform());
+        //qDebug() << "canvas scale" << canvasScale << "model scale" << modelScale << "layer scale" << layerScale;
+
+        QPointF correction = mpt * (canvasScale-layerScale);
+        if (!correction.isNull())
+        {
+            //qWarning() << "applying correction for legacy center" << correction << "to translate" << xf.getTranslate();
+            xf.applyTranslate(correction);
+            setModelXform(xf,false,Sys::nextSigid());
+            rv = true;
+        }
     }
 
-    // save in model units
-    QPointF mpt = invertedLayer.map(spt);
-    Xform xf = getModelXform();
-    xf.setModelCenter(mpt);
-    setModelXform(xf,false);
-    computeLayerTransform();
+    qreal scale   = xf.getScale();
+    if (!Loose::equals(1.0,scale))
+    {
+        QPointF trans = xf.getTranslate();
+        trans /= scale;
+        xf.setTranslate(trans);
+        setModelXform(xf,false,Sys::nextSigid());
+        rv = true;
+    }
 
-    // adjust so that image does not jump
-    QPointF adjCenter = getCenterScreenUnits();
-    QPointF diff      = spt - adjCenter;
-    xf = getModelXform();
-    xf.setTranslateX(xf.getTranslateX() + diff.x());
-    xf.setTranslateY(xf.getTranslateY() + diff.y());
-    setModelXform(xf,false);
-    computeLayerTransform();
+    if (rv == true)
+    {
+        forceLayerRecalc(false);
+    }
+
+    return rv;
 }
 
 QPointF Layer::getCenterScreenUnits()
@@ -175,16 +266,16 @@ QPointF Layer::getCenterScreenUnits()
     if (layerTransform.isIdentity())
     {
         computeLayerTransform();
-        //qDebug() << "Layer::getCenter()" << Transform::toInfoString(qtr_layer);
     }
-    return layerTransform.map(getModelXform().getModelCenter());
+    // NOTE - in this new world is alwyays zero
+    return modelToScreen(QPointF(0,0));
 }
 
 QPointF Layer::getCenterModelUnits()
 {
-    return getModelXform().getModelCenter();
+    // NOTE - in this new world is alwyays zero
+    return QPointF(0,0);
 }
-
 
 qreal Layer::screenToModel(qreal val)
 {
@@ -194,6 +285,12 @@ qreal Layer::screenToModel(qreal val)
 }
 
 QPointF Layer::screenToModel(QPointF pt)
+{
+    getLayerTransform();
+    return invertedLayer.map(pt);
+}
+
+QPoint Layer::screenToModel(QPoint pt)
 {
     getLayerTransform();
     return invertedLayer.map(pt);
@@ -266,7 +363,6 @@ Circle Layer::modelToScreen(Circle c)
     return circ;
 }
 
-
 void Layer::setLoc(QPointF loc)
 {
     //qDebug() << name << "pos=" << pos << "new" << loc;
@@ -280,7 +376,7 @@ void Layer::setZValue(int z)
 
 void  Layer::drawLayerModelCenter(QPainter * painter)
 {
-    if (config->showCenterDebug || Sys::showCenterMouse)
+    if (Sys::config->showCenterDebug || Sys::showCenterMouse)
     {
         QPointF pt = getCenterScreenUnits();
         drawCenterSymbol(painter,pt,QColor(Qt::green),QColor(Qt::blue));
@@ -324,5 +420,112 @@ void Layer::paint(QPainter * painter)
 
 void Layer::id_layer()
 {
-    qInfo().noquote() << getLayerName() << (isUnique() ? "unique" : "common");
+    qInfo().noquote() << layerName() << sViewerType[viewType()];
 }
+
+//////////////////////////////////////////////////////////////////////////////////////
+///
+///  Brekaway/SMX logic (SMX is System Model Xfeorm)
+///
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+void Layer::_setUserLock(bool set)
+{
+    if (set)
+        _lockState |= USER_LOCK;
+    else
+        _lockState &= ~USER_LOCK;
+}
+
+void Layer::_setSoloLock(bool set)
+{
+    if (set)
+        _lockState |= SOLO_LOCK;
+    else
+        _lockState &= ~SOLO_LOCK;
+}
+
+void Layer::breakaway(bool set)
+{
+    if (isBreakaway() == set)
+        return;
+
+    if (viewControl()->getSelectedPrimaryLayer().get() == this)
+        return;
+
+    // alayer can be in breakaway but not locked or soloed
+    if (set)
+    {
+        xf_model = getModelXform();     // copies from SMX to local
+        _setBreakaway(true);
+    }
+    else
+    {
+        _setBreakaway(false);
+        forceLayerRecalc(true);
+    }
+}
+
+void Layer::lock(bool set)
+{
+    if (set)
+    {
+        if (_lockState & USER_LOCK)
+            return;
+
+        _setUserLock(true);
+
+        // a locked layer does not respond to keyboard events
+        // so its model xform needs to be copied into the local xform
+        // when unlocked, a derived layer will pop back into
+        // alignment with other derived layers and primary layers stay where they are
+        breakaway(true);
+    }
+    else
+    {
+        if ((_lockState & USER_LOCK) == 0)
+            return;
+
+        _setUserLock(false);
+    }
+}
+
+// soloing a layer means all other layers aare locked and the selkected layer is put into breakaway, and remains there
+// turning off solo for the layer turns  of the locks on all the others layers
+// if another layer goes into solo while another layer is soloed, the first solo layer muste be turned off;.
+// but in effect the selected layer is mmade solo and all other layers are locked, if another layer is soloed it is taken out and locked
+void Layer::solo(Layer * layer, bool set)
+{
+    if (layer == this)
+    {
+        if (set)
+        {
+            // the solo layer is set into solo mode
+            _setSolo(true);
+            _setSoloLock(false);
+            breakaway(true);
+        }
+        else
+        {
+            _setSolo(false);
+            _setSoloLock(false);
+        }
+    }
+    else
+    {
+        // other layers
+        if (set)
+        {
+            _setSolo(false);
+            _setSoloLock(true);
+        }
+        else
+        {
+            _setSolo(false);    // should already be false
+            _setSoloLock(false);
+        }
+    }
+}
+
+

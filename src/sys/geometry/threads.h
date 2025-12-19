@@ -1,35 +1,48 @@
 #pragma once
-#ifndef THREAD_H
-#define THREAD_H
+#ifndef TPM_THREAD_H
+#define TPM_THREAD_H
 
 #include <QColor>
 #include "model/styles/colorset.h"
+#include "model/styles/casing.h"
 
 typedef std::shared_ptr<class Map>              MapPtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
 typedef std::shared_ptr<class Vertex>           VertexPtr;
 typedef std::shared_ptr<class Thread>           ThreadPtr;
 
-class Thread : public QVector<EdgePtr>
+//#define  DEBUG_THREADS
+//#define  THREAD_LIMITS
+
+class Thread : public QVector<CasingPtr>
 {
 public:
     Thread() {}
     QColor color;
 };
 
-
 class Threads : public QVector<ThreadPtr>
 {
 public:
-    Threads() {}
+    Threads();
 
-    void   createThreads(Map * map);
-    void   assignColors(ColorSet & colors);
+    void        createThreads(CasingSet &casings);
+    void        assignColors(ColorSet & colors);
+
+    uint        chainLimit;
 
 protected:
-    void   createThread(Map * map, ThreadPtr thread, EdgePtr edge, VertexPtr touchPt);
+    void        addToThread(ThreadPtr &thread, CasingSet &casings, CasingPtr &casing, VertexPtr &v);
+
+    bool        reachesBoundary(EdgePtr edge);
+    bool        meetsThis(CasingSet &casings, EdgePtr edge, ThreadPtr & thread, NeighboursPtr n);
+    EdgeSet     choices(CasingSet&casings, EdgePtr edge, NeighboursPtr n);
+    EdgePtr     isLinear(EdgePtr edge, EdgeSet & eset);
+    EdgePtr     getContinuation(EdgePtr edge, EdgeSet & eset, int type);
 
 private:
+    uint        chainCount;
+
 };
 
 #endif // THREAD_H

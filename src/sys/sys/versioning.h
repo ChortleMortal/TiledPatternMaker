@@ -26,6 +26,8 @@ public:
 
        void operator=(const VersionedName& other)  { name = other.name; }
        bool operator==(const VersionedName& other) { return (name == other.name); }
+       bool operator!=(const VersionedName& other) const { return !(*this == other); }
+
 friend bool operator==(const VersionedName & v1, const VersionedName & v2) { return (v1.name == v2.name); }
 
 private:
@@ -42,6 +44,7 @@ public:
     QStringList getNames();
 
     bool        add(const VersionedName & name);
+    bool        remove(const VersionedName & name);
     bool        prepend(const VersionedName & name);
 
     void        sort(); // case insensitive
@@ -57,9 +60,9 @@ public:
     VersionedName at(qsizetype index)                       { return list.at(index); }
 
     QVector<VersionedName>::iterator begin()                { return list.begin(); }
-    QVector<VersionedName>::const_iterator begin() const    { return list.begin(); }
+    QVector<VersionedName>::const_iterator begin() const    { return list.cbegin(); }
     QVector<VersionedName>::iterator end()                  { return list.end(); }
-    QVector<VersionedName>::const_iterator end() const      { return list.end(); }
+    QVector<VersionedName>::const_iterator end() const      { return list.cend(); }
 
     VersionList& operator+=(const VersionList& other)       { list += other.list; return  *this; }
 
@@ -81,9 +84,13 @@ public:
     VersionedName & getVersionedName()          { return name; }
     QString         getPathedName() const       { return full; }
     QString         getPathOnly() const         { return path; }
+    QString         getPathDir();
 
     void            clear()                     { full.clear(); path.clear(); name.clear(); }
     bool            isEmpty()                   { return full.isEmpty(); }
+
+    bool operator==(const VersionedFile& other) { return (name == other.name); }
+    bool operator!=(const VersionedFile& other) { return !(*this == other); }
 
 protected:
     static QString  stripPath(QString path);
@@ -94,7 +101,7 @@ private:
     VersionedName   name;   // created using extracted file name
 };
 
-class VersionFileList : public QVector<VersionedFile>
+class VersionFileList
 {
 public:
     QStringList     getNames();
@@ -103,8 +110,25 @@ public:
     void            sort(); // case insensitive
     VersionFileList filter(QString filter, bool lowerCase);
 
+    void            add(const VersionedFile & vf);
+    void            prepend(const VersionedFile & vf);
+    void            remove(const VersionedFile & vf);
+
+    void            clear()                                 { list.clear(); }
+    int             size()                                  { return list.size(); }
+    VersionedFile   at(qsizetype index)                     { return list.at(index); }
+
+    QVector<VersionedFile>::iterator begin()                { return list.begin(); }
+    QVector<VersionedFile>::const_iterator begin() const    { return list.cbegin(); }
+    QVector<VersionedFile>::iterator end()                  { return list.end(); }
+    QVector<VersionedFile>::const_iterator end() const      { return list.cend(); }
+
+    VersionFileList& operator+=(const VersionFileList& other) { list += other.list; return  *this; }
+
 private:
     static bool     CompareVersionName(VersionedFile &a, VersionedFile &b);
+
+    QVector<VersionedFile>  list;
 };
 
 #endif // VERSIONING_H

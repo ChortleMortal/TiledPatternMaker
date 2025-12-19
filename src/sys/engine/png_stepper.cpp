@@ -2,7 +2,7 @@
 #include <QGridLayout>
 #include "sys/engine/png_stepper.h"
 #include "sys/sys.h"
-#include "gui/top/view_controller.h"
+#include "gui/top/system_view_controller.h"
 
 ////////////////////////////////////////////
 ///
@@ -12,7 +12,7 @@
 
 PNGStepper::PNGStepper(ImageEngine * parent) : SteppingEngine(parent)
 {
-    connect(this,  &PNGStepper::cycle_sig_unloadView, Sys::viewController,  &ViewController::slot_unloadView);
+    connect(this,  &PNGStepper::cycle_sig_unloadView, Sys::viewController,  &SystemViewController::slot_unloadView);
 }
 
 bool PNGStepper::begin()
@@ -44,9 +44,9 @@ bool PNGStepper::begin()
     {
         VersionedFile vf;
         vf.updateFromVersionedName(name);
-        cydata.files.push_back(vf);
+        cydata.files.add(vf);
     }
-    qDebug() << "num pngs =" << cydata.files.count();
+    qDebug() << "num pngs =" << cydata.files.size();
 
     return next();
 }
@@ -64,7 +64,7 @@ bool PNGStepper::next()
 
     emit cycle_sig_unloadView();
 
-    while (pngIndex < cydata.files.count())
+    while (pngIndex < cydata.files.size())
     {
         VersionedFile vf = cydata.files.at(pngIndex);
         cycleShowPNG(vf.getVersionedName(),pngRow, pngCol);
@@ -95,11 +95,11 @@ void PNGStepper::cycleShowPNG(VersionedName file, int row, int col)
     QLabel  * label = new QLabel("Put PNG Here");
     label->setPixmap(pix);
 
-    QLayout * l = Sys::view->layout();
+    QLayout * l = Sys::viewController->layout();
     QGridLayout * grid = dynamic_cast<QGridLayout*>(l);
     grid->addWidget(label,row,col);
 
-    Sys::view->show();
+    Sys::viewController->showView();
 }
 
 bool PNGStepper::prev()

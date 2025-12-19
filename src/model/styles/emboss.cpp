@@ -62,11 +62,11 @@ void Emboss::draw(GeoGraphics * gg)
         return;
     }
 
-    for (auto & bae : std::as_const(pts4))
+    auto map = getProtoMap();    // from prototype
+    for (auto & casing : std::as_const(casings))
     {
-        QPolygonF poly = bae.getPoly();
-        drawTrap(gg, bae.v2.v, bae.v2.above, bae.v1.below, bae.v1.v);
-        drawTrap(gg, bae.v1.v, bae.v1.above, bae.v2.below, bae.v2.v);
+        drawTrap(gg, casing->side(SIDE_2)->mid, casing->side(SIDE_2)->inner, casing->side(SIDE_1)->inner, casing->side(SIDE_1)->mid);
+        drawTrap(gg, casing->side(SIDE_1)->mid, casing->side(SIDE_1)->outer, casing->side(SIDE_2)->outer, casing->side(SIDE_2)->mid);
         
         if (drawOutline != OUTLINE_NONE)
         {
@@ -83,8 +83,10 @@ void Emboss::draw(GeoGraphics * gg)
             pen.setJoinStyle(join_style);
             pen.setCapStyle(cap_style);
 
+            OutlineCasingPtr ocp = std::static_pointer_cast<OutlineCasing>(casing);
+            QPolygonF poly = ocp->getPoly();
             gg->drawPolygon(poly,pen);
-            gg->drawLine(bae.v2.v, bae.v1.v,pen);
+            gg->drawLine(casing->side(SIDE_2)->mid, casing->side(SIDE_1)->mid,pen);
         }
     }
 }
@@ -130,15 +132,10 @@ void Emboss::setColorSet(ColorSet & cset)
 
 void Emboss::setGreys()
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
     float h;
     float s;
     float b;
-#else
-    qreal h;
-    qreal s;
-    qreal b;
-#endif
+
     getColorSet()->getFirstTPColor().color.getHsvF(&h,&s,&b);
 
     greys.clear();

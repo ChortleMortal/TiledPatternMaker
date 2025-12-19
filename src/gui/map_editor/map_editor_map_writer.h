@@ -3,23 +3,18 @@
 #define MAP_EDITOR_MAP_WRITER
 
 #include "model/mosaics/mosaic_writer.h"
-#include "sys/enums/emapeditor.h"
 
-
-class MapEditorView;
+class MapEditorDb;
 
 class MapEditorMapWriter : private MosaicWriter
 {
     friend class TilingWriter;
 
 public:
-    MapEditorMapWriter(MapEditorView * view);
+    MapEditorMapWriter();
     ~MapEditorMapWriter();
 
-    bool writeXML(VersionedFile xfile, MapPtr map, eMapEditorMapType mapType);
-
-private:
-    MapEditorView * meView;
+    bool writeXML(VersionedFile xfile, MapEditorDb * db);
 };
 
 #endif

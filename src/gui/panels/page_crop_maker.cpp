@@ -8,8 +8,8 @@
 #include "model/mosaics/mosaic.h"
 #include "gui/top/controlpanel.h"
 #include "gui/panels/page_crop_maker.h"
-#include "gui/viewers/crop_view.h"
-#include "gui/top/view_controller.h"
+#include "gui/viewers/crop_viewer.h"
+#include "gui/top/system_view_controller.h"
 #include "gui/widgets/crop_widget.h"
 
 using std::string;
@@ -17,7 +17,9 @@ using std::make_shared;
 
 page_crop_maker::page_crop_maker(ControlPanel * apanel)  : panel_page(apanel,PAGE_CROP_MAKER,"Crop Maker")
 {
-    QGroupBox * mosaicGroup = new QGroupBox("Moisaic Crop");
+    pageStatusString = "Left-click on corner to Resize - Left-click inside or on edge to Move";
+
+    QGroupBox * mosaicGroup = new QGroupBox("Moisaic Crop - mosaic crops are applied to prototype maps");
 
     mosaicWidget = new CropWidget();
 
@@ -31,7 +33,7 @@ page_crop_maker::page_crop_maker(ControlPanel * apanel)  : panel_page(apanel,PAG
     vb->addWidget(widget);
     mosaicGroup->setLayout(vb);
 
-    QGroupBox * painterGroup = new QGroupBox("Painter Crop");
+    QGroupBox * painterGroup = new QGroupBox("Painter Crop - painter crops form a clip region for painting the whole mosaic");
 
     painterWidget = new CropWidget();
 
@@ -138,11 +140,6 @@ void  page_crop_maker::onRefresh()
 void page_crop_maker::onEnter()
 {
     emit sig_reconstructView();
-}
-
-QString page_crop_maker::getPageStatus()
-{
-    return QString("Left-click on corner to Resize - Left-click inside or on edge to Move");
 }
 
 void page_crop_maker::display()
@@ -271,8 +268,19 @@ void page_crop_maker::slot_clip(bool checked)
 void page_crop_maker::slot_applyCrop()
 {
     auto crop = mosaicCropMaker.getCrop();
-    mosaicMaker->getMosaic()->setCrop(crop);
-    emit sig_reconstructView();
+    if (crop)
+    {
+        mosaicMaker->getMosaic()->setCrop(crop);
+        emit sig_reconstructView();
+    }
+    else
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Applu failed: No crop to apply");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+    }
 }
 
 void page_crop_maker::slot_removeMosaicCrop()
@@ -283,7 +291,7 @@ void page_crop_maker::slot_removeMosaicCrop()
 
 void page_crop_maker::slot_removePainterCrop()
 {
-    mosaicCropMaker.removeCrop();
+    mosaicCropMaker.removePainterCrop();
     emit sig_reconstructView();
 }
 
@@ -366,9 +374,20 @@ void page_crop_maker::slot_fetchBorderForPainter()
 
 void page_crop_maker::slot_fetchMosaicCrop()
 {
-    Crop cr    = *(mosaicCropMaker.getCrop().get());
-    CropPtr cp = make_shared<Crop>(cr);
-    mosaicMaker->getMosaic()->setPainterCrop(cp);
-    painterCropMaker.setCrop(cp);
-    emit sig_reconstructView();
+    CropPtr mosCr  = mosaicCropMaker.getCrop();
+    if (mosCr)
+    {
+        CropPtr cp = make_shared<Crop>(*mosCr.get());
+        mosaicMaker->getMosaic()->setPainterCrop(cp);
+        painterCropMaker.setCrop(cp);
+        emit sig_reconstructView();
+    }
+    else
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Fetch failed: No Crop in Mosaic");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+    }
 }

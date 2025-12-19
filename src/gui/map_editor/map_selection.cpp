@@ -2,7 +2,6 @@
 #include "gui/map_editor/map_selection.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/vertex.h"
-#include "sys/geometry/circle.h"
 #include "sys/geometry/geo.h"
 
 static bool debugInfoSelection = false;

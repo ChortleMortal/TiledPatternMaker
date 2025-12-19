@@ -504,3 +504,24 @@ void ColorMaker::assignPaletteColors(DCELPtr dcel)
         face->iPalette = indices[i];
     }
 }
+
+void ColorMaker::removePaletteIndex(DCELPtr dcel, int index)
+{
+    QVector<int> & indices = filled->getPaletteIndices();
+    for (int i=0; i < indices.size(); i++)
+    {
+        int existing = indices[i];
+        if (existing == index)
+        {
+            indices[i] = -1;
+        }
+        else if (existing > index)
+        {
+            indices[i] = (existing -1);
+        }
+    }
+    filled->setPaletteIndices(indices);
+    assignPaletteColors(dcel);
+}
+
+

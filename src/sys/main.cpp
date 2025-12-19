@@ -1,6 +1,6 @@
 /* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
- *  Copyright (c) 2016-2023 David A. Casper  email: david.casper@gmail.com
+ *  Copyright (c) 2016-2025 David A. Casper  email: david.casper@gmail.com
  *
  *  This file is part of TiledPatternMaker
  *
@@ -19,8 +19,10 @@
 #include <QStyleHints>
 #include <QProcess>
 #include <QStyle>
+#include <QCommandLineParser>
 
 #include "sys/tiledpatternmaker.h"
+#include "sys/enums/edesign.h"
 #include "sys/qt/qtapplog.h"
 #include "sys/sys.h"
 #include "sys/version.h"
@@ -29,121 +31,169 @@
 #if defined(Q_OS_WINDOWS)
 #include <windows.h>
 #include <psapi.h>
-
-HANDLE hHandle = 0;
 #endif
 
-TiledPatternMaker * theApp          = nullptr;
-QtMessageHandler originalMsgHandler = nullptr;
+#define USE_LOG
 
-void stackInfo()
+TiledPatternMaker* theApp = nullptr;
+
+namespace
 {
 #if defined(Q_OS_WINDOWS)
-    PROCESS_MEMORY_COUNTERS pmc;
-    GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
-    qInfo() << "Stack size        :" << (static_cast<double>(pmc.WorkingSetSize) / static_cast<double>(1024 * 1024)) << "MB";
-#endif
-}
+    struct WinMutexGuard
+    {
+        WinMutexGuard() noexcept = default; // ensure default-constructible
 
-void closeHandle()
-{
+        HANDLE handle = nullptr;
+
+        bool create(const wchar_t* name)
+        {
+            handle = CreateMutexW(NULL, TRUE, name);
+            return handle != nullptr;
+        }
+
+        bool alreadyExists() const
+        {
+            return (GetLastError() == ERROR_ALREADY_EXISTS);
+        }
+
+        ~WinMutexGuard()
+        {
+            if (handle)
+            {
+                ReleaseMutex(handle);
+                CloseHandle(handle);
+                handle = nullptr;
+            }
+        }
+
+        WinMutexGuard(const WinMutexGuard&) = delete;
+        WinMutexGuard& operator=(const WinMutexGuard&) = delete;
+    };
+#endif
+
+    void stackInfo()
+    {
 #if defined(Q_OS_WINDOWS)
-    if (hHandle)
-    {
-        ReleaseMutex(hHandle); // Explicitly release mutex
-        CloseHandle(hHandle); // close handle before terminating
-        hHandle = 0;
+        PROCESS_MEMORY_COUNTERS pmc;
+        if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
+        {
+            qInfo() << "Stack size        :" << (static_cast<double>(pmc.WorkingSetSize) / static_cast<double>(1024 * 1024)) << "MB";
+        }
+#endif
     }
-#endif
-}
 
-void installLog()
-{
-    originalMsgHandler = qInstallMessageHandler(&qtAppLog::crashMessageOutput);
-}
-
-void uninstallLog()
-{
-    if (originalMsgHandler)
+    QString runGitCommand(const QStringList& args, int timeoutMs = 1000)
     {
-        qInstallMessageHandler(originalMsgHandler);
+        QProcess proc;
+        proc.start("git", args);
+
+        if (!proc.waitForStarted(timeoutMs))
+        {
+            qWarning() << "git command failed to start:" << args;
+            return QString();
+        }
+
+        if (!proc.waitForFinished(timeoutMs))
+        {
+            qWarning() << "git command timed out:" << args;
+            proc.kill();
+            proc.waitForFinished();
+            return QString();
+        }
+
+        if (proc.exitStatus() != QProcess::NormalExit || proc.exitCode() != 0)
+        {
+            // no hard error here - just log and return empty
+            qDebug() << "git returned non-zero exit code:" << proc.exitCode() << "args:" << args;
+            return QString();
+        }
+
+        const QByteArray out = proc.readAllStandardOutput();
+        return QString::fromUtf8(out).trimmed();
     }
-}
 
-void getGitInfo()
-{
-    QProcess process;
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
-    process.startCommand("git branch --show-current");
-#else
-    QStringList qsl;
-    qsl << "branch" << "--show-current";
-    process.start("git",qsl);
-#endif
-    process.waitForFinished(-1); // will wait forever until finished
+    void getGitInfo()
+    {
+        // git branch
+        Sys::gitBranch = runGitCommand({ "branch", "--show-current" });
 
-    QByteArray sout  = process.readAllStandardOutput();
-    QString br(sout);
-    Sys::gitBranch = br.trimmed();
+        // git sha
+        Sys::gitSha = runGitCommand({ "rev-parse", "--short", "HEAD" });
 
-    QProcess process2;
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
-    process2.startCommand("git rev-parse --short HEAD");
-#else
-    QStringList qsl2;
-    qsl << " rev-parse" << "--short" << "HEAD";
-    process2.start("git",qsl2);
-#endif
-    process2.waitForFinished(-1); // will wait forever until finished
+        // git root (we store just the last path component, same behavior as original)
+        QString root = runGitCommand({ "rev-parse", "--show-toplevel" });
+        if (!root.isEmpty())
+        {
+            QFileInfo fi(root);
+            Sys::gitRoot = fi.fileName();
+        }
+    }
 
-    sout  = process2.readAllStandardOutput();
-    QString sha(sout);
-    Sys::gitSha = sha.trimmed();
-}
+    void logSystemInfo()
+    {
+        QTime ct = QTime::currentTime();
+        QDate cd = QDate::currentDate();
+        qInfo().noquote() << QCoreApplication::applicationName() << ":" << "started" << cd.toString() << ct.toString() << "on" << QSysInfo::machineHostName();
 
-void logSystemInfo()
-{
-    QTime ct = QTime::currentTime();
-    QDate cd = QDate::currentDate();
-    qInfo().noquote() << QCoreApplication::applicationName()  << ":"  <<  "started" << cd.toString() << ct.toString() << "on" << QSysInfo::machineHostName();
-
-    qInfo().noquote() << "Version           :"  << tpmVersion;
+        qInfo().noquote() << "Version           :" << tpmVersion;
 #ifdef QT_DEBUG
-    qInfo().noquote() << "Build             : Debug" << QSysInfo::productType();
+        qInfo().noquote() << "Build             : Debug" << QSysInfo::productType();
 #else
-    qInfo().noquote() << "Build             : Release" << QSysInfo::productType();
+        qInfo().noquote() << "Build             : Release" << QSysInfo::productType();
 #endif
 
-    if (Sys::config->insightMode)
-        qInfo().noquote() << "Mode              : Insight mode";
-    else
-        qInfo().noquote() << "Mode              : Designer mode";
+        if (Sys::config && Sys::config->insightMode)
+            qInfo().noquote() << "Mode              : Insight mode";
+        else
+            qInfo().noquote() << "Mode              : Designer mode";
 
-    qInfo().noquote() << "Qt version        :" << QT_VERSION_STR;
+        qInfo().noquote() << "Qt version        :" << QT_VERSION_STR;
 
 #if defined(Q_OS_WINDOWS)
-    qInfo() << "MSC Version       :" << _MSC_VER;
-    stackInfo();
+        qInfo() << "MSC Version       :" << _MSC_VER;
+        stackInfo();
 #endif
 
-    qInfo().noquote() << "App path          :"  << qApp->applicationDirPath();
-    qInfo().noquote() << "Local Media root  :"  << Sys::config->getMediaRootLocal();
-    qInfo().noquote() << "App Media root    :"  << Sys::config->getMediaRootAppdata();
-    qInfo().noquote() << "Media root        :"  << Sys::config->getMediaRoot();
-    qInfo().noquote() << "Design Dir        :"  << Sys::rootMosaicDir;
-    qInfo().noquote() << "App Font          :"  << QApplication::font().toString();
-    qInfo().noquote() << "App Style         :"  << QApplication::style();
-    QFileInfo fi(qtAppLog::currentLogName);
-    qInfo().noquote() << "Log file          :"  << fi.canonicalFilePath();
-    const QFont font = qtAppLog::getTextEditor()->font();
-    qInfo().noquote() << "Log font          :" << font.toString();
-    qInfo().noquote() << "Platform          :" << QGuiApplication::platformName();
-    getGitInfo();
-    if (!Sys::gitBranch.isEmpty())
-        qInfo().noquote() << "git branch        :" << Sys::gitBranch;
-}
+        qInfo().noquote() << "App path          :" << qApp->applicationDirPath();
+        if (Sys::config)
+        {
+            qInfo().noquote() << "Local Media root  :" << Sys::config->getMediaRootLocal();
+            qInfo().noquote() << "App Media root    :" << Sys::config->getMediaRootAppdata();
+            qInfo().noquote() << "Media root        :" << Sys::config->getMediaRoot();
+        }
+        qInfo().noquote() << "Design Dir        :" << Sys::rootMosaicDir;
+        qInfo().noquote() << "App Font          :" << QApplication::font().toString();
+        qInfo().noquote() << "App Style         :" << QApplication::style();
+        QFileInfo fi(qtAppLog::currentLogName);
+        qInfo().noquote() << "Log file          :" << fi.canonicalFilePath();
+        const QFont font = qtAppLog::getTextEditor()->font();
+        qInfo().noquote() << "Log font          :" << font.toString();
+        qInfo().noquote() << "Platform          :" << QGuiApplication::platformName();
 
-int main(int argc, char *argv[])
+        getGitInfo();
+        if (!Sys::gitBranch.isEmpty())
+            qInfo().noquote() << "git branch        :" << Sys::gitBranch;
+    }
+
+    void firstBirthday()
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        box.setText("This will erase all registry settings for this application\n\nProceed?");
+        int ret = box.exec();
+        if (ret == QMessageBox::Yes)
+        {
+            QSettings s;
+            s.clear();
+            s.sync();
+            qInfo() << "Registry settings cleared.";
+        }
+    }
+} // anonymous namespace
+
+int main(int argc, char* argv[])
 {
     Sys::appInstance    = 0;
     bool noAutoLoad     = false;
@@ -156,15 +206,21 @@ int main(int argc, char *argv[])
 
     do
     {
+        // Ensure QApplication is created before any QWidget-based objects (QMessageBox, etc.)
         QApplication app(argc, argv);
         QApplication::setStyle("Fusion");
         QCoreApplication::setOrganizationName("DAC");
         QCoreApplication::setApplicationName("TiledPatternMaker");
 
 #if defined(Q_OS_WINDOWS)
-    const wchar_t * uniqueName = L"TiledPatternMaker";
-    hHandle = CreateMutexW(NULL, TRUE, uniqueName);
-    if (ERROR_ALREADY_EXISTS == GetLastError())
+       WinMutexGuard instanceGuard;
+        const wchar_t* uniqueName = L"TiledPatternMaker";
+        if (!instanceGuard.create(uniqueName))
+        {
+            // Failed to create mutex; continue but log
+            qWarning() << "Failed to create single-instance mutex.";
+        }
+        else if (instanceGuard.alreadyExists())
         {
             QMessageBox box;
             box.setIcon(QMessageBox::Warning);
@@ -173,42 +229,84 @@ int main(int argc, char *argv[])
             int ret = box.exec();
             if (ret == QMessageBox::No)
             {
-                return(1); // Exit program
+                return 1; // Exit program
             }
             Sys::appInstance = 1;
         }
 #endif
-        // holding down shift key on start to stop autoload or reset registry
+
+        // Restore original startup keyboard-modifier behavior:
+        // - Shift + Alt: clear registry/settings
+        // - Shift only: disable autoload and force primary display
+        // - Shift only: disable autoload and force primary display
         Qt::KeyboardModifiers mods = QApplication::queryKeyboardModifiers();
         if (mods & Qt::ShiftModifier)
         {
             if (mods & Qt::AltModifier)
             {
-                QMessageBox box;
-                box.setIcon(QMessageBox::Warning);
-                box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-                box.setText("This will erase all registry settings for this application\n\nProceed?");
-                int ret = box.exec();
-                if (ret == QMessageBox::Yes)
-                {
-                    QSettings s;
-                    s.clear();
-                }
+                firstBirthday();
             }
             else
             {
                 noAutoLoad = true;
+                primaryDisplay = true;
             }
         }
 
-        // load configuration
-        Configuration * config = new Configuration;
-        Sys::config = config;
+        // parse input using QCommandLineParser
+        QCommandLineParser parser;
+        parser.setApplicationDescription("TiledPatternMaker");
+        parser.addHelpOption();
+        parser.addVersionOption();
+        QCommandLineOption firstBirthdayOpt(QStringList() << "first-birthday", "Reset all settings to default.");
+        QCommandLineOption noAutoOpt(QStringList() << "no-autoload", "Do not autoload last mosaic on startup.");
+        QCommandLineOption mapVerifyOpt(QStringList() << "map-verify", "Run map verification.");
+        QCommandLineOption loadOpt(QStringList() << "load", "Force load the specified mosaic.", "file");
+        QCommandLineOption primaryDisplayOpt(QStringList() << "primary-display", "Force primary display output.");
+        parser.addOption(firstBirthdayOpt);
+        parser.addOption(noAutoOpt);
+        parser.addOption(mapVerifyOpt);
+        parser.addOption(loadOpt);
+        parser.addOption(primaryDisplayOpt);
+        parser.process(app);
+
+        if (parser.isSet(firstBirthdayOpt))
+        {
+            firstBirthday();
+            qInfo() << "--first-birthday";
+        }
+
+        if (parser.isSet(noAutoOpt))
+        {
+            noAutoLoad = true;
+            qInfo() << "--no-autoload";
+        }
+        if (parser.isSet(mapVerifyOpt))
+        {
+            mapVerify = true;
+            qInfo() << "--map-verify";
+        }
+        QString loadstr;
+        if (parser.isSet(loadOpt))
+        {
+            forceLoad = true;
+            loadstr = parser.value(loadOpt).toStdString().c_str();
+            qInfo().noquote() << "--load" << loadstr;
+        }
+        if (parser.isSet(primaryDisplayOpt))
+        {
+            primaryDisplay = true;
+            qInfo().noquote() << "--primary-display";
+        }
+
+        // load configuration (use RAII)
+        auto config = std::make_unique<Configuration>();
+        Sys::config = config.get();
 
 #if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
-        Qt::ColorScheme  scheme = QApplication::styleHints()->colorScheme();
+        Qt::ColorScheme scheme = QApplication::styleHints()->colorScheme();
 
-        switch (config->colorTheme)
+        switch (Sys::config->colorTheme)
         {
         case AUTO_THEME:
             switch (scheme)
@@ -220,6 +318,7 @@ int main(int argc, char *argv[])
                 Sys::isDarkTheme = false;
                 break;
             case Qt::ColorScheme::Unknown:
+                QApplication::styleHints()->setColorScheme(Qt::ColorScheme::Light);
                 Sys::isDarkTheme = false;
                 break;
             }
@@ -227,13 +326,13 @@ int main(int argc, char *argv[])
 
         case LITE_THEME:
             Sys::isDarkTheme = false;
+            QApplication::styleHints()->setColorScheme(Qt::ColorScheme::Light);
             break;
 
         case DARK_THEME:
             Sys::isDarkTheme = true;
-            break;
+            QApplication::styleHints()->setColorScheme(Qt::ColorScheme::Dark);
         }
-
 #else
         // older versions of Qt
         switch (config->colorTheme)
@@ -253,9 +352,11 @@ int main(int argc, char *argv[])
         afont.setPointSize(8);
         QApplication::setFont(afont);
 #endif
+
         auto log = qtAppLog::getInstance();
         Sys::log = log;
 
+#ifdef USE_LOG
         log->baseLogName = config->baseLogName;
 
         if (config->insightMode)
@@ -266,7 +367,7 @@ int main(int argc, char *argv[])
             log->logToPanel(config->logToPanel);
             log->logLines(config->logNumberLines);
             log->logDebug(config->logDebug);
-            log->logTimer(config->logTime);     // last
+            log->logTimer(config->logTime); // last
         }
         else
         {
@@ -276,94 +377,55 @@ int main(int argc, char *argv[])
             log->logToPanel(false);
             log->logLines(false);
             log->logDebug(false);
-            log->logTimer(LOGT_NONE);   // last
+            log->logTimer(LOGT_NONE); // last
         }
 
         log->init();
-        installLog();
+#endif
+
         logSystemInfo();
 
-        // parse input
-        std::string loadstr;
-        for (int i = 1; i < argc; ++i)
+        // preconfigure according to parsed options
+        if (noAutoLoad)
         {
-            if (qstrcmp(argv[i], "--no-autoload") == 0)
-            {
-                noAutoLoad = true;
-                qInfo() << "--no-autoload";
-            }
-            if (qstrcmp(argv[i], "--map-verify") == 0)
-            {
-                mapVerify = true;
-                qInfo() << "--map-verify";
-            }
-            if (qstrcmp(argv[i], "--load") == 0)
-            {
-                forceLoad = true;
-                i++;
-                loadstr = std::string(argv[i]);
-                qInfo().noquote() <<  "--load" << loadstr.c_str();
-            }
-            if (qstrcmp(argv[i], "--primary-display") == 0)
-            {
-                primaryDisplay = true;
-                qInfo().noquote() <<  "--primary-display";
-            }
-            else
-            {
-                qWarning() << "Unknown parameter" << argv[i];
-            }
+            config->autoLoadLast = false;
+        }
+        if (mapVerify)
+        {
+            config->verifyMaps = true;
+        }
+        if (forceLoad)
+        {
+            config->autoLoadLast = true;
+            config->lastLoadedMosaic.set(QString::fromStdString(loadstr.toStdString()));
+        }
+        if (primaryDisplay)
+        {
+            Sys::primaryDisplay = true;
+            Sys::enableDetachedPages = false;
         }
 
-        // preconfigure
-        if (noAutoLoad || mapVerify || forceLoad || primaryDisplay)
-        {
-            if (noAutoLoad)
-            {
-                config->autoLoadStyles   = false;
-                config->autoLoadTiling   = false;
-                config->autoLoadDesigns  = false;
-                Sys::enableDetachedPages = false;
-            }
-            if (mapVerify)
-            {
-                config->verifyMaps       = true;
-            }
-            if (forceLoad)
-            {
-                config->autoLoadStyles   = true;
-                config->lastLoadedMosaic.set(QString(loadstr.c_str()));
-            }
-            if (primaryDisplay)
-            {
-                Sys::primaryDisplay      = true;
-            }
-        }
-
-        // instantiate and run
-        TiledPatternMaker * maker = new TiledPatternMaker();
-        theApp = maker;
+        // instantiate and run (use RAII)
+        auto maker = std::make_unique<TiledPatternMaker>();
+        theApp = maker.get();
         emit theApp->sig_start();
 
-        currentExitCode =  app.exec();
+        currentExitCode = app.exec();
 
         qInfo() << "Exiting...";
 
-        delete maker;
-
+        // teardown in reverse order of construction
+        maker.reset();
         qInfo() << "TPM exited";
 
-        uninstallLog();
-        qInfo() << "Log closed.";
         log->releaseInstance();
+        qInfo() << "Log closed.";
 
-        delete Sys::config;
+        // release application-level config
         Sys::config = nullptr;
-
-        closeHandle();
+        config.reset();
 
     } while (currentExitCode == TiledPatternMaker::EXIT_CODE_REBOOT);
-
 
     return currentExitCode;
 }

@@ -11,15 +11,19 @@ class SplashScreen : public QLabel
 public:
     SplashScreen();
 
-    void display(QString & txt);
+    void display(QString & txt, bool panelToo = false);
+    void replace(QString & txt, bool panelToo = false);
     void display(QString && txt);
-    void remove();
+    void remove(bool panelToo = false);
+
+    void disable(bool disable);
 
 protected:
     void draw();
 
 private:
     QStack<QString>  msgStack;
+    bool            _disable;
 };
 
 #endif

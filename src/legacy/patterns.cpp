@@ -62,20 +62,6 @@ Pattern::~Pattern()
     refs--;
 }
 
-#if 0
-void Pattern::identify(Layer * layer, QPolygonF * poly)
-{
-    for (int i=0; i< poly->count(); i++)
-    {
-        QPointF p   = poly->at(i);
-        QString txt = QString("%1: %2 %3").arg(i).arg(p.x()).arg(p.y());
-        qDebug() << txt;
-        MarkXPtr m   = std::make_shared<MarkX>(p, QPen(QColor(Qt::green),3), txt);
-        layer->addSubLayer(m);
-    }
-}
-#endif
-
 /////////////////////////////////////////////////////////////
 //
 /////////////////////////////////////////////////////////////
@@ -1305,22 +1291,6 @@ void PatternIncompleteA::build()
     s1->addLine(linePen,aline);
     //s2->addLine(QPen(QColor(Qt::red),1),aline);
 
-#if 0
-    // marks for a,b,c,d
-    MarkX  * m;
-    m = new MarkX(a,QPen(QColor(Qt::green),3),"a");
-    layers[4].addToGroup(m);
-
-    m = new MarkX(b,QPen(QColor(Qt::green),3),"b");
-    layers[4].addToGroup(m);
-
-    m = new MarkX(c,QPen(QColor(Qt::green),3),"c");
-    layers[4].addToGroup(m);
-
-    m = new MarkX(d,QPen(QColor(Qt::green),3),"d");
-    layers[4].addToGroup(m);
-#endif
-
     // the eraser
     ShapeFPtr s2 = make_shared<ShapeFactory>(diameter/2.6);  // need to do the math 2.6
     layer2->addSubLayer(s2);
@@ -1496,13 +1466,6 @@ void PatternKumiko1::build()
     Polygon2 * p2 = s5->addStretchedExternalHexagon(woodPen, nobrush,90.0);
     p2->translate(radius,ypos);
     //identify(&layers[5],p2);
-
-#if 0
-    ShapeFPtr s6 = make_shared<ShapeFactory>(diameter);
-    layers[6].addToGroup(s1);
-    MarkX * m = new MarkX(QPointF(0,0),QPen(QColor(Qt::green),5),"center");
-    layers[6].addToGroup(m);
-#endif
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -1570,13 +1533,6 @@ void PatternKumiko2::build()
     p2->translate(radius,ypos);
     //identify(&layers[5],p2);
 
-#if 0
-    ShapeFPtr s6 = make_shared<ShapeFactory>(diameter);
-    layers[6].addToGroup(s1);
-    MarkX * m = new MarkX(QPointF(0,0),QPen(QColor(Qt::green),5),"center");
-    layers[6].addToGroup(m);
-#endif
-
     // Make a map of the shape factory design and create a style from it
     MapPtr map = make_shared<Map>("PatternKumiko2 map");
     map->addShapeFactory(s2);
@@ -1594,19 +1550,19 @@ void PatternKumiko2::build()
         t = make_shared<Tiling>();
         CanvasSettings cs;  // default
         cs.setFillData(fd);
-        t->setCanvasSettings(cs);
+        t->hdr().setCanvasSettings(cs);
         TilePtr fp = make_shared<Tile>(4,0.0);
         PlacedTilePtr pfp = make_shared<PlacedTile>(fp,QTransform());
-        t->setTranslationVectors(trans1, trans2, QPointF());
-        t->addPlacedTile(pfp);
-        t->setName(vn);
+        t->hdr().setTranslationVectors(trans1, trans2, QPointF());
+        t->unit().addPlacedTile(pfp);
+        t->setVName(vn);
         t->setDescription("Kumiko2 translation vectors");
         t->setAuthor("David A. Casper");
         TilingManager tm;
-        tm.saveTiling(t);
+        tm.saveTiling(t,vf,true);
     }
 
-    const TilingPlacements tilingUnit = t->getTilingUnitPlacements();
+    const PlacedTiles tilingUnit = t->unit().getIncluded();
     auto tile = tilingUnit[0]->getTile();
 
     auto motif = make_shared<ExplicitMapMotif>(map);
@@ -1617,7 +1573,7 @@ void PatternKumiko2::build()
     DesignElementPtr dep = make_shared<DesignElement>(tilingUnit[0]->getTile(),motif);
 
     MosaicPtr mosaic = make_shared<Mosaic>();
-    FillData fd = t->getCanvasSettings().getFillData();
+    FillData fd = t->hdr().getCanvasSettings().getFillData();
     mosaic->getCanvasSettings().setFillData(fd);
 
     ProtoPtr proto = make_shared<Prototype>(t,mosaic);

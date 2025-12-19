@@ -1,7 +1,4 @@
 #include <qglobal.h>
-#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
-#include <QDebug>
-#endif
 #include "gui/model_editors/motif_edit/motif_maker_widget.h"
 #include "gui/model_editors/motif_edit/design_element_button.h"
 #include "gui/model_editors/motif_edit/motif_editor_widget.h"
@@ -10,7 +7,7 @@
 #include "model/makers/prototype_maker.h"
 #include "sys/sys.h"
 #include "model/prototypes/design_element.h"
-#include "gui/top/view.h"
+#include "gui/top/system_view.h"
 
 MotifMakerWidget::MotifMakerWidget() : QWidget()
 {
@@ -41,27 +38,33 @@ MotifMakerWidget::MotifMakerWidget() : QWidget()
     setLayout(motifBox);
     setMinimumWidth(610);
 
-    connect(this, &MotifMakerWidget::sig_updateView, Sys::view, &View::slot_update);
+    connect(this, &MotifMakerWidget::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
 }
 
-void MotifMakerWidget::selectPrototype()
+void MotifMakerWidget::refreshMotifMakerWidget()
 {
     static WeakProtoPtr _prototype;
     static int          _numButtons = 0;
 
     auto proto = protoMaker->getSelectedPrototype();
 
-    if (proto && proto->numDesignElements() && ((_prototype.lock() != proto) || (proto->numDesignElements() != _numButtons)))
+    if (proto && ((_prototype.lock() != proto) || (proto->numDesignElements() != _numButtons) || protoMaker->forceWidgetRefresh()))
     {
+        protoMaker->setForceWidgetRefresh(false);
+
         _prototype  = proto;
         _numButtons = proto->numDesignElements();
 
         delSelector->setup(proto);
 
-        auto del = proto->getDesignElements().last();
-        auto btn = delSelector->getButton(del);
-        delegate(btn,false,true);   // start off with a single selection
+        if (_numButtons)
+        {
+            auto del = proto->getDesignElements().last();
+            auto btn = delSelector->getButton(del);
+            delegate(btn,false,true);   // start off with a single selection
+        }
     }
+    update();
 }
 
 // when a DEL button is selected, this delgates the motif in both the motif maker and the motif editor
@@ -117,8 +120,10 @@ void MotifMakerWidget::delegate(DELBtnPtr btn, bool add, bool set)
     emit sig_updateView();
 }
 
+
 void MotifMakerWidget::update()
 {
-    delSelector->getDelegated()->update();
+    delSelector->update();
     viewerBtn->update();
+    QWidget::update();
 }

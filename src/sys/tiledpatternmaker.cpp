@@ -1,6 +1,6 @@
 /* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
- *  Copyright (c) 2016-2023 David A. Casper  email: david.casper@gmail.com
+ *  Copyright (c) 2016-2025 David A. Casper  email: david.casper@gmail.com
  *
  *  This file is part of TiledPatternMaker
  *
@@ -16,10 +16,9 @@
 #include "gui/top/controlpanel.h"
 #include "gui/top/splash_screen.h"
 #include "gui/top/split_screen.h"
-#include "gui/top/view_controller.h"
+#include "gui/top/system_view.h"
 #include "legacy/design_maker.h"
 #include "model/makers/mosaic_maker.h"
-#include "model/makers/prototype_maker.h"
 #include "model/makers/tiling_maker.h"
 #include "model/settings/configuration.h"
 #include "sys/enums/efilesystem.h"
@@ -49,10 +48,9 @@ int const TiledPatternMaker::EXIT_CODE_REBOOT = -123456789;
 
 TiledPatternMaker::TiledPatternMaker() : QObject()
 {
-    connect(this,&TiledPatternMaker::sig_start, this, &TiledPatternMaker::slot_start, Qt::QueuedConnection);
+    sys = nullptr;
 
-    splitter = nullptr;
-    sys      = nullptr;
+    connect(this,&TiledPatternMaker::sig_start, this, &TiledPatternMaker::slot_start, Qt::QueuedConnection);
 }
 
 void TiledPatternMaker::slot_start()
@@ -78,54 +76,80 @@ void TiledPatternMaker::slot_start()
     qDebug() << "memory management test complete";
 #endif
 
-    // split-screen
-    if (Sys::config->splitScreen)
-    {
-        splitScreen();
-    }
-
     Sys::controlPanel->show();
     Sys::controlPanel->setWindowState((Sys::controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
     Sys::controlPanel->raise();
     Sys::controlPanel->activateWindow();
 
-    if (Sys::config->splitScreen)
+    if (Sys::splitter)
     {
         int width = Sys::controlPanel->width();
-        splitter->setLHSWidth(width);
+        Sys::splitter->setLHSWidth(width);
     }
 
-    Sys::view->show();
-    Sys::view->raise();
+    Sys::viewController->showView();
+    Sys::viewController->raiseView();
+
+    // move template files if necessary
+    FileServices::relocateTemplateFiles();
 
     connect(this, &TiledPatternMaker::sig_floatPages,      Sys::controlPanel->getPageController(), &PanelPageController::slot_floatPages,Qt::QueuedConnection);
-    connect(this, &TiledPatternMaker::sig_reconstructView, Sys::viewController, &ViewController::slot_reconstructView);
+    connect(this, &TiledPatternMaker::sig_subAttachPage,   Sys::controlPanel->getPageController(), &PanelPageController::slot_subAttachPage,Qt::QueuedConnection);
+    connect(this, &TiledPatternMaker::sig_reconstructView, Sys::viewController, &SystemViewController::slot_reconstructView);
     connect(this, &TiledPatternMaker::sig_primaryDisplay,  this,                &TiledPatternMaker::slot_bringToPrimaryScreen, Qt::QueuedConnection);
 
-    connect(Sys::view,          &View::sig_close,           this, &TiledPatternMaker::slot_stop);
+    connect(Sys::sysview,       &SystemView::sig_close,     this, &TiledPatternMaker::slot_stop);
     connect(Sys::controlPanel,  &ControlPanel::sig_close,   this, &TiledPatternMaker::slot_stop);
     connect(Sys::mapEditor,     &MapEditor::sig_close,      this, &TiledPatternMaker::slot_stop);
     connect(Sys::tilingMaker,   &TilingMaker::sig_close,    this, &TiledPatternMaker::slot_stop);
 
-    emit sig_floatPages();
+    if (Sys::splitter && Sys::config->bigScreen)
+    {
+        emit sig_subAttachPage();
+    }
+    else
+    {
+        emit sig_floatPages();
+    }
 
     // get started - kick off
-    if (Sys::config->autoLoadStyles && !Sys::config->lastLoadedMosaic.isEmpty())
+    if (Sys::config->autoLoadLast)
     {
-        VersionedFile vfile = FileServices::getFile(Sys::config->lastLoadedMosaic,FILE_MOSAIC);
-        Sys::mosaicMaker->loadMosaic(vfile);
-    }
-    else if (Sys::config->autoLoadTiling &&  !Sys::config->lastLoadedTiling.isEmpty())
-    {
-        VersionedFile vfile = FileServices::getFile(Sys::config->lastLoadedTiling,FILE_TILING);
-        Sys::tilingMaker->loadTiling(vfile,TILM_LOAD_SINGLE);
-    }
-    else if (Sys::config->autoLoadDesigns)
-    {
-        eDesign design   = (eDesign)designs.key(Sys::config->lastLoadedLegacy.get());
-        Sys::designMaker->slot_loadDesign(design);
+        switch(Sys::config->lastLoadedType)
+        {
+        case LT_MOSAIC:
+        {
+            VersionedFile vfile = FileServices::getFile(Sys::config->lastLoadedMosaic,FILE_MOSAIC);
+            if (!vfile.isEmpty())
+            {
+                Sys::mosaicMaker->loadMosaic(vfile);
+            }
+        }   break;
+
+        case LT_TILING:
+        {
+            VersionedFile vfile = FileServices::getFile(Sys::config->lastLoadedTiling,FILE_TILING);
+            if (!vfile.isEmpty())
+            {
+                Sys::tilingMaker->loadTiling(vfile,TILM_LOAD_SINGLE);
+            }
+        }   break;
+
+        case LT_LEGACY:
+        {
+            eDesign design = (eDesign)designs.key(Sys::config->lastLoadedLegacy.get());
+            if (design != NO_DESIGN)
+            {
+                Sys::designMaker->slot_loadDesign(design);
+            }
+        }   break;
+
+        case LT_UNDEFINED:
+            break;
+        }
     }
 
+    // re-eanble lock status after auto-loads are complete
     Sys::config->lockView = oldPanelLock;    // restore
     emit sig_lockStatus();
 
@@ -139,7 +163,7 @@ void TiledPatternMaker::slot_start()
 
     Sys::splash->remove();
 
-    qInfo() << __FUNCTION__ << " - started";
+    qInfo() << "TiledPatternMaker::slot_start" << " - started";
 }
 
 TiledPatternMaker::~TiledPatternMaker()
@@ -170,20 +194,80 @@ void TiledPatternMaker::setPaletteColors()
 #if 0
     // reverse engineer existing palatte
     QPalette apalette = QApplication::palette();
-    qDebug() << apalette.color(QPalette::Window).name();
     qDebug() << apalette.color(QPalette::WindowText).name();
-    qDebug() << apalette.color(QPalette::Base).name();
-    qDebug() << apalette.color(QPalette::AlternateBase).name();
-    qDebug() << apalette.color(QPalette::ToolTipBase).name();
-    qDebug() << apalette.color(QPalette::ToolTipText).name();
-    qDebug() << apalette.color(QPalette::Text).name();
     qDebug() << apalette.color(QPalette::Button).name();
-    qDebug() << apalette.color(QPalette::ButtonText).name();
+    qDebug() << apalette.color(QPalette::Light).name();
+    qDebug() << apalette.color(QPalette::Midlight).name();
+    qDebug() << apalette.color(QPalette::Dark).name();
+    qDebug() << apalette.color(QPalette::Mid).name();
+    qDebug() << apalette.color(QPalette::Text).name();
     qDebug() << apalette.color(QPalette::BrightText).name();
-    qDebug() << apalette.color(QPalette::Link).name();
+    qDebug() << apalette.color(QPalette::ButtonText).name();
+    qDebug() << apalette.color(QPalette::Base).name();
+    qDebug() << apalette.color(QPalette::Window).name();
+    qDebug() << apalette.color(QPalette::Shadow).name();
     qDebug() << apalette.color(QPalette::Highlight).name();
     qDebug() << apalette.color(QPalette::HighlightedText).name();
+    qDebug() << apalette.color(QPalette::Link).name();
+    qDebug() << apalette.color(QPalette::LinkVisited).name();
+    qDebug() << apalette.color(QPalette::AlternateBase).name();
+    qDebug() << apalette.color(QPalette::NoRole).name();
+    qDebug() << apalette.color(QPalette::ToolTipBase).name();
+    qDebug() << apalette.color(QPalette::ToolTipText).name();
+    qDebug() << apalette.color(QPalette::PlaceholderText).name();
+    qDebug() << apalette.color(QPalette::Accent).name();
     return;
+
+//Light
+const QString lightColors[QPalette::NColorRoles] = {
+"#000000",  //  WindowText
+"#f0f0f0",  //  Button
+"#ffffff",  //  Light
+"#e3e3e3",  //  Midlight
+"#a0a0a0",  //  Dark
+"#a0a0a0",  //  Mid
+"#000000",  //  Text
+"#ffffff",  //  BrightText
+"#000000",  //  ButtonText
+"#ffffff",  //  Base
+"#f0f0f0",  //  Window
+"#696969",  //  Shadow
+"#0078d4",  //  Highlight
+"#ffffff",  //  HighlightedText
+"#003e92",  //  Link
+"#001a68",  //  LinkVisitied
+"#e9e7e3",  //  AlternateBase
+"#000000",  //  NoRole
+"#ffffdc",  //  ToolTipBase
+"#000000",  //  ToolTipText
+"#000000",  //  PlaceholderText
+"#0067c0",  //  Accent
+};
+
+const QString darkColors[QPalette::NColorRoles] = {
+"#ffffff",  //
+"#3c3c3c",  //
+"#787878",  //
+"#5a5a5a",  //
+"#1e1e1e",  //
+"#282828",  //
+"#ffffff",  //
+"#99ebff",  //
+"#ffffff",  //
+"#2d2d2d",  //
+"#1e1e1e",  //
+"#000000",  //
+"#0078d4",  //
+"#ffffff",  //
+"#99ebff",  //
+"#4cc2ff",  //
+"#001a68",  //
+"#000000",  //
+"#3c3c3c",  //
+"#d4d4d4",  //
+"#ffffff",  //
+"#4cc2ff",  //
+};
 #endif
 
     QPalette palette;
@@ -227,66 +311,30 @@ void TiledPatternMaker::setPaletteColors()
     QApplication::setPalette(palette);
 }
 
-void TiledPatternMaker::slot_render()
-{
-    TilingPtr dummy;
-    Sys::prototypeMaker->sm_takeUp(dummy, PROM_RENDER);
-
-    if (!Sys::config->lockView)
-    {
-        Sys::controlPanel->delegateView(VIEW_MOSAIC);
-    }
-    emit sig_reconstructView();
-}
-
 void TiledPatternMaker::slot_bringToPrimaryScreen()
 {
     QScreen * primary = qApp->primaryScreen();
 
-    QWindow * wh = Sys::view->windowHandle();
+    QWindow * wh = Sys::viewController->windowHandle();
     if (wh)
     {
         wh->setScreen(primary);
-        Sys::view->move(primary->geometry().center() - Sys::view->rect().center());
-        Sys::view->setWindowState((Sys::view->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-        Sys::view->raise();  // for MacOS
-        Sys::view->activateWindow();  // for windows
-        Sys::controlPanel->move(primary->geometry().center() - Sys::view->rect().center());
+
+        Sys::viewController->move(primary->geometry().center() - Sys::viewController->viewRect().center());
+        Sys::viewController->setWindowState((Sys::viewController->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+        Sys::viewController->raiseView();  // for MacOS
+        Sys::viewController->activateWindow();  // for windows
+
+        Sys::controlPanel->move(primary->geometry().center() - Sys::viewController->viewRect().center());
         Sys::controlPanel->setWindowState((Sys::controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
         Sys::controlPanel->raise();  // for MacOS
         Sys::controlPanel->activateWindow();  // for windows
     }
-}
 
-void TiledPatternMaker::splitScreen()
-{
-    Q_ASSERT(Sys::config->splitScreen);
-
-    // save current positions
-    QSettings s;
-    s.setValue((QString("viewPos/%1").arg(Sys::appInstance)),Sys::view->pos());
-    s.setValue(QString("panelPos/%1").arg(Sys::appInstance), Sys::controlPanel->pos());
-
-    // split the screen
-    Q_ASSERT(!splitter);
-    splitter = new SplitScreen();
-    splitter->show();
-}
-
-void TiledPatternMaker::appDebugBreak()
-{
-#ifdef QT_DEBUG
-    qWarning() << "appDebugBreak";
-#ifdef Q_OS_WINDOWS
-    DebugBreak();
-#else
-    raise(SIGTRAP);
-#endif
-#endif
+    emit sig_imageToPrimary();
 }
 
 #ifdef TEST_MEMORY_LEAKS
-
 void TiledPatternMaker::testMemoryManagement()
 {
     Sys::dumpRefs();
@@ -294,7 +342,8 @@ void TiledPatternMaker::testMemoryManagement()
     // test tiling
     TilingManager  * tm = new TilingManager;
     VersionedName vn("12-6-Trigon");
-    TilingPtr tp = tm->loadTiling(vn,TILM_LOAD_FROM_MOSAIC);
+    VersionedFile vf = FileServices::getFile(vn, FILE_TILING);
+    TilingPtr tp = tm->loadTiling(vf,TILM_LOAD_FROM_MOSAIC);
     Sys::dumpRefs();
 
     delete tm;
@@ -307,7 +356,7 @@ void TiledPatternMaker::testMemoryManagement()
     VersionedName vname("12-6-trigon.v4");
     VersionedFile file = FileServices::getFile(vname,FILE_MOSAIC);
     QFile afile(file.getVersionedName().get());
-    MosaicReader * loader = new MosaicReader;
+	MosaicReader* loader = new MosaicReader(Sys::viewController);
     auto mosaic = loader->readXML(file);
     Sys::dumpRefs();
 
@@ -317,5 +366,4 @@ void TiledPatternMaker::testMemoryManagement()
     mosaic.reset();
     Sys::dumpRefs();
 }
-
 #endif

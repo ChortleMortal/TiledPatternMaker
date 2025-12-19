@@ -23,3 +23,11 @@ release
 /src/uic_wrapper.bat
 /src/build/*
 /logs/*
+*.vs*
+*autogen*
+*.cmake*
+*src/out*
+#/src/CmakePresets.json
+/src/CmakeUserPresets.json
+/src/.qtcreator*
+

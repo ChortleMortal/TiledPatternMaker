@@ -24,9 +24,11 @@ public:
 
     void setCurrentPage(QString name);
     panel_page * getCurrentPage();
+    panel_page * getPage(QString name);
 
 public slots:
     void    slot_floatPages();
+    void    slot_subAttachPage();
     void    slot_itemDetachPanelPage(QListWidgetItem * item);
     void    slot_selectPanelPage(QListWidgetItem * item);
     void    slot_detachWidget(QString name);

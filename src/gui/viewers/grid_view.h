@@ -6,7 +6,7 @@
 #include "gui/viewers/geo_graphics.h"
 
 typedef std::shared_ptr<class PlacedTileSelector>   PlacedTileSelectorPtr;
-typedef std::shared_ptr<class Map>            MapPtr;
+typedef std::shared_ptr<class Map>                  MapPtr;
 
 class GridView : public LayerController
 {
@@ -17,9 +17,6 @@ public:
     void paint(QPainter * painter ) override;
 
     bool nearGridPoint(QPointF spt, QPointF & foundGridPoint);  // used by tiling maker
-
-    const Xform &   getModelXform() override;
-    void            setModelXform(const Xform & xf, bool update) override;
 
 protected:
     void draw(QPainter * painter);
@@ -33,27 +30,18 @@ protected:
     void drawScreenUnitsCanvasCentered();
     void drawScreenUnitsModelCentered();
 
-    eViewType iamaLayer() override { return VIEW_GRID; }
+    void drawCenters();
+
     void iamaLayerController() override {}
 
     static int refs;
 
 public slots:
-    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    void slot_mousePressed(QPointF spt, Qt::MouseButton btn) override;
     void slot_mouseDragged(QPointF spt)       override;
-    void slot_mouseTranslate(QPointF pt)      override;
     void slot_mouseMoved(QPointF spt)         override;
     void slot_mouseReleased(QPointF spt)      override;
     void slot_mouseDoublePressed(QPointF spt) override;
-    void slot_setCenter(QPointF spt)          override;
-
-    void slot_wheel_scale(qreal delta)  override;
-    void slot_wheel_rotate(qreal delta) override;
-
-    void slot_scale(int amount)  override;
-    void slot_rotate(int amount) override;
-    void slot_moveX(qreal amount)  override;
-    void slot_moveY(qreal amount)  override;
 
 private:
     void drawScreenUnits(QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step);

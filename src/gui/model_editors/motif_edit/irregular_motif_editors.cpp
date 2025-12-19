@@ -462,7 +462,7 @@ IrregularRosetteEditor::IrregularRosetteEditor(QString aname, DesignElementPtr d
     connect(q_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(r_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
-    connect(version_combo,  QOverload<int>::of(&QComboBox::currentIndexChanged), this,[this]() { editorToMotif(true);});
+    connect(version_combo,  &QComboBox::currentIndexChanged, this,[this]() { editorToMotif(true);});
 
     w_rose.reset();
     wDel = del;
@@ -598,7 +598,7 @@ IrregularStarEditor::IrregularStarEditor(QString aname, DesignElementPtr del, bo
 
     connect(d_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
-    connect(version_combo,  QOverload<int>::of(&QComboBox::currentIndexChanged), this,[this]() { editorToMotif(true);});
+    connect(version_combo, &QComboBox::currentIndexChanged, this,[this]() { editorToMotif(true);});
 
     w_star.reset();
     wDel = del;

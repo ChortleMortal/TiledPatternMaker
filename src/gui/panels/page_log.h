@@ -2,7 +2,7 @@
 #ifndef PAGE_LOG_H
 #define PAGE_LOG_H
 
-class TextEditorWidget;
+class LogWidget;
 
 #include <QScrollBar>
 #include <QDialog>
@@ -43,7 +43,7 @@ private:
     TextEditPtr   savedText;
     QLineEdit   * search;
 
-    TextEditorWidget * tew;
+    LogWidget * tew;
 
     QPushButton * btnViewLog;
 

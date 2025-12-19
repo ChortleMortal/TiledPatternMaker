@@ -1,9 +1,10 @@
 #include <qapplication.h>
+#include "gui/top/controlpanel.h"
 #include "gui/top/splash_screen.h"
-#include "gui/top/view.h"
+#include "gui/top/system_view.h"
 #include "sys/sys.h"
 
-SplashScreen::SplashScreen() : QLabel(Sys::view)
+SplashScreen::SplashScreen() : QLabel(Sys::sysview)
 {
     QPixmap pm(":/tpm.png");
     QSize qs = pm.size();
@@ -16,31 +17,64 @@ SplashScreen::SplashScreen() : QLabel(Sys::view)
     f.setPointSize(16);
     setFont(f);
 
+    disable(false);
+
     hide();
 }
 
-void SplashScreen::display(QString &  txt)
+void SplashScreen::display(QString &  txt, bool panelToo)
 {
+    if (_disable) return;
+
     msgStack.push(txt);
 
     draw();
+
+    if (panelToo)
+    {
+        Sys::controlPanel->overridePagelStatus(txt);
+    }
+}
+
+void SplashScreen::replace(QString &  txt, bool panelToo)
+{
+    if (!msgStack.isEmpty())
+    {
+        msgStack.pop();
+    }
+    msgStack.push(txt);
+    draw();
+
+    if (panelToo)
+    {
+        Sys::controlPanel->overridePagelStatus(txt);
+    }
 }
 
 void SplashScreen::display(QString &&  txt)
 {
+    if (_disable) return;
+
     msgStack.push(txt);
 
     draw();
 }
 
-void SplashScreen::remove()
+void SplashScreen::remove(bool panelToo)
 {
+    if (_disable) return;
+
     if (!msgStack.isEmpty())
     {
         msgStack.pop();
     }
 
     draw();
+
+    if (panelToo)
+    {
+        Sys::controlPanel->restorePageStatus();
+    }
 }
 
 void SplashScreen::draw()
@@ -51,10 +85,10 @@ void SplashScreen::draw()
     }
     else
     {
-        if (Sys::view)
+        if (Sys::sysview)
         {
-            this->setParent(Sys::view);
-            QPoint pos = Sys::view->rect().center() - rect().center();
+            this->setParent(Sys::sysview);
+            QPoint pos = Sys::viewController->viewRect().center() - rect().center();
             move(pos);
         }
 
@@ -69,19 +103,24 @@ void SplashScreen::draw()
         }
         setText(txt);
 
-        if (Sys::view)
-        {
-            Sys::view->appSuspendPaint(true);
-        }
+        if (Sys::viewController)
+            Sys::viewController->appSuspendPaint(true);
 
         //repaint();
         update();
         qApp->processEvents();
 
-        if (Sys::view)
-        {
-            Sys::view->appSuspendPaint(false);
-        }
+        if (Sys::viewController)
+            Sys::viewController->appSuspendPaint(false);
     }
 }
 
+void SplashScreen::disable(bool disable)
+{
+    _disable = disable;
+
+    if (disable)
+    {
+        msgStack.clear();
+    }
+}

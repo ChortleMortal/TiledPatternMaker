@@ -10,6 +10,7 @@ public:
 
     FillData& operator=(const FillData& rhs);
     bool operator==(const FillData & other) const;
+    bool operator != (const FillData & other) const { return !(*this == other); }
 
     bool isSet() const { return _set; }
     void set(bool singleton, int minX, int minY, int maxX, int maxY);

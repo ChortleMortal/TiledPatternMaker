@@ -1,31 +1,34 @@
 #include <QApplication>
+#include <QMessageBox>
 
-#include "model/motifs/motif.h"
-#include "sys/geometry/circle.h"
-#include "sys/geometry/arcdata.h"
-#include "sys/geometry/dcel.h"
-#include "sys/geometry/edge.h"
-#include "sys/geometry/geo.h"
-#include "sys/geometry/map.h"
-#include "sys/geometry/transform.h"
-#include "sys/geometry/vertex.h"
-#include "gui/viewers/gui_modes.h"
-#include "model/makers/crop_maker.h"
 #include "gui/map_editor/map_editor.h"
 #include "gui/map_editor/map_editor_db.h"
 #include "gui/map_editor/map_selection.h"
 #include "gui/model_editors/motif_edit/design_element_button.h"
+#include "gui/top/system_view_controller.h"
+#include "gui/viewers/crop_viewer.h"
 #include "gui/viewers/geo_graphics.h"
+#include "gui/viewers/gui_modes.h"
+#include "gui/viewers/map_editor_view.h"
+#include "model/makers/crop_maker.h"
+#include "model/motifs/motif.h"
 #include "model/prototypes/design_element.h"
 #include "model/prototypes/prototype.h"
 #include "model/settings/configuration.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
-#include "gui/viewers/crop_view.h"
-#include "gui/viewers/map_editor_view.h"
-#include "gui/top/view_controller.h"
+#include "sys/geometry/arcdata.h"
+#include "sys/geometry/circle.h"
+#include "sys/geometry/dcel.h"
+#include "sys/geometry/edge.h"
+#include "sys/geometry/geo.h"
+#include "sys/geometry/map.h"
+#include "sys/geometry/map_cleanser.h"
+#include "sys/geometry/map_verifier.h"
+#include "sys/geometry/transform.h"
+#include "sys/geometry/vertex.h"
 
-MapEditorView::MapEditorView() : LayerController("MapEditorView",true)
+MapEditorView::MapEditorView() : LayerController(VIEW_MAP_EDITOR,DERIVED,"Map Editor")
 {
     config      = Sys::config;
     debugMouse  = false;
@@ -51,7 +54,7 @@ void MapEditorView::paint(QPainter *painter)
     // set up view transform
     viewT       = getLayerTransform();
     viewTinv    = viewT.inverted();
-    //qDebug().noquote() << "MapEditorView::paint viewT" << Transform::toInfoString(viewT);
+    //qDebug().noquote() << "MapEditorView::paint viewT" << Transform::info(viewT);
 
     // draw
     draw(painter);
@@ -67,7 +70,8 @@ void MapEditorView::draw(QPainter *painter )
 
     // TODO this assumes that composite and sources have the sanme source characteristics
     // A better scheme would be to put source design element references into composite data as an array
-    for (const MapEditorLayer * layer : db->getComposableLayers())
+    auto vec = db->getComposableLayers();
+    for (const MapEditorLayer * layer : std::as_const(vec))
     {
         DesignElementPtr del = layer->getDel();
         if (del)
@@ -110,7 +114,7 @@ void MapEditorView::draw(QPainter *painter )
 
     drawPoints(painter,selector->points);
 
-    for (const auto & sel : selector->getCurrentSelections())
+    for (auto & sel : selector->getCurrentSelections())
     {
         eMapSelection type = sel->getType();
         if (type == MAP_EDGE && db->showMap)
@@ -199,7 +203,7 @@ void MapEditorView::drawMap(QPainter * painter, eMapedLayer layer, QColor color)
     QPen pen(color,mapLineWidth);
     painter->setPen(pen);
 
-    map->paint(painter,t,db->showDirnPoints,db->showArcCentre);
+    map->paint(painter,t,db->showDirnPoints,db->showArcCentre,false,true);
 }
 
 void MapEditorView::drawDCEL(QPainter * painter)
@@ -214,7 +218,7 @@ void MapEditorView::drawDCEL(QPainter * painter)
     QPen pen(Qt::green,mapLineWidth);
     painter->setPen(pen);
 
-    dcel->paint(painter,viewT,db->showDirnPoints,db->showArcCentre);
+    dcel->paint(painter,viewT,db->showDirnPoints,db->showArcCentre,false,true);
 }
 
 void MapEditorView::drawTile(QPainter * painter, DesignElementPtr del)
@@ -344,7 +348,7 @@ void MapEditorView::drawConstructionLines(QPainter * painter)
     if (!db->showConstructionLines)
         return;
 
-    QColor color = (Sys::view->getViewBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
+    QColor color = (Sys::viewController->getViewBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
 
     painter->setPen(QPen(color,constructionLineWidth));
     for (const auto & line : std::as_const(db->constructionLines))
@@ -358,7 +362,7 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
     if (!db->showConstructionLines)
         return;
 
-    QColor color = (Sys::view->getViewBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
+    QColor color = (Sys::viewController->getViewBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
 
     for (const auto & circle :  std::as_const(db->constructionCircles))
     {
@@ -384,12 +388,12 @@ QTransform MapEditorView::getPlacement(TilePtr tile)
     if (proto)
     {
         auto tiling = proto->getTiling();
-        t = tiling->getFirstPlacement(tile);
+        t = tiling->unit().getFirstPlacement(tile);
     }
     return t;
 }
 
-void MapEditorView::startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton)
+void MapEditorView::startMouseInteraction(QPointF spt, Qt::MouseButton mouseButton)
 {
     if (Sys::cropViewer->getShowCrop(CM_MAPED))
     {
@@ -405,11 +409,17 @@ void MapEditorView::startMouseInteraction(QPointF spt, enum Qt::MouseButton mous
             switch (sel->getType())
             {
             case MAP_VERTEX:
-                db->setMouseInteraction(std::make_shared<MoveVertex>(sel->getVertex(), spt));
-                return;
+            {
+                auto map = db->getEditMap();
+                NeighbourMap  * nmap = new NeighbourMap(map);
+                db->setMouseInteraction(std::make_shared<MoveVertex>(nmap,sel->getVertex(), spt));
+            }   return;
             case MAP_EDGE:
-                db->setMouseInteraction(std::make_shared<MoveEdge>(sel->getEdge(), spt));
-                return;
+            {
+                auto map = db->getEditMap();
+                NeighbourMap  * nmap = new NeighbourMap(map);
+                db->setMouseInteraction(std::make_shared<MoveEdge>(nmap,sel->getEdge(), spt));
+            }   return;
             default:
                 break;
             }
@@ -425,80 +435,6 @@ void MapEditorView::startMouseInteraction(QPointF spt, enum Qt::MouseButton mous
     db->resetMouseInteraction();
 }
 
-void MapEditorView::setModelXform(const Xform & xf, bool update)
-{
-    Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
-    xf_model = xf;
-    forceLayerRecalc(update);
-}
-
-const Xform & MapEditorView::getModelXform()
-{
-    Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.info() << (isUnique() ? "unique" : "common");
-    return xf_model;
-}
-
-void MapEditorView::slot_wheel_rotate(qreal delta)
-{
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
-
-    if (Sys::guiModes->getKbdMode(KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getModelXform();
-        xf.setRotateDegrees(xf.getRotateDegrees() + delta);
-        setModelXform(xf,true);
-    }
-}
-
-void MapEditorView::slot_scale(int amount)
-{
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
-
-    if (Sys::guiModes->getKbdMode(KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getModelXform();
-        xf.setScale(xf.getScale() * (1 + static_cast<qreal>(amount)/100.0));
-        setModelXform(xf,true);
-    }
-}
-
-void MapEditorView::slot_rotate(int amount)
-{
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
-
-    if (Sys::guiModes->getKbdMode(KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getModelXform();
-        xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-        setModelXform(xf,true);
-    }
-}
-
-void MapEditorView:: slot_moveX(qreal amount)
-{
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
-
-    if (Sys::guiModes->getKbdMode(KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getModelXform();
-        xf.setTranslateX(xf.getTranslateX() + amount);
-        setModelXform(xf,true);
-    }
-}
-
-void MapEditorView::slot_moveY(qreal amount)
-{
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
-
-    if (Sys::guiModes->getKbdMode(KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getModelXform();
-        xf.setTranslateY(xf.getTranslateY() + amount);
-        setModelXform(xf,true);
-    }
-}
 
 //////////////////////////////////////////////////////////////////
 ///
@@ -506,70 +442,9 @@ void MapEditorView::slot_moveY(qreal amount)
 ///
 //////////////////////////////////////////////////////////////////
 
-#if 0
-const Xform  & MapEditorView::getCanvasXform()
+void MapEditorView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 {
-    switch (db->getMapType(db->getEditMap()))
-    {
-    case MAPED_TYPE_UNKNOWN:
-    case MAPED_LOADED_FROM_FILE:
-    case MAPED_TYPE_CREATED:
-    case MAPED_TYPE_CROP:
-        return xf_canvas;
-
-    case MAPED_LOADED_FROM_MOTIF:
-    case MAPED_LOADED_FROM_FILE_MOTIF:
-    case MAPED_TYPE_COMPOSITE:
-    case MAPED_TYPE_COMPOSITE_MOTIF:
-
-    case MAPED_LOADED_FROM_MOSAIC:
-    case MAPED_LOADED_FROM_MOTIF_PROTOTYPE:
-    case MAPED_LOADED_FROM_TILING_UNIT:
-    case MAPED_LOADED_FROM_TILING_REPEATED:
-        return Layer::getCanvasXform();
-    }
-    return xf_canvas;   // makes compiler happy
-}
-
-void MapEditorView::setCanvasXform(const Xform & xf)
-{
-    switch (db->getMapType(db->getEditMap()))
-    {
-    case MAPED_TYPE_UNKNOWN:
-    case MAPED_LOADED_FROM_FILE:
-    case MAPED_TYPE_CREATED:
-    case MAPED_TYPE_COMPOSITE:
-    case MAPED_TYPE_CROP:
-        xf_canvas = xf;
-        break;
-
-    case MAPED_LOADED_FROM_MOTIF:
-    case MAPED_LOADED_FROM_FILE_MOTIF:
-    case MAPED_TYPE_COMPOSITE_MOTIF:
-
-    case MAPED_LOADED_FROM_MOSAIC:
-    case MAPED_LOADED_FROM_MOTIF_PROTOTYPE:
-    case MAPED_LOADED_FROM_TILING_UNIT:
-    case MAPED_LOADED_FROM_TILING_REPEATED:
-        Layer::setCanvasXform(xf);
-        break;
-    }
-}
-#endif
-
-void MapEditorView::slot_setCenter(QPointF spt)
-{
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
-
-    if (Sys::guiModes->getKbdMode(KBD_MODE_XFORM_VIEW) || (Sys::guiModes->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
-    {
-        setCenterScreenUnits(spt);
-    }
-}
-
-void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
-{
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
+    if (!viewControl()->isEnabled(VIEW_MAP_EDITOR)) return;
 
     setMousePos(spt);
 
@@ -597,9 +472,9 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 
     case MAPED_MOUSE_CREATE_LINE:
     {
-        QVector<EdgePtr> qvep;
+        EdgeSet qvep;
         SelectionSet set;
-        for (const auto & map : db->getMapLayerMaps())
+        for (auto & map : db->getMapLayerMaps())
         {
             selector->findEdges(map,mousePos, qvep, set);
         }
@@ -610,20 +485,35 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             {
                 qreal len    = config->mapedLen;
                 EdgePtr ep   = set.first()->getEdge();
-                
-                QLineF line  = Geo::createLine(ep->getLine(),ep->getMidPoint(),qDegreesToRadians(config->mapedAngle),len);
+                QLineF eline = ep->getLine();
+                QPointF mid  = ep->getMidPoint();
+
+                // can't use ep below since it becomes modified
+                QLineF line  = Geo::createLine(eline,mid,qDegreesToRadians(config->mapedAngle),len);
                 VertexPtr v1 = map->insertVertex(line.p1());
                 VertexPtr v2 = map->insertVertex(line.p2());
                 map->insertEdge(v1,v2);
                 
-                line  = Geo::createLine(ep->getLine(),ep->getMidPoint(),qDegreesToRadians(-config->mapedAngle),len);
-                v1 = map->insertVertex(line.p1());
-                v2 = map->insertVertex(line.p2());
-                map->insertEdge(v1,v2);
+                auto line2  = Geo::createLine(eline,mid,qDegreesToRadians(-config->mapedAngle),len);
+                auto v3 = map->insertVertex(line2.p1());
+                auto v4 = map->insertVertex(line2.p2());
+                map->insertEdge(v3,v4);
+            }
+            else
+            {
+                QMessageBox box((QWidget*)Sys::sysview);
+                box.setIcon(QMessageBox::Warning);
+                box.setText("Cannot create lines here.\nClick on an existing map line to insert.");
+                box.exec();
             }
         }
         else
-            qDebug() << "no edge";
+        {
+            QMessageBox box((QWidget*)Sys::sysview);
+            box.setIcon(QMessageBox::Warning);
+            box.setText("Cannot create lines here.\nClick on an existing map line to insert.");
+            box.exec();
+        }
         break;
     }
 
@@ -643,8 +533,12 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
                 if (map)
                 {
                     map->removeEdge(sel->getEdge());
-                    map->cleanse(joinupColinearEdges,Sys::config->mapedMergeSensitivity);
-                    map->verify();
+
+                    MapCleanser mc(map);
+                    mc.cleanse(joinupColinearEdges,Sys::config->mapedMergeSensitivity);
+
+                    MapVerifier mv(map);
+                    mv.verify();
                 }
                 break;
             }
@@ -669,9 +563,9 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 
     case MAPED_MOUSE_SPLIT_LINE:
     {
-        QVector<EdgePtr> qvep;
+        EdgeSet qvep;
         SelectionSet set;
-        for (const auto & map : db->getMapLayerMaps())
+        for (auto & map : db->getMapLayerMaps())
         {
             selector->findEdges(map, mousePos, qvep, set);
         }
@@ -681,22 +575,24 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             for (const auto & sel : std::as_const(set))
             {
                 map->splitEdge(sel->getEdge());
-                map->verify();
+
+                MapVerifier mv(map);
+                mv.verify();
             }
             forceRedraw();
             //setMapedMouseMode(MAPED_MOUSE_NONE);
         }
     }
-        break;
+    break;
 
     case MAPED_MOUSE_EXTEND_LINE_P1:
         set = selector->findSelectionsUsingDB(mousePos);
-        db->setMouseInteraction(std::make_shared<ExtendLine>(set,mousePos,true));
+        db->setMouseInteraction(std::make_shared<ExtendLineP1>(set,mousePos));
         break;
 
     case MAPED_MOUSE_EXTEND_LINE_P2:
         set = selector->findSelectionsUsingDB(mousePos);
-        db->setMouseInteraction(std::make_shared<ExtendLine>(set,mousePos,false));
+        db->setMouseInteraction(std::make_shared<ExtendLineP2>(set,mousePos));
         break;
 
     case MAPED_MOUSE_CONSTRUCTION_CIRCLES:
@@ -738,16 +634,11 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         qDebug().noquote() << "press end:"  << mma->desc;
     else
         qDebug() << "press end: no mouse_interaction";
-
-    if (Sys::guiModes->getMouseMode(MOUSE_MODE_CENTER))
-    {
-        setCenterScreenUnits(mousePos);
-    }
 }
 
 void MapEditorView::slot_mouseDragged(QPointF spt)
 {
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
+    if (!viewControl()->isEnabled(VIEW_MAP_EDITOR)) return;
 
     setMousePos(spt);
 
@@ -764,22 +655,10 @@ void MapEditorView::slot_mouseDragged(QPointF spt)
     forceRedraw();
 }
 
-void MapEditorView::slot_mouseTranslate(QPointF pt)
-{
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
-
-    if (Sys::guiModes->getKbdMode(KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getModelXform();
-        xf.setTranslateX(xf.getTranslateX() + pt.x());
-        xf.setTranslateY(xf.getTranslateY() + pt.y());
-        setModelXform(xf,true);
-    }
-}
 
 void MapEditorView::slot_mouseMoved(QPointF spt)
 {
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
+    if (!viewControl()->isEnabled(VIEW_MAP_EDITOR)) return;
 
     setMousePos(spt);
 
@@ -792,7 +671,7 @@ void MapEditorView::slot_mouseMoved(QPointF spt)
 
 void MapEditorView::slot_mouseReleased(QPointF spt)
 {
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
+    if (!viewControl()->isEnabled(VIEW_MAP_EDITOR)) return;
 
     setMousePos(spt);
 
@@ -808,18 +687,6 @@ void MapEditorView::slot_mouseReleased(QPointF spt)
 
 void MapEditorView::slot_mouseDoublePressed(QPointF spt)
 { Q_UNUSED(spt); }
-
-void MapEditorView::slot_wheel_scale(qreal delta)
-{
-    if (!Sys::view->isActiveLayer(VIEW_MAP_EDITOR)) return;
-
-    if (Sys::guiModes->getKbdMode( KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getModelXform();
-        xf.setScale(xf.getScale() * (1.0 + delta));
-        setModelXform(xf,true);
-    }
-}
 
 void MapEditorView::setMousePos(QPointF pt)
 {

@@ -7,7 +7,7 @@
 #endif
 
 #include "sys/geometry/edge.h"
-#include "sys/geometry/edgepoly.h"
+#include "sys/geometry/edge_poly.h"
 #include "sys/geometry/geo.h"
 #include "sys/geometry/loose.h"
 #include "sys/geometry/vertex.h"
@@ -70,9 +70,16 @@ qreal Geo::dist2(const QPointF & pt, const QPointF & other )
     return dx * dx + dy * dy;
 }
 
-qreal Geo::dist( QPointF pt, QPointF other )
+qreal Geo::dist(const QPointF & pt, const QPointF & other )
 {
-    return qSqrt( dist2(pt,other));
+    return qSqrt(dist2(pt,other));
+}
+
+QPointF Geo::nearest(const QPointF &pt, const QPointF & p1, const QPointF & p2)
+{
+    qreal d1   = dist2(pt,p1);
+    qreal d2   = dist2(p2,p2);
+    return (d1 < d2) ? p1 : p2;
 }
 
 // DAC - this is probably same as Kaplan's convex sum
@@ -98,11 +105,7 @@ bool Geo::intersectPoly(QLineF line, const QPolygonF & bounds, QPointF & interse
     for (int i=0; i < (bounds.size()-1); i++)
     {
         QLineF l2(bounds[i],bounds[i+1]);
-#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
         QLineF::IntersectType it = line.intersects(l2,&intersect);
-#else
-        QLineF::IntersectType it = line.intersect(l2,&intersect);
-#endif
         if (it == QLineF::BoundedIntersection)
         {
             return true;
@@ -131,11 +134,7 @@ QLineF Geo::clipLine(QLineF line,QPolygonF bounds)
     for (int i=0; i < (bounds.count()-1); i++)
     {
         QLineF l2 = QLineF(bounds.at(i), bounds.at(i+1));
-#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
         if (line.intersects(l2,&clipped) == QLineF::BoundedIntersection)
-#else
-        if (line.intersect(l2,&clipped) == QLineF::BoundedIntersection)
-#endif
         {
             line.setP2(clipped);
             return line;
@@ -158,6 +157,44 @@ QLineF Geo::createLine(QLineF line, QPointF mid, qreal angle, qreal length)
     qreal y1 = mid.y() - (length * qSin(new_angle));
 
     return QLineF(QPointF(x1,y1), QPointF(x2,y2));
+}
+
+void Geo::calculateParallelLines(QPointF p1, QPointF p2, double d, QPointF* p1a, QPointF* p2a, QPointF* p1b, QPointF* p2b)
+{
+    double dx = p2.x() - p1.x();
+    double dy = p2.y() - p1.y();
+
+    // Length of the line
+    double length = sqrt(dx*dx + dy*dy);
+
+    // Perpendicular unit vector
+    double ux = -dy / length;
+    double uy = dx / length;
+
+    // Offset both QPointFs by ±d
+    p1a->setX(p1.x() + ux * d);
+    p1a->setY(p1.y() + uy * d);
+    p2a->setX(p2.x() + ux * d);
+    p2a->setY(p2.y() + uy * d);
+
+    p1b->setX(p1.x() - ux * d);
+    p1b->setY(p1.y() - uy * d);
+    p2b->setX(p2.x() - ux * d);
+    p2b->setY(p2.y() - uy * d);
+}
+
+QLineF Geo::calculateOuterParallelLine(QLineF line, double distance)
+{
+    QPointF p1p,p2p,p1m,p2m;
+    calculateParallelLines(line.p1(), line.p2(), distance, &p1p, &p2p, &p1m, &p2m);
+    return QLineF(p1p,p2p);
+}
+
+QLineF Geo::calculateInnerParallelLine(QLineF line, double distance)
+{
+    QPointF p1p,p2p,p1m,p2m;
+    calculateParallelLines(line.p1(), line.p2(), distance, &p1p, &p2p, &p1m, &p2m);
+    return QLineF(p1m,p2m);
 }
 
 QPointF Geo::normalize(QPointF & pt)
@@ -250,6 +287,110 @@ qreal Geo::sweep(QPointF joint, QPointF from, QPointF to)
     return res;
 }
 
+///////////////////////
+
+// Function to calculate the dot product of two vectors
+double dotProduct(QPointF a, QPointF b) {
+    return a.x() * b.x() + a.y() * b.y();
+}
+
+// Function to calculate the magnitude of a vector
+double magnitude(QPointF a) {
+    return std::sqrt(a.x() * a.x() + a.y() * a.y());
+}
+
+
+// Function to calculate the angle between two lines
+double angleBetweenLines(QPointF a, QPointF b, QPointF c) {
+    // Vectors representing the lines
+    QPointF vectorAB = { b.x() - a.x(), b.y() - a.y() };
+    QPointF vectorBC = { c.x() - b.x(), c.y() - b.y() };
+
+    // Dot product of the vectors
+    double dotProd = dotProduct(vectorAB, vectorBC);
+
+    // Magnitudes of the vectors
+    double magAB = magnitude(vectorAB);
+    double magBC = magnitude(vectorBC);
+
+    // Calculating the angle in radians
+    double angleRad = std::acos(dotProd / (magAB * magBC));
+
+    // Converting the angle to degrees
+    double angleDeg = angleRad * (180.0 / M_PI);
+
+    return angleDeg;
+}
+
+double calculateAngle(double x1, double y1, double x2, double y2, double x3, double y3) {
+    // Vector u = (x2 - x1, y2 - y1)
+    double ux = x2 - x1;
+    double uy = y2 - y1;
+
+    // Vector v = (x3 - x2, y3 - y2)
+    double vx = x3 - x2;
+    double vy = y3 - y2;
+
+    // Dot product u . v
+    double dotProduct = (ux * vx) + (uy * vy);
+
+    // Magnitudes of vectors
+    double magU = sqrt(ux * ux + uy * uy);
+    double magV = sqrt(vx * vx + vy * vy);
+
+    // Compute the cosine of the angle
+    double cosTheta = dotProduct / (magU * magV);
+
+    // Ensure cosTheta is within valid range [-1, 1] to avoid domain errors in acos()
+    cosTheta = qMax(-1.0, qMin(1.0, cosTheta));
+
+    // Compute the angle in radians and convert to degrees
+    double angleRad = acos(cosTheta);
+    double angleDeg = angleRad * (180.0 / M_PI);
+
+    return angleDeg;
+}
+
+double angleBetween(EdgePtr a, EdgePtr b)
+{
+    // find common pt
+    QPointF from;
+    QPointF mid;
+    QPointF to;
+    if (a->v1 == b->v1)
+    {
+        from = a->v2->pt;
+        mid  = a->v1->pt;
+        to   = b->v2->pt;
+    }
+    else if (a->v1 == b->v2)
+    {
+        from = a->v2->pt;
+        mid  = a->v1->pt;
+        to   = b->v1->pt;
+    }
+    else if (a->v2 == b->v1)
+    {
+        from = a->v1->pt;
+        mid  = a->v2->pt;
+        to   = b->v2->pt;
+    }
+    else
+    {
+        Q_ASSERT(a->v2 == b->v2);
+        from = a->v1->pt;
+        mid  = a->v2->pt;
+        to   = b->v1->pt;
+    }
+    qreal angle1 = angleBetweenLines(from,mid,to);
+   // qreal angle2 = qRadiansToDegrees(Geo::sweep(mid,from,to));
+   // qreal angle3 = calculateAngle(from.x(), from.y(), mid.x(),mid.y(), to.x(),to.y());
+   // qDebug() << angle1 << angle2 << angle3;
+
+    return angle1;
+}
+
+////////////////////////////
 qreal Geo::distToLine(QPointF pt, QLineF line)
 {
     return qSqrt( dist2ToLine(pt, line.p1(), line.p2() ) );
@@ -258,6 +399,33 @@ qreal Geo::distToLine(QPointF pt, QLineF line)
 qreal Geo::distToLine(QPointF pt, QPointF p, QPointF q )
 {
     return qSqrt( dist2ToLine(pt, p, q ) );
+}
+
+qreal Geo::signedDistToLine(const QPointF& point, const QLineF& line)
+{
+    // Vector from line's p1 to the point
+    qreal dx_p1_p = point.x() - line.x1();
+    qreal dy_p1_p = point.y() - line.y1();
+
+    // Vector for the line segment p1 to p2
+    qreal dx_p1_p2 = line.dx();
+    qreal dy_p1_p2 = line.dy();
+
+    // Calculate the 2D cross-product (z-component) of the two vectors.
+    // The sign indicates the side, and the magnitude is twice the triangle area.
+    qreal cross_product = dx_p1_p2 * dy_p1_p - dy_p1_p2 * dx_p1_p;
+
+    // Calculate the length of the line vector
+    qreal line_length = line.length();
+
+    // If the line has no length, return the distance to one of its endpoints.
+    if (qFuzzyIsNull(line_length))
+    {
+        return QLineF(line.p1(), point).length();
+    }
+
+    // Signed distance is the cross-product divided by the length of the line.
+    return cross_product / line_length;
 }
 
 qreal Geo::dist2ToLine(QPointF pt,  QPointF p, QPointF q )
@@ -302,6 +470,12 @@ QPointF Geo::center(const QPolygonF & pts)
 
 QPointF Geo::irregularCenter(const QPolygonF & poly)
 {
+    const QVector<QPointF> & plist = static_cast<QVector<QPointF>>(poly);
+    return irregularCenter(plist);
+}
+
+QPointF Geo::irregularCenter(const QVector<QPointF> & plist)
+{
     //Q_ASSERT(!poly.isClosed());
 
     double area = 0.0;
@@ -313,9 +487,9 @@ QPointF Geo::irregularCenter(const QPolygonF & poly)
     double sumX = 0.0;
     double sumY = 0.0;
 
- // For all vertices in a loop
-    auto prev = poly.constLast();
-    for (const auto & next : std::as_const(poly))
+    // For all vertices in a loop
+    auto prev = plist.constLast();
+    for (const auto & next : std::as_const(plist))
 	{
         x0    = prev.x();
         y0    = prev.y();
@@ -418,6 +592,7 @@ QPointF Geo::perpPt(QPointF A, QPointF B, QPointF C)
     return QPointF(x4,y4);
 }
 
+
 QLineF Geo::reversed(QLineF & line)
 {
     return QLineF(line.p2(),line.p1());
@@ -454,6 +629,53 @@ QPointF Geo::findNearestPoint(const QVector<QPointF> &pts, const QPointF apoint)
         }
     }
     return nearest;
+}
+
+bool Geo::getCircleLineIsect(const Circle &circle, const QLineF &line, const QPointF &oldPt, QPointF & newPt)
+{
+    QPointF isect1,isect2;
+    bool rv = true;
+
+    int n = Geo::circleLineIntersectionPoints(circle,line,isect1,isect2);
+    if (n == 1)
+    {
+        newPt = isect1;
+    }
+    else if (n == 2)
+    {
+        qreal d1 = Geo::dist2(oldPt,isect1);
+        qreal d2 = Geo::dist2(oldPt,isect2);
+        newPt = (d1 < d2) ? isect1 : isect2;
+    }
+    else
+    {
+        qWarning() << "no circle-line intersect";
+        rv = false;
+    }
+    return rv;
+}
+
+bool Geo::getCircleCircleIsect(const Circle & circ1, const Circle & circ2, const QPointF & oldPt, QPointF & newPt)
+{
+    QPointF is1, is2;
+    bool rv = true;
+    int pts = Geo::circleCircleIntersectionPoints(circ1, circ2, is1, is2);
+    if (pts == 1)
+    {
+        newPt = is1;
+    }
+    else if (pts == 2)
+    {
+        qreal d1   = Geo::dist2(is1,oldPt);
+        qreal d2   = Geo::dist2(is2,oldPt);
+        newPt      = (d1 < d2) ? is1 : is2;
+    }
+    else
+    {
+        qWarning() << "no circle-circle intersect";
+        rv = false;
+    }
+    return rv;
 }
 
 
@@ -555,6 +777,10 @@ int Geo::circleLineIntersectionPoints(const QGraphicsItem & circle, qreal radius
     }
     return points;
 }
+int Geo::circleLineIntersectionPoints(Circle c, const QLineF & line, QPointF & aa, QPointF & bb)
+{
+    return circleLineIntersectionPoints(c.centre, c.radius, line, aa, bb);
+}
 
 // This is derived from chmike's response in https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
 int Geo::circleLineIntersectionPoints(QPointF center, qreal radius, const QLineF & line, QPointF & aa, QPointF & bb)
@@ -616,6 +842,11 @@ int Geo::circleLineIntersectionPoints(QPointF center, qreal radius, const QLineF
         // line doesn't touch circle
         return 0;
     }
+}
+
+int Geo::findLineCircleIntersections(Circle c, QLineF & line, QPointF & intersection1, QPointF & intersection2)
+{
+    return findLineCircleIntersections(c.centre,c.radius,line, intersection1, intersection2);
 }
 
 int Geo::findLineCircleIntersections(QPointF centre, qreal radius, QLineF line, QPointF & intersection1, QPointF & intersection2)
@@ -686,8 +917,6 @@ int Geo::findLineCircleIntersections(QPointF centre, qreal radius, QLineF line, 
     }
 }
 
-
-
 bool Geo::pointInCircle(QPointF pt, Circle c)
 {
     qreal d2  = Geo::dist2(pt,c.centre);
@@ -703,17 +932,12 @@ bool Geo::pointOnCircle(QPointF pt, Circle c, qreal tolerance)
     return Loose::equals(d,r,tolerance);
 }
 
-bool circCollide(QGraphicsItem * item, QList<QGraphicsItem *> items)
+QPointF Geo::calculateEndPoint(const QPointF& pt, qreal angle, qreal distance)
 {
-    QPointF c1 = item->boundingRect().center();                                             // ok
-    foreach (QGraphicsItem * t, items)
-    {
-        qreal distance = QLineF(c1, t->boundingRect().center()).length();                   // ok
-        qreal radii    = (item->boundingRect().width() + t->boundingRect().width()) / 2;    // ok
-        if ( distance <= radii )
-            return true;
-    }
-    return false;
+    qreal radians = qDegreesToRadians(angle);
+    qreal offsetX = distance * qCos(radians);
+    qreal offsetY = distance * qSin(radians);
+    return QPointF(pt.x() + offsetX, pt.y() - offsetY);
 }
 
 /*
@@ -820,30 +1044,151 @@ int Geo::circleCircleIntersectionPoints(Circle c1, Circle c2, QPointF & p1, QPoi
     return 2;
 }
 
+
+/* circle_circle_intersection() *
+ * Determine the points where 2 circles in a common plane intersect.
+ *
+ * int circle_circle_intersection(
+ *                                // center and radius of 1st circle
+ *                                double x0, double y0, double r0,
+ *                                // center and radius of 2nd circle
+ *                                double x1, double y1, double r1,
+ *                                // 1st intersection point
+ *                                double *xi, double *yi,
+ *                                // 2nd intersection point
+ *                                double *xi_prime, double *yi_prime)
+ *
+ * This is a public domain work. 3/26/2005 Tim Voght
+ *
+ */
+
+int circle_circle_intersection(double x0, double y0, double r0,
+                               double x1, double y1, double r1,
+                               double *xi, double *yi,
+                               double *xi_prime, double *yi_prime)
+{
+    double a, dx, dy, d, h, rx, ry;
+    double x2, y2;
+
+    /* dx and dy are the vertical and horizontal distances between
+   * the circle centers.
+   */
+    dx = x1 - x0;
+    dy = y1 - y0;
+
+    /* Determine the straight-line distance between the centers. */
+    //d = sqrt((dy*dy) + (dx*dx));
+    d = hypot(dx,dy); // Suggested by Keith Briggs
+
+    /* Check for solvability. */
+    if (d > (r0 + r1))
+    {
+        /* no solution. circles do not intersect. */
+        return 0;
+    }
+    if (d < fabs(r0 - r1))
+    {
+        /* no solution. one circle is contained in the other */
+        return 0;
+    }
+
+    /* 'point 2' is the point where the line through the circle
+   * intersection points crosses the line between the circle
+   * centers.
+   */
+
+    /* Determine the distance from point 0 to point 2. */
+    a = ((r0*r0) - (r1*r1) + (d*d)) / (2.0 * d) ;
+
+    /* Determine the coordinates of point 2. */
+    x2 = x0 + (dx * a/d);
+    y2 = y0 + (dy * a/d);
+
+    /* Determine the distance from point 2 to either of the
+   * intersection points.
+   */
+    h = sqrt((r0*r0) - (a*a));
+
+    /* Now determine the offsets of the intersection points from
+   * point 2.
+   */
+    rx = -dy * (h/d);
+    ry = dx * (h/d);
+
+    /* Determine the absolute intersection points. */
+    *xi = x2 + rx;
+    *xi_prime = x2 - rx;
+    *yi = y2 + ry;
+    *yi_prime = y2 - ry;
+
+    return 1;
+}
+
+int Geo::circleCircleIntersectionPoints2(Circle c1, Circle c2, QPointF & p1, QPointF & p2)
+{
+    double x3, y3, x3_prime, y3_prime;
+    int n = circle_circle_intersection(c1.x(),c1.y(),c1.radius, c2.x(), c2.y(), c2.radius,
+                               &x3, &y3, &x3_prime, &y3_prime);
+    p1 = QPointF(x3,y3);
+    p2 = QPointF(x3_prime,y3_prime);
+    return n;
+}
+#if 0
+#define TEST
+
+#ifdef TEST
+
+void run_test(double x0, double y0, double r0,
+              double x1, double y1, double r1)
+{
+    double x3, y3, x3_prime, y3_prime;
+
+    printf("x0=%F, y0=%F, r0=%F, x1=%F, y1=%F, r1=%F :\n",
+           x0, y0, r0, x1, y1, r1);
+    circle_circle_intersection(x0, y0, r0, x1, y1, r1,
+                               &x3, &y3, &x3_prime, &y3_prime);
+    printf("  x3=%F, y3=%F, x3_prime=%F, y3_prime=%F\n",
+           x3, y3, x3_prime, y3_prime);
+}
+
+int main(void)
+{
+    /* Add more! */
+    run_test(-1.0, -1.0, 1.5, 1.0, 1.0, 2.0);
+    run_test(1.0, -1.0, 1.5, -1.0, 1.0, 2.0);
+    run_test(-1.0, 1.0, 1.5, 1.0, -1.0, 2.0);
+    run_test(1.0, 1.0, 1.5, -1.0, -1.0, 2.0);
+    exit(0);
+}
+#endif
+#endif
+
+
 // Why not just use 7 lines of your favorite procedural language (or programmable calculator!) as below.
 // Assuming you are given P0 coords (x0,y0), P1 coords (x1,y1), r0 and r1 and you want to find P3 coords (x3,y3):
 // https://stackoverflow.com/questions/3349125/circle-circle-intersection-points
-void Geo::circleTouchPt(qreal x0, qreal x1, qreal & x3,  qreal y0, qreal y1, qreal & y3, qreal r0, qreal r1)
+void Geo::circleTouchPt(qreal x0, qreal x1, qreal & x3, qreal & x4, qreal y0, qreal y1, qreal & y3, qreal & y4, qreal r0, qreal r1)
 {
     qreal d  = qSqrt( ((x1-x0)*(x1-x0)) + ((y1-y0)*(y1-y0)) );
     qreal a  = ((r0*r0) - (r1*r1) + (d*d))/(2*d);
     qreal h  = qSqrt((r0*r0)- (a*a));
     qreal x2 = x0+a*(x1-x0)/d;
     qreal y2 = y0+a*(y1-y0)/d;
-    x3 = x2+h*(y1-y0)/d;       // also x3=x2-h*(y1-y0)/d
-    y3 = y2-h*(x1-x0)/d;       // also y3=y2+h*(x1-x0)/d
+    x3 = x2+h*(y1-y0)/d;
+    x4  =x2-h*(y1-y0)/d;
+    y3 = y2-h*(x1-x0)/d;
+    y4 = y2+h*(x1-x0)/d;
 }
 
-QPointF Geo::circleTouchPt(Circle c0, Circle c1)
+void Geo::circleTouchPts(Circle c0, Circle c1, QPointF & p1, QPointF & p2)
 {
-    qreal x3;
-    qreal y3;
+    qreal x3,x4 = 0;
+    qreal y3,y4 = 0;
 
-    circleTouchPt(c0.x(), c1.x(),x3,c0.y(), c1.y(), y3, c0.radius, c1.radius);
+    circleTouchPt(c0.x(), c1.x(),x3,x4,c0.y(), c1.y(), y3, y4, c0.radius, c1.radius);
 
-    QPointF pt(x3,y3);
-
-    return pt;
+    p1 = QPointF(x3,y3);
+    p2 = QPointF(x4,y4);
 }
 
 QVector<QLineF> Geo::rectToLines(QRectF &box)
@@ -999,6 +1344,14 @@ QPolygonF Geo::getCircumscribedPolygon(int n)
     return p;
 }
 
+void Geo::closePolygon(QPolygonF & poly)
+{
+    if (!poly.isClosed())
+    {
+        poly << poly[0];
+    }
+}
+
 qreal Geo::calcArea(QPolygonF &poly)
 {
     // taken from https://www.geeksforgeeks.org/area-of-a-polygon-with-given-n-ordered-vertices/
@@ -1038,7 +1391,6 @@ QPointF Geo::rotatePoint(QPointF fp, QPointF pt, qreal a)
     return QPointF(fp.x()+xRot,fp.y()+yRot);
 }
 
-
 QLineF Geo::normalVectorP1(QLineF line)
 {
     return QLineF(line.p1(), line.p1() + QPointF(line.dy(), -line.dx()));
@@ -1046,8 +1398,7 @@ QLineF Geo::normalVectorP1(QLineF line)
 
 QLineF Geo::normalVectorP2(QLineF line)
 {
-    return QLineF(line.p2(), line.p2() - QPointF(line.dy(), -line.dx()));
-
+    return QLineF(line.p2(), (line.p2() - QPointF(line.dy(), -line.dx())));
 }
 
 QPointF Geo::getClosestPoint(QLineF line, QPointF p)
@@ -1138,7 +1489,7 @@ bool Geo::isClockwiseKaplan(QPolygonF & poly)
 
 void Geo::reverseOrder(QPolygonF & poly)
 {
-    qDebug() << "reverse order: polygon";
+    //qDebug() << "reverse order: polygon";
     QPolygonF ret;
     for (int i = poly.size()-1; i >= 0; i--)
     {
@@ -1149,18 +1500,18 @@ void Geo::reverseOrder(QPolygonF & poly)
 
 void Geo::reverseOrder(EdgePoly & ep)
 {
-    qDebug() << "reverse order: edge poly";
-    EdgePoly ret;
-    for (int i = ep.size()-1; i >= 0; i--)
+    //qDebug() << "reverse order: edge poly";
+    EdgeSet set;
+    for (int i = ep.numPoints()-1; i >= 0; i--)
     {
-        EdgePtr edge = ep[i];
+        EdgePtr edge = ep.get().at(i);
         VertexPtr v1 = edge->v1;
         VertexPtr v2 = edge->v2;
         edge->setV1(v2);
         edge->setV2(v1);
-        ret << edge;
+        set << edge;
     }
-    ep = ret;
+    ep.set(set);
 }
 
 #ifndef M_2PI
@@ -1200,11 +1551,10 @@ bool Geo::rectContains(const QRectF & rect, QPointF p)
     return false;
 }
 
-
 bool Geo::isColinearAndTouching(const EdgePoly & ep1, const EdgePoly & ep2, qreal tolerance)
 {
-    QPolygonF p1 = ep1.getPoly();
-    QPolygonF p2 = ep2.getPoly();
+    QPolygonF p1 = ep1.getPolygon();
+    QPolygonF p2 = ep2.getPolygon();
     if (p1.intersects(p2))
     {
         QPolygonF p3 = p1.intersected(p2);
@@ -1213,9 +1563,9 @@ bool Geo::isColinearAndTouching(const EdgePoly & ep1, const EdgePoly & ep2, qrea
     }
 
     Q_UNUSED(tolerance);
-    for (const EdgePtr & edge1 : std::as_const(ep1))
+    for (const EdgePtr & edge1 : ep1.get())
     {
-        for (const EdgePtr &  edge2 : std::as_const(ep2))
+        for (const EdgePtr &  edge2 : ep2.get())
         {
             if (isColinearAndTouching(edge1->getLine(),edge2->getLine()))
             {
@@ -1392,7 +1742,7 @@ bool Geo::point_in_polygon(QPointF point, const QPolygonF &polygon)
 bool Geo::point_on_poly_edge(QPointF p, const QPolygonF & poly)
 {
     EdgePoly ep(poly);
-    for (EdgePtr edge : std::as_const(ep))
+    for (const EdgePtr & edge : ep.get())
     {
         if (Loose::zero(distToLine(p,edge->getLine())))
         {

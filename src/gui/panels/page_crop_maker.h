@@ -20,7 +20,6 @@ public:
     void onRefresh()        override;
     void onEnter()          override;
     void onExit()           override {}
-    QString getPageStatus() override;
 
 private slots:
     void display();

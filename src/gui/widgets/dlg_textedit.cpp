@@ -1,29 +1,24 @@
 #include <QCoreApplication>
-#include <QFontDatabase>
-#include <QPushButton>
-#include <QFileDialog>
-#include <QMessageBox>
+#include <QBoxLayout>
 #include <QLabel>
-#include <QVBoxLayout>
-#include <QDebug>
+#include <QFontDatabase>
+#include <QTabWidget>
 
 #include "dlg_textedit.h"
 #include "sys/qt/qtapplog.h"
-#include "sys/sys/load_unit.h"
-#include "sys/sys.h"
 #include "sys/version.h"
 
-TextEditorWidget::TextEditorWidget()
+LogWidget::LogWidget()
 {
 }
 
-TextEditorWidget::~TextEditorWidget()
+LogWidget::~LogWidget()
 {
     unload();
     //ted.reset();
 }
 
-void TextEditorWidget::set(TextEditPtr te)
+void LogWidget::set(TextEditPtr te)
 {
     ted = te;
 
@@ -35,7 +30,7 @@ void TextEditorWidget::set(TextEditPtr te)
     adjustSize();
 }
 
-void TextEditorWidget::unload()
+void LogWidget::unload()
 {
     QLayout * l = layout();
     if (l)
@@ -65,8 +60,8 @@ DlgTextEdit::DlgTextEdit(QWidget *parent) : QDialog(parent)
     txt.setLineWrapMode(QTextEdit::NoWrap);
     txt.setReadOnly(true);
 
-    const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    txt.setCurrentFont(fixedFont);
+    //const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    //txt.setCurrentFont(fixedFont);
 }
 
 void DlgTextEdit::set(const QVector<sTrapMsg> &msgs)
@@ -79,19 +74,14 @@ void DlgTextEdit::set(const QVector<sTrapMsg> &msgs)
 
 DlgMapVerify::DlgMapVerify(QString name, QWidget *parent) : DlgTextEdit(parent)
 {
-    // FIXME - does this work with tiling maps
-
-    QString dlgName     = Sys::loadUnit->getLoadFile().getVersionedName().get();
-
-    setWindowTitle(dlgName);
-    qWarning() << "Map:" << name << "verify problem with:" << dlgName;
+    setWindowTitle(name);
+    qWarning() << "Map verify problem with:" << name;
 }
 
 DlgAbout::DlgAbout(QWidget * parent) : DlgTextEdit(parent)
 {
     setMinimumSize(600,600);
-
-    QString info = QString("%1 Version %2  Copyright (c) David A. Casper 2016-2023").arg(QCoreApplication::applicationName()).arg(tpmVersion);
+    QString info = QString("%1 Version %2  Copyright (c) David A. Casper 2016-2025").arg(QCoreApplication::applicationName()).arg(tpmVersion);
     QLabel * line1 = new QLabel(info);
     QHBoxLayout * lay1 = new QHBoxLayout();
     lay1->addWidget(line1);
@@ -103,8 +93,6 @@ DlgAbout::DlgAbout(QWidget * parent) : DlgTextEdit(parent)
 
     vbox->insertLayout(0,lay1);
     vbox->insertLayout(1,lay2);
-
-    txt.setReadOnly(true);
 
     QString name(":/LICENSE");
     QFile data(name);
@@ -119,11 +107,130 @@ DlgAbout::DlgAbout(QWidget * parent) : DlgTextEdit(parent)
         data.close();
     }
     else
-    {
-        qWarning() << "Coud not open" << name;
-    }
+        qWarning() << "Coud not open" << name << data.errorString();
 
     QTextCursor  c = txt.textCursor();
     c.setPosition(0);
     txt.setTextCursor(c);
 }
+
+DlgStartOptions::DlgStartOptions(QWidget * parent) : DlgTextEdit(parent)
+{
+    setWindowTitle("TiledPatternMaker - Startup Options");
+
+    QString name(":/txt/start-options.txt");
+    QFile data(name);
+    if (data.open(QFile::ReadOnly | QFile::Text))
+    {
+        QTextStream in(&data);
+        txt.setPlainText(in.readAll());
+        data.close();
+    }
+    else
+        qWarning() << "Coud not open" << name << data.errorString();
+}
+
+DlgSupport::DlgSupport(QWidget * parent) : DlgTextEdit(parent)
+{
+    setWindowTitle("TiledPatternMaker - Support");
+
+    QString name(":/txt/support.txt");
+    QFile data(name);
+    if (data.open(QFile::ReadOnly | QFile::Text))
+    {
+        QTextStream in(&data);
+        txt.setPlainText(in.readAll());
+        data.close();
+    }
+    else
+        qWarning() << "Coud not open" << name << data.errorString();
+}
+
+DlgKbdOpts::DlgKbdOpts(QWidget * parent) : QDialog(parent)
+{
+
+    setWindowTitle("TiledPatternMaker -  Keyboard and Mouse operations");
+    setMinimumSize(900,600);
+
+    auto mosaic = new QTextEdit();
+    {
+        QString name(":/txt/mosaic.txt");
+        QFile data(name);
+        if (data.open(QFile::ReadOnly | QFile::Text))
+        {
+            QTextStream in(&data);
+            mosaic->setHtml(in.readAll());
+            data.close();
+        }
+        else
+            qWarning() << "Coud not open" << name << data.errorString();
+        mosaic->adjustSize();
+    }
+
+    auto tiling = new QTextEdit();
+    {
+        QString name(":/txt/tilingmaker.txt");
+        QFile data(name);
+        if (data.open(QFile::ReadOnly | QFile::Text))
+        {
+            QTextStream in(&data);
+            tiling->setHtml(in.readAll());
+            data.close();
+        }
+        else
+            qWarning() << "Coud not open" << name << data.errorString();
+        tiling->adjustSize();
+    }
+
+    auto maped = new QTextEdit();
+    {
+        QString name(":/txt/mapeditor.txt");
+        QFile data(name);
+        if (data.open(QFile::ReadOnly | QFile::Text))
+        {
+            QTextStream in(&data);
+            maped->setHtml(in.readAll());
+            data.close();
+        }
+        else
+            qWarning() << "Coud not open" << name << data.errorString();
+        maped->adjustSize();
+    }
+
+    auto legacy = new QTextEdit();
+    {
+        QString name(":/txt/legacy.txt");
+        QFile data(name);
+        if (data.open(QFile::ReadOnly | QFile::Text))
+        {
+            QTextStream in(&data);
+            legacy->setHtml(in.readAll());
+            data.close();
+        }
+        else
+            qWarning() << "Coud not open" << name << data.errorString();
+        legacy->adjustSize();
+    }
+    auto tabWidget = new QTabWidget;
+    tabWidget->addTab(mosaic, "Mosaic Maker");
+    tabWidget->addTab(tiling, "Tiling Maker");
+    tabWidget->addTab(maped,  "Map Editor");
+    tabWidget->addTab(legacy, "Legacy");
+    tabWidget->setCurrentIndex(0);
+
+    auto vbox = new QVBoxLayout;
+    vbox->addWidget(tabWidget);
+
+    this->setLayout(vbox);
+}
+
+
+
+
+
+
+
+
+
+
+
