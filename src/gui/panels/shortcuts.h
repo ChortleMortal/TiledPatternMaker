@@ -13,8 +13,8 @@ class Shortcuts
 public:
     static void  popup(eViewType view);
 
-    static QString getMosaicShortcuts();
-    static QString getDesignShortcuts();
+    static QString getGeneralShortcuts();
+    static QString getLegacyShortcuts();
     static QString getTilingMakerShortcuts();
     static QString getMapEditorShortcuts();
 

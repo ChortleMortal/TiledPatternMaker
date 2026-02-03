@@ -14,7 +14,6 @@
 #include "gui/panels/panel_worker.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view_controller.h"
-#include "gui/viewers/gui_modes.h"
 #include "gui/widgets/dlg_listnameselect.h"
 #include "gui/widgets/dlg_rebase.h"
 #include "gui/widgets/dlg_rename.h"
@@ -66,7 +65,7 @@ page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,PAGE_LOAD,
     if (config->insightMode)
         mosaicWorklistCheck->setChecked(config->mosaicWorklistCheck);
 
-    mosaicSortChk->setChecked(config->mosaicSortCheck);
+    cbMosaicSortChk->setChecked(config->mosaicSortCheck);
 
     tilingFilter->setText(config->tileFilter);
     tilingFilterCheck->setChecked(config->tileFilterCheck);
@@ -108,13 +107,14 @@ page_loaders::~page_loaders()
 
 QGroupBox * page_loaders::createGeneralColumn()
 {
-    cbAutoLoadLast = new QCheckBox("Load last on startup");
-
+    cbAutoLoadLast   = new QCheckBox("Load last on startup");
     cbShowWithImages = new QCheckBox("Show with background images");
+    cbMosaicSortChk  = new QCheckBox("Sort all by date written");
 
     QVBoxLayout * vb = new QVBoxLayout();
     vb->addWidget(cbAutoLoadLast);
     vb->addWidget(cbShowWithImages);
+    vb->addWidget(cbMosaicSortChk);
 
     QGroupBox * gb = new QGroupBox();
     gb->setLayout(vb);
@@ -156,7 +156,7 @@ QGroupBox * page_loaders::createLegacyColumn()
     designGroup->setLayout(designLayout);
 
     connect(kbdModeCombo,  &QComboBox::currentIndexChanged, this, &page_loaders::slot_kbdModeChanged);
-    connect(Sys::guiModes, &GuiModes::sig_LegacyKbdMode,    this, &page_loaders::slot_kbdMode);
+    connect(designMaker,   &DesignMaker::sig_LegacyKbdMode, this, &page_loaders::slot_kbdMode);
 
     return designGroup;
 }
@@ -204,12 +204,6 @@ QGroupBox * page_loaders::createMosaicColumn()
     hbox3->addWidget(mosaicFilterCheck);
     hbox3->addWidget(mosaicFilter);
 
-    // fourth row
-    mosaicSortChk = new QCheckBox("Sort all by date written");
-    AQHBoxLayout * hbox4 = new AQHBoxLayout();
-    hbox4->addWidget(mosaicSortChk);
-    hbox4->addStretch();
-
     // list widget
     mosaicListWidget = new VersionedListWidget();
     mosaicListWidget->setFixedHeight(LOADER_MAX_HEIGHT);
@@ -219,7 +213,7 @@ QGroupBox * page_loaders::createMosaicColumn()
     mosaicLayout->addLayout(hbox1);
     mosaicLayout->addLayout(hbox3);
     mosaicLayout->addLayout(hbox2);
-    mosaicLayout->addLayout(hbox4);
+    mosaicLayout->addStretch();
     mosaicLayout->addWidget(mosaicListWidget);
 
     QGroupBox * mosaicGroup = new QGroupBox();
@@ -312,7 +306,7 @@ void page_loaders::setupKbdModeCombo()
 
     kbdModeCombo->blockSignals(false);
 
-    Sys::guiModes->resetLegacyKbdMode();
+    designMaker->resetLegacyKbdMode();
 }
 
 void page_loaders::makeConnections()
@@ -355,7 +349,7 @@ void page_loaders::makeConnections()
     connect(mosaicOrigChk,      &QCheckBox::clicked,                this,   &page_loaders::slot_mosOrigCheck);
     connect(mosaicNewChk,       &QCheckBox::clicked,                this,   &page_loaders::slot_mosNewCheck);
     connect(mosaicTestChk,      &QCheckBox::clicked,                this,   &page_loaders::slot_mosTestCheck);
-    connect(mosaicSortChk,      &QCheckBox::clicked,                this,   &page_loaders::slot_mosSortCheck);
+    connect(cbMosaicSortChk,    &QCheckBox::clicked,                this,   &page_loaders::slot_mosSortCheck);
     connect(cbShowWithImages,   &QCheckBox::clicked,                this,   &page_loaders::slot_showWithBkgds);
     connect(tilingOrigChk,      &QCheckBox::clicked,                this,   &page_loaders::slot_tilingOrigCheck);
     connect(tilingNewChk,       &QCheckBox::clicked,                this,   &page_loaders::slot_tilingNewCheck);
@@ -395,7 +389,7 @@ void page_loaders::slot_kbdModeChanged(int row)
     qDebug() << "slot_kbdModeChanged to:"  << kbdModeCombo->currentText();
     QVariant var = kbdModeCombo->currentData();
     eLegacyMode mode = static_cast<eLegacyMode>(var.toInt());
-    Sys::guiModes->setLegacyKbdMode(mode);
+    designMaker->setLegacyKbdMode(mode);
 }
 
 // from canvas setKbdMode

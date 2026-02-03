@@ -315,7 +315,7 @@ void MosaicWriter::procBorder(QTextStream &ts, StylePtr style)
 
     QString str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,border->getModelXform(),border->zValue());
+    procesToolkitGeoLayer(ts,border->getModelXform(),border->getZLevel());
     ts << "</" << str << ">" << endl;
 
     eBorderType btype = border->getBorderType();
@@ -430,7 +430,7 @@ bool MosaicWriter::processThick(QTextStream &ts, StylePtr s)
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,xf,s->zValue());
+    procesToolkitGeoLayer(ts,xf,s->getZLevel());
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -478,7 +478,7 @@ bool MosaicWriter::processInterlace(QTextStream & ts, StylePtr s)
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,xf,il->zValue());
+    procesToolkitGeoLayer(ts,xf,il->getZLevel());
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -527,7 +527,7 @@ bool MosaicWriter::processOutline(QTextStream &ts, StylePtr s)
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,xf,ol->zValue());
+    procesToolkitGeoLayer(ts,xf,ol->getZLevel());
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -573,7 +573,7 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,xf,filled->zValue());
+    procesToolkitGeoLayer(ts,xf,filled->getZLevel());
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -634,7 +634,7 @@ bool MosaicWriter::processPlain(QTextStream &ts, StylePtr s)
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,xf,s->zValue());
+    procesToolkitGeoLayer(ts,xf,s->getZLevel());
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -667,7 +667,7 @@ bool MosaicWriter::processSketch(QTextStream &ts, StylePtr s)
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,xf,s->zValue());
+    procesToolkitGeoLayer(ts,xf,s->getZLevel());
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -706,7 +706,7 @@ bool MosaicWriter::processEmboss(QTextStream &ts, StylePtr s)
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,xf,em->zValue());
+    procesToolkitGeoLayer(ts,xf,em->getZLevel());
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -750,7 +750,7 @@ bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr style)
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,xf,style->zValue());
+    procesToolkitGeoLayer(ts,xf,style->getZLevel());
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -789,7 +789,7 @@ bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr style)
     return true;
 }
 
-void MosaicWriter::procesToolkitGeoLayer(QTextStream & ts, const Xform & xf, int zlevel)
+void MosaicWriter::procesToolkitGeoLayer(QTextStream & ts, const Xform & xf, eZLevel zlevel)
 {
     ts << "<left__delta>"  << xf.getTranslateX()      << "</left__delta>"  << endl;
     ts << "<top__delta>"   << xf.getTranslateY()      << "</top__delta>"   << endl;
@@ -883,7 +883,7 @@ void MosaicWriter::processsStyleFilled(QTextStream &ts, bool draw_inside, bool d
 
 void MosaicWriter::processsStyleFilledFaces(QTextStream &ts, class Filled * filled)
 {
-    FilledDCELPtr dcel = filled->getPrototype()->getFilledDCEL();
+    DCELPtr dcel = filled->getPrototype()->getDCEL();
     if (!dcel)
     {
         qWarning() << "DCEL not found - cannot save face data";
@@ -951,11 +951,20 @@ void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
         ts << "<Sensitivity>" << sensitivity << "</Sensitivity>" << endl;
     }
 
-    QVector<DesignElementPtr>  dels = pp->getDesignElements();
-    QVector<DesignElementPtr>::reverse_iterator it;
+    if (pp->getDistortionEnable())
+    {
+        QTransform t = pp->getDistortion();
+        ts << "<Distort>" << endl;
+        ts << "<scalex>" << t.m11() << "</scalex>" << endl;
+        ts << "<scaley>" << t.m22() << "</scaley>" << endl;
+        ts << "</Distort>" << endl;
+    }
+
+    QVector<DELPtr>  dels = pp->getDesignElements();
+    QVector<DELPtr>::reverse_iterator it;
     for (it = dels.rbegin(); it != dels.rend(); it++)
     {
-        DesignElementPtr de = *it;
+        DELPtr de = *it;
         TilePtr tile = de->getTile();
         MotifPtr  motif  = de->getMotif();
 
@@ -1358,31 +1367,33 @@ void  MosaicWriter::setRosetteCommon( QTextStream & ts, RosettePtr rose)
 
 void  MosaicWriter::setRosette2Common(QTextStream & ts, Rosette2Ptr rose)
 {
-    int s       = rose->getS();
-    qreal x     = rose->getKneeX();
-    qreal y     = rose->getKneeY();
-    qreal k     = rose->getK();
-    eTipType tt = rose->getTipType();
+    int s        = rose->getS();
+    qreal x      = rose->getKneeX();
+    qreal y      = rose->getKneeY();
+    qreal k      = rose->getK();
+    uint  types  = rose->getTipTypes();
+    eTipMode tmode = rose->getTipMode();
 
-    QString tip;
-    switch (tt)
-    {
-    case TIP_TYPE_OUTER:
-        tip = "out";
-        break;
-    case TIP_TYPE_INNER:
-        tip = "in";
-        break;
-    case TIP_TYPE_ALTERNATE:
-        tip = "alt";
-        break;
-    }
+    QString tiptypes;
+    if (types & TIP_TYPE2_OUTER)
+        tiptypes += "outer|";
+    if (types & TIP_TYPE2_INNER)
+        tiptypes += "inner|";
+    if (types & TIP_TYPE2_FLIPPED)
+        tiptypes += "flipped";
+
+    QString mode;
+    if (tmode == TIP_MODE_REGULAR)
+        mode = "regular";
+    else
+        mode = "alternate";
 
     ts << "<x>" << x << "</x>" << endl;
     ts << "<y>" << y << "</y>" << endl;
     ts << "<k>" << k << "</k>" << endl;
     ts << "<s>" << s << "</s>" << endl;
-    ts << "<tip>" << tip << "</tip>" << endl;
+    ts << "<tiptypes>" << tiptypes << "</tiptypes>" << endl;
+    ts << "<tipmode>" << mode << "</tipmode>" << endl;
 
     ts << "</" << Sys::XMLgetMotifName(rose->getMotifType()) << ">" << endl;
 }

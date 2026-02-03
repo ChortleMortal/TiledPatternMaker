@@ -35,6 +35,7 @@ private slots:
 protected:
     void createMosaicSave();
     void createTilingSave();
+    bool saveTiling();
     void savePixmap(QPixmap & pixmap, QString name);
     void selectTiling(TilingPtr tiling);
 

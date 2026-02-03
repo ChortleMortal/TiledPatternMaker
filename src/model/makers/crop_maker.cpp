@@ -3,15 +3,15 @@
 #include "model/makers/mosaic_maker.h"
 #include "sys/sys.h"
 #include "model/mosaics/mosaic.h"
-#include "gui/viewers/crop_viewer.h"
+#include "gui/viewers/crop_maker_view.h"
 #include "gui/top/system_view.h"
 
 QString sCropMaker[] =
 {
-    "UNDEFINED",
-    "MOSAIC",
-    "PAINTER",
-    "MAP EDITOR"
+    "Not in use",
+    "Mosaic Crop",
+    "Painter Crop",
+    "Map Editor Crop"
 };
 
 CropMaker::CropMaker()
@@ -69,7 +69,7 @@ CropPtr CropMaker::createCrop()
     srect.setSize(ssz);
     srect.moveCenter(scenter);
 
-    QRectF mrect    = Sys::cropViewer->screenToModel(srect);
+    QRectF mrect    = Sys::cropMakerView->screenToModel(srect);
     QPointF mcenter = mrect.center();
 
     // create crop

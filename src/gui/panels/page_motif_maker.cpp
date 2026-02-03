@@ -91,7 +91,7 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,PA
     if (config->insightMode)
     {
         QCheckBox * hiliteUnit   = new QCheckBox("Highlight Unit");
-                    replicate    = new QCheckBox("Replicate");
+                    replicate    = new QCheckBox("Radial Replicate");
         QCheckBox * showMotif    = new QCheckBox("Motif");
         QCheckBox * showTile     = new QCheckBox("Tile");
         QCheckBox * showMotifB   = new QCheckBox("Motif");
@@ -430,10 +430,14 @@ void page_motif_maker::slot_combine()
     MapVerifier mv(compositeMap);
     mv.verify(true);
 
+    auto prototype = prototypeMaker->getSelectedPrototype();
+    auto tiling = prototype->getTiling();
+
     auto emm = make_shared<ExplicitMapMotif>(compositeMap);
     emm->setN(sides);
-    auto delp = make_shared<DesignElement>(tp,emm);
-    auto prototype = prototypeMaker->getSelectedPrototype();
+
+    auto delp = make_shared<DesignElement>(tiling, tp,emm);
+
     prototype->addDesignElement(delp);
     prototypeMaker->select(MVD_DELEM,prototype,false);
 }

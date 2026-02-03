@@ -33,7 +33,7 @@ public:
     // operations
     bool        duplicateDesignElement();
     MotifPtr    duplicateMotif(MotifPtr motif);
-    void        selectDesignElement(DesignElementPtr delp);
+    void        selectDesignElement(DELPtr delp);
     void        erasePrototypes();
     
     void        setWidget(MotifMakerWidget * widget) { motifMakerWidget = widget; }

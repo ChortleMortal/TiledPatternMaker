@@ -8,6 +8,7 @@ typedef std::shared_ptr<class Layer>   LayerPtr;
 typedef std::weak_ptr<class Layer>     WeakLayerPtr;
 
 class AQDoubleSpinBox;
+class AQSpinBox;
 class AQTableWidget;
 class EdgePoly;
 
@@ -59,7 +60,7 @@ protected:
     Layer * getLayer(int col);
 
     void visibilityChanged(int col);
-    void zChanged(AQDoubleSpinBox *dsp, int col);
+    void zChanged(AQSpinBox *dsp, int col);
     void alignPressed(int col);
     void slot_set_deltas(int col);
     void clear_deltas(int col);

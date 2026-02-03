@@ -9,13 +9,13 @@ typedef std::shared_ptr<class MouseEditCrop> CropMouseActionPtr;
 
 class CropMaker;
 
-class CropViewer : public LayerController
+class CropMakerView : public LayerController
 {
     Q_OBJECT
 
 public:
-    CropViewer();
-    ~CropViewer() {}
+    CropMakerView();
+    ~CropMakerView() {}
 
     void        aquire(CropMaker * ed, eCropMaker maker);
     void        release(eCropMaker maker);
@@ -31,6 +31,11 @@ public:
     void        draw(QPainter *, QTransform t);
 
     virtual void  iamaLayerController() override {}
+
+    virtual QTransform getLayerTransform() override;
+    virtual QTransform getCanvasTransform() override;
+    virtual QTransform getModelTransform() override;
+    virtual const Xform &   getModelXform() override;
 
 signals:
     void    sig_delegateView(eViewType vt, bool delegate);
@@ -54,6 +59,7 @@ private:
     QPointF            mousePos;            // used by menu
     bool               debugMouse;
     eCropMaker         makerType;
+    const Xform        unityXf;
 };
 
 #endif

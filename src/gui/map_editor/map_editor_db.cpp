@@ -19,17 +19,17 @@ MapEditorDb::MapEditorDb()
 
     editSelect            = LAYER_1;
     viewSelect            = NO_MAP;
+
+    __compositeLayer.init(COMPOSITE);
+    __layer1.init(LAYER_1);
+    __layer2.init(LAYER_2);
+    __layer3.init(LAYER_3);
 }
 
 void MapEditorDb::reset()
 {
-    importedTilingMap.reset();
-    currentTilingMap.reset();
     localDcel.reset();
     activeDcel.reset();
-
-    tiling.reset();
-    motifPrototype.reset();
 
     getLayer(LAYER_1).reset();
     getLayer(LAYER_2).reset();
@@ -74,46 +74,58 @@ MapEditorLayer & MapEditorDb::getEditLayer()
     return getLayer(getEditSelect());
 }
 
+MapEditorLayer &  MapEditorDb::getLayer(MapPtr map)
+{
+    MapEditorLayer & layer = getLayer(LAYER_1);
+    if (layer.getMapedLayerMap() == map)
+    {
+        return __layer1;
+    }
+
+    MapEditorLayer & layer2 = getLayer(LAYER_2);
+    if (layer2.getMapedLayerMap() == map)
+    {
+        return __layer2;
+    }
+
+    MapEditorLayer & layer3 = getLayer(LAYER_3);
+    if (layer3.getMapedLayerMap() == map)
+    {
+        return __layer3;
+    }
+    else
+    {
+        return __compositeLayer;
+    }
+}
+
+
 MapPtr MapEditorDb::getEditMap()
 {
     return getEditLayer().getMapedLayerMap();
 }
 
-eMapedLayer MapEditorDb::insertLayer(MapPtr map, eMapEditorMapType mtype)
+eMapedLayer MapEditorDb::obtainEmptyLayer()
 {
-    qDebug().noquote() << "inserting map" << map->summary() << sMapEditorMapType[mtype];
-
     MapEditorLayer & layer = getLayer(LAYER_1);
-    if (layer.getLayerMapType() == MAPED_TYPE_UNKNOWN)
+    if (layer.getLayerMapType() == MAPED_TYPE_NONE)
     {
-        layer.set(map,mtype);
-        setEditSelect(LAYER_1);
-        setViewSelect(LAYER_1,true);
         return LAYER_1;
     }
 
     MapEditorLayer & layer2 = getLayer(LAYER_2);
-    if (layer2.getLayerMapType() == MAPED_TYPE_UNKNOWN)
+    if (layer2.getLayerMapType() == MAPED_TYPE_NONE)
     {
-        layer2.set(map,mtype);
-        setEditSelect(LAYER_2);
-        setViewSelect(LAYER_2,true);
         return LAYER_2;
     }
 
     MapEditorLayer & layer3 = getLayer(LAYER_3);
-    if (layer3.getLayerMapType() == MAPED_TYPE_UNKNOWN)
+    if (layer3.getLayerMapType() == MAPED_TYPE_NONE)
     {
-        layer3.set(map,mtype);
-        setEditSelect(LAYER_3);
-        setViewSelect(LAYER_3,true);
         return LAYER_3;
     }
     else
     {
-        // default nothing inserted
-        setEditSelect(COMPOSITE);
-        setViewSelect(COMPOSITE,true);
         return COMPOSITE;
     }
 }
@@ -125,7 +137,9 @@ void MapEditorDb::createComposite()
 
     Sys::splash->display("Creating composite");
 
-    DesignElementPtr  del;
+    DELPtr   del;
+    ProtoPtr proto;
+    MotifPtr motif;
 
     qreal tolerance = Sys::config->mapedMergeSensitivity;
 
@@ -136,7 +150,9 @@ void MapEditorDb::createComposite()
         eMapEditorMapType maptype = layer->getLayerMapType();
         if (isMotif(maptype))
         {
-            del = layer->getDel();
+            proto = layer->getProto();
+            del   = layer->getDel();
+            motif = layer->getMotif();
         }
         MapPtr map = layer->getMapedLayerMap();
         qDebug() << map->summary();
@@ -147,10 +163,17 @@ void MapEditorDb::createComposite()
     MapCleanser mc(compositeMap);
     mc.deDuplicateVertices(tolerance);
 
+    MapEditorLayer & layer = getLayer(COMPOSITE);
+    layer.reset();
     if (del)
-        getLayer(COMPOSITE).set(compositeMap,MAPED_TYPE_COMPOSITE_MOTIF,del);
+    {
+        layer.setLayer(compositeMap,proto,del,motif);
+        layer.setType(MAPED_TYPE_COMPOSITE_MOTIF);
+    }
     else
-        getLayer(COMPOSITE).set(compositeMap,MAPED_TYPE_COMPOSITE);
+    {
+        getLayer(COMPOSITE).setLayer(compositeMap,MAPED_TYPE_COMPOSITE);
+    }
 
     Sys::splash->remove();
 }
@@ -205,7 +228,7 @@ QVector<MapPtr>  MapEditorDb::getDrawMaps()
     if (isViewSelected(COMPOSITE))
     {
         MapEditorLayer & layerC = getLayer(COMPOSITE);
-        if (layerC.getLayerMapType() != MAPED_TYPE_UNKNOWN)
+        if (layerC.getLayerMapType() != MAPED_TYPE_NONE)
         {
             maps.push_back(layerC.getMapedLayerMap());
         }
@@ -215,7 +238,7 @@ QVector<MapPtr>  MapEditorDb::getDrawMaps()
         if (isViewSelected(LAYER_1))
         {
             MapEditorLayer & layer1 = getLayer(LAYER_1);
-            if (layer1.getLayerMapType() != MAPED_TYPE_UNKNOWN)
+            if (layer1.getLayerMapType() != MAPED_TYPE_NONE)
             {
                 maps.push_back(layer1.getMapedLayerMap());
             }
@@ -223,7 +246,7 @@ QVector<MapPtr>  MapEditorDb::getDrawMaps()
         if (isViewSelected(LAYER_2))
         {
             MapEditorLayer & layer2 = getLayer(LAYER_2);
-            if (layer2.getLayerMapType() != MAPED_TYPE_UNKNOWN)
+            if (layer2.getLayerMapType() != MAPED_TYPE_NONE)
             {
                 maps.push_back(layer2.getMapedLayerMap());
             }
@@ -231,7 +254,7 @@ QVector<MapPtr>  MapEditorDb::getDrawMaps()
         if (isViewSelected(LAYER_3))
         {
             MapEditorLayer & layer3 = getLayer(LAYER_3);
-            if (layer3.getLayerMapType() != MAPED_TYPE_UNKNOWN)
+            if (layer3.getLayerMapType() != MAPED_TYPE_NONE)
             {
                 maps.push_back(layer3.getMapedLayerMap());
             }
@@ -244,15 +267,15 @@ QVector<MapPtr> MapEditorDb::getMapLayerMaps()
 {
     QVector<MapPtr> maps;
 
-    if (getLayer(LAYER_1).getLayerMapType() != MAPED_TYPE_UNKNOWN)
+    if (getLayer(LAYER_1).getLayerMapType() != MAPED_TYPE_NONE)
     {
         maps.push_back(getLayer(LAYER_1).getMapedLayerMap());
     }
-    if (getLayer(LAYER_2).getLayerMapType() != MAPED_TYPE_UNKNOWN)
+    if (getLayer(LAYER_2).getLayerMapType() != MAPED_TYPE_NONE)
     {
         maps.push_back(getLayer(LAYER_2).getMapedLayerMap());
     }
-    if (getLayer(LAYER_3).getLayerMapType() != MAPED_TYPE_UNKNOWN)
+    if (getLayer(LAYER_3).getLayerMapType() != MAPED_TYPE_NONE)
     {
         maps.push_back(getLayer(LAYER_3).getMapedLayerMap());
     }
@@ -266,7 +289,7 @@ QVector<const MapEditorLayer *> MapEditorDb::getDrawLayers()
     if (isViewSelected(COMPOSITE))
     {
         MapEditorLayer & layerC = getLayer(COMPOSITE);
-        if (layerC.getLayerMapType() != MAPED_TYPE_UNKNOWN)
+        if (layerC.getLayerMapType() != MAPED_TYPE_NONE)
         {
             layers.push_back(&layerC);
         }
@@ -276,7 +299,7 @@ QVector<const MapEditorLayer *> MapEditorDb::getDrawLayers()
         if (isViewSelected(LAYER_1))
         {
             MapEditorLayer & layer1 = getLayer(LAYER_1);
-            if (layer1.getLayerMapType() != MAPED_TYPE_UNKNOWN)
+            if (layer1.getLayerMapType() != MAPED_TYPE_NONE)
             {
                 layers.push_back(&layer1);
             }
@@ -284,7 +307,7 @@ QVector<const MapEditorLayer *> MapEditorDb::getDrawLayers()
         if (isViewSelected(LAYER_2))
         {
             MapEditorLayer & layer2 = getLayer(LAYER_2);
-            if (layer2.getLayerMapType() != MAPED_TYPE_UNKNOWN)
+            if (layer2.getLayerMapType() != MAPED_TYPE_NONE)
             {
                 layers.push_back(&layer2);
             }
@@ -292,7 +315,7 @@ QVector<const MapEditorLayer *> MapEditorDb::getDrawLayers()
         if (isViewSelected(LAYER_3))
         {
             MapEditorLayer & layer3 = getLayer(LAYER_3);
-            if (layer3.getLayerMapType() != MAPED_TYPE_UNKNOWN)
+            if (layer3.getLayerMapType() != MAPED_TYPE_NONE)
             {
                 layers.push_back(&layer3);
             }
@@ -305,17 +328,17 @@ QVector<const MapEditorLayer* > MapEditorDb::getComposableLayers()
 {
     QVector<const MapEditorLayer *> maps;
 
-    if (getLayer(LAYER_1).getLayerMapType() != MAPED_TYPE_UNKNOWN)
+    if (getLayer(LAYER_1).getLayerMapType() != MAPED_TYPE_NONE)
     {
         maps.push_back(&getLayer(LAYER_1));
     }
 
-    if (getLayer(LAYER_2).getLayerMapType() != MAPED_TYPE_UNKNOWN)
+    if (getLayer(LAYER_2).getLayerMapType() != MAPED_TYPE_NONE)
     {
         maps.push_back(&getLayer(LAYER_2));
     }
 
-    if (getLayer(LAYER_3).getLayerMapType() != MAPED_TYPE_UNKNOWN)
+    if (getLayer(LAYER_3).getLayerMapType() != MAPED_TYPE_NONE)
     {
         maps.push_back(&getLayer(LAYER_3));
     }
@@ -338,7 +361,7 @@ eMapEditorMapType MapEditorDb::getMapType(MapPtr map)
         return getLayer(LAYER_3).getLayerMapType();
 
     else
-        return MAPED_TYPE_UNKNOWN;
+        return MAPED_TYPE_NONE;
 }
 
 MapPtr  MapEditorDb::getMap(eMapedLayer mode)
@@ -354,7 +377,7 @@ bool MapEditorDb::isMotif(eMapEditorMapType type)
     case MAPED_LOADED_FROM_MOTIF:
     case MAPED_LOADED_FROM_FILE_MOTIF:
     case MAPED_TYPE_COMPOSITE_MOTIF:
-    case MAPED_LOADED_FROM_MOTIF_PROTOTYPE:
+    case MAPED_LOADED_FROM_PROTOTMAKER:
         return true;
 
     default:
@@ -451,25 +474,88 @@ MapEditorLayer::MapEditorLayer()
     reset();
 }
 
-void MapEditorLayer::set(MapPtr map, eMapEditorMapType type)
+void MapEditorLayer::setLayer(MapPtr source, StylePtr style)
 {
-    qDebug() << "Inserting map" << map->summary();
-    this->map = map;
-    mtype = type;
-    wdel.reset();
+    qDebug() << "Using map" << source->summary();
+
+    mtype        = MAPED_LOADED_FROM_STYLE;
+    this->source = source;
+    this->style  = style;
+
+    if (Sys::config->mapedLoadCopies)
+        map = source->recreate();
+    else
+        map = source;
 }
 
-void MapEditorLayer::set(MapPtr map, eMapEditorMapType type, WeakDELPtr wdel)
+
+void MapEditorLayer::setLayer(MapPtr source, ProtoPtr proto)
 {
-    qDebug() << "Inserting map" << map->summary();
-    this->map = map;
-    mtype = type;
-    this->wdel = wdel;
+    qDebug() << "Using map" << source->summary();
+
+    mtype        = MAPED_LOADED_FROM_PROTOTMAKER;
+    this->source = source;
+    this->proto  = proto;
+
+    if (Sys::config->mapedLoadCopies)
+        map = source->recreate();
+    else
+        map = source;
+}
+
+void MapEditorLayer::setLayer(MapPtr source, ProtoPtr proto, DELPtr del, MotifPtr motif)
+{
+    qDebug() << "Using map" << source->summary();
+
+    mtype        = MAPED_LOADED_FROM_MOTIF;
+    this->source = source;
+    this->proto  = proto;
+    this->del    = del;
+    this->motif  = motif;
+
+    if (Sys::config->mapedLoadCopies)
+        map = source->recreate();
+    else
+        map = source;
+}
+
+void MapEditorLayer::setLayer(MapPtr source, TilingPtr tiling, eMapEditorMapType mtype)
+{
+    qDebug() << "Using map" << source->summary();
+
+    this->mtype  = mtype;
+    this->source = source;
+    this->tiling = tiling;
+
+    if (Sys::config->mapedLoadCopies)
+        map = source->recreate();
+    else
+        map = source;
+}
+
+
+void MapEditorLayer::setLayer(MapPtr source, eMapEditorMapType mtype)
+{
+    qDebug() << "Using map" << source->summary();
+
+    this->mtype  = mtype;
+    this->source = source;
+
+    if (Sys::config->mapedLoadCopies)
+        map = source->recreate();
+    else
+        map = source;
 }
 
 void MapEditorLayer::reset()
 {
-    mtype = MAPED_TYPE_UNKNOWN;
+    mtype = MAPED_TYPE_NONE;
+
     map.reset();
-    wdel.reset();
+    source.reset();
+    style.reset();
+    proto.reset();
+    del.reset();
+    motif.reset();
+    tiling.reset();
 }

@@ -30,54 +30,48 @@ int DesignElement::refs = 0;
 // tile library and will be used to determine where to place copies of the
 // Motif, which is designed by the user.
 
-DesignElement::DesignElement(const TilePtr & tile, const MotifPtr & motif)
+DesignElement::DesignElement(const TilingPtr & tiling,  const TilePtr & tile, const MotifPtr & motif)
 {
+    this->tiling = tiling;
     this->tile   = tile;
     this->motif  = motif;
     motif->setTile(tile);
     refs++;
 }
 
-DesignElement::DesignElement(const TilePtr & tile)
+DesignElement::DesignElement(const TilingPtr & tiling, const TilePtr & tile)
 {
-    this->tile = tile;
+    this->tiling = tiling;
+    this->tile   = tile;
     createMotifFromTile();
     refs++;
 }
 
-DesignElement::DesignElement(const DesignElementPtr & dep)
+DesignElement::DesignElement(const TilingPtr & tiling, const DELPtr & dep)
 {
-    tile   = dep->tile;
-    motif  = dep->motif;
+    this->tiling = tiling;
+    tile         = dep->tile;
+    motif        = dep->motif;
     refs++;
 }
 
-DesignElement::DesignElement(const DesignElement & other)
+DesignElement::DesignElement(const TilingPtr & tiling, const DesignElement & other)
 {
-    tile   = other.tile;
-    motif  = other.motif;
+    this->tiling = tiling;
+    tile         = other.tile;
+    motif        = other.motif;
     refs++;
 }
 
-
-DesignElement::DesignElement()
+DesignElement::DesignElement(const TilingPtr & tiling)
 {
+    this->tiling = tiling;
     refs++;
 }
 
 DesignElement::~DesignElement()
 {
     refs--;
-}
-
-TilePtr DesignElement::getTile() const
-{
-    return tile;
-}
-
-MotifPtr DesignElement::getMotif() const
-{
-    return motif;
 }
 
 void DesignElement::createMotifFromTile()

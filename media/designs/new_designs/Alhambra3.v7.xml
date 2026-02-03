@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Fri Apr 18 2025 10:52:09 -->
-<vector id="1" version="26">
+<!-- Written: Sun Jan 25 2026 21:08:35 -->
+<vector id="1" version="29">
 	<design>
 		<size>
 			<width>1330</width>
@@ -23,18 +23,16 @@
 		<BackgroundImage name="IMG_1694-1ADJ.JPG">
 			<Scale>0.5237600236810447</Scale>
 			<Rot>0</Rot>
-			<X>-2</X>
-			<Y>510</Y>
-			<Center>0,0</Center>
+			<X>-3.818542671400871</X>
+			<Y>973.7283812072222</Y>
 		</BackgroundImage>
 	</design>
 	<style.Thick id="2">
 		<toolkit.GeoLayer>
-			<left__delta>-2</left__delta>
-			<top__delta>518</top__delta>
+			<left__delta>-3.818542671400871</left__delta>
+			<top__delta>989.0025518928256</top__delta>
 			<width__delta>0.5237600236810447</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>0,0</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
@@ -361,7 +359,6 @@
 			<color hide="f">#ff1496d2</color>
 		</style.Colored>
 		<style.Thick>
-			<Version>0</Version>
 			<draw__outline>true</draw__outline>
 			<outline_width>0.05</outline_width>
 			<outline_color>#ff000000</outline_color>
@@ -372,11 +369,10 @@
 	</style.Thick>
 	<style.Filled id="83">
 		<toolkit.GeoLayer>
-			<left__delta>-2</left__delta>
-			<top__delta>518</top__delta>
+			<left__delta>-3.818542671400871</left__delta>
+			<top__delta>989.0025518928256</top__delta>
 			<width__delta>0.5237600236810447</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>0,0</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
@@ -683,11 +679,10 @@
 	<style.Border id="84">
 		<border type="2Color" shape="Rectangle" useViewSize="f">
 			<toolkit.GeoLayer>
-				<left__delta>-2</left__delta>
-				<top__delta>518</top__delta>
+				<left__delta>-3.818542671400871</left__delta>
+				<top__delta>989.0025518928256</top__delta>
 				<width__delta>0.5237600236810447</width__delta>
 				<theta__delta>0</theta__delta>
-				<center>0,0</center>
 				<Z>10</Z>
 			</toolkit.GeoLayer>
 			<color>#ff10100e</color>

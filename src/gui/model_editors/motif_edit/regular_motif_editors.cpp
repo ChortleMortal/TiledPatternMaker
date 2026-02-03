@@ -22,7 +22,7 @@ typedef shared_ptr<RadialMotif>    RadialPtr;
 // StarEditor
 //
 ////////////////////////////////////////////////////////
-StarEditor::StarEditor(QString name, DesignElementPtr del, bool doEmit) : NamedMotifEditor(name)
+StarEditor::StarEditor(QString name, DELPtr del, bool doEmit) : NamedMotifEditor(name)
 {
     d_slider = new DoubleSliderSet("Star Editor Hops D", 3.0, 0.0, 10.0, 100 );
     s_slider = new SliderSet("Star Editor Intersects S", 2, 1, 5);
@@ -138,7 +138,7 @@ void StarEditor::editorToMotif(bool doEmit)
 // Star2Editor
 //
 ////////////////////////////////////////////////////////
-Star2Editor::Star2Editor(QString name, DesignElementPtr del, bool doEmit) : NamedMotifEditor(name)
+Star2Editor::Star2Editor(QString name, DELPtr del, bool doEmit) : NamedMotifEditor(name)
 {
     theta_slider = new DoubleSliderSet("Star Editor Angle theta", 45, 0.0, 90.0, 10 );
     s_slider     = new SliderSet("Star Editor Intersects S", 2, 1, 5);
@@ -236,7 +236,7 @@ void Star2Editor::editorToMotif(bool doEmit)
 // ResetteEditor
 //
 ////////////////////////////////////////////////////////
-RosetteEditor::RosetteEditor(QString name, DesignElementPtr del, bool doEmit) : NamedMotifEditor(name)
+RosetteEditor::RosetteEditor(QString name, DELPtr del, bool doEmit) : NamedMotifEditor(name)
 {
     connectScale = nullptr;
 
@@ -341,7 +341,7 @@ void RosetteEditor::editorToMotif(bool doEmit)
 // Rosette2Editor
 //
 ////////////////////////////////////////////////////////
-Rosette2Editor::Rosette2Editor(QString name, DesignElementPtr del, bool doEmit) : NamedMotifEditor(name)
+Rosette2Editor::Rosette2Editor(QString name, DELPtr del, bool doEmit) : NamedMotifEditor(name)
 {
     connectScale = nullptr;
 
@@ -350,49 +350,62 @@ Rosette2Editor::Rosette2Editor(QString name, DesignElementPtr del, bool doEmit) 
     k_slider  = new DoubleSliderSet("Rosette2 K (Knee Angle)", 0.0, -90.0, 90.0, 10);
     s_slider  = new SliderSet(      "Rosette2 S Intersections", 1, 1, 5);
 
-    QRadioButton * rOuter = new QRadioButton("Outwards");
-    QRadioButton * rInner = new QRadioButton("Inwards");
-    QRadioButton * rAlter = new QRadioButton("Alternating");
-    QLabel       * label  = new QLabel("Tip Direction :");
-                kaplanize = new QCheckBox("Kaplan's constraint");
-             chk_inscribe = new QCheckBox("Inscribed");
-             chk_on_point  = new QCheckBox("On Point");
-                  convert = new QPushButton("Convert");
+    chkOuter   = new QCheckBox("Outward");
+    chkInner   = new QCheckBox("Inward");
+    chkFlipped = new QCheckBox("Flipped");
+
+    rSingle = new QRadioButton("Single");
+    rAlter  = new QRadioButton("Alternating");
+
+    QLabel  * label  = new QLabel("Tip Direction : ");
+    QLabel  * label2 = new QLabel("Tip Mode : ");
+
+    kaplanize     = new QCheckBox("Kaplan's constraint ");
+    chk_inscribe  = new QCheckBox("Inscribed ");
+    chk_on_point  = new QCheckBox("On Point ");
+    convert       = new QPushButton("Convert");
 
     QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addStretch();
     hbox->addWidget(label);
-    hbox->addSpacing(11);
-    hbox->addWidget(rOuter);
-    hbox->addWidget(rInner);
+    hbox->addWidget(chkOuter);
+    hbox->addWidget(chkInner);
+    hbox->addWidget(chkFlipped);
+    hbox->addStretch(1);
+    hbox->addWidget(label2);
+    hbox->addWidget(rSingle);
     hbox->addWidget(rAlter);
-    hbox->addStretch();
-    hbox->addWidget(kaplanize);
-    hbox->addWidget(chk_inscribe);
-    hbox->addWidget(chk_on_point);
-    hbox->addSpacing(5);
-    hbox->addWidget(convert);
+    hbox->addStretch(4);
+
+    QHBoxLayout * hbox2 = new QHBoxLayout;
+    hbox2->addWidget(chk_inscribe);
+    hbox2->addWidget(chk_on_point);
+    hbox2->addWidget(kaplanize);
+    hbox2->addWidget(convert);
+    hbox2->addStretch(10);
 
     addLayout(kx_slider);
     addLayout(ky_slider);
     addLayout(k_slider);
     addLayout(s_slider);
     addLayout(hbox);
-
-    tipGroup = new QButtonGroup;
-    tipGroup->addButton(rOuter,TIP_TYPE_OUTER);
-    tipGroup->addButton(rInner,TIP_TYPE_INNER);
-    tipGroup->addButton(rAlter,TIP_TYPE_ALTERNATE);
+    addLayout(hbox2);
 
     connect(kx_slider,    &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(ky_slider,    &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(k_slider,     &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(s_slider,     &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
-    connect(tipGroup,     &QButtonGroup::idClicked,       this, [this]() { editorToMotif(true);});
     connect(kaplanize,    &QCheckBox::clicked,            this, [this]() { editorToMotif(true);});
     connect(chk_inscribe, &QCheckBox::clicked,            this, [this]() { editorToMotif(true);});
     connect(chk_on_point, &QCheckBox::clicked,            this, [this]() { editorToMotif(true);});
+
     connect(convert,      &QPushButton::clicked,          this, &Rosette2Editor::convertConstrained);
+   \
+    connect(rSingle,      &QRadioButton::clicked,         this, &Rosette2Editor::rSingleClicked);
+    connect(rAlter,       &QRadioButton::clicked,         this, &Rosette2Editor::rAlternateClicked);
+
+    connect(chkOuter,     &QCheckBox::clicked,            this, &Rosette2Editor::chkOuterClicked);
+    connect(chkInner,     &QCheckBox::clicked,            this, &Rosette2Editor::chkInnerClicked);
+    connect(chkFlipped,   &QCheckBox::clicked,            this, &Rosette2Editor::chkFlippedClicked);
 
     wDel = del;
     if (!del || !del->getMotif())
@@ -436,7 +449,8 @@ void Rosette2Editor::motifToEditor()
         qreal  y  = rose->getKneeY();
         qreal  k  = rose->getK();
         int    ss = rose->getS();
-        eTipType tt    = rose->getTipType();
+        eTipMode tt    = rose->getTipMode();
+        uint tipTypes  = rose->getTipTypes();
         bool constrain = rose->getConstrain();
 
         convert->setVisible(constrain);
@@ -446,10 +460,17 @@ void Rosette2Editor::motifToEditor()
         ky_slider->setValue(y);
         k_slider->setValue(k);
         s_slider->setValue(ss);
-        tipGroup->button(tt)->setChecked(true);
         kaplanize->setChecked(constrain);
         chk_inscribe->setChecked(rose->getInscribe());
         chk_on_point->setChecked(rose->getOnPoint());
+        if (tt == TIP_MODE_REGULAR)
+            rSingle->setChecked(true);
+        else
+            rAlter->setChecked(true);
+        chkOuter->setChecked(tipTypes & TIP_TYPE2_OUTER);
+        chkInner->setChecked(tipTypes & TIP_TYPE2_INNER);
+        chkFlipped->setChecked(tipTypes & TIP_TYPE2_FLIPPED);
+
         blockSignals(false);
     }
 }
@@ -465,8 +486,8 @@ void Rosette2Editor::editorToMotif(bool doEmit)
         qreal  y = ky_slider->value();
         qreal  k = k_slider->value();
         int    s = s_slider->value();
-        eTipType tt = static_cast<eTipType>(tipGroup->checkedId());
         bool   c = kaplanize->isChecked();
+        eTipMode tt = (rSingle->isChecked()) ? TIP_MODE_REGULAR : TIP_MODE_ALTERNATE;
 
         convert->setVisible(c);
 
@@ -474,14 +495,187 @@ void Rosette2Editor::editorToMotif(bool doEmit)
         rose->setKneeY(y);
         rose->setK(k);
         rose->setS(s);
-        rose->setTipType(tt);
+        rose->setTipMode(tt);
         rose->setConstrain(c);
         rose->setInscribe(chk_inscribe->isChecked());
         rose->setOnPoint(chk_on_point->isChecked());
         rose->resetMotifMap();
 
+        if (chkOuter->isChecked())
+            rose->addTipType(TIP_TYPE2_OUTER);
+        else
+            rose->removeTipType(TIP_TYPE2_OUTER);
+
+        if (chkInner->isChecked())
+            rose->addTipType(TIP_TYPE2_INNER);
+        else
+            rose->removeTipType(TIP_TYPE2_INNER);
+
+        if (chkFlipped->isChecked())
+            rose->addTipType(TIP_TYPE2_FLIPPED);
+        else
+            rose->removeTipType(TIP_TYPE2_FLIPPED);
+
         if (doEmit)
             emit sig_motif_modified(rose);
+    }
+}
+
+void Rosette2Editor::chkOuterClicked(bool checked)
+{
+    auto rose = wrosette.lock();
+    if (!rose) return;
+
+    if (checked)
+    {
+        if (rose->getTipMode() == TIP_MODE_REGULAR)
+        {
+            // single turn off others
+            chkInner->setChecked(false);
+            chkFlipped->setChecked(false);
+        }
+        else
+        {
+            // only allow turn off which will turn on the one that is not selected
+            chkOuter->setChecked(false);
+            return;
+        }
+    }
+    else
+    {
+        if (rose->getTipMode() == TIP_MODE_REGULAR)
+        {
+            if (!chkInner->isChecked() && !chkFlipped->isChecked())
+            {
+                // something must be checked
+                chkInner->setChecked(true);
+            }
+        }
+        else
+        {
+            // turn on the non selected
+            if (!chkInner->isChecked())
+                chkInner->setChecked(true);
+            else
+                chkFlipped->setChecked(true);
+        }
+    }
+
+    editorToMotif(true);
+}
+
+void Rosette2Editor::chkInnerClicked(bool checked)
+{
+    auto rose = wrosette.lock();
+    if (!rose) return;
+
+    if (checked)
+    {
+        if (rose->getTipMode() == TIP_MODE_REGULAR)
+        {
+            // single turn off others
+            chkOuter->setChecked(false);
+            chkFlipped->setChecked(false);
+        }
+        else
+        {
+            // only allow turn off which will turn on the one that is not selected
+            chkInner->setChecked(false);
+            return;
+        }
+    }
+    else
+    {
+        if (rose->getTipMode() == TIP_MODE_REGULAR)
+        {
+            if (!chkOuter->isChecked() && !chkFlipped->isChecked())
+            {
+                // something must be checked
+                chkOuter->setChecked(true);
+            }
+        }
+        else
+        {
+            // turn on the non selected
+            if (!chkOuter->isChecked())
+                chkOuter->setChecked(true);
+            else
+                chkFlipped->setChecked(true);
+        }
+    }
+
+    editorToMotif(true);
+}
+
+void Rosette2Editor::chkFlippedClicked(bool checked)
+{
+    auto rose = wrosette.lock();
+    if (!rose) return;
+
+    if (checked)
+    {
+        if (rose->getTipMode() == TIP_MODE_REGULAR)
+        {
+            // single turn off others
+            chkOuter->setChecked(false);
+            chkInner->setChecked(false);
+        }
+        else
+        {
+            // only allow turn off which will turn on the one that is not selected
+            chkFlipped->setChecked(false);
+            return;
+        }
+    }
+    else
+    {
+        if (rose->getTipMode() == TIP_MODE_REGULAR)
+        {
+            if (!chkOuter->isChecked() && !chkInner->isChecked())
+            {
+                // something must be checked
+                chkOuter->setChecked(true);
+            }
+        }
+        else
+        {
+            // turn on the non selected
+            if (!chkOuter->isChecked())
+                chkOuter->setChecked(true);
+            else
+                chkInner->setChecked(true);
+        }
+    }
+
+    editorToMotif(true);
+}
+
+void Rosette2Editor::rSingleClicked(bool checked)
+{
+    if (checked)
+    {
+        // assumes 2 are selected so turn one off
+        if (chkFlipped->isChecked())
+            chkFlipped->setChecked(false);
+        else if (chkInner->isChecked())
+            chkInner->setChecked(false);
+
+        editorToMotif(true);
+    }
+}
+
+void Rosette2Editor::rAlternateClicked(bool checked)
+{
+    if (checked)
+    {
+        // assumes ones is one, so turn on another
+        if (chkOuter->isChecked())
+            chkInner->setChecked(true);
+        else if (chkInner->isChecked())
+            chkFlipped->setChecked(true);
+        else
+            chkOuter->setChecked(true);
+        editorToMotif(true);
     }
 }
 

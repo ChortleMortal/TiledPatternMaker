@@ -17,9 +17,8 @@ class page_backgrounds : public panel_page
 public:
     page_backgrounds(ControlPanel *apanel);
 
-    QGroupBox     * createBackgroundImageGroup();
-    QGroupBox     * createBackgroundViewGroup();
-    QGroupBox     * createBackgroundColorGroup();
+    QGroupBox * createBackgroundImageGroup();
+    QGroupBox * createBackgroundColorGroup();
 
     void onRefresh() override;
     void onEnter() override;
@@ -28,29 +27,44 @@ public:
 private slots:
     void slot_loadBackground();
     void slot_removeBackground();
-    void slot_startSkewAdjustment(bool checked);
-    void slot_adjustBackground();
-    void slot_saveAdjustedBackground();
-    void slot_setBkgdXform();
     void slot_clearBackground();
-    void slot_useAdjustedClicked(bool checked);
+
+    void slot_startKeystoneAdjustment(bool checked);
+    void slot_endKeystoneAdjust();
+
+    void slot_startCrop(bool checked);
+    void slot_endCrop();
+
+    void slot_setBkgdXform();
     void slot_resetXform();
     void slot_showImageChanged(bool checked);
 
 protected:
-    void setupBackground(Xform xform);
+    void saveModified(bool adjusted);
+
+    void useAdjusted(bool checked);
+    void useCropped(bool checked);
+
+    void setupBackgroundPixmap();
     void displayBackgroundImageStatus(bool force);
     void selectColor(int row);
     void reInitBkgdColors(QColor bcolor);
 
 private:
-    LayoutTransform       bkgdLayout;
-    AQPushButton        * startAdjustBtn;
-    QCheckBox           * chk_useAdjusted;
-    QLineEdit           * imageName;
-    QGroupBox           * bkgdViewGroup;
-    AQTableWidget       * viewTable;
-    SMXWidget           * smxWidget;
+    LayoutTransform tformLayout;
+
+    AQPushButton * startAdjustBtn;
+    AQPushButton * startCropBtn;
+
+    QCheckBox    * chkShowAdjusted;
+    QCheckBox    * chkShowCropped;
+    QCheckBox    * chkView;
+
+    QLineEdit    * imageName;
+
+    AQTableWidget* viewTable;
+
+    SMXWidget    * smxWidget;
 
     QRadioButton * btnNone;
     QRadioButton * btnMosaic;

@@ -6,19 +6,18 @@
 #include <QTransform>
 #include <QMutex>
 #include <QMetaType>
+#include <QDebug>
 
 #include "sys/geometry/fill_region.h"
 
 typedef std::shared_ptr<class Crop>             CropPtr;
 typedef std::shared_ptr<class DCEL>             DCELPtr;
-typedef std::shared_ptr<class ThickDCEL>        ThickDCELPtr;
-typedef std::shared_ptr<class FilledDCEL>       FilledDCELPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
 typedef std::shared_ptr<class Tile>             TilePtr;
 typedef std::shared_ptr<class Mosaic>           MosaicPtr;
 typedef std::shared_ptr<class Motif>            MotifPtr;
-typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+typedef std::shared_ptr<class DesignElement>    DELPtr;
 typedef std::shared_ptr<class Prototype>        ProtoPtr;
 
 typedef std::weak_ptr<class Prototype>          WeakProtoPtr;
@@ -63,16 +62,18 @@ public:
 
     MapPtr getProtoMap(bool splash = false);
     MapPtr getExistingProtoMap()   { return _protoMap; }
+    void   setProtoMap(MapPtr map) { _protoMap = map; }
 
-    const FilledDCELPtr & getFilledDCEL();          // builds on demand
-    const FilledDCELPtr & getExistingFilledDCEL()   { return _filledDCEL; }
+    const DCELPtr & getDCEL();          // builds on demand
+    const DCELPtr & getExistingDCEL()   { return _DCEL; }
+
 
     // Design Elements
-    void              addDesignElement(const DesignElementPtr & element);
-    void              removeDesignElement(const DesignElementPtr &element);
-    QVector<DesignElementPtr> &  getDesignElements() { return _designElements; }
-    DesignElementPtr  getDesignElement(int index);
-    bool              containsDesignElement(DesignElementPtr del);
+    void              addDesignElement(const DELPtr & element);
+    void              removeDesignElement(const DELPtr &element);
+    QVector<DELPtr> &  getDesignElements() { return _designElements; }
+    DELPtr  getDesignElement(int index);
+    bool              containsDesignElement(DELPtr del);
 
     bool              hasContent()          { return (_designElements.size() > 0); }
     int               numDesignElements()   { return _designElements.size(); }
@@ -91,6 +92,13 @@ public:
     void    setCrop(CropPtr crop);
     void    resetCrop();
     CropPtr getCrop()                               { return _crop; }
+
+    // distort
+    bool    getDistortionEnable()                   { return distort; }
+    void    enableDistortion(bool set)              { distort = set; }
+    void    setDistortion(QTransform t)             { distortionTransform = t; }
+    void    resetDistortion()                       { distortionTransform.reset(); }
+    QTransform getDistortion()                      { return distortionTransform; }
 
     void    setViewController(SystemViewController * vc)  { viewController = vc; }
 
@@ -117,15 +125,15 @@ private:
     void    _createMap();
 
     // prototype data
-    QVector<DesignElementPtr>   _designElements;
+    QVector<DELPtr>             _designElements;
     CropPtr                     _crop;
 
     // derived maps
     MapPtr                      _protoMap;
-    FilledDCELPtr               _filledDCEL;
+    DCELPtr                     _DCEL;
 
     TilingPtr                   _tiling;            // prototypes own tilings
-    WeakMosaicPtr               wMosaic;           // mosaics own prototypes, si weak pointer
+    WeakMosaicPtr               wMosaic;            // mosaics own prototypes, si weak pointer
     SystemViewController *      viewController;     // can be changed
 
     QMutex                      dcelMutex;
@@ -133,6 +141,9 @@ private:
 
     uint                        cleanseLevel;
     qreal                       cleanseSensitivity;
+
+    bool                        distort;
+    QTransform                  distortionTransform;
 };
 
 #endif

@@ -42,14 +42,6 @@ enum eColor
     C_BLACK = 1
 };
 
-enum eDCELType
-{
-    DCEL_UNDEFINED,
-    DCEL_SIMPLE,
-    DCEL_FACES,
-    DCEL_TIPS
-};
-
 //////////////////////////////////////////////////////////////////////////////
 ///
 ///  DCEL
@@ -65,15 +57,14 @@ public:
     DCEL(Map * map);
     virtual ~DCEL();
 
-    virtual bool build() = 0;
+    bool    build();
     void    displayDCEL(int val);
 
     FaceSet                  & getFaceSet()  { return faces; }
     const QVector<VertexPtr> & getVertices() { return vertices; }
-    const EdgeSet   & getEdges()    { return edges; }
+    const EdgeSet   & getEdges()             { return edges; }
 
     virtual   QString info() const override;
-    eDCELType getType() { return dtype; }
 
     static int refs;
 
@@ -117,30 +108,6 @@ protected:
     int     faceIndex(const FacePtr & face) { return faces.indexOf(face); }
 
     FaceSet faces;
-    eDCELType  dtype;
 };
-
-
-class SimpleDCEL : public DCEL
-{
-public:
-    SimpleDCEL(Map * map);
-    virtual bool build() override;
-};
-
-class FilledDCEL : public DCEL
-{
-public:
-    FilledDCEL(Map * map);
-    virtual bool build() override;
-};
-
-class ThickDCEL : public DCEL
-{
-public:
-    ThickDCEL(Map * map);
-    virtual bool build() override;
-};
-
 
 #endif // DCEL_H

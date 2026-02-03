@@ -32,7 +32,6 @@ private slots:
     void slot_circleChanged(qreal r);
     void slot_typeSelected(int id);
     void slot_rectChangedM();
-    void slot_rectChangedS();
 
     void slot_sidesChanged(int n);
     void slot_pointChanged();
@@ -47,7 +46,6 @@ private:
     QButtonGroup    * cropTypes;
     QButtonGroup    * aspects;
     LayoutQRectF    * rectLayoutW;
-    LayoutQRectF    * rectLayoutS;
     DoubleSpinSet   * radius;
     DoubleSpinSet   * centerX;
     DoubleSpinSet   * centerY;

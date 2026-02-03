@@ -7,7 +7,7 @@
 #include "model/motifs/extender.h"
 #include "model/styles/colorset.h"
 #include "sys/enums/efilltype.h"
-#include "sys/enums/emotiftype.h"
+#include "sys/enums/eviewtype.h"
 #include "sys/enums/estyletype.h"
 #include "sys/geometry/edge_poly.h"
 #include "sys/geometry/polygon.h"
@@ -77,7 +77,7 @@ protected:
     bool    processTileColors(QTextStream &ts, StylePtr style);
 
     // styles
-    void    procesToolkitGeoLayer(QTextStream &ts, const Xform &xf, int zlevel);
+    void    procesToolkitGeoLayer(QTextStream &ts, const Xform &xf, eZLevel zlevel);
     void    processsStyleThick(QTextStream &ts, eDrawOutline draw_outline, qreal width, qreal outlineWidth, QColor outlineColor, Qt::PenJoinStyle join_style, Qt::PenCapStyle cap_style);
     void    processsStyleInterlace(QTextStream &ts, qreal gap, qreal shadow, bool includeSVerts, bool startUnder);
     void    processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, eFillType algorithm);
@@ -161,7 +161,7 @@ protected:
     QString getRosetteReference(RosettePtr ptr);
     QString getRosette2Reference(Rosette2Ptr ptr);
 
-    QString             _failMsg;
+    QString      _failMsg;
     WriterBase    mwbase;
 
 private:

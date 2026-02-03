@@ -86,18 +86,16 @@ void Mosaic::enginePaint(QPainter * painter)
 
     painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
-    auto crop = getPainterCrop();
-    if (crop)
-    {
-        auto firststyle = getFirstRegularStyle();
-        auto transform = firststyle->getLayerTransform();
-        crop->setPainterClip(painter,transform);
-    }
+    CropPtr painterCrop = getPainterCrop();
 
     for (auto const & layer : std::as_const(layers))
     {
         painter->save();
         layer->forceLayerRecalc(false);
+        if (layer->isClipable() && painterCrop)
+        {
+            painterCrop->clipPainter(painter,layer->getLayerTransform());
+        }
         layer->paint(painter);
         painter->restore();
     }

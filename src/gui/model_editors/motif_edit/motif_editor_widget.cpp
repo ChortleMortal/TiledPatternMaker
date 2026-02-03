@@ -58,7 +58,7 @@ MotifEditorWidget::MotifEditorWidget()
     setLayout(layout);
 }
 
-void MotifEditorWidget::delegate(DesignElementPtr del)
+void MotifEditorWidget::delegate(DELPtr del)
 {
     delegatedDesignElement = del;
 
@@ -86,7 +86,7 @@ void MotifEditorWidget::delegate(DesignElementPtr del)
     delegate(del,motifType,false);
 }
 
-void MotifEditorWidget::delegate(DesignElementPtr del,eMotifType type,bool doEmit)
+void MotifEditorWidget::delegate(DELPtr del,eMotifType type,bool doEmit)
 {
     NamedMotifEditor * ed = nullptr;
     switch (type)

@@ -47,13 +47,13 @@ protected:
 
 private:
     void   draw();
-    void   drawProto(ProtoPtr proto);
+    void   drawProto(const int mode, ProtoPtr proto);
+    void   drawDEL(  const int mode, ProtoPtr proto, DELPtr del);
 
     GeoGraphics    * gg;
 
     ProtoViewColors colors;
     qreal           lineWidth;
-    int             mode;
 };
 
 #endif

@@ -182,7 +182,7 @@ void StyleColorFillFace::slot_delete()
 
 void StyleColorFillFace::select(QPointF mpt,Qt::MouseButton btn)
 {
-    FilledDCELPtr dcel    = filled->getPrototype()->getFilledDCEL();
+    DCELPtr dcel    = filled->getPrototype()->getDCEL();
     if (!dcel) return;
 
     FaceSet & faces = dcel->getFaceSet();

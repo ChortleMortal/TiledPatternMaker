@@ -40,8 +40,8 @@ private slots:
     void slot_showPainterCrop(bool checked);
 
 protected:
-    QWidget * createMosaicCropControls();
-    QWidget * createPainterCropControls();
+    QGridLayout * createMosaicCropControls();
+    QGridLayout * createPainterCropControls();
 
 private:
     MosaicCropMaker mosaicCropMaker;

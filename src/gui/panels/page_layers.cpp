@@ -108,7 +108,6 @@ void page_layers::populateLayers()
 void page_layers::populateLayer(Layer * layer, int col)
 {
     QTransform canT = layer->getCanvasTransform();
-  //QTransform modT = layer->getModelTransform();
     QTransform layT = layer->getLayerTransform();
     Xform     layXf = layer->getModelXform();
 
@@ -128,13 +127,13 @@ void page_layers::populateLayer(Layer * layer, int col)
     connect(cb, &QCheckBox::clicked, this, [this, col] { visibilityChanged(col); });
 
     // z-level
-    qreal z = layer->zValue();
-    AQDoubleSpinBox * zBox = new AQDoubleSpinBox;
-    zBox->setRange(-10,10);
+    eZLevel z = layer->getZLevel();
+    AQSpinBox * zBox = new AQSpinBox;
+    zBox->setRange(-30,30);
     zBox->setValue(z);
     zBox->setAlignment(Qt::AlignCenter);
     layerTable->setCellWidget(LAYER_Z,col,zBox);
-    connect(zBox, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,zBox,col] { zChanged(zBox,col); });
+    connect(zBox, static_cast<void (AQSpinBox::*)(int)>(&AQSpinBox::valueChanged), this, [this,zBox,col] { zChanged(zBox,col); });
 
     // align
     QPushButton * align_btn = new QPushButton("Align-to-Selected");
@@ -321,10 +320,10 @@ void page_layers::refreshLayer(Layer * layer, int col)
 
     // z-level
     w = layerTable->cellWidget(LAYER_Z,col);
-    AQDoubleSpinBox * zBox = dynamic_cast<AQDoubleSpinBox*>(w);
+    AQSpinBox * zBox = dynamic_cast<AQSpinBox*>(w);
     Q_ASSERT(zBox);
     zBox->blockSignals(true);
-    zBox->setValue(layer->zValue());
+    zBox->setValue(layer->getZLevel());
     zBox->blockSignals(false);
 
     // canvas transform
@@ -412,16 +411,16 @@ void page_layers::visibilityChanged(int col)
     layer->forceRedraw();
 }
 
-void page_layers::zChanged(AQDoubleSpinBox * dsp, int col)
+void page_layers::zChanged(AQSpinBox * dsp, int col)
 {
     Q_ASSERT(dsp);
-    qreal z = dsp->value();
+    int z = dsp->value();
 
     auto layer = getLayer(col);
     if (!layer) return;
     
     qDebug() << "z-level changed: row=" << col << "layer=" << layer->layerName();
-    layer->setZValue(z);
+    layer->setZLevel(eZLevel(z));
     layer->forceRedraw();
 }
 

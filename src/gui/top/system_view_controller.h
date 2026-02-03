@@ -65,6 +65,7 @@ signals:
     void    sig_lock(Layer * l, bool set);
     void    sig_solo(Layer * l, bool set);
     void    sig_breakaway(Layer * l, bool set);
+    void    sig_unloaded();
 
 public slots:
     void    slot_updateView();

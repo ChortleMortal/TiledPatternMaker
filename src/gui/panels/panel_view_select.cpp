@@ -64,7 +64,7 @@ void PanelViewSelect::createGUI()
     cbMultiSelect->setStyleSheet("QCheckBox {padding-left: 3px;}");
     cbMultiSelect->setChecked(config->multiView);
 
-    cbLockSelect           = new QCheckBox("Lock Select");
+    cbLockSelect           = new QCheckBox("Lock Layers");
     cbLockSelect->setStyleSheet("QCheckBox {padding-left: 3px;}");
     cbLockSelect->setChecked(config->lockView);
 

@@ -11,8 +11,8 @@ class NamedMotifEditor;
 class PrototypeMaker;
 
 typedef std::shared_ptr<class Motif>           MotifPtr;
-typedef std::shared_ptr<class DesignElement>   DesignElementPtr;
-typedef std::weak_ptr<class DesignElement>     WeakDesignElementPtr;
+typedef std::shared_ptr<class DesignElement>   DELPtr;
+typedef std::weak_ptr<class DesignElement>     WeakDELPtr;
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -29,7 +29,7 @@ class MotifEditorWidget : public QWidget
 public:
     MotifEditorWidget();
     
-    void  delegate(DesignElementPtr del);
+    void  delegate(DELPtr del);
 
     void  onRefresh();
 
@@ -45,9 +45,9 @@ protected slots:
 protected:
 
 private:
-    void delegate(DesignElementPtr del, eMotifType type, bool doEmit);
+    void delegate(DELPtr del, eMotifType type, bool doEmit);
 
-    WeakDesignElementPtr    delegatedDesignElement;
+    WeakDELPtr    delegatedDesignElement;
 
     MotifTypeCombo        * typeCombo;
     SpecificEditorWidget  * specificEditorWidget;

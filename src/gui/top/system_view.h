@@ -24,6 +24,8 @@ class SystemViewController;
 class ActiveLayers
 {
 public:
+    void    paint(QPainter * painter, CropPtr paineterCrop);
+
     void    add(LayerPtr layer);
     void    clear();
     void    unloadContent();
@@ -32,8 +34,6 @@ public:
     int     size() { return layers.count(); }
 
     const QVector<Layer *> get();
-
-    void    paint(QPainter & painter);
 
 private:
     QVector<WeakLayerPtr> layers;
@@ -122,8 +122,8 @@ protected:
     void    setFixedSize(QSize sz);
     void    setSize(QSize sz);
 
-    void    setPainterClip(CropPtr crop)            { _painterCrop = crop; }
-    CropPtr getPainterClip()                        { return _painterCrop.lock(); }
+    void    setPainterCrop(CropPtr crop)            { _painterCrop = crop; }
+    CropPtr getPainterCrop()                        { return _painterCrop.lock(); }
 
     void    clearLayout(); // only used by cycler for pngs
     void    clearLayout(QLayout* layout, bool deleteWidgets = true);

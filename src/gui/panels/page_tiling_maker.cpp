@@ -11,16 +11,14 @@
 #include "gui/panels/page_tiling_maker.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view_controller.h"
-#include "gui/viewers/gui_modes.h"
 #include "gui/viewers/image_view.h"
 #include "gui/widgets/dlg_edgepoly_edit.h"
 #include "gui/widgets/dlg_listnameselect.h"
 #include "gui/widgets/dlg_listselect.h"
 #include "gui/widgets/dlg_trim.h"
 #include "gui/widgets/floatable_tab.h"
-#include "model/makers/prototype_maker.h"
 #include "gui/widgets/smx_widget.h"
-#include "model/makers/tiling_maker.h"
+#include "model/makers/prototype_maker.h"
 #include "model/settings/configuration.h"
 #include "model/styles/style.h"
 #include "model/tilings/placed_tile.h"
@@ -32,6 +30,7 @@
 #include "sys/qt/utilities.h"
 #include "sys/sys.h"
 #include "sys/sys/fileservices.h"
+
 typedef std::weak_ptr<Tiling>   WeakTilingPtr;
 
 using std::make_shared;
@@ -52,11 +51,11 @@ page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpane
     controlTab = createControlTab();
     stateTab   = createStateTab();
 
-    Sys::guiModes->resetTMKbdMode(); // tirggers selection
+    tilingMaker->resetTMKbdMode(); // tirggers selection
 
     tabWidget = new QTabWidget;
-    tabWidget->addTab(controlTab, "Control");
-    tabWidget->addTab(stateTab,   "State");
+    tabWidget->addTab(controlTab, "Create");
+    tabWidget->addTab(stateTab,   "Adjust");
 
     vbox->addWidget(tabWidget);
     vbox->addStretch();
@@ -693,7 +692,7 @@ QGroupBox * page_tiling_maker::createKbdModes(QButtonGroup * kbdGroup, SMXWidget
     kbdGroup->addButton(rbPTile,    TM_MODE_XFORM_PLACED_TILE);
 
     connect(kbdGroup, QOverload<QAbstractButton*>::of(&QButtonGroup::buttonClicked), this, [this,kbdGroup] (QAbstractButton* btn) { slot_setKbdMode1(btn, kbdGroup); });
-    connect(Sys::guiModes, &GuiModes::sig_TMKbdMode, this, &page_tiling_maker::slot_kbdMode1);
+    connect(tilingMaker, &TilingMaker::sig_TMKbdMode, this, &page_tiling_maker::slot_kbdMode1);
 
     QHBoxLayout * hb = new QHBoxLayout;
     hb->addWidget(smxwidget);
@@ -713,9 +712,9 @@ QGroupBox * page_tiling_maker::createKbdModes(QButtonGroup * kbdGroup, SMXWidget
 void page_tiling_maker::slot_setKbdMode1(QAbstractButton * btn, QButtonGroup * kbdGroup)
 {
     int mode = kbdGroup->id(btn);
-    eTMMode tmm = static_cast<eTMMode>(mode);
+    eTMKbdMode tmm = static_cast<eTMKbdMode>(mode);
 
-    Sys::guiModes->setTMKbdMode(tmm);
+    tilingMaker->setTMKbdMode(tmm);
 
     if (tmm != TM_MODE_XFORM_ALL)
         emit Sys::viewController->sig_solo(Sys::tilingMakerView.get(),true);
@@ -726,7 +725,7 @@ void page_tiling_maker::slot_setKbdMode1(QAbstractButton * btn, QButtonGroup * k
 }
 
 // from canvas setKbdMode
-void page_tiling_maker::slot_kbdMode1(eTMMode mode)
+void page_tiling_maker::slot_kbdMode1(eTMKbdMode mode)
 {
     QAbstractButton * button = kbdBtnGroup1->button(mode);
     if (button)
@@ -1941,7 +1940,7 @@ void page_tiling_maker::tallyMouseMode()
 
 void page_tiling_maker::tallyKbdMode()
 {
-    eTMMode mode = Sys::guiModes->TMKbdMode();
+    eTMKbdMode mode = tilingMaker->getTMKbdMode();
 
     QAbstractButton * button = kbdBtnGroup1->button(mode);
     button->setChecked(true);

@@ -21,16 +21,16 @@ public:
 protected:
     void draw(QPainter * painter);
 
-    void drawFromTilingFlood();
-    void drawFromTilingRegion();
+    void drawFromTilingFlood(QPainter * painter);
+    void drawFromTilingRegion(QPainter * painter);
 
-    void drawModelUnitsModelCentered();
-    void drawModelUnitsCanvasCentered();
+    void drawModelUnits(QPainter * painter);
+    void drawModelUnitsCentered(QPainter * painter);
 
-    void drawScreenUnitsCanvasCentered();
-    void drawScreenUnitsModelCentered();
+    void drawScreenUnits(QPainter * painter);
+    void drawScreenUnitsCentered(QPainter * painter);
 
-    void drawCenters();
+    void drawCenters(QPainter *painter);
 
     void iamaLayerController() override {}
 
@@ -44,22 +44,20 @@ public slots:
     void slot_mouseDoublePressed(QPointF spt) override;
 
 private:
-    void drawScreenUnits(QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step);
-    void drawModelUnits( QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step);
+    void drawScreenUnits(QPainter * painter, QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step);
+    void drawModelUnits( GeoGraphics * gg, QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step);
 
-    void ggdrawLine(QLineF line, QPen pen);
-    void ggdrawLine(QPointF p1, QPointF p2, QPen  pen);
-    void ggdrawPoly(QPolygonF & poly, QPen  pen);
+    void ggdrawLine(GeoGraphics * gg, QLineF line, QPen pen);
+    void ggdrawLine(GeoGraphics * gg, QPointF p1, QPointF p2, QPen  pen);
+    void ggdrawPoly(GeoGraphics * gg, QPolygonF & poly, QPen  pen);
 
-    void ppdrawLine(QLineF &line);
-    void ppdrawLine(QPointF p1, QPointF p2);
+    void ppdrawLine(QPainter * painter, QLineF &line);
+    void ppdrawLine(QPainter * painter, QPointF p1, QPointF p2);
 
     bool intersects(QVector<QLineF> &edges , QLineF & line);
     QVector<QLineF> toEdges(const QRectF & r);
 
     Configuration   * config;
-    QPainter        * painter;
-    GeoGraphics     * gg;
     MapPtr          gridMap;
 
     QLineF      corners[2];

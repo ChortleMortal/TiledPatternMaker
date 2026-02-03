@@ -20,7 +20,7 @@ class ExplicitMapEditor : public  NamedMotifEditor
     Q_OBJECT
 
 public:
-    ExplicitMapEditor(QString aname,DesignElementPtr del, bool doEmit);
+    ExplicitMapEditor(QString aname,DELPtr del, bool doEmit);
 
 protected:
 };
@@ -43,7 +43,7 @@ protected:
 class GirihEditor : public NamedMotifEditor
 {
 public:
-    GirihEditor(QString aname,DesignElementPtr del, bool doEmit);
+    GirihEditor(QString aname,DELPtr del, bool doEmit);
 
 private:
     void editorToMotif(bool doEmit) override;
@@ -71,7 +71,7 @@ private:
 class HourglassEditor : public NamedMotifEditor
 {
 public:
-    HourglassEditor(QString aname,DesignElementPtr del, bool doEmit);
+    HourglassEditor(QString aname,DELPtr del, bool doEmit);
 
 private:
     void motifToEditor() override;
@@ -102,7 +102,7 @@ class InferEditor : public  NamedMotifEditor
     Q_OBJECT
 
 public:
-    InferEditor(QString aname,DesignElementPtr del, bool doEmit);
+    InferEditor(QString aname,DELPtr del, bool doEmit);
 
 private:
     void editorToMotif(bool doEmit) override;
@@ -129,7 +129,7 @@ class IntersectEditor : public NamedMotifEditor
     Q_OBJECT
 
 public:
-    IntersectEditor(QString aname, DesignElementPtr del, bool doEmit);
+    IntersectEditor(QString aname, DELPtr del, bool doEmit);
 
 private:
     void editorToMotif(bool doEmit) override;
@@ -161,7 +161,7 @@ class IrregularRosetteEditor : public NamedMotifEditor
     Q_OBJECT
 
 public:
-    IrregularRosetteEditor(QString aname,DesignElementPtr del, bool doEmit);
+    IrregularRosetteEditor(QString aname,DELPtr del, bool doEmit);
 
 private:
     void motifToEditor() override;
@@ -186,7 +186,7 @@ class IrregularStarEditor : public NamedMotifEditor
     Q_OBJECT
 
 public:
-    IrregularStarEditor(QString aname,DesignElementPtr del, bool doEmit);
+    IrregularStarEditor(QString aname,DELPtr del, bool doEmit);
 
 private:
     void editorToMotif(bool doEmit) override;
@@ -211,7 +211,7 @@ class ExplicitTileEditor : public NamedMotifEditor
     Q_OBJECT
 
 public:
-    ExplicitTileEditor(QString aname,DesignElementPtr del, bool doEmit);
+    ExplicitTileEditor(QString aname,DELPtr del, bool doEmit);
 
 private:
     void editorToMotif(bool doEmit) override;
@@ -229,7 +229,7 @@ class IrregularNoMapEditor : public  NamedMotifEditor
     Q_OBJECT
 
 public:
-    IrregularNoMapEditor(QString aname,DesignElementPtr del, bool doEmit);
+    IrregularNoMapEditor(QString aname,DELPtr del, bool doEmit);
 
 protected:
 

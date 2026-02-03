@@ -6,6 +6,7 @@
 #include "sys/enums/ebkgdimage.h"
 #include "sys/enums/ecyclemode.h"
 #include "sys/enums/emotiftype.h"
+#include "sys/enums/emousemode.h"
 #include "sys/enums/erender.h"
 #include "sys/sys/versioning.h"
 
@@ -16,7 +17,7 @@ typedef QVector<TilingUse>                  TilingUses;
 
 typedef std::shared_ptr<class DebugView>            DebugViewPtr;
 typedef std::shared_ptr<class GridView>             GridViewPtr;
-typedef std::shared_ptr<class CropViewer>           CropViewPtr;
+typedef std::shared_ptr<class CropMakerView>        CropViewPtr;
 typedef std::shared_ptr<class MapEditorView>        MapedViewPtr;
 typedef std::shared_ptr<class MotifMakerView>       MMViewiewPtr;
 typedef std::shared_ptr<class TilingMakerView>      TMViewPtr;
@@ -34,6 +35,9 @@ public:
 
     static void         appDebugBreak();
     static void         render(eRenderType rtype);
+
+    static void         setSysMouseMode(eMouseMode newMode, bool set);
+    static bool         getSysMouseMode(eMouseMode mode);
 
     static eMotifType   XMLgetMotifType(QString name);
     static QString      XMLgetMotifName(eMotifType type);
@@ -63,7 +67,6 @@ public:
     static class ControlPanel    * controlPanel;
     static class SplitScreen     * splitter;
     static class SplashScreen    * splash;
-    static class GuiModes        * guiModes;
 
     // makers
     static class DesignMaker    * designMaker;
@@ -81,7 +84,7 @@ public:
     static class SystemViewController * viewController;
 
     static DebugViewPtr     debugView;
-    static CropViewPtr      cropViewer;
+    static CropViewPtr      cropMakerView;
     static GridViewPtr      gridViewer;
     static MapedViewPtr     mapEditorView;
     static MMViewiewPtr     motifMakerView;
@@ -161,9 +164,10 @@ public:
     static wBkgdImagePtr   definedBkImage;
 
 private:
+    static int     iMouseMode;
     static QString sysBMPDir;
     static QString workingBMPDir;
-    static uint rx_sigid;
+    static uint    rx_sigid;
 };
 
 #endif // SYS_H

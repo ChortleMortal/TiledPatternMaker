@@ -66,6 +66,7 @@ void TiledPatternMaker::slot_start()
     qRegisterMetaType<TilePtr>("TilePtr");
     qRegisterMetaType<QList<int>>();
     qRegisterMetaType<VersionedName>("VersionName");
+    qRegisterMetaType<std::weak_ptr<Style>>("std::weak_ptr<Style>");
 
     // instantiate main classes
     sys = new Sys;

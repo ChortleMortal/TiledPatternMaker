@@ -5,6 +5,7 @@
 #include "gui/model_editors/motif_edit/motif_editors.h"
 
 class QCheckBox;
+class QRadioButton;
 
 class page_motif_maker;
 class SliderSet;
@@ -15,7 +16,7 @@ typedef std::shared_ptr<class Star>                 StarPtr;
 typedef std::shared_ptr<class Star2>                Star2Ptr;
 typedef std::shared_ptr<class Rosette>              RosettePtr;
 typedef std::shared_ptr<class Rosette2>             Rosette2Ptr;
-typedef std::shared_ptr<class DesignElement>        DesignElementPtr;
+typedef std::shared_ptr<class DesignElement>        DELPtr;
 
 typedef std::weak_ptr<class Motif>                  WeakMotifPtr;
 typedef std::weak_ptr<class Star>                   WeakStarPtr;
@@ -28,7 +29,7 @@ class StarEditor : public NamedMotifEditor
     Q_OBJECT
 
 public:
-    StarEditor(QString name, DesignElementPtr del, bool doEmit);
+    StarEditor(QString name, DELPtr del, bool doEmit);
 
     void setMotif(StarPtr star, bool doEmit);
 
@@ -51,7 +52,7 @@ class Star2Editor : public NamedMotifEditor
     Q_OBJECT
 
 public:
-    Star2Editor(QString name, DesignElementPtr del, bool doEmit);
+    Star2Editor(QString name, DELPtr del, bool doEmit);
 
     void setMotif(Star2Ptr star, bool doEmit);
 
@@ -73,7 +74,7 @@ class RosetteEditor : public NamedMotifEditor
     Q_OBJECT
 
 public:
-    RosetteEditor(QString name, DesignElementPtr del, bool doEmit);
+    RosetteEditor(QString name, DELPtr del, bool doEmit);
 
 protected:
     void setMotif(RosettePtr rosette, bool doEmit);
@@ -95,7 +96,7 @@ class Rosette2Editor : public NamedMotifEditor
     Q_OBJECT
 
 public:
-    Rosette2Editor(QString name, DesignElementPtr del, bool doEmit);
+    Rosette2Editor(QString name, DELPtr del, bool doEmit);
 
 protected:
     void setMotif(Rosette2Ptr rosette, bool doEmit);
@@ -107,14 +108,26 @@ protected:
     DoubleSliderSet	* ky_slider;
     SliderSet       * s_slider;
     DoubleSliderSet	* k_slider;
-    QButtonGroup    * tipGroup;
     QCheckBox       * kaplanize;
     QPushButton     * convert;
     QCheckBox       * chk_inscribe;
     QCheckBox       * chk_on_point;
 
+    QCheckBox       * chkOuter;
+    QCheckBox       * chkInner;
+    QCheckBox       * chkFlipped;
+
+    QRadioButton    * rSingle;
+    QRadioButton    * rAlter;
+
 private slots:
     void    convertConstrained();
+
+    void    chkOuterClicked(bool checked);
+    void    chkInnerClicked(bool checked);
+    void    chkFlippedClicked(bool checked);
+    void    rSingleClicked(bool checked);
+    void    rAlternateClicked(bool checked);
 
 private:
     WeakRosette2Ptr             wrosette;

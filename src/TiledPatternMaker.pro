@@ -70,11 +70,10 @@ SOURCES += \
     gui/top/system_view_accessor.cpp \
     gui/top/system_view.cpp \
     gui/top/system_view_controller.cpp \
-    gui/viewers/crop_viewer.cpp \
+    gui/viewers/crop_maker_view.cpp \
     gui/viewers/debug_view.cpp \
     gui/viewers/geo_graphics.cpp \
     gui/viewers/grid_view.cpp \
-    gui/viewers/gui_modes.cpp \
     gui/viewers/image_view.cpp \
     gui/viewers/layer.cpp \
     gui/viewers/layer_controller.cpp \
@@ -212,7 +211,6 @@ SOURCES += \
     sys/enums/edesign.cpp \
     sys/enums/edgetype.cpp \
     sys/enums/efillmode.cpp \
-    sys/enums/ekeyboardmode.cpp \
     sys/enums/emapeditor.cpp \
     sys/enums/emotiftype.cpp \
     sys/enums/epanelpage.cpp \
@@ -316,11 +314,10 @@ HEADERS += \
     gui/top/system_view_accessor.h \
     gui/top/system_view.h \
     gui/top/system_view_controller.h \
-    gui/viewers/crop_viewer.h \
+    gui/viewers/crop_maker_view.h \
     gui/viewers/debug_view.h \
     gui/viewers/geo_graphics.h \
     gui/viewers/grid_view.h \
-    gui/viewers/gui_modes.h \
     gui/viewers/image_view.h \
     gui/viewers/layer.h \
     gui/viewers/layer_controller.h \
@@ -464,7 +461,6 @@ HEADERS += \
     sys/enums/efilesystem.h \
     sys/enums/efillmode.h \
     sys/enums/efilltype.h \
-    sys/enums/ekeyboardmode.h \
     sys/enums/elogmode.h \
     sys/enums/emapeditor.h \
     sys/enums/emotiftype.h \

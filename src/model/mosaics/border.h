@@ -16,9 +16,13 @@ class Border : public Style, public Crop
 
 public:
     virtual void createStyleRepresentation() override  = 0;
-    virtual void resetStyleRepresentation()  override { created = false; }
-    virtual void paint(QPainter *painter)    override;
+    virtual void resetStyleRepresentation()  override    { created = false; }
 
+    virtual MapPtr      getProtoMap()       override     { return nullptr; }
+    virtual MapPtr      getStyleMap()       override     { return nullptr; }
+    virtual void        setStyleMap(MapPtr map) override { Q_UNUSED(map); }
+
+    virtual void paint(QPainter *painter)    override;
     virtual void draw(GeoGraphics * gg)      override  = 0 ;
 
     virtual void setModelXform(const Xform & xf, bool update, uint sigid) override;

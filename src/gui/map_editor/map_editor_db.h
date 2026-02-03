@@ -16,7 +16,7 @@ typedef std::shared_ptr<class Border>           BorderPtr;
 typedef std::shared_ptr<class Tile>             TilePtr;
 typedef std::shared_ptr<class DCEL>             DCELPtr;
 typedef std::shared_ptr<class Crop>             CropPtr;
-typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+typedef std::shared_ptr<class DesignElement>    DELPtr;
 typedef std::shared_ptr<class Style>            StylePtr;
 typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
 typedef std::shared_ptr<class Circle>           CirclePtr;
@@ -31,26 +31,48 @@ typedef std::weak_ptr<class DesignElement>      WeakDELPtr;
 typedef std::weak_ptr<class Tiling>             WeakTilingPtr;
 typedef std::weak_ptr<class Map>                WeakMapPtr;
 
+
+// Every Map editor layer has source information and a current map ptr
 class MapEditorLayer
 {
 public:
     MapEditorLayer();
 
-    void set(MapPtr map, eMapEditorMapType type);
-    void set(MapPtr map, eMapEditorMapType type, WeakDELPtr wdel);
+    void init(eMapedLayer id)  { this->id = id; }
+    void setType(eMapEditorMapType mtype) { this->mtype = mtype; }
+
+    void setLayer(MapPtr source, StylePtr style);
+    void setLayer(MapPtr source, ProtoPtr proto);
+    void setLayer(MapPtr source, ProtoPtr proto, DELPtr del, MotifPtr motif);
+    void setLayer(MapPtr source, TilingPtr tiling, eMapEditorMapType mtype);
+    void setLayer(MapPtr source, eMapEditorMapType mtype);
+
     void reset();
 
-    void setDel(DesignElementPtr del)   { wdel = del; }
-    DesignElementPtr  getDel() const    { return wdel.lock(); }
+    MapPtr            getMapedLayerMap() const { return map; }
+    eMapEditorMapType getLayerMapType()  const { return mtype; }
 
-    MapPtr getMapedLayerMap() const     { return map; }
-    eMapEditorMapType getLayerMapType() const { return mtype; }
+    DELPtr            getDel()           const { return del; }
+    ProtoPtr          getProto()         const { return proto; }
+    MotifPtr          getMotif()         const { return motif; }
+    TilingPtr         getTiling()        const { return tiling; }
+    eMapedLayer       getId()            const { return id; }
 
+protected:
 
 private:
-    WeakDELPtr        wdel;
+   // TODO - make all these weak pointers (except map)
     eMapEditorMapType mtype;
     MapPtr            map;
+    MapPtr            source;
+
+    StylePtr          style;
+    ProtoPtr          proto;
+    DELPtr            del;
+    MotifPtr          motif;    // maybe not needed (is pasrt of del)
+    TilingPtr         tiling;
+
+    eMapedLayer       id;
 };
 
 class MapEditorDb  : public MosaicCropMaker
@@ -62,25 +84,20 @@ public:
     void                reset();
 
     MapEditorLayer &    getLayer(eMapedLayer layer);
+    MapEditorLayer &    getLayer(MapPtr map);
     MapEditorLayer &    getEditLayer();
 
     MapPtr              getMap(eMapedLayer mode);
     eMapEditorMapType   getMapType(MapPtr map);
     MapPtr              getEditMap();
 
-    eMapedLayer         insertLayer(MapPtr map, eMapEditorMapType mtype);
+    eMapedLayer         obtainEmptyLayer();
     void                createComposite();
 
     void                setViewSelect(eMapedLayer layer, bool on);
     void                setEditSelect(eMapedLayer layer) { editSelect = layer; }
     bool                isViewSelected(eMapedLayer layer){ return viewSelect & layer; }
     eMapedLayer         getEditSelect()             { return editSelect; }
-
-    void                setTiling(TilingPtr tp)     { tiling = tp; }
-    TilingPtr           getTiling()                 { return tiling.lock(); }
-
-    void                setMotfiPrototype(ProtoPtr pp) { motifPrototype = pp; }
-    ProtoPtr            getMotifPrototype()         { return motifPrototype.lock(); }
 
     QVector<WeakDELPtr> & getDesignElements()       { return delps; }
 
@@ -114,9 +131,6 @@ public:
     UniqueQVector<QLineF>    constructionLines;
     UniqueQVector<CirclePtr> constructionCircles;
 
-    MapPtr              importedTilingMap;
-    MapPtr              currentTilingMap;
-
     void                setCrop(CropPtr acrop) override;
     CropPtr             getCrop()              override { return _crop; }
     void                removeCrop()           override { _crop.reset(); }
@@ -135,8 +149,7 @@ protected:
     eMapEditorMouseMode  mouseMode; // Mouse mode, triggered by the toolbar.
 
     QVector<WeakDELPtr> delps;
-    WeakTilingPtr       tiling;
-    WeakProtoPtr        motifPrototype;
+
 
     WeakDCELPtr         activeDcel;
     DCELPtr             localDcel;

@@ -17,7 +17,7 @@ public:
     int getRow() { return row;}
     int getCol() { return col;}
 
-    void     addLayer(LayerPtr layer, int zlevel = 0);
+    void addLayer(LayerPtr layer, eZLevel zlevel = STANDARD_ZLEVEL);
 
     virtual bool doStep(int index);
     virtual void reset() {}

@@ -129,13 +129,13 @@ void Crop::setPolygon(QPolygonF & p)
 }
 
 
-QString Crop::getCropString()
+QString Crop::getContentString()
 {
     QString astring = "Undefined";
     switch(_cropType)
     {
     case CROP_RECTANGLE:
-        astring = QString("Rect: %1,%2,%3x%4").arg(_rect.x()).arg(_rect.y()).arg(_rect.width()).arg(_rect.height());
+        astring = QString("Rect: %1, %2, %3 x %4").arg(_rect.x()).arg(_rect.y()).arg(_rect.width()).arg(_rect.height());
         break;
     case CROP_CIRCLE:
             astring =  QString("Circle: %1 %2 %3").arg(_circle.radius).arg(_circle.centre.x()).arg(_circle.centre.y());
@@ -161,7 +161,7 @@ QPointF Crop::getCenter()
         center = _rect.center();
         break;
     case CROP_CIRCLE:
-            center = _circle.centre;
+        center = _circle.centre;
         break;
     case CROP_POLYGON:
         center = Geo::center(_poly.get());
@@ -183,7 +183,7 @@ void  Crop::transform(QTransform t)
     _circle.radius = Transform::scalex(t) * _circle.radius;
 }
 
-void Crop::setPainterClip(QPainter * painter, QTransform transform)
+void Crop::clipPainter(QPainter * painter, QTransform transform)
 {
     switch (getCropType())
     {
@@ -191,17 +191,15 @@ void Crop::setPainterClip(QPainter * painter, QTransform transform)
     {
         auto rect = getRect();
         rect = transform.mapRect(rect);
-        qInfo() << "Painter Clip:" << rect;
         painter->setClipRect(rect);
     }   break;
 
     case CROP_POLYGON:
     {
-        QPolygonF p  = getAPolygon().get();
-        QPolygonF p2 = transform.map(p);
-        //painter.setClipRegion(p2);
+        QPolygonF poly  = getAPolygon().get();
+        QPolygonF poly2 = transform.map(poly);
         QPainterPath pp;
-        pp.addPolygon(p2);
+        pp.addPolygon(poly2);
         painter->setClipPath(pp);
     }   break;
 

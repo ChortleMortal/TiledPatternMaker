@@ -10,7 +10,6 @@
 #include "gui/widgets/dlg_textedit.h"
 #include "gui/widgets/floatable_tab.h"
 #include "gui/widgets/layout_sliderset.h"
-#include "gui/widgets/transparent_widget.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/prototype_maker.h"
 #include "model/makers/tiling_maker.h"
@@ -46,6 +45,8 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_DEBUG_T
     QGroupBox   * debugMaps     = creatDebugMaps();
     QGroupBox   * meas          = createMeasure();
     QGroupBox   * clns          = createCleanse();
+    QGroupBox   * debugView     = createDebugView();
+
 
     // tab 2
     QWidget     * dbgFlags = creatDebugFlags();
@@ -54,6 +55,8 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_DEBUG_T
     QVBoxLayout * vbox2 = new QVBoxLayout;
     QVBoxLayout * vbox3 = new QVBoxLayout;
 
+    vbox1->addWidget(debugView);
+    vbox1->addStretch();
     vbox1->addWidget(debugSettings);
     vbox1->addStretch();
     vbox1->addWidget(clns);
@@ -329,6 +332,31 @@ QGroupBox * page_debug::createMeasure()
 }
 
 
+QGroupBox * page_debug::createDebugView()
+{
+    QCheckBox * cbDebugMotif = new QCheckBox("Debug Motif");
+    cbDebugMotif->setChecked(config->debugMotifView);
+
+    connect(cbDebugMotif, &QCheckBox::clicked, this, [this] (bool checked) { Sys::config->debugMotifView = checked; emit sig_updateView(); } );
+
+    pbEnbDbgView3 = new AQPushButton("Enable View");
+    pbEnbDbgView3->setChecked(viewControl->isEnabled(VIEW_DEBUG));
+    connect(pbEnbDbgView3,  &AQPushButton::clicked, this, &page_debug::slot_dbgViewClicked);
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(pbEnbDbgView3);
+    hbox->addWidget(cbDebugMotif);
+    hbox->addStretch();
+
+    QVBoxLayout * vbox = new QVBoxLayout;
+    vbox->addLayout(hbox);
+
+    QGroupBox * gb= new QGroupBox("Debug View");
+    gb->setLayout(vbox);
+
+    return gb;
+}
+
 QGroupBox * page_debug::createCleanse()
 {
     QCheckBox * cbCleanseMerges = new QCheckBox("Cleanse Merges (slow)");
@@ -603,17 +631,11 @@ void  page_debug::onRefresh()
     if (pick)
         colorPicker();
 
-    pbEnbDbgView->blockSignals(true);
     pbEnbDbgView->setChecked(viewControl->isEnabled(VIEW_DEBUG));
-    pbEnbDbgView->blockSignals(false);
-
-    pbEnbDbgView2->blockSignals(true);
     pbEnbDbgView2->setChecked(viewControl->isEnabled(VIEW_DEBUG));
-    pbEnbDbgView2->blockSignals(false);
+    pbEnbDbgView3->setChecked(viewControl->isEnabled(VIEW_DEBUG));
 
-    pbEnbDbgFlags->blockSignals(true);
     pbEnbDbgFlags->setChecked(Sys::flags->enabled());
-    pbEnbDbgFlags->blockSignals(false);
 
     QList<int> ql1 = Sys::debugMapCreate->numInfo();
     QList<int> ql2 = Sys::debugMapPaint->numInfo();

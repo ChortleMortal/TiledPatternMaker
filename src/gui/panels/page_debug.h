@@ -100,11 +100,13 @@ protected:
     QWidget      * creatDebugFlags();
     QGroupBox    * createMeasure();
     QGroupBox    * createCleanse();
+    QGroupBox    * createDebugView();
 
     QComboBox    * debugTests;
 
     AQPushButton * pbEnbDbgView;
     AQPushButton * pbEnbDbgView2;
+    AQPushButton * pbEnbDbgView3;
     AQPushButton * pbEnbDbgFlags;
     AQPushButton * pbTrigger;
     QGridLayout  * mapGrid;

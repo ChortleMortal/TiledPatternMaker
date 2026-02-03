@@ -86,6 +86,7 @@ public:
     void                createViewablePlacedTiles();
     int                 numViewable()                       { return _viewable.count(); }
     PlacedTiles &       getViewablePlacements()             { return _viewable; }
+    QTransform          getFirstPlacement(TilePtr tile)     { return _tilingUnit.getFirstPlacement(tile); }
 
     BkgdImagePtr        getBkgdImage()                      { return bip; }
     void                setBkgdImage(BkgdImagePtr bp)       { bip = bp; }

@@ -4,8 +4,8 @@
 
 #include "gui/panels/panel_page.h"
 #include "gui/widgets/versioned_list_widget.h"
+#include "legacy/design_maker.h"
 #include "sys/enums/edesign.h"
-#include "sys/enums/ekeyboardmode.h"
 #include "sys/enums/estatemachineevent.h"
 #include "sys/sys/versioning.h"
 
@@ -166,7 +166,7 @@ private:
     QCheckBox   * mosaicOrigChk;
     QCheckBox   * mosaicNewChk;
     QCheckBox   * mosaicTestChk;
-    QCheckBox   * mosaicSortChk;
+    QCheckBox   * cbMosaicSortChk;
     QCheckBox   * cbShowWithImages;
 
     eDesign       selectedDesign;

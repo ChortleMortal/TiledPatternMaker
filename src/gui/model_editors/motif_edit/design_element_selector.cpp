@@ -64,7 +64,7 @@ void DELSelectorWidget::setup(ProtoPtr proto)
         return;
     }
 
-    QVector<DesignElementPtr> & dels = proto->getDesignElements();
+    QVector<DELPtr> & dels = proto->getDesignElements();
     auto tiling = proto->getTiling();
 
     buttons.clear();
@@ -80,7 +80,7 @@ void DELSelectorWidget::setup(ProtoPtr proto)
 
         // only use rotation from first placement, since scale and position are backed out
         // in the design element button which tries to center the del in its window
-        DesignElementPtr del = *rit;
+        DELPtr del = *rit;
         QTransform t  = tiling->unit().getFirstPlacement(del->getTile());
         qreal rotation = Transform::rotation(t);
 
@@ -164,7 +164,7 @@ void DELSelectorWidget::delegate(DELBtnPtr btn, bool add, bool set)
     ensureWidgetVisible(btn.get());
 }
 
-DELBtnPtr DELSelectorWidget::getButton(DesignElementPtr del)
+DELBtnPtr DELSelectorWidget::getButton(DELPtr del)
 {
     for (auto & btn : std::as_const(buttons))
     {

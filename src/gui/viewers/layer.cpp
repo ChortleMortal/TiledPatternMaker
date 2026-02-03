@@ -14,9 +14,11 @@ Layer::Layer(eViewType viewType,eModelType modelType, QString name)
     _modelType   = modelType;
     _name        = name;
     visible      = true;
+    _clipable    = false;
+    visible      = true;
     _viewControl = Sys::viewController;
-    zlevel       = STANDARD_ZLEVEL;
     debug        = 0; //DEBUG_LAYER | DEBUG_TFORM | DEBUG_XFORM;
+    setZLevel(STANDARD_ZLEVEL);
 
     initLayer();
     connectSignals();
@@ -30,11 +32,11 @@ Layer::Layer(const Layer & other) : QObject()
     _name           = other._name;
     _useSMX         = other._useSMX;
     _viewControl    = other._viewControl;
+    _zlevel         = other._zlevel;
     visible         = other.visible;
+    _clipable       = other._clipable;
     layerTransform  = other.layerTransform;
-    invertedLayer   = other.invertedLayer;
     subLayers       = other.subLayers;
-    zlevel          = other.zlevel;
     xf_model        = other.xf_model;
     debug           = other.debug;
 
@@ -50,11 +52,11 @@ Layer::Layer(LayerPtr other)
     _name           = other->_name;
     _useSMX         = other->_useSMX;
     _viewControl    = other->_viewControl;
+    _zlevel         = other->_zlevel;
     visible         = other->visible;
+    _clipable       = other->_clipable;
     layerTransform  = other->layerTransform;
-    invertedLayer   = other->invertedLayer;
     subLayers       = other->subLayers;
-    zlevel          = other->zlevel;
     xf_model        = other->xf_model;
     debug           = other->debug;
 
@@ -96,18 +98,18 @@ void Layer::connectSignals()
 
 bool Layer::sortByZlevel(LayerPtr s1, LayerPtr s2)
 {
-    return s1->zlevel < s2->zlevel;
+    return s1->_zlevel < s2->_zlevel;
 }
 
 bool Layer::sortByZlevelP(Layer * s1, Layer * s2)
 {
-    return s1->zlevel < s2->zlevel;
+    return s1->_zlevel < s2->_zlevel;
 }
 
 void Layer::addSubLayer(LayerPtr item)
 {
     item->setLoc(pos);
-    item->setZValue(zlevel);
+    item->setZLevel(_zlevel);
 
     subLayers.push_back(item);
 }
@@ -202,9 +204,8 @@ QTransform  Layer::getModelTransform()
 
 void Layer::computeLayerTransform()
 {
-    layerTransform              = getCanvasTransform() * getModelTransform();
-    invertedLayer               = layerTransform.inverted();
-    if (debug & DEBUG_TFORM) qDebug().noquote() << "Comput transfrom:" << layerName() << Transform::info(layerTransform);
+    layerTransform        = getCanvasTransform() * getModelTransform();
+    if (debug & DEBUG_TFORM) qDebug().noquote() << "Computed transfrom:" << layerName() << Transform::info(layerTransform);
 }
 
 QTransform Layer::getLayerTransform()
@@ -279,27 +280,33 @@ QPointF Layer::getCenterModelUnits()
 
 qreal Layer::screenToModel(qreal val)
 {
-    getLayerTransform();
-    qreal scale = Transform::scalex(invertedLayer);
+    auto t = getLayerTransform().inverted();
+    qreal scale = Transform::scalex(t);
     return val * scale;
 }
 
 QPointF Layer::screenToModel(QPointF pt)
 {
-    getLayerTransform();
-    return invertedLayer.map(pt);
+    auto t = getLayerTransform().inverted();
+    return t.map(pt);
 }
 
 QPoint Layer::screenToModel(QPoint pt)
 {
-    getLayerTransform();
-    return invertedLayer.map(pt);
+    auto t = getLayerTransform().inverted();
+    return t.map(pt);
 }
 
 QRectF  Layer::screenToModel(QRectF rect)
 {
-    getLayerTransform();
-    return invertedLayer.mapRect(rect);
+    auto t = getLayerTransform().inverted();
+    return t.mapRect(rect);
+}
+
+QRect Layer::screenToModel(QRect rect)
+{
+    auto t = getLayerTransform().inverted();
+    return t.mapRect(rect);
 }
 
 QPointF Layer::screenToModel(int x, int y)
@@ -307,21 +314,21 @@ QPointF Layer::screenToModel(int x, int y)
     qreal xx = static_cast<qreal>(x);
     qreal yy = static_cast<qreal>(y);
 
-    getLayerTransform();
-    return invertedLayer.map(QPointF(xx, yy));
+    auto t = getLayerTransform().inverted();
+    return t.map(QPointF(xx, yy));
 }
 
 QPolygonF Layer::screenToModel(QPolygonF poly)
 {
-    getLayerTransform();
-    return invertedLayer.map(poly);
+    auto t = getLayerTransform().inverted();
+    return t.map(poly);
 }
 
 Circle Layer::screenToModel(Circle c)
 {
-    getLayerTransform();
-    QPointF cent = invertedLayer.map(c.centre);
-    qreal radius = Transform::scalex(invertedLayer) * c.radius;
+    auto       t = getLayerTransform().inverted();
+    QPointF cent = t.map(c.centre);
+    qreal radius = Transform::scalex(t) * c.radius;
     Circle circ(cent,radius);
     return circ;
 }
@@ -333,6 +340,12 @@ QPointF Layer::modelToScreen(QPointF pt)
 }
 
 QRectF Layer::modelToScreen(QRectF rect)
+{
+    getLayerTransform();
+    return layerTransform.mapRect(rect);
+}
+
+QRect Layer::modelToScreen(QRect rect)
 {
     getLayerTransform();
     return layerTransform.mapRect(rect);
@@ -367,11 +380,6 @@ void Layer::setLoc(QPointF loc)
 {
     //qDebug() << name << "pos=" << pos << "new" << loc;
     pos += loc;
-}
-
-void Layer::setZValue(int z)
-{
-    zlevel = z;
 }
 
 void  Layer::drawLayerModelCenter(QPainter * painter)

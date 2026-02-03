@@ -106,7 +106,7 @@ void page_layer_algnment::populateLayers()
     layer = (Layer*)Sys::getBackgroundImageFromSource().get();
     if (layer) populateLayer(layer,row++,active.contains(layer),false);
 
-    layer = (Layer*)Sys::cropViewer.get();
+    layer = (Layer*)Sys::cropMakerView.get();
     if (layer) populateLayer(layer,row++,active.contains(layer),false);
 
     layer = (Layer*)Sys::gridViewer.get();

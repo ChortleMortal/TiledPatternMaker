@@ -12,7 +12,7 @@
 #include "gui/top/system_view_accessor.h"
 #include "gui/top/system_view.h"
 #include "gui/top/system_view_controller.h"
-#include "gui/viewers/crop_viewer.h"
+#include "gui/viewers/crop_maker_view.h"
 #include "gui/viewers/debug_view.h"
 #include "gui/viewers/grid_view.h"
 #include "gui/viewers/image_view.h"
@@ -99,7 +99,6 @@ void SystemViewController::slot_unloadView()
     }
 }
 
-
 void SystemViewController::slot_unloadAll()
 {
     if (!theView) return;
@@ -132,6 +131,8 @@ void SystemViewController::slot_unloadAll()
     Sys::tilingMaker->sm_takeUp(tevent);
 
     slot_reconstructView();
+
+    emit sig_unloaded();
 
     Sys::dumpRefs();
     qDebug() << "ViewControl::slot_unloadAll - created empty tiling and mosaic";
@@ -319,48 +320,34 @@ void SystemViewController::reconstructView()
 
 void SystemViewController::enableLayer(eViewType view)
 {
-   // qDebug().noquote() << "SystemViewController::enableLayer" << sViewerType[view];
+    //qDebug().noquote() << "SystemViewController::enableLayer" << sViewerType[view];
+
+    MosaicPtr mosaic = Sys::mosaicMaker->getMosaic();
+    if (!mosaic->isBuilt())
+    {
+        // build the mosaic
+        QString name = mosaic->getName().get();
+        QString astring    = QString("Preparing Mosaic: %1").arg(name);
+        Sys::splash->display(astring,true);
+
+        mosaic->build(); // important
+
+        Sys::splash->remove(true);
+    }
 
     switch (view)
     {
     case VIEW_MOSAIC:
     {
-        MosaicPtr mosaic = Sys::mosaicMaker->getMosaic();
-        if (mosaic)
+        // setup clip region
+        theView->setPainterCrop(mosaic->getPainterCrop());
+
+        // display the mosaic
+        const StyleSet & sset = mosaic->getStyleSet();
+        for (const StylePtr & style : std::as_const(sset))
         {
-            // build the mosaic
-            QString name = mosaic->getName().get();
-            //qDebug().noquote() << "Viewing mosaic: " << name;
-
-            if (!mosaic->isBuilt())
-            {
-                QString astring    = QString("Preparing Mosaic: %1").arg(name);
-                Sys::splash->display(astring,true);
-
-                // important
-                mosaic->build();
-
-                Sys::splash->remove(true);
-            }
-
-            CropPtr painterCrop = mosaic->getPainterCrop();
-            if (painterCrop && painterCrop->getClip())
-            {
-                // set clip region
-                theView->setPainterClip(painterCrop);
-            }
-
-            // display the mosaic
-            const StyleSet & sset = mosaic->getStyleSet();
-            for (const StylePtr & style : std::as_const(sset))
-            {
-                qDebug().noquote() << "Adding Style:" << style->getDescription();
-                theView->addLayer(style);
-            }
-        }
-        else
-        {
-            qDebug() << "SystemViewController::enableLayer" << "- no mosaic";
+            qDebug().noquote() << "Adding Style:" << style->getDescription();
+            theView->addLayer(style);
         }
 
         const CanvasSettings & modelSettings = Sys::mosaicMaker->getCanvasSettings();
@@ -417,7 +404,7 @@ void SystemViewController::enableLayer(eViewType view)
         break;
 
     case VIEW_CROP:
-        theView->addLayer(Sys::cropViewer);
+        theView->addLayer(Sys::cropMakerView);
         break;
 
     case VIEW_LEGACY:

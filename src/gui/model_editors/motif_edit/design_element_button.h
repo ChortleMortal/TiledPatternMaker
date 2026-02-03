@@ -4,8 +4,8 @@
 
 #include <QFrame>
 
-typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
-typedef std::weak_ptr<class DesignElement>      WeakDesignElementPtr;
+typedef std::shared_ptr<class DesignElement>    DELPtr;
+typedef std::weak_ptr<class DesignElement>      WeakDELPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
 
 ////////////////////////////////////////////////////////////////////////////
@@ -30,10 +30,10 @@ class DesignElementButton : public QFrame
     Q_OBJECT
 
 public:
-    DesignElementButton(int index, DesignElementPtr del = nullptr, QTransform t = QTransform());
+    DesignElementButton(int index, DELPtr del = nullptr, QTransform t = QTransform());
 
-    void    setDesignElement(DesignElementPtr del);
-    DesignElementPtr getDesignElement();
+    void    setDesignElement(DELPtr del);
+    DELPtr getDesignElement();
 
     void    paintEvent(QPaintEvent *event) override;
 
@@ -44,7 +44,7 @@ public:
     void    setSize( int w, int h );
     void    setViewTransform();
 
-    static QTransform resetViewport(int index, DesignElementPtr designElement, QRect frameRect);
+    static QTransform resetViewport(int index, DELPtr designElement, QRect frameRect);
     static QTransform lookAt(int index, QRectF rect, QRect frameRect);
 
     void    tally();
@@ -60,7 +60,7 @@ protected:
     static QTransform centerInside(int index, QRectF first, QRectF other);
 
 private:
-    WeakDesignElementPtr designElement;
+    WeakDELPtr designElement;
 
     int              index;
     bool             selected;      // in multi more than one can be selected

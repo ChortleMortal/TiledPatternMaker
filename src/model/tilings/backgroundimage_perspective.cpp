@@ -1,14 +1,14 @@
 #include <QImage>
 #include <QFileDialog>
 #include <QPainter>
+#include <QApplication>
 
 #include "gui/model_editors/tiling_edit/tiling_mouseactions.h"
 #include "model/tilings/backgroundimage_perspective.h"
-#include "gui/viewers/gui_modes.h"
+#include "model/tilings/backgroundimage.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/geo.h"
 #include "sys/geometry/vertex.h"
-
 
 /////////
 ///
@@ -18,12 +18,12 @@
 
 BackgroundImagePerspective::BackgroundImagePerspective()
 {
-    skewMode = false;
+    active = false;
 }
 
 bool BackgroundImagePerspective::startDragging(QPointF spos)
 {
-    if (!skewMode)
+    if (!active)
         return false;
 
     if (sAccum.size() == 0)
@@ -36,7 +36,7 @@ bool BackgroundImagePerspective::startDragging(QPointF spos)
 
 bool BackgroundImagePerspective::addPoint(QPointF spos)
 {
-    if (!skewMode)
+    if (!active)
         return false;
 
     qDebug("Perspective::addPoint");
@@ -78,7 +78,7 @@ bool BackgroundImagePerspective::addPoint(QPointF spos)
 
 bool BackgroundImagePerspective::updateDragging(QPointF spt)
 {
-    if (!skewMode)
+    if (!active)
         return false;
 
     sLastDrag = spt;
@@ -87,7 +87,7 @@ bool BackgroundImagePerspective::updateDragging(QPointF spt)
 
 bool BackgroundImagePerspective::endDragging(QPointF spt)
 {
-    if (!skewMode)
+    if (!active)
         return false;
 
     if (sAccum.size() == 0)
@@ -99,6 +99,36 @@ bool BackgroundImagePerspective::endDragging(QPointF spt)
     }
     sLastDrag = QPointF();
     return true;
+}
+
+void BackgroundImagePerspective::draw(QPainter * painter)
+{
+    // draw accum
+    if (sAccum.size() > 0)
+    {
+        QColor construction_color(0, 128, 0,128);
+        QPen pen(construction_color,3);
+        QBrush brush(construction_color);
+        painter->setPen(pen);
+        painter->setBrush(brush);
+        for (EdgePtr & edge : sAccum)
+        {
+            if (edge->getType() == EDGETYPE_LINE)
+            {
+                QPointF p1 = edge->v1->pt;
+                QPointF p2 = edge->v2->pt;
+                painter->drawEllipse(p1,6,6);
+                painter->drawEllipse(p2,6,6);
+                painter->drawLine(p1, p2);
+            }
+            else if (edge->getType() == EDGETYPE_POINT)
+            {
+                QPointF p = edge->v1->pt;
+                painter->drawEllipse(p,6,6);
+            }
+        }
+        drawPerspective(painter);
+    }
 }
 
 void BackgroundImagePerspective::drawPerspective(QPainter * painter)
@@ -121,9 +151,9 @@ void Perspective::forceRedraw()
 }
 #endif
 
-void BackgroundImagePerspective::setSkewMode(bool enb)
+void BackgroundImagePerspective::activate(bool enb)
 {
-    skewMode = enb;
+    active = enb;
     if (enb)
     {
         sAccum.clear();
@@ -131,3 +161,116 @@ void BackgroundImagePerspective::setSkewMode(bool enb)
     }
 }
 
+/////////
+///
+///  BackgroundImageCropper
+///
+/////////
+
+BackgroundImageCropper::BackgroundImageCropper()
+{
+    active = false;
+    editor = nullptr;
+}
+
+BackgroundImageCropper::~BackgroundImageCropper()
+{
+    if (editor)
+        delete editor;
+}
+
+bool BackgroundImageCropper::startDragging(QPointF spt)
+{
+    if (editor)
+        delete editor;
+
+    setMousePos(spt);
+    editor = new MouseEditCrop(spt,crop,parent->getLayerTransform());
+
+    return true;
+}
+
+bool BackgroundImageCropper::updateDragging(QPointF spt )
+{
+    if (editor)
+    {
+        setMousePos(spt);
+        editor->updateDragging(spt,parent->getLayerTransform());
+        return true;
+    }
+    return false;
+}
+
+bool BackgroundImageCropper::endDragging(QPointF spt )
+{
+    if (editor)
+    {
+        setMousePos(spt);
+        editor->endDragging(spt,parent->getLayerTransform());
+        delete editor;
+        editor = nullptr;
+        return true;
+    }
+    return false;
+}
+
+void BackgroundImageCropper::draw(QPainter *painter )
+{
+    if (active)
+    {
+        crop->draw(painter,parent->getLayerTransform(),true);
+        if (editor)
+        {
+            editor->draw(painter,mousePos,parent->getLayerTransform());
+        }
+    }
+}
+
+void BackgroundImageCropper::activate(bool enb, BackgroundImage * parent, Crop *crop)
+{
+    active       = enb;
+
+    if (enb)
+    {
+        Q_ASSERT(parent);
+        Q_ASSERT(crop);
+        this->parent = parent;
+        this->crop   = crop;
+
+        if (crop->getRect().isNull())
+        {
+            // this sets up a default crop
+            QRectF srect    = Sys::viewController->viewRect();
+            QPointF scenter = srect.center();
+            QSizeF ssz      = srect.size();
+            ssz            *= 0.7;
+            srect.setSize(ssz);
+            srect.moveCenter(scenter);
+
+            QRectF mrect    = parent->screenToModel(srect);
+            crop->setRect(mrect);
+        }
+    }
+    else
+    {
+        this->parent = nullptr;
+        this->crop   = nullptr;
+    }
+}
+
+void BackgroundImageCropper::setMousePos(QPointF pt)
+{
+    Qt::KeyboardModifiers km = QApplication::keyboardModifiers();
+    if (km & Qt::ControlModifier)
+    {
+        mousePos.setY(pt.y());
+    }
+    else if (km & Qt::ShiftModifier)
+    {
+        mousePos.setX(pt.x());
+    }
+    else
+    {
+        mousePos = pt;
+    }
+}

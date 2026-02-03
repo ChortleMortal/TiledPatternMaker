@@ -7,7 +7,7 @@
 #include "gui/map_editor/map_editor_db.h"
 #include "gui/top/splash_screen.h"
 #include "gui/top/system_view_controller.h"
-#include "gui/viewers/crop_viewer.h"
+#include "gui/viewers/crop_maker_view.h"
 #include "gui/viewers/grid_view.h"
 #include "gui/viewers/image_view.h"
 #include "gui/viewers/map_editor_view.h"
@@ -178,11 +178,11 @@ void page_system_info::doMosaicMaker()
     auto mositem = new QTreeWidgetItem();
     mositem->setText(0,"Mosaic Maker");
     MosaicPtr  mosaic = mosaicMaker->getMosaic();
-    if (mosaic)
-    {
-        numStyles = mosaic->getStyleSet().size();
-        name      = mosaic->getName().get();
-    }
+    Q_ASSERT(mosaic);
+
+    numStyles = mosaic->getStyleSet().size();
+    name      = mosaic->getName().get();
+
     mositem->setText(1,QString("Styles: %1").arg(numStyles));
     mositem->setText(2,QString("Mosaic: %1").arg(name));
     tree->addTopLevelItem(mositem);
@@ -192,17 +192,14 @@ void page_system_info::doMosaicMaker()
 
     populateBorder(mositem,mosaic);
 
-    if (mosaic)
-    {
-        crop = mosaic->getCrop();
-    }
-    populateCrop(mositem,crop);
+    crop = mosaic->getCrop();
+    populateCrop(mositem,"Mosaic Crop",crop);
 
-    if (mosaic)
-    {
-        auto bip = mosaic->getBkgdImage();
-        populateBackgroundImage(mositem, bip);
-    }
+    crop = mosaic->getPainterCrop();
+    populateCrop(mositem,"Painter Crop",crop);
+
+    auto bip = mosaic->getBkgdImage();
+    populateBackgroundImage(mositem, bip);
 
     qDebug().noquote() << "page_system_info::doMosaicMaker" << "- end";
 }
@@ -330,7 +327,7 @@ void page_system_info::doBackgroundImage()
     {
         bk_item->setText(2, bip->getTitle());
         auto bk_item2 = new QTreeWidgetItem;
-        bk_item2->setText(0,"xf_image");
+        bk_item2->setText(0,"Model Xform");
         bk_item2->setText(1, addr(bip.get()));
         bk_item2->setText(2,Transform::info(bip->getModelTransform()));
         bk_item->addChild(bk_item2);
@@ -353,7 +350,7 @@ void page_system_info::populateBackgroundImage(QTreeWidgetItem * parent, BkgdIma
         bkitem->setText(1, addr(bip.get()));
         bkitem->setText(2, bip->getTitle());
         auto bkitem2 = new QTreeWidgetItem;
-        bkitem2->setText(0,"xf_image");
+        bkitem2->setText(0,"Model Xform");
         bkitem2->setText(2,bip->getModelXform().info(8));
         bkitem->addChild(bkitem2);
         tree->expandItem(bkitem);
@@ -369,8 +366,8 @@ void page_system_info::doViews()
     // views
     auto vitem = new QTreeWidgetItem;
     vitem->setText(0,"Views");
-    populateViews(vitem);
     tree->addTopLevelItem(vitem);
+    populateViews(vitem);
 }
 
 void page_system_info::doMapEditor()
@@ -394,14 +391,16 @@ void page_system_info::doMapEditor()
 void page_system_info::doCropMaker()
 {
     // Crop maker
+
+    QString s = sCropMaker[Sys::cropMakerView->getMakerType()];
     auto citem = new QTreeWidgetItem;
     citem->setText(0,"Crop Viewer");
-    citem->setText(2, sCropMaker[Sys::cropViewer->getMakerType()]);
-    auto maker  = Sys::cropViewer->getMaker();
+    citem->setText(2, s);
+    auto maker = Sys::cropMakerView->getMaker();
     if (maker)
     {
         crop = maker->getCrop();
-        populateCrop(citem,crop);
+        populateCrop(citem,s,crop);
     }
     tree->addTopLevelItem(citem);
 }
@@ -419,7 +418,7 @@ void page_system_info::doImageViewer()
     }
     else
     {
-        ivitem->setText(2,"not loaded");
+        ivitem->setText(2,"Not loaded");
     }
     tree->addTopLevelItem(ivitem);
 }
@@ -547,22 +546,22 @@ void page_system_info::populateBorder(QTreeWidgetItem * parent, MosaicPtr mosaic
     item->setText(1,addr(bp.get()));
     if (bp)
     {
-        QString astring = QString("%1 %2 %3").arg(bp->getBorderTypeString()).arg(bp->getCropTypeString()).arg(bp->getCropString());
+        QString astring = QString("%1 %2 %3").arg(bp->getBorderTypeString()).arg(bp->getCropTypeString()).arg(bp->getContentString());
         item->setText(2,astring);
     }
     parent->addChild(item);
 }
 
-void page_system_info::populateCrop(QTreeWidgetItem * parent, CropPtr crop)
+void page_system_info::populateCrop(QTreeWidgetItem * parent, QString name, CropPtr crop)
 {
     QTreeWidgetItem * item = new QTreeWidgetItem();;
-    item->setText(0,"Crop");
+    item->setText(0,name);
     item->setText(1,addr(crop.get()));
     if (crop)
     {
         QString emb = (crop->getEmbed()) ? "Embed" : QString();
         QString app = (crop->getApply())  ? "Apply" : QString();
-        item->setText(2,QString("%1 %2 %3").arg(crop->getCropString()).arg(emb).arg(app));
+        item->setText(2,QString("%1 %2 %3").arg(crop->getContentString()).arg(emb).arg(app));
     }
     parent->addChild(item);
 }
@@ -674,7 +673,7 @@ void page_system_info::populatePrototype(QTreeWidgetItem *parent, ProtoPtr pp, Q
     if  (!pp) return;
 
     TilingPtr tiling                 = pp->getTiling();
-    QVector<DesignElementPtr> & dels = pp->getDesignElements();
+    QVector<DELPtr> & dels = pp->getDesignElements();
 
     // summary
     QTreeWidgetItem * pitem = new QTreeWidgetItem;
@@ -703,7 +702,7 @@ void page_system_info::populatePrototype(QTreeWidgetItem *parent, ProtoPtr pp, Q
         auto map = pp->getExistingProtoMap();
         populateMap(pitem,map,"ProtoMap");
 
-        auto dcel = pp->getExistingFilledDCEL();
+        auto dcel = pp->getExistingDCEL();
         if (dcel && !dcel->isEmpty())
         {
             QTreeWidgetItem * item = new QTreeWidgetItem();
@@ -714,11 +713,11 @@ void page_system_info::populatePrototype(QTreeWidgetItem *parent, ProtoPtr pp, Q
         }
 
         auto crop = pp->getCrop();
-        populateCrop(pitem,crop);
+        populateCrop(pitem,"Mosaic Crop",crop);
     }
 }
 
-void page_system_info::populateDEL(QTreeWidgetItem * parent, DesignElementPtr del, QString name, QString state, bool summary)
+void page_system_info::populateDEL(QTreeWidgetItem * parent, DELPtr del, QString name, QString state, bool summary)
 {
     if (!del) return;
 

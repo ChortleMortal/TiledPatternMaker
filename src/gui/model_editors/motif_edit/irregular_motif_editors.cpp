@@ -20,7 +20,7 @@ typedef shared_ptr<RadialMotif>    RadialPtr;
 // ExplicitMapEditor
 //
 
-ExplicitMapEditor::ExplicitMapEditor(QString aname, DesignElementPtr del, bool doEmit) : NamedMotifEditor(aname)
+ExplicitMapEditor::ExplicitMapEditor(QString aname, DELPtr del, bool doEmit) : NamedMotifEditor(aname)
 {
     wDel = del;
     if (!del || !del->getMotif())
@@ -65,7 +65,7 @@ ExplicitMapEditor::ExplicitMapEditor(QString aname, DesignElementPtr del, bool d
 // the explicit map directly by hand, beginning with a vertex in the
 // centre of every edge of the tile.
 
-GirihEditor::GirihEditor(QString aname, DesignElementPtr del, bool doEmit) : NamedMotifEditor (aname)
+GirihEditor::GirihEditor(QString aname, DELPtr del, bool doEmit) : NamedMotifEditor (aname)
 {
     skip = new DoubleSliderSet("Explicit Girih Skip D", 3.0, 0.0, 12.0, 100);
 
@@ -150,7 +150,7 @@ void  GirihEditor::editorToMotif(bool doEmit)
 // the explicit map directly by hand, beginning with a vertex in the
 // centre of every edge of the tile.
 
-HourglassEditor::HourglassEditor(QString aname, DesignElementPtr del, bool doEmit) : NamedMotifEditor(aname)
+HourglassEditor::HourglassEditor(QString aname, DELPtr del, bool doEmit) : NamedMotifEditor(aname)
 {
     // Hourglass panel.
     d = new DoubleSliderSet("Explicit Hourglass D", 2.0, 1.0, 12.0, 100);
@@ -274,7 +274,7 @@ void HourglassEditor::editorToMotif(bool doEmit)
 // the explicit map directly by hand, beginning with a vertex in the
 // centre of every edge of the tile.
 
-InferEditor::InferEditor(QString aname, DesignElementPtr del, bool doEmit) : NamedMotifEditor(aname)
+InferEditor::InferEditor(QString aname, DELPtr del, bool doEmit) : NamedMotifEditor(aname)
 {
     w_infer.reset();
     wDel  = del;
@@ -338,7 +338,7 @@ void InferEditor::editorToMotif(bool doEmit)
 // the explicit map directly by hand, beginning with a vertex in the
 // centre of every edge of the tile.
 
-IntersectEditor::IntersectEditor(QString aname, DesignElementPtr del, bool doEmit) : NamedMotifEditor(aname)
+IntersectEditor::IntersectEditor(QString aname, DELPtr del, bool doEmit) : NamedMotifEditor(aname)
 {
     skip = new DoubleSliderSet("Explicit Intersect Sides Skip", 3, 0, 12, 100);
     s    = new SliderSet("Explicit Intersect S", 1, 1, 12);
@@ -438,7 +438,7 @@ void IntersectEditor::editorToMotif(bool doEmit)
 // casper - interesting but somewhat inscrutable comment
 // this implementation inherits the rosette editor
 
-IrregularRosetteEditor::IrregularRosetteEditor(QString aname, DesignElementPtr del, bool doEmit) : NamedMotifEditor(aname)
+IrregularRosetteEditor::IrregularRosetteEditor(QString aname, DELPtr del, bool doEmit) : NamedMotifEditor(aname)
 {
     q_slider = new DoubleSliderSet("Explicit Rosette Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
     r_slider = new DoubleSliderSet("Explicit Rosette R (Flex Point)", 0.5, -1.0, 1.0, 100 );
@@ -577,7 +577,7 @@ void IrregularRosetteEditor::editorToMotif(bool doEmit)
 // The controls for editing a Star.  Glue code, just like RosetteEditor.
 // caser pthis implementation inherits the rosette editor
 
-IrregularStarEditor::IrregularStarEditor(QString aname, DesignElementPtr del, bool doEmit) : NamedMotifEditor(aname)
+IrregularStarEditor::IrregularStarEditor(QString aname, DELPtr del, bool doEmit) : NamedMotifEditor(aname)
 {
     d_slider = new DoubleSliderSet("Explicit Star D", 0.0, 0.0, 1.0, 100);
     s_slider = new SliderSet("Explicit Star S", 0.0, 0.0, 1.0);
@@ -721,7 +721,7 @@ void IrregularStarEditor::editorToMotif(bool doEmit)
 //  Make a motif from a Tile
 //
 
-ExplicitTileEditor::ExplicitTileEditor(QString aname, DesignElementPtr del, bool doEmit) : NamedMotifEditor(aname)
+ExplicitTileEditor::ExplicitTileEditor(QString aname, DELPtr del, bool doEmit) : NamedMotifEditor(aname)
 {
     w_tileMotif.reset();
     wDel = del;
@@ -777,7 +777,7 @@ void ExplicitTileEditor::editorToMotif(bool doEmit)
 // Irregular No Map Editor
 //
 
-IrregularNoMapEditor::IrregularNoMapEditor(QString aname, DesignElementPtr del, bool doEmit) : NamedMotifEditor(aname)
+IrregularNoMapEditor::IrregularNoMapEditor(QString aname, DELPtr del, bool doEmit) : NamedMotifEditor(aname)
 {
     wDel = del;
     if (!del)

@@ -8,11 +8,10 @@
 typedef std::shared_ptr<class DesignElementButton>  DELBtnPtr;
 typedef std::weak_ptr<  class DesignElementButton>  WeakDELBtnPtr;
 typedef std::shared_ptr<class Prototype>            ProtoPtr;
-typedef std::shared_ptr<class DesignElement>        DesignElementPtr;
+typedef std::shared_ptr<class DesignElement>        DELPtr;
 
 class MotifMakerWidget;
 class QGridLayout;
-class ProtoMakerData;
 class Configuration;
 
 ////////////////////////////////////////////////////////////////////////////
@@ -46,7 +45,7 @@ public:
 
     void            tallyButtons();
 
-    DELBtnPtr       getButton(DesignElementPtr del);
+    DELBtnPtr       getButton(DELPtr del);
 
     void            update();
 

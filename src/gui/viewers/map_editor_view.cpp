@@ -6,9 +6,8 @@
 #include "gui/map_editor/map_selection.h"
 #include "gui/model_editors/motif_edit/design_element_button.h"
 #include "gui/top/system_view_controller.h"
-#include "gui/viewers/crop_viewer.h"
+#include "gui/viewers/crop_maker_view.h"
 #include "gui/viewers/geo_graphics.h"
-#include "gui/viewers/gui_modes.h"
 #include "gui/viewers/map_editor_view.h"
 #include "model/makers/crop_maker.h"
 #include "model/motifs/motif.h"
@@ -73,7 +72,7 @@ void MapEditorView::draw(QPainter *painter )
     auto vec = db->getComposableLayers();
     for (const MapEditorLayer * layer : std::as_const(vec))
     {
-        DesignElementPtr del = layer->getDel();
+        DELPtr del = layer->getDel();
         if (del)
         {
             Q_ASSERT(db->isMotif(layer->getLayerMapType()));
@@ -193,7 +192,7 @@ void MapEditorView::drawMap(QPainter * painter, eMapedLayer layer, QColor color)
     QTransform t;
     if (crop && type == MAPED_TYPE_CROP)
     {
-        t = Sys::cropViewer->getLayerTransform();
+        t = Sys::cropMakerView->getLayerTransform();
     }
     else
     {
@@ -221,7 +220,7 @@ void MapEditorView::drawDCEL(QPainter * painter)
     dcel->paint(painter,viewT,db->showDirnPoints,db->showArcCentre,false,true);
 }
 
-void MapEditorView::drawTile(QPainter * painter, DesignElementPtr del)
+void MapEditorView::drawTile(QPainter * painter, DELPtr del)
 {
     if (!del)
         return;
@@ -232,7 +231,9 @@ void MapEditorView::drawTile(QPainter * painter, DesignElementPtr del)
     TilePtr tile = del->getTile();
     if (tile)
     {
-        QTransform placement = getPlacement(tile);
+        TilingPtr tiling = del->getTiling();
+        Q_ASSERT(tiling);
+        QTransform placement = tiling->getFirstPlacement(tile);
 
         QPolygonF poly = tile->getPoints();
         poly = placement.map(poly);
@@ -244,7 +245,7 @@ void MapEditorView::drawTile(QPainter * painter, DesignElementPtr del)
     }
 }
 
-void MapEditorView::drawBoundaries(QPainter *painter,  DesignElementPtr del)
+void MapEditorView::drawBoundaries(QPainter *painter,  DELPtr del)
 {
     if (!del)
         return;
@@ -252,13 +253,13 @@ void MapEditorView::drawBoundaries(QPainter *painter,  DesignElementPtr del)
     if (!db->showBoundaries)
         return;
 
-    TilePtr tile = del->getTile();
-    MotifPtr  motif = del->getMotif();
-    if (!motif || !tile)
+    TilingPtr tiling = del->getTiling();
+    TilePtr tile     = del->getTile();
+    MotifPtr  motif  = del->getMotif();
+    if (!tiling || !motif || !tile)
         return;
 
-
-    QTransform placement = getPlacement(tile);
+    QTransform placement = tiling->getFirstPlacement(tile);
 
     QPolygonF figBoundary = motif->getMotifBoundary();
     figBoundary  = placement.map(figBoundary);
@@ -381,21 +382,9 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
     }
 }
 
-QTransform MapEditorView::getPlacement(TilePtr tile)
-{
-    QTransform t;
-    auto proto = db->getMotifPrototype();
-    if (proto)
-    {
-        auto tiling = proto->getTiling();
-        t = tiling->unit().getFirstPlacement(tile);
-    }
-    return t;
-}
-
 void MapEditorView::startMouseInteraction(QPointF spt, Qt::MouseButton mouseButton)
 {
-    if (Sys::cropViewer->getShowCrop(CM_MAPED))
+    if (Sys::cropMakerView->getShowCrop(CM_MAPED))
     {
         return;     // it will be handled by the CropMaker - this is right
     }

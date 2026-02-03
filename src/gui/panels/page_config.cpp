@@ -32,20 +32,15 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_CONFI
 
     auto hbox = new QHBoxLayout();
     hbox->addWidget(appGroup);
-    hbox->addStretch();
+    hbox->addSpacing(7);
     hbox->addWidget(controlGroup);
     hbox->addStretch();
-
-    auto hbox2 = new QHBoxLayout();
-    hbox2->addStretch(1);
-    hbox2->addWidget(infoGroup);
-    hbox2->addStretch(2);
 
     vbox->addLayout(hbox);
     vbox->addStretch();
     vbox->addWidget(pathGroup);
     vbox->addStretch();
-    vbox->addLayout(hbox2);
+    vbox->addWidget(infoGroup);
     vbox->addStretch();
 }
 
@@ -85,8 +80,8 @@ QGroupBox * page_config::createAppInfo()
     QGridLayout * grid = new QGridLayout();
     grid->addWidget(btnKbdd,0,0);
     grid->addWidget(pbStartup,0,1);
-    grid->addWidget(pbAbout,1,0);
-    grid->addWidget(btnSupport,1,1);
+    grid->addWidget(pbAbout,0,2);
+    grid->addWidget(btnSupport,0,3);
 
     QGroupBox * info = new QGroupBox("App Information");
     info->setLayout(grid);

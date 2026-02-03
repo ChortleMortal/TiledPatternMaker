@@ -33,7 +33,7 @@ class MouseEditCrop
     };
 
 public:
-    MouseEditCrop(QPointF spt, CropPtr crop, QTransform t);
+    MouseEditCrop(QPointF spt, Crop * crop, QTransform t);
     virtual ~MouseEditCrop() {}
 
     virtual void updateDragging(QPointF spt, QTransform t);
@@ -43,7 +43,7 @@ public:
 protected:
     QPointF * start;
     QPointF * end;
-    CropPtr  crop;
+    Crop    * crop;
 
     eEditCropMode   ecMode;
     eCropCorner     ecCorner;

@@ -43,8 +43,9 @@ public:
     ProtoPtr            getPrototype() const {return prototype;}
     void                setPrototype(ProtoPtr pp);
 
-    MapPtr              getProtoMap() { return prototype->getProtoMap(); }  // can build map
-    virtual MapPtr      getStyleMap() { return prototype->getProtoMap(); }
+    virtual MapPtr      getProtoMap()           { return prototype->getProtoMap(); }  // can build map
+    virtual MapPtr      getStyleMap()           { return prototype->getProtoMap(); }  // same but can be overridenb
+    virtual void        setStyleMap(MapPtr map) { prototype->setProtoMap(map); }
 
     TilingPtr           getTiling();
 

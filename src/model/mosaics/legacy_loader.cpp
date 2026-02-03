@@ -673,7 +673,7 @@ ProtoPtr LegacyLoader::getPrototype(xml_node & node)
                 }
             }
             if (_debug) qDebug() << "adding to Proto" << figure->getMotifDesc();
-            DesignElementPtr  dep = make_shared<DesignElement>(feature, figure);
+            DELPtr  dep = make_shared<DesignElement>(tp,feature, figure);
             p->addDesignElement(dep);
         }
         //p->walk();

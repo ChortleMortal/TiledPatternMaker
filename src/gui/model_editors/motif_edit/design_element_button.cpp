@@ -28,7 +28,7 @@
 QColor DesignElementButton::tileBorder    = QColor( 140, 140, 160 );
 QColor DesignElementButton::tileIinterior = QColor( 240, 240, 255 );
 
-DesignElementButton::DesignElementButton(int index, DesignElementPtr del, QTransform t)
+DesignElementButton::DesignElementButton(int index, DELPtr del, QTransform t)
 {
     selected            = false;
     delegated           = false;
@@ -79,12 +79,12 @@ void DesignElementButton::setViewTransform()
     update();
 }
 
-DesignElementPtr DesignElementButton::getDesignElement()
+DELPtr DesignElementButton::getDesignElement()
 {
     return designElement.lock();
 }
 
-void DesignElementButton::setDesignElement(DesignElementPtr del)
+void DesignElementButton::setDesignElement(DELPtr del)
 {
     if (del == designElement.lock())
         return;
@@ -103,7 +103,7 @@ void DesignElementButton::setDesignElement(DesignElementPtr del)
     setViewTransform();
 }
 
-QTransform DesignElementButton::resetViewport(int index, DesignElementPtr del, QRect frameRect)
+QTransform DesignElementButton::resetViewport(int index, DELPtr del, QRect frameRect)
 {
     qDebug() << "DesignElementButton::resetViewport" << index;
 

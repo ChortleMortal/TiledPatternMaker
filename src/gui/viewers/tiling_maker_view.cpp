@@ -17,7 +17,6 @@
 #include "gui/top/system_view_controller.h"
 #include "gui/viewers/geo_graphics.h"
 #include "gui/viewers/grid_view.h"
-#include "gui/viewers/gui_modes.h"
 #include "gui/viewers/tiling_maker_view.h"
 #include "model/makers/tiling_maker.h"
 #include "model/makers/prototype_maker.h"
@@ -1009,7 +1008,7 @@ void TilingMakerView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
     switch (tilingMaker->getTilingMakerMouseMode())
     {
     case TM_NO_MOUSE_MODE:
-        if (Sys::guiModes->getMouseMode(MOUSE_MODE_NONE))
+        if (Sys::getSysMouseMode(MOUSE_MODE_NONE))
         {
             startMouseInteraction(sMousePos,btn);
         }
@@ -1265,7 +1264,7 @@ void TilingMakerView::slot_wheel_scale(uint sigid, qreal delta)
 {
     if (!validateSignal()) return;
 
-    switch (Sys::guiModes->TMKbdMode())
+    switch (tilingMaker->getTMKbdMode())
     {
     case TM_MODE_XFORM_TILING:
     {
@@ -1314,7 +1313,7 @@ void TilingMakerView::slot_wheel_rotate(uint sigid, qreal delta)
 {
     if (!validateSignal()) return;
 
-    switch (Sys::guiModes->TMKbdMode())
+    switch (tilingMaker->getTMKbdMode())
     {
     case TM_MODE_XFORM_TILING:
     {
@@ -1363,7 +1362,7 @@ void TilingMakerView::slot_mouseTranslate(uint sigid, QPointF spt)
 {
     if (!validateSignal()) return;
 
-    switch (Sys::guiModes->TMKbdMode())
+    switch (tilingMaker->getTMKbdMode())
     {
     case TM_MODE_XFORM_TILING:
     {
@@ -1436,7 +1435,7 @@ void TilingMakerView::slot_scale(uint sigid, int amount)
 
     if (!validateSignal()) return;
 
-    switch (Sys::guiModes->TMKbdMode())
+    switch (tilingMaker->getTMKbdMode())
     {
     case TM_MODE_XFORM_TILING:
         tilingMaker->tilingDeltaScale(amount);
@@ -1466,7 +1465,7 @@ void TilingMakerView::slot_rotate(uint sigid,int amount)
 
     if (!validateSignal()) return;
 
-    switch (Sys::guiModes->TMKbdMode())
+    switch (tilingMaker->getTMKbdMode())
     {
     case TM_MODE_XFORM_TILING:
         tilingMaker->tilingDeltaRotate(amount);
@@ -1496,7 +1495,7 @@ void TilingMakerView::slot_moveX(uint sigid, qreal amount)
 
     if (!validateSignal()) return;
 
-    switch (Sys::guiModes->TMKbdMode())
+    switch (tilingMaker->getTMKbdMode())
     {
     case TM_MODE_XFORM_TILING:
         tilingMaker->tilingDeltaX(amount);
@@ -1526,7 +1525,7 @@ void TilingMakerView::slot_moveY(uint sigid, qreal amount)
 
     if (!validateSignal()) return;
 
-    switch (Sys::guiModes->TMKbdMode())
+    switch (tilingMaker->getTMKbdMode())
     {
     case TM_MODE_XFORM_TILING:
         tilingMaker->tilingDeltaY(amount);

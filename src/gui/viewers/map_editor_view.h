@@ -5,7 +5,7 @@
 #include "gui/viewers/layer_controller.h"
 #include "sys/enums/emapeditor.h"
 
-typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+typedef std::shared_ptr<class DesignElement>    DELPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
 typedef std::shared_ptr<class Tile>             TilePtr;
 
@@ -28,15 +28,13 @@ public:
     void                draw(QPainter * painter);
     void                drawMap(QPainter * painter, eMapedLayer layer, QColor color);
     void                drawDCEL(QPainter * painter);
-    void                drawTile(QPainter * painter, DesignElementPtr del);
-    void                drawBoundaries(QPainter * painter, DesignElementPtr del);
+    void                drawTile(QPainter * painter, DELPtr del);
+    void                drawBoundaries(QPainter * painter, DELPtr del);
     void                drawPoints(QPainter * painter, QVector<class PointInfo> & points);
     void                drawConstructionLines(QPainter * painter);
     void                drawConstructionCircles(QPainter * painter);
 
     void                startMouseInteraction(QPointF spt, Qt::MouseButton mouseButton);
-
-    QTransform          getPlacement(TilePtr tile);
 
     MapEditorSelection * getSelector() { return selector; }
     MapEditorDb        * getDb() { return db; }

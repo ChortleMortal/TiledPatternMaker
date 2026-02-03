@@ -7,7 +7,7 @@
 
 MapEditorMapLoader::MapEditorMapLoader() : MosaicReader(Sys::viewController)
 {
-    maptype = MAPED_TYPE_UNKNOWN;
+    maptype = MAPED_TYPE_NONE;
 }
 
 MapEditorMapLoader::~MapEditorMapLoader()
@@ -78,9 +78,8 @@ MapPtr MapEditorMapLoader::loadMosaicMap(VersionedFile xfile)
         xml_node ca = node.child("ModelSettings");
         if (ca)
         {
-            int   unused;
-            QPointF unused2;
-            procesToolkitGeoLayer(ca,_xf,unused,unused2);
+            eZLevel unused;
+            procesToolkitGeoLayer(ca,_xf,unused);
         }
 
         xml_node bi = node.child("BackgroundImage");

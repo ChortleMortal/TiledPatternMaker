@@ -75,8 +75,7 @@ void Filled::createStyleRepresentation()
 {
     if (!created)
     {
-        // Filled does not use a style map, just a DCEL
-        FilledDCELPtr dcel = prototype->getFilledDCEL();
+        DCELPtr dcel = prototype->getDCEL();
         if (dcel)
         {
             colorMaker->buildFaceSets(algorithm, dcel);
@@ -87,7 +86,7 @@ void Filled::createStyleRepresentation()
 
 void Filled::draw(GeoGraphics * gg)
 {
-    if (!isVisible() || !getPrototype()->getFilledDCEL())
+    if (!isVisible() || !getPrototype()->getDCEL())
     {
         return;
     }
@@ -227,7 +226,7 @@ void Filled::drawDCELNew3(GeoGraphics *gg)
 
 void Filled::drawDCELDirectColor(GeoGraphics *gg)
 {
-    FilledDCELPtr dcel = getPrototype()->getFilledDCEL();
+    DCELPtr dcel = getPrototype()->getDCEL();
     if (!dcel) return;
 
     const FaceSet & faces = dcel->getFaceSet();
@@ -277,7 +276,7 @@ void Filled::setColorIndex(int faceIndex,int colorIndex)
 
 void Filled::removeColorIndex(int index)
 {
-    FilledDCELPtr dcel = getPrototype()->getFilledDCEL();
+    DCELPtr dcel = getPrototype()->getDCEL();
     if (!dcel) return;
 
     colorMaker->removePaletteIndex(dcel,index);

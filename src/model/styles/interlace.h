@@ -35,6 +35,8 @@ public:
     void    setIncludeTipVertices(bool include) { includeTipVertices = include; }
 
     virtual MapPtr  getStyleMap()  override;
+    virtual void    setStyleMap(MapPtr map) override { casings.setMap(map); }
+
     eStyleType      getStyleType() const override { return STYLE_INTERLACED; }
     QString         getStyleDesc() const override { return "Interlaced"; }
     void            dump()         const override { qDebug().noquote() << getStyleDesc() << "gap" << gap

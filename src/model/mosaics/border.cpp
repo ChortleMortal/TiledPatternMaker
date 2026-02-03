@@ -3,16 +3,14 @@
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
 #include "gui/top/system_view.h"
-#include "gui/viewers/crop_viewer.h"
+#include "gui/viewers/crop_maker_view.h"
 #include "gui/viewers/geo_graphics.h"
-#include "gui/viewers/gui_modes.h"
 #include "model/mosaics/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/motifs/tile_color_defs.h"
 #include "qmath.h"
 #include "sys/geometry/crop.h"
 #include "sys/geometry/map.h"
-#include "sys/geometry/transform.h"
 
 /*
  * A border (defined in model units) is both a a layer, and a crop
@@ -25,7 +23,7 @@
  *     but when locked to view size, content is (or shoulde be) adjusted as the view size changes
  */
 
-Border::Border(Mosaic * parent) : Style (DERIVED,"Border")
+Border::Border(Mosaic * parent) : Style (PRIMARY,"Border")
 {
     this->parent          = parent;
     borderType            = BORDER_NONE;
@@ -35,13 +33,14 @@ Border::Border(Mosaic * parent) : Style (DERIVED,"Border")
     _requiresConversion   = false;
     debugMouse            = false;
 
-    setZValue(BORDER_ZLEVEL);
+    setZLevel(BORDER_ZLEVEL);
+    setClipable(false);
 
     connect(Sys::sysview, &SystemView::sig_viewSizeChanged, this, &Border::viewResized);
     connect(Sys::sysview, &SystemView::sig_viewMoved,       this, &Border::viewMoved);
 }
 
-Border::Border(Mosaic *parent, const Crop & crop) : Style(DERIVED, "Border"), Crop(crop)
+Border::Border(Mosaic *parent, const Crop & crop) : Style(PRIMARY, "Border"), Crop(crop)
 {
     this->parent          = parent;
     borderType            = BORDER_NONE;
@@ -51,7 +50,8 @@ Border::Border(Mosaic *parent, const Crop & crop) : Style(DERIVED, "Border"), Cr
     _requiresConversion   = false;
     debugMouse            = false;
 
-    setZValue(BORDER_ZLEVEL);
+    setZLevel(BORDER_ZLEVEL);
+    setClipable(false);
 
     connect(Sys::sysview, &SystemView::sig_viewSizeChanged, this, &Border::viewResized);
     connect(Sys::sysview, &SystemView::sig_viewMoved,       this, &Border::viewMoved);
@@ -79,7 +79,6 @@ void Border::paint(QPainter *painter)
     painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     QTransform tr = getLayerTransform();
-    qDebug().noquote() << "Border::paint" << Transform::info(tr);
 
     GeoGraphics gg(painter,tr);
 
@@ -179,7 +178,7 @@ void Border::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 
     if (!viewControl()->isEnabled(VIEW_MOSAIC))
         return;
-    if (Sys::cropViewer->getShowCrop(CM_MOSAIC))
+    if (Sys::cropMakerView->getShowCrop(CM_MOSAIC))
         return;
     if (!Sys::controlPanel->isVisiblePage(PAGE_BORDER_MAKER))
         return;
@@ -197,7 +196,7 @@ void Border::slot_mouseDragged(QPointF spt)
     if (!viewControl()->isEnabled(VIEW_MOSAIC))
         return;
 
-    if (Sys::cropViewer->getShowCrop(CM_MOSAIC))
+    if (Sys::cropMakerView->getShowCrop(CM_MOSAIC))
         return;
 
     setMousePos(spt);
@@ -216,7 +215,7 @@ void Border::slot_mouseMoved(QPointF spt)
 {
     if (!viewControl()->isEnabled(VIEW_MOSAIC))
         return;
-    if (Sys::cropViewer->getShowCrop(CM_MOSAIC))
+    if (Sys::cropMakerView->getShowCrop(CM_MOSAIC))
         return;
 
     setMousePos(spt);
@@ -228,7 +227,7 @@ void Border::slot_mouseReleased(QPointF spt)
 {
     if (!viewControl()->isEnabled(VIEW_MOSAIC))
         return;
-    if (Sys::cropViewer->getShowCrop(CM_MOSAIC))
+    if (Sys::cropMakerView->getShowCrop(CM_MOSAIC))
         return;
 
     setMousePos(spt);

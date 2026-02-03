@@ -1,5 +1,4 @@
 #include "gui/viewers/layer_controller.h"
-#include "gui/viewers/gui_modes.h"
 #include "gui/top/system_view.h"
 #include "sys/sys.h"
 

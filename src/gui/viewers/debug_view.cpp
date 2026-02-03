@@ -1,7 +1,7 @@
 #include <QPainter>
 #include "gui/viewers/debug_view.h"
 #include "gui/viewers/geo_graphics.h"
-#include "gui/viewers/gui_modes.h"
+#include "gui/viewers/motif_maker_view.h"
 #include "model/mosaics/reader_base.h"
 #include "model/settings/configuration.h"
 #include "model/tilings/placed_tile.h"
@@ -21,7 +21,7 @@ DebugView::DebugView() : LayerController(VIEW_DEBUG,DERIVED,"Debug View")
     doTestA = false;
     doTestB = false;
 
-    setZValue(Sys::config->gridZLevel);
+    setZLevel(Sys::config->gridZLevel);
 
     readConfig();
 
@@ -33,7 +33,12 @@ DebugView::~DebugView()
 
 void DebugView::paint(QPainter * painter)
 {
-    QTransform t = getLayerTransform();
+    QTransform t;
+
+    if (Sys::config->debugMotifView)
+        t = Sys::motifMakerView->getLayerTransform();
+    else
+        t = getLayerTransform();
 
     if (doTestA)
     {

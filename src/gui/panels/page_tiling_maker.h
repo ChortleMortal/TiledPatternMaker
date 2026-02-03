@@ -4,7 +4,7 @@
 #include "gui/panels/panel_misc.h"
 #include "gui/panels/panel_page.h"
 #include "gui/widgets/layout_sliderset.h"
-#include "sys/enums/ekeyboardmode.h"
+#include "model/makers/tiling_maker.h"
 #include "sys/enums/etilingmaker.h"
 
 typedef std::shared_ptr<class Tiling>         TilingPtr;
@@ -98,7 +98,7 @@ private slots:
     void slot_mergeTilings();
 
     void slot_setKbdMode1(QAbstractButton *btn, QButtonGroup *kbdGroup);
-    void slot_kbdMode1(eTMMode mode);
+    void slot_kbdMode1(eTMKbdMode mode);
 
 protected:
     FloatableTab * createControlTab();

@@ -13,7 +13,7 @@ void  Shortcuts::popup(eViewType view)
     switch(view)
     {
     case VIEW_LEGACY:
-        ted->setHtml(getDesignShortcuts());
+        ted->setHtml(getLegacyShortcuts());
         break;
 
     case VIEW_TILING_MAKER:
@@ -26,7 +26,7 @@ void  Shortcuts::popup(eViewType view)
 
     case VIEW_MOSAIC:
     default:
-        ted->setHtml(getMosaicShortcuts());
+        ted->setHtml(getGeneralShortcuts());
         break;
     }
     ted->show();
@@ -34,7 +34,7 @@ void  Shortcuts::popup(eViewType view)
 }
 
 
-QString Shortcuts::getMosaicShortcuts()
+QString Shortcuts::getGeneralShortcuts()
 {
     QString name(":/txt/mosaic.txt");
     QFile data(name);
@@ -54,7 +54,7 @@ QString Shortcuts::getMosaicShortcuts()
     }
 }
 
-QString Shortcuts::getDesignShortcuts()
+QString Shortcuts::getLegacyShortcuts()
 {
     QString name(":/txt/legacy.txt");
     QFile data(name);

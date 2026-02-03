@@ -2,25 +2,16 @@
 //
 // Rosette2
 //
-// The rosette is a classic feature of Islamic art.  It's a star
-// shape surrounded by hexagons.
-//
-// This class implements the rosette as a RadialFigure using the
-// geometric construction given in Lee [1].
-//
-// [1] A.J. Lee, _Islamic Star Patterns_.  Muqarnas 4.
-//
 // Rosette2 is an alternative to Kaplan's Rosette, which relaxes
 // Kaplans constraint on Knee position which is only a partial truth
-//
+// Also adds more vraiations
 
 #include <QDebug>
 #include "model/motifs/rosette2.h"
 #include "sys/geometry/geo.h"
+#include "sys/geometry/intersect.h"
 #include "sys/geometry/transform.h"
-#include "sys/geometry/map.h"
 #include "model/tilings/tile.h"
-#include "gui/viewers/debug_view.h"
 
 typedef std::shared_ptr<Rosette2> Rosette2Ptr;
 
@@ -33,7 +24,8 @@ Rosette2::Rosette2(const Motif & fig,  int nsides, qreal kneeX, qreal kneeY, int
     s           = ss;
     k           = kk;
     constrain   = c;
-    tipType     = TIP_TYPE_OUTER;
+    tipTypes    = TIP_TYPE2_OUTER;
+    setTipMode(TIP_MODE_REGULAR);
     setMotifType(MOTIF_TYPE_ROSETTE2);
 }
 
@@ -44,7 +36,8 @@ Rosette2::Rosette2(int nsides, qreal kneeX, qreal kneeY, int ss, qreal kk, bool 
     s           = ss;
     k           = kk;
     constrain   = c;
-    tipType     = TIP_TYPE_OUTER;
+    tipTypes    = TIP_TYPE2_OUTER;
+    setTipMode(TIP_MODE_REGULAR);
     setMotifType(MOTIF_TYPE_ROSETTE2);
 }
 
@@ -55,7 +48,7 @@ Rosette2::Rosette2(const Rosette2 & other) : RadialMotif(other)
     s           = other.s;
     k           = other.k;
     constrain   = other.constrain;
-    tipType     = other.tipType;
+    tipTypes    = other.tipTypes;
     setMotifType(MOTIF_TYPE_ROSETTE2);
 }
 
@@ -77,7 +70,7 @@ bool Rosette2::equals(const MotifPtr other)
     if (s != otherp->s)
         return false;
 
-    if (tipType != otherp->tipType)
+    if (tipTypes != otherp->tipTypes)
         return false;
 
     if (!Motif::equals(other))
@@ -98,7 +91,7 @@ void Rosette2::buildUnitMap()
   //motifDebug = 0x15
   //motifDebug = 0x04
   //motifDebug = 0x05;
-    motifDebug = 0x00;
+    motifDebug = 0;
 
     if (motifDebug > 0)
     {
@@ -178,32 +171,88 @@ void Rosette2::buildUnitMap()
     // build the rays
     raySet1.clear();
     raySet2.clear();
-    auto tr = getUnitRotationTransform();
-    if (tipType ==  TIP_TYPE_OUTER)
-    {
-        buildRay(raySet1,outerTip,epoints);
-        raySet2 = raySet1;
-        raySet2.transform(tr);
-    }
-    else
-    {
-        QLineF  kneeLine(kneePt,kneePtMirror);
-        QPointF innerTip = Geo::reflectPoint(outerTip,kneeLine);    // outer tip reflected over kneeLine
 
-        if (tipType == TIP_TYPE_INNER)
+    QLineF  kneeLine(kneePt,kneePtMirror);
+    QPointF innerTip = Geo::reflectPoint(outerTip,kneeLine);    // outer tip reflected over kneeLine
+    QTransform rotTr = getUnitRotationTransform();
+
+    if (tipMode == TIP_MODE_REGULAR)
+    {
+        // really only one should be selected
+        if (getTipTypes() & TIP_TYPE2_OUTER)
+        {
+            buildRay(raySet1,outerTip,epoints);
+            raySet2 = raySet1;
+            raySet2.transform(rotTr);
+        }
+        else if (getTipTypes() & TIP_TYPE2_INNER)
         {
             buildRay(raySet1,innerTip,epoints);
             raySet2 = raySet1;
-            raySet2.transform(tr);
+            raySet2.transform(rotTr);
         }
-        else
+        else if (getTipTypes() & TIP_TYPE2_FLIPPED)
         {
-            Q_ASSERT(tipType == TIP_TYPE_ALTERNATE);
-            buildRay(raySet1,outerTip,epoints);
-            buildRay(raySet2,innerTip,epoints);
-            raySet2.transform(tr);
+            buildRay(raySet1,innerTip,epoints);
+
+            QTransform td = getDELTransform();
+            QLineF edge = atile.getEdge(getN()-1);
+            edge = td.map(edge);
+
+            QPointF ep2 = Geo::perpPt(edge,raySet1.ray1.pt(1));
+            raySet1.ray1.setPt(1,ep2);
+            QPointF ep3 = Geo::perpPt(edge,raySet1.ray2.pt(1));
+            raySet1.ray2.setPt(1,ep3);
+
+            raySet2 = raySet1;
+            raySet2.transform(rotTr);
         }
     }
+    else
+    {
+        Q_ASSERT(tipMode == TIP_MODE_ALTERNATE);
+        // really only two should be selected
+        int raysdone = 0;
+
+        if (getTipTypes() & TIP_TYPE2_OUTER)
+        {
+            buildRay(raySet1,outerTip,epoints);
+            raysdone++;
+        }
+
+        if (getTipTypes() & TIP_TYPE2_INNER)
+        {
+            if (raysdone)
+            {
+                buildRay(raySet2,innerTip,epoints);
+                raysdone++;
+            }
+            else
+            {
+                buildRay(raySet1,innerTip,epoints);
+                raysdone++;
+            }
+        }
+
+        if (getTipTypes() & TIP_TYPE2_FLIPPED)
+        {
+            if (raysdone == 1)
+            {
+                buildRay(raySet2,innerTip,epoints);
+
+                QTransform td = getDELTransform();
+                QLineF edge = atile.getEdge(getN()-1);
+                edge = td.map(edge);
+
+                QPointF ep2 = Geo::perpPt(edge,raySet2.ray1.pt(1));
+                raySet2.ray1.setPt(1,ep2);
+                QPointF ep3 = Geo::perpPt(edge,raySet2.ray2.pt(1));
+                raySet2.ray2.setPt(1,ep3);
+            }
+        }    
+    }
+
+    raySet2.transform(rotTr);
 
     if (inscribe)
     {
@@ -221,6 +270,8 @@ void Rosette2::buildUnitMap()
         raySet1.transform(t);
         raySet2.transform(t);
     }
+
+    raySet1.debug();
 }
 
 void  Rosette2::buildRay(RaySet &  set, QPointF tip, const QVector<QPointF> & epoints)

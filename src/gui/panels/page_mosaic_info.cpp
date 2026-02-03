@@ -30,6 +30,7 @@ page_mosaic_info:: page_mosaic_info(ControlPanel *panel)  : panel_page(panel,PAG
 
     connect(tilingMaker,   &TilingMaker::sig_tilingLoaded,      this,   &page_mosaic_info::onEnter);
     connect(mosaicMaker,   &MosaicMaker::sig_mosaicLoaded,      this,   &page_mosaic_info::onEnter);
+    connect(viewControl,   &SystemViewController::sig_unloaded, this,   &page_mosaic_info::onEnter);
 }
 
 void  page_mosaic_info::onEnter()
@@ -83,7 +84,7 @@ void page_mosaic_info::showMotifsFromStyles()
                     motifTable->setItem(row,COL_TILING_NAME,item);
                 }
 
-                QVector<DesignElementPtr>  dels = pp->getDesignElements();
+                QVector<DELPtr>  dels = pp->getDesignElements();
                 for (auto & del : dels)
                 {
                     MotifPtr motif = del->getMotif();

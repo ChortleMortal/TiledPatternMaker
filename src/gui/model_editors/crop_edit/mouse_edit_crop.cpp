@@ -11,7 +11,7 @@
 ///
 /////////////////////////////////////////////////////////
 
-MouseEditCrop::MouseEditCrop(QPointF spt, CropPtr crop, QTransform t)
+MouseEditCrop::MouseEditCrop(QPointF spt, Crop *crop, QTransform t)
 {
     start        = nullptr;
     end          = nullptr;

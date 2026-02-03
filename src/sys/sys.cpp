@@ -5,10 +5,9 @@
 #include "gui/top/split_screen.h"
 #include "gui/top/system_view.h"
 #include "gui/top/system_view_controller.h"
-#include "gui/viewers/crop_viewer.h"
+#include "gui/viewers/crop_maker_view.h"
 #include "gui/viewers/debug_view.h"
 #include "gui/viewers/grid_view.h"
-#include "gui/viewers/gui_modes.h"
 #include "gui/viewers/image_view.h"
 #include "gui/viewers/map_editor_view.h"
 #include "gui/viewers/motif_maker_view.h"
@@ -49,7 +48,6 @@ Configuration   * Sys::config           = nullptr;
 ControlPanel    * Sys::controlPanel     = nullptr;
 SplitScreen     * Sys::splitter         = nullptr;
 SplashScreen    * Sys::splash           = nullptr;
-GuiModes        * Sys::guiModes         = nullptr;
 DebugMap        * Sys::debugMapCreate   = nullptr;
 DebugMap        * Sys::debugMapPaint    = nullptr;
 DebugFlags      * Sys::flags            = nullptr;
@@ -67,7 +65,7 @@ SystemView           * Sys::sysview           = nullptr;
 SystemViewController * Sys::viewController    = nullptr;
 
 DebugViewPtr     Sys::debugView;
-CropViewPtr      Sys::cropViewer;
+CropViewPtr      Sys::cropMakerView;
 GridViewPtr      Sys::gridViewer;
 MapedViewPtr     Sys::mapEditorView;
 MMViewiewPtr     Sys::motifMakerView;
@@ -81,6 +79,7 @@ wBkgdImagePtr    Sys::definedBkImage;
 
 int  Sys::appInstance       = 0;
 uint Sys::rx_sigid          = 1;
+int  Sys::iMouseMode        = 0;
 bool Sys::isDarkTheme       = false;
 bool Sys::imgGeneratorInUse = false;
 bool Sys::localCycle        = false;
@@ -169,7 +168,6 @@ Sys::Sys()
     designMaker         = new DesignMaker;
 
     controlPanel        = new ControlPanel;
-    guiModes            = new GuiModes;
 
     sysview             = new SystemView;
     viewController      = new SystemViewController;
@@ -179,7 +177,7 @@ Sys::Sys()
     motifMakerView      = make_shared<MotifMakerView>();
     mapEditorView       = make_shared<MapEditorView>();
     debugView           = make_shared<DebugView>();
-    cropViewer          = make_shared<CropViewer>();
+    cropMakerView       = make_shared<CropMakerView>();
     gridViewer          = make_shared<GridView>();
     imageViewer         = make_shared<ImageViewer>();
 
@@ -216,7 +214,7 @@ Sys::~Sys()
 
     gridViewer.reset();
     imageViewer.reset();
-    cropViewer.reset();
+    cropMakerView.reset();
     debugView.reset();
     mapEditorView.reset();
     motifMakerView.reset();
@@ -230,8 +228,6 @@ Sys::~Sys()
 
     delete controlPanel;
     controlPanel = nullptr;
-    delete guiModes;
-    guiModes = nullptr;
 
     delete designMaker;
     designMaker = nullptr;
@@ -344,6 +340,70 @@ QMultiMap<eMotifType,QString> Sys::initMotifAssociations()
 
     return mmap;
 }
+
+bool Sys::getSysMouseMode(eMouseMode mode)
+{
+    if (mode == MOUSE_MODE_NONE)
+        return iMouseMode == 0;
+    else
+        return (iMouseMode & mode) > 0;
+}
+
+
+void Sys::setSysMouseMode(eMouseMode newMode, bool set)
+{
+    qDebug() << "MouseMode:" << newMode;
+
+    if (set)
+    {
+        switch (newMode)
+        {
+        case MOUSE_MODE_NONE:
+            iMouseMode = 0;
+            break;
+
+        case MOUSE_MODE_TRANSLATE:
+            iMouseMode |= newMode;
+            break;
+
+        case MOUSE_MODE_ROTATE:
+            iMouseMode &= ~MOUSE_MODE_SCALE;
+            iMouseMode |= newMode;
+            break;
+
+        case MOUSE_MODE_SCALE:
+            iMouseMode &= ~MOUSE_MODE_ROTATE;
+            iMouseMode |= newMode;
+            break;
+        }
+    }
+    else
+    {
+        switch (newMode)
+        {
+        case MOUSE_MODE_NONE:
+            break;
+
+        case MOUSE_MODE_TRANSLATE:
+            iMouseMode &= ~newMode;
+            break;
+
+        case MOUSE_MODE_ROTATE:
+            iMouseMode &= ~newMode;
+            break;
+
+        case MOUSE_MODE_SCALE:
+            iMouseMode &= ~newMode;
+            break;
+        }
+    }
+
+    if (iMouseMode)
+        showCenterMouse = true;
+    else
+        showCenterMouse = false;
+}
+
 
 QString Sys::XMLgetMotifName(eMotifType type)
 {

@@ -20,7 +20,7 @@ typedef std::shared_ptr<class Circle>           CirclePtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
 typedef std::shared_ptr<class Neighbours>       NeighboursPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+typedef std::shared_ptr<class DesignElement>    DELPtr;
 
 class MapEditorSelection
 {
@@ -48,7 +48,7 @@ public:
     // circles
     MapSelectionPtr findConstructionCircle(const QPointF &spt);
 
-    void            buildMotifDB(DesignElementPtr delp);
+    void            buildMotifDB(DELPtr delp);
     bool            insideBoundary(QPointF wpt);
 
     QVector<LineInfo>  lines;   // generated

@@ -27,7 +27,7 @@ Configuration::Configuration()
 
     cycleInterval       = s.value("cycleInterval",4).toInt();
     polySides           = s.value("polySides",8).toInt();
-    protoViewMode       = s.value("protoViewMode2",PROTO_ALL_TILES | PROTO_ALL_MOTIFS).toInt();
+    protoViewMode       = s.value("protoViewMode2",SHOW_TILES | SHOW_MOTIFS).toInt();
     rootMediaDir        = s.value("rootMediaDir",getMediaRoot()).toString();
     rootImageDir        = s.value("rootImageDir",getImageRoot()).toString();
     BMPCompare0         = s.value("image0","").toString();
@@ -103,6 +103,7 @@ Configuration::Configuration()
     limitViewSize       = s.value("limitViewSize",true).toBool();
     disableSplash       = s.value("disableSplash",false).toBool();
     disableResizeNotify = s.value("disableResizeNotify",false).toBool();
+    debugMotifView      = s.value("debugMotifView",false).toBool();
     insightMode         = s.value("insightMode",false).toBool();
     cs_showBkgds        = s.value("cs_showBkgds",false).toBool();
     defaultImageRoot    = s.value("defaultImageRoot",true).toBool();
@@ -132,7 +133,7 @@ Configuration::Configuration()
     gridScreenSpacing   = s.value("gridScreenSpacing",100).toInt();
     gridScreenCenter    = s.value("gridScreenCenter",false).toBool();
     gridTilingWidth     = s.value("gridTilingWidth",3).toInt();
-    gridZLevel          = s.value("gridZLevel",5).toInt();
+    gridZLevel          = (eZLevel)s.value("gridZLevel",GRID_ZLEVEL).toInt();
     debugViewConfig     = s.value("debugViewConfig2",0xffff).toUInt();
     mapedCleanseLevel   = s.value("mapedCleanseLevel",44).toUInt();
     tm_snapToGrid       = s.value("snapToGrid",true).toBool();
@@ -279,6 +280,7 @@ void Configuration::save()
     s.setValue("limitViewSize",limitViewSize);
     s.setValue("disableSplash",disableSplash);
     s.setValue("disableResizeNotify",disableResizeNotify);
+    s.setValue("debugMotifView",debugMotifView);
     s.setValue("xmlTool",xmlTool);
     s.setValue("diffTool",diffTool);
     s.setValue("insightMode",insightMode);

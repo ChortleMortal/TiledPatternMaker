@@ -3,7 +3,6 @@
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
 #include "gui/top/system_view_controller.h"
-#include "gui/viewers/gui_modes.h"
 #include "gui/viewers/image_view.h"
 #include "legacy/design.h"
 #include "legacy/design_maker.h"
@@ -21,6 +20,19 @@
 
 using std::make_shared;
 
+#define E2STR(x) #x
+
+const QString sLegacyMode [] =
+    {
+        E2STR(LEGACY_MODE_DES_POS),
+        E2STR(LEGACY_MODE_DES_LAYER_SELECT),
+        E2STR(LEGACY_MODE_DES_ZLEVEL),
+        E2STR(LEGACY_MODE_DES_STEP),
+        E2STR(LEGACY_MODE_MODE_DES_SEPARATION),
+        E2STR(LEGACY_MODE_DES_ORIGIN),
+        E2STR(LEGACY_MODE_DES_OFFSET),
+};
+
 DesignMaker::DesignMaker()
 {
     selectedLayer   = 0;
@@ -33,6 +45,8 @@ void DesignMaker::init()
 {
     viewControl = Sys::viewController;
     config      = Sys::config;
+
+    _legacyKeyboardMode  = LEGACY_MODE_DES_POS;
 
     availableDesigns.insert(DESIGN_5,make_shared<Design5>(DESIGN_5,"Pattern 1 (created)"));
     availableDesigns.insert(DESIGN_6,make_shared<Design6>(DESIGN_6,"Pattern 2 (re-ceated)"));
@@ -284,73 +298,113 @@ void DesignMaker::setStep(int astep)
 void DesignMaker::ProcKeyUp()
 {
     // up arrow
-    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ZLEVEL))
+    switch(_legacyKeyboardMode)
+    {
+    case LEGACY_MODE_DES_ZLEVEL:
         designLayerZPlus();
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_STEP))
+        break;
+    case  LEGACY_MODE_DES_STEP:
         step(1);
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_MODE_DES_SEPARATION))
+        break;
+    case LEGACY_MODE_MODE_DES_SEPARATION:
         designReposition(0,-1);
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_OFFSET))
+        break;
+    case LEGACY_MODE_DES_OFFSET:
         designOffset(0,-1);
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ORIGIN))
+        break;
+    case LEGACY_MODE_DES_ORIGIN:
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
             designOrigin(0,-100);
         else
             designOrigin(0,-1);
+    }   break;
+    case LEGACY_MODE_DES_POS:
+    case LEGACY_MODE_DES_LAYER_SELECT:
+        break;
     }
 }
 
 void DesignMaker::ProcKeyDown()
 {
     // down arrrow
-    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ZLEVEL))
+    switch(_legacyKeyboardMode)
+    {
+    case LEGACY_MODE_DES_ZLEVEL:
         designLayerZMinus();
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_STEP))
+        break;
+    case LEGACY_MODE_DES_STEP:
         step(-1);
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_MODE_DES_SEPARATION))
+        break;
+    case LEGACY_MODE_MODE_DES_SEPARATION:
         designReposition(0,1);
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_OFFSET))
+        break;
+    case LEGACY_MODE_DES_OFFSET:
         designOffset(0,1);
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ORIGIN))
+        break;
+    case LEGACY_MODE_DES_ORIGIN:
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
             designOrigin(0,100);
         else
             designOrigin(0,1);
+    }   break;
+    case LEGACY_MODE_DES_POS:
+    case LEGACY_MODE_DES_LAYER_SELECT:
+        break;
     }
 }
 
 void DesignMaker::ProcKeyLeft()
 {
-    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_MODE_DES_SEPARATION))
+    switch(_legacyKeyboardMode)
+    {
+    case LEGACY_MODE_MODE_DES_SEPARATION:
         designReposition(-1,0);
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_OFFSET))
+        break;
+    case LEGACY_MODE_DES_OFFSET:
         designOffset(-1,0);
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ORIGIN))
+        break;
+    case LEGACY_MODE_DES_ORIGIN:
     {   Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
             designOrigin(-100,0);
         else
             designOrigin(-1,0);
+    }   break;
+    case LEGACY_MODE_DES_POS:
+    case LEGACY_MODE_DES_LAYER_SELECT:
+    case LEGACY_MODE_DES_ZLEVEL:
+    case LEGACY_MODE_DES_STEP:
+        break;
     }
 }
 
 void DesignMaker::ProcKeyRight()
 {
-    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_MODE_DES_SEPARATION))
+    switch(_legacyKeyboardMode)
+    {
+    case LEGACY_MODE_MODE_DES_SEPARATION:
         designReposition(1,0);
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_OFFSET))
+        break;
+    case LEGACY_MODE_DES_OFFSET:
         designOffset(1,0);
-    else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_ORIGIN))
+        break;
+    case LEGACY_MODE_DES_ORIGIN:
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
             designOrigin(100,0);
         else
             designOrigin(1,0);
+    }   break;
+    case LEGACY_MODE_DES_POS:
+    case LEGACY_MODE_DES_LAYER_SELECT:
+    case LEGACY_MODE_DES_ZLEVEL:
+    case LEGACY_MODE_DES_STEP:
+        break;
     }
 }
 
@@ -379,7 +433,7 @@ void DesignMaker::designRotate(int delta)
 
 void DesignMaker::designMoveY(int delta)
 {
-    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_POS) || Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_LAYER_SELECT))
+    if (_legacyKeyboardMode == LEGACY_MODE_DES_POS || _legacyKeyboardMode == LEGACY_MODE_DES_LAYER_SELECT)
     {
         for (auto & design : std::as_const(activeDesigns))
         {
@@ -404,7 +458,7 @@ void DesignMaker::designMoveY(int delta)
 
 void DesignMaker::designMoveX(int delta)
 {
-    if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_POS) || Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_LAYER_SELECT))
+    if (_legacyKeyboardMode == LEGACY_MODE_DES_POS || _legacyKeyboardMode == LEGACY_MODE_DES_LAYER_SELECT)
     {
         for (auto & design : std::as_const(activeDesigns))
         {
@@ -424,6 +478,31 @@ void DesignMaker::designMoveX(int delta)
         {
             ProcKeyLeft();
         }
-
     }
+}
+
+void DesignMaker::setLegacyKbdMode(eLegacyMode mode)
+{
+    if (mode != _legacyKeyboardMode)
+    {
+        _legacyKeyboardMode = mode;
+        qDebug().noquote() << "Keyboard Mode is:" << getLegacyKbdModeStr();
+        emit sig_LegacyKbdMode(mode);
+    }
+}
+
+void DesignMaker::resetLegacyKbdMode()
+{
+    setLegacyKbdMode(LEGACY_MODE_DES_POS);
+    emit sig_LegacyKbdMode(_legacyKeyboardMode);
+}
+
+bool DesignMaker::isLegacyKbdMode(eLegacyMode mode)
+{
+    return (mode == _legacyKeyboardMode);
+}
+
+QString DesignMaker::getLegacyKbdModeStr()
+{
+    return sLegacyMode[_legacyKeyboardMode];
 }

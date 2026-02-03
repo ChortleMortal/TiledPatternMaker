@@ -2,7 +2,7 @@
 #include <QButtonGroup>
 
 #include "gui/widgets/crop_widget.h"
-#include "gui/viewers/crop_viewer.h"
+#include "gui/viewers/crop_maker_view.h"
 #include "gui/widgets/layout_qrectf.h"
 #include "gui/widgets/layout_sliderset.h"
 #include "sys/enums/eborder.h"
@@ -21,15 +21,10 @@ QLayout * CropWidget::createLayout()
     QRadioButton * undefinedBtn = new QRadioButton("No Crop");
     QRadioButton * rectBtn      = new QRadioButton("Rectangular Crop");
     rectLayoutW                 = new LayoutQRectF("Model  units", 8, 0.05);
-    rectLayoutS                 = new LayoutQRectF("Screen units", 8,1.0);
 
     QHBoxLayout * rectW = new QHBoxLayout;
     rectW->addSpacing(21);
     rectW->addLayout(rectLayoutW);
-
-    QHBoxLayout * rectS = new QHBoxLayout;
-    rectS->addSpacing(21);
-    rectS->addLayout(rectLayoutS);
 
     QHBoxLayout * rectAsp = new QHBoxLayout;
     rectAsp->addSpacing(21);
@@ -79,7 +74,6 @@ QLayout * CropWidget::createLayout()
     vb->addWidget(undefinedBtn);
     vb->addWidget(rectBtn);
     vb->addLayout(rectW);
-    vb->addLayout(rectS);
     vb->addLayout(rectAsp);
     vb->addLayout(hbCirc);
     vb->addLayout(hbreg);
@@ -92,7 +86,6 @@ QLayout * CropWidget::createLayout()
     cropTypes->addButton(circBtn,CROP_CIRCLE);
 
     connect(rectLayoutW,    &LayoutQRectF::rectChanged,       this, &CropWidget::slot_rectChangedM);
-    connect(rectLayoutS,    &LayoutQRectF::rectChanged,       this, &CropWidget::slot_rectChangedS);
     connect(radius,         &DoubleSpinSet::valueChanged,     this, &CropWidget::slot_circleChanged);
     connect(centerX,        &DoubleSpinSet::valueChanged,     this, &CropWidget::slot_circleChanged);
     connect(centerY,        &DoubleSpinSet::valueChanged,     this, &CropWidget::slot_circleChanged);
@@ -271,19 +264,6 @@ void CropWidget::slot_rectChangedM()
     emit sig_cropModified();
 }
 
-void CropWidget::slot_rectChangedS()
-{
-    if (blocked || !crop) return;
-
-    if (crop && crop->getCropType() == CROP_RECTANGLE )
-    {
-        QRectF rect = rectLayoutS->get();
-        rect = Sys::cropViewer->screenToModel(rect);
-        crop->setRect(rect);
-    }
-    emit sig_cropModified();
-}
-
 void CropWidget::slot_typeSelected(int id)
 {
     if (blocked || !crop) return;
@@ -302,7 +282,7 @@ void CropWidget::slot_typeSelected(int id)
 
     case CROP_POLYGON:
     {
-         APolygon p(numSides->value(),rot->value(),scale->value());
+        APolygon p(numSides->value(),rot->value(),scale->value());
         p.setPos(QPointF(pos->getX(),pos->getY()));
         crop->setPolygon(p);
     }   break;
@@ -328,7 +308,6 @@ void CropWidget::refresh()
         cropTypes->button(crop->getCropType())->setChecked(true);
 
         rectLayoutW->set(crop->getRect());
-        rectLayoutS->set(Sys::cropViewer->modelToScreen(crop->getRect()));
         aspects->button(crop->getAspect())->setChecked(true);
         chkVert->setChecked(crop->getAspectVertical());
 
@@ -350,7 +329,6 @@ void CropWidget::refresh()
         cropTypes->button(CROP_UNDEFINED)->setChecked(true);
 
         rectLayoutW->set(QRectF());
-        rectLayoutS->set(QRectF());
         aspects->button(ASPECT_UNCONSTRAINED)->setChecked(true);
         chkVert->setChecked(false);
 

@@ -11,7 +11,6 @@
 #include "gui/top/split_screen.h"
 #include "gui/top/system_view.h"
 #include "gui/top/system_view_controller.h"
-#include "gui/viewers/gui_modes.h"
 #include "gui/widgets/mouse_mode_widget.h"
 #include "legacy/design_maker.h"
 #include "model/makers/mosaic_maker.h"

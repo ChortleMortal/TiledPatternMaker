@@ -17,9 +17,9 @@ LegacyTile::~LegacyTile()
     refs--;
 }
 
-void LegacyTile::addLayer(LayerPtr layer, int zlevel)
+void LegacyTile::addLayer(LayerPtr layer, eZLevel zlevel)
 {
-    layer->setZValue(zlevel);
+    layer->setZLevel(zlevel);
     addSubLayer(layer);
 }
 

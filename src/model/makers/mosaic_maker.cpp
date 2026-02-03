@@ -294,7 +294,7 @@ void MosaicMaker::sm_takeUp(MosaicEvent & mosEvent)
     case MOSM_RELOAD_PROTO_SINGLE:
         // the prototype remains the same, but may have different content
         // so just reset the styles so that they may be drawn again
-        sm_resetStyles();   // FIXME  could be more granular
+        sm_resetStyles();
         break;
 
     case MOSM_RELOAD_PROTO_MULTI:
@@ -323,6 +323,7 @@ void MosaicMaker::sm_takeUp(MosaicEvent & mosEvent)
 
 MosaicPtr MosaicMaker::getMosaic()
 {
+    Q_ASSERT(_mosaic);  // there is always a mosaic
     return _mosaic;
 }
 

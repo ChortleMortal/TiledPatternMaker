@@ -369,7 +369,7 @@ FilledEditor::FilledEditor(StylePtr style) : StyleEditor()
     panel        = Sys::controlPanel;
 
     auto proto = filled->getPrototype();
-    if (!proto->getFilledDCEL())
+    if (!proto->getDCEL())
     {
         filled->createStyleRepresentation();   // builds and  cleans the  dcel
     }
@@ -567,7 +567,7 @@ void FilledEditor::slot_colorsChanged()
     {
         filled->resetStyleRepresentation();
     }
-    emit sig_updateView();     // that's all
+    emit sig_reconstructView();
 }
 
 void FilledEditor::onEnter()

@@ -87,6 +87,7 @@ public:
 public slots:
     void slot_removeBorder();
     void slot_loadFromCrop();
+    void slot_loadFromPainterCrop();
 
     void slot_borderTypeChanged(int row);
     void slot_cropTypeChanged(int row);

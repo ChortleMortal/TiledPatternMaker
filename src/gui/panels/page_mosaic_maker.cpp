@@ -17,6 +17,7 @@
 #include "model/styles/style.h"
 #include "model/tilings/tiling.h"
 #include "sys/geometry/map.h"
+#include "sys/geometry/transform.h"
 
 Q_DECLARE_METATYPE(WeakStylePtr)
 
@@ -73,6 +74,11 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
     lowerWidget->setContentsMargins(0,0,0,0);
     lowerWidget->setLayout(hbox2);
 
+    QHBoxLayout * hbl = new QHBoxLayout();
+    hbl->addLayout(buildDistortionsLayout());
+    hbl->addStretch();
+    hbl->addLayout(createBackgroundInfo());
+
     AQVBoxLayout * wvbox = new AQVBoxLayout;
     wvbox->addLayout(fillBox);
     wvbox->addSpacing(10);
@@ -82,7 +88,7 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
     wvbox->addSpacing(5);
     wvbox->addWidget(lowerWidget);
     wvbox->addSpacing(5);
-    wvbox->addLayout(createBackgroundInfo());
+    wvbox->addLayout(hbl);
     wvbox->addStretch();
 
     vbox->addLayout(wvbox);
@@ -142,23 +148,38 @@ QHBoxLayout * page_mosaic_maker::createFillDataRow()
     return hbox;
 }
 
-QVBoxLayout * page_mosaic_maker::createBackgroundInfo()
+QHBoxLayout *page_mosaic_maker::createBackgroundInfo()
 {
-    chkBkgd = new QCheckBox("Has Background Image");
-    pbExam  = new QPushButton("Examine or Load Background Image");
+    pbExam  = new QPushButton("Background Image");  // label is overwritten by status
 
     QHBoxLayout * hb1 = new QHBoxLayout();
-    hb1->addWidget(chkBkgd);
     hb1->addWidget(pbExam);
-    hb1->addStretch();
-
-    QVBoxLayout * vb1 = new QVBoxLayout;
-    vb1->addLayout(hb1);
 
     connect (pbExam, &QPushButton::pressed, this, [this] { panel->setCurrentPage("Backgrounds");} );
-    return vb1;
+    return hb1;
 }
 
+QHBoxLayout * page_mosaic_maker::buildDistortionsLayout()
+{
+    chkDistort = new QCheckBox("Distort");
+
+    xBox = new DoubleSpinSet("X:",1.0,-9.99,9.99);
+    xBox->setSingleStep(0.01);
+    yBox = new DoubleSpinSet("Y:",1.0,-9.99,9.99);
+    yBox->setSingleStep(0.01);
+
+    connect(xBox, &DoubleSpinSet::valueChanged, this, &page_mosaic_maker::setDistortion);
+    connect(yBox, &DoubleSpinSet::valueChanged, this, &page_mosaic_maker::setDistortion);
+    connect(chkDistort, &QCheckBox::clicked,    this, &page_mosaic_maker::enbDistortion);
+
+    QHBoxLayout * dist = new QHBoxLayout;
+    dist->addWidget(chkDistort);
+    dist->addLayout(xBox);
+    dist->addSpacing(5);
+    dist->addLayout(yBox);
+
+    return dist;
+}
 void  page_mosaic_maker::onRefresh()
 {
     static WeakMosaicPtr wmp;
@@ -205,12 +226,10 @@ void  page_mosaic_maker::onRefresh()
 
     if (mosaic->getBkgdImage())
     {
-        chkBkgd->setChecked(true);
         pbExam->setText("Examine Background Image");
     }
     else
     {
-        chkBkgd->setChecked(false);
         pbExam->setText("Add Background Image");
     }
 
@@ -220,7 +239,7 @@ void  page_mosaic_maker::onRefresh()
         ProtoPtr proto = style->getPrototype();
         if (proto)
         {
-            uint level     = proto->getCleanseLevel();
+            uint level = proto->getCleanseLevel();
             if (level > 0)
             {
                 pbClean->setText("Cleanse : ON ");
@@ -233,6 +252,8 @@ void  page_mosaic_maker::onRefresh()
                 pbClean->setText("Cleanse : OFF");
                 cleanseStatus->setText(" ");
             }
+
+
         }
         else
         {
@@ -244,6 +265,21 @@ void  page_mosaic_maker::onRefresh()
     {
         pbClean->setText("Cleanse : OFF");
         cleanseStatus->setText(" ");
+    }
+
+    ProtoPtr proto = getCurrentPrototype();
+    if (proto)
+    {
+        chkDistort->setChecked(proto->getDistortionEnable());
+        QTransform t = proto->getDistortion();
+        xBox->setValue(Transform::scalex(t));
+        yBox->setValue(Transform::scaley(t));
+    }
+    else
+    {
+        chkDistort->setChecked(false);
+        xBox->setValue(0);
+        yBox->setValue(0);
     }
 
     if (mosaic == wmp.lock())
@@ -414,7 +450,7 @@ void  page_mosaic_maker::slot_styleSelected(const QItemSelection &selected, cons
 void page_mosaic_maker::displayStyleParams()
 {
     int row = styleTable->currentRow();  // can be -1
-    qDebug() << "displayStyleParams row =" << row;
+    //qDebug() << "displayStyleParams row =" << row;
 
     StylePtr style = getStyleIndex(row);
     if (!style)
@@ -726,4 +762,65 @@ void page_mosaic_maker::slot_notrans(bool checked)
 void page_mosaic_maker::slot_nolayer(bool checked)
 {
     styleTable->setColumnHidden(STYLE_COL_LAYER_CONTROL,checked);
+}
+void page_mosaic_maker::setDistortion()
+{
+    // distortion is used to force desings into a fixed space
+    // by defornming regular polygons by transforming the map
+
+    // distortion is applied to prototypes used by styles
+
+    ProtoPtr proto = getCurrentPrototype();
+    if (!proto) return;
+
+    qreal x = xBox->value();
+    qreal y = yBox->value();
+    QTransform t = QTransform::fromScale(x,y);
+    qDebug() << "scale x" << t.m11() << "y" << t.m22();
+    proto->setDistortion(t);
+
+    if (proto->getDistortionEnable())
+    {
+        auto mosaic = mosaicMaker->getMosaic();
+        mosaic->resetProtoMaps();   // really is wipeout
+        mosaic->resetStyleMaps();
+        emit sig_reconstructView();
+    }
+}
+
+void page_mosaic_maker::enbDistortion(bool checked)
+{
+    ProtoPtr proto = getCurrentPrototype();
+    if (!proto) return;
+
+    proto->enableDistortion(checked);
+
+    auto mosaic = mosaicMaker->getMosaic();
+    mosaic->resetProtoMaps();   // really is wipeout
+    mosaic->resetStyleMaps();
+    emit sig_reconstructView();
+}
+
+ProtoPtr page_mosaic_maker::getCurrentPrototype()
+{
+    ProtoPtr proto;
+
+    int row = styleTable->currentRow();  // can be -1
+    if (row >= 0)
+    {
+        //qDebug() << "displayStyleParams row =" << row;
+        StylePtr style = getStyleIndex(row);
+        if (style)
+        {
+            proto = style->getPrototype();
+        }
+    }
+    if (!proto)
+    {
+        // try another way
+        auto mosaic = mosaicMaker->getMosaic();
+        proto = mosaic->getPrototypes().first();
+    }
+
+    return proto;
 }

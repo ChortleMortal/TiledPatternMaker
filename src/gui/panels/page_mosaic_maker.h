@@ -7,7 +7,9 @@
 
 class AQTableWidget;
 class SpinSet;
+class DoubleSpinSet;
 
+typedef std::shared_ptr<class Prototype>       ProtoPtr;
 typedef std::shared_ptr<class StyleEditor>     StyleEditorPtr;
 typedef std::shared_ptr<class Style>           StylePtr;
 typedef std::weak_ptr<class Style>             WeakStylePtr;
@@ -50,7 +52,8 @@ private slots:
     void    slot_nolayer(bool checked);
 
 protected:
-    QVBoxLayout * createBackgroundInfo();
+    QHBoxLayout *createBackgroundInfo();
+    QHBoxLayout *buildDistortionsLayout();
 
     void     styleChanged(int row);
     void     tilingChanged(int row);
@@ -64,7 +67,13 @@ protected:
     StylePtr getStyleIndex(int index);
     StylePtr copyStyle(const StylePtr style);
 
+    ProtoPtr getCurrentPrototype();
+
     QHBoxLayout *createFillDataRow();
+
+    void     setDistortion();
+    void     enbDistortion(bool checked);
+
 
 private:
     QWidget       * lowerWidget;
@@ -90,8 +99,12 @@ private:
     QPushButton * pbClean;
     QLabel      * cleanseStatus;
 
-    QCheckBox   * chkBkgd;
     QPushButton * pbExam;
+
+    QCheckBox     * chkDistort;
+    DoubleSpinSet * xBox;
+    DoubleSpinSet * yBox;
+
 };
 
 #endif

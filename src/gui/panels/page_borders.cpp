@@ -26,24 +26,27 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORD
     pageStatusString = "Left-click inside crop to display and move";
 
     // create button
-    QPushButton * pbLoadCrop = new QPushButton("Load from Crop");
-    QPushButton * pbRemove  =  new QPushButton("Remove Border");
+    QPushButton * pbLoadCrop  = new QPushButton("Load from Mosaic Crop");
+    QPushButton * pbLoadPCrop = new QPushButton("Load from Painter Crop");
+    QPushButton * pbRemove    = new QPushButton("Remove Border");
 
     QHBoxLayout * hbox3 = new QHBoxLayout;
     hbox3->addStretch();
     hbox3->addWidget(pbLoadCrop);
+    hbox3->addWidget(pbLoadPCrop);
     hbox3->addStretch();
     hbox3->addWidget(pbRemove);
     hbox3->addStretch();
 
-    connect(pbLoadCrop, &QPushButton::clicked, this, &page_borders::slot_loadFromCrop);
-    connect(pbRemove,   &QPushButton::clicked, this, &page_borders::slot_removeBorder);
+    connect(pbLoadCrop,  &QPushButton::clicked, this, &page_borders::slot_loadFromCrop);
+    connect(pbLoadPCrop, &QPushButton::clicked, this, &page_borders::slot_loadFromPainterCrop);
+    connect(pbRemove,    &QPushButton::clicked, this, &page_borders::slot_removeBorder);
 
     // border selection
     QLabel * label2 = new QLabel("Border Shape");
     chkUseViewSize  = new QCheckBox("Lock to view size");
 
-    connect(chkUseViewSize,   &QCheckBox::clicked, this, &page_borders::slot_useViewSzChanged);
+    connect(chkUseViewSize, &QCheckBox::clicked, this, &page_borders::slot_useViewSzChanged);
 
     // border shapes
     cropTypes = new AQComboBox();
@@ -51,7 +54,6 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORD
     cropTypes->addItem("Rectangle", CROP_RECTANGLE);
     cropTypes->addItem("Circle",    CROP_CIRCLE);
     cropTypes->addItem("Polygon",   CROP_POLYGON);
-
 
     QHBoxLayout * hbox2 = new QHBoxLayout;
     hbox2->addWidget(label2);
@@ -550,6 +552,92 @@ void page_borders::slot_loadFromCrop()
     case CROP_POLYGON:
     {
         APolygon poly = mosaicCrop->getAPolygon();
+        borderCrop->setPolygon(poly);
+    }   break;
+
+    case CROP_UNDEFINED:
+        break;
+    }
+
+    border->resetStyleRepresentation();
+
+    emit sig_reconstructView();
+
+    QMessageBox box(panel);
+    box.setIcon(QMessageBox::Information);
+    box.setText("Load OK");
+    box.setStandardButtons(QMessageBox::Ok);
+    box.exec();
+}
+
+void page_borders::slot_loadFromPainterCrop()
+{
+    if (pageBlocked()) return;
+
+    auto mosaic = mosaicMaker->getMosaic();
+    if (!mosaic)
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Load failed: No mosaic");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+        return;
+    }
+
+    CropPtr painterCrop = mosaic->getPainterCrop();
+    if (!painterCrop)
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Fetch failed: No crop");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+        return;
+    }
+
+    BorderPtr border =mosaic->getBorder();
+    if (!border || border->getBorderType() == BORDER_NONE)
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Please select a Border Type before applying crop dimensions");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+        return;
+    }
+
+    // convert crop
+    CropPtr borderCrop = std::dynamic_pointer_cast<Crop>(border);
+    Q_ASSERT(borderCrop);
+
+    if (painterCrop->getCropType() != borderCrop->getCropType())
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Border Crop Type <%1> does not match Mosaic Crop Type <%2>");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+        return;
+    }
+
+    switch (painterCrop->getCropType())
+    {
+    case CROP_RECTANGLE:
+    {
+        auto rect = painterCrop->getRect();
+        borderCrop->setRect(rect);
+    }   break;
+
+    case CROP_CIRCLE:
+    {
+        Circle c = painterCrop->getCircle();
+        borderCrop->setCircle(c);
+    }   break;
+
+    case CROP_POLYGON:
+    {
+        APolygon poly = painterCrop->getAPolygon();
         borderCrop->setPolygon(poly);
     }   break;
 

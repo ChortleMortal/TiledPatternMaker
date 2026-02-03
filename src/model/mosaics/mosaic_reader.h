@@ -16,6 +16,7 @@
 #include "sys/geometry/xform.h"
 #include "sys/enums/emotiftype.h"
 #include "sys/enums/estyletype.h"
+#include "sys/enums/eviewtype.h"
 #include "model/styles/filled.h"
 #include "model/motifs/extender.h"
 #include "model/motifs/rosette2.h"
@@ -82,12 +83,14 @@ protected:
     QSize   procCanvasSize(xml_node & node, QSize &defaultSize);
     QColor  procBackgroundColor(xml_node & node);
     void    procBorder(xml_node & node);
+    CropPtr processCrop(xml_node & node);
+    CropPtr processOldCrop(xml_node & n);
     void    procFill(xml_node & node, bool isSingle);
     qreal   procWidth(xml_node & node);
     qreal   procLength(xml_node & node);
 
     // styles
-    void    procesToolkitGeoLayer(xml_node & node, Xform & xf, int &zlevel, QPointF & legacyCenter);
+    QPointF procesToolkitGeoLayer(xml_node & node, Xform & xf, eZLevel &zlevel);
     void    processColorSet(xml_node & node, ColorSet & colorSet);
     void    processColorGroup(xml_node & node, ColorGroup & colorGroup);
     void    processsStyleThick(xml_node & node, eDrawOutline & draw_outline, qreal & width, qreal &outlineWidth, QColor &outlineColor, Qt::PenJoinStyle & pjs, Qt::PenCapStyle & pcs);
@@ -96,7 +99,6 @@ protected:
     void    processsStyleFilledFaces(xml_node & node, QVector<int> &paletteIndices);
     void    processsStyleEmboss(xml_node & node, qreal & angle);
     void    processStylePrototype(xml_node & node, ProtoPtr &proto);
-    void    processStyleBorder(xml_node & node);
 
     // tiles
     TilePtr  getTile(TileReader & treader, xml_node & node);
@@ -112,7 +114,7 @@ protected:
     void                getStarCommon(    xml_node & node, int & n, qreal & d, int & s);
     void                getStar2Common(   xml_node & node, int & n, qreal & theta, int & s);
     void                getRosetteCommon( xml_node & node, int & n, qreal & q, int & s);
-    void                getRosette2Common(xml_node & node, int & n, qreal & x, qreal & y, qreal & k, int & s, eTipType & tt, bool & constrain);
+    void                getRosette2Common(xml_node & node, int & n, qreal & x, qreal & y, qreal & k, int & s, uint & tipTypes, eTipMode & tipMode, bool & constrain);
 
     BkgdImagePtr    getBackgroundImage(xml_node & node);
     void            getExtendedData(xml_node & node, ExtenderPtr ep);
@@ -161,12 +163,10 @@ protected:
     void            procBorderPlain(xml_node & n);
     void            procBorderTwoColor(xml_node & n);
     void            procBorderBlocks(xml_node & n);
-    CropPtr         procCropV1(xml_node & n);
-    CropPtr         procCropV2(xml_node & node);
     bool            getAttributeTF(xml_node & node, const char_t *name);
     uint            getAttributeUint(xml_node & node, const char_t *name);
 
-    void            fixupIrregularTransform(DesignElementPtr del);
+    void            fixupIrregularTransform(DELPtr del);
 
     [[noreturn]] void fail(QString a, QString b);
 
@@ -202,7 +202,7 @@ protected:
     qreal                   _cleanseSensitivity;
     BkgdImagePtr            _mosbip;
     ColorGroup              _tilingColorGroup;
-    Xform                   _firstStyleXform;   // used when _version < 23
+    Xform                   _firstStyleXform;
 
     bool                    _legacyCenterConverted;
     bool                    _debug;

@@ -19,63 +19,9 @@ int DCEL::refs  = 0;
 
 #define E2STR(x) #x
 
-const  QString sDCELType[] =
+bool DCEL::build()
 {
-        E2STR(DCEL_UNDEFINED),
-        E2STR(DCEL_SIMPLE),
-        E2STR(DCEL_FACES),
-        E2STR(DCEL_TIPS),
-};
-
-SimpleDCEL::SimpleDCEL(Map * map) : DCEL(map)
-{
-}
-
-FilledDCEL::FilledDCEL(Map * map) : DCEL(map)
-{
-}
-
-ThickDCEL::ThickDCEL(Map* map) : DCEL(map)
-{
-
-}
-
-bool SimpleDCEL::build()
-{
-    qDebug().noquote() << "SimpleDCEL::build" << sDCELType[dtype] << info();
-    dtype = DCEL_SIMPLE;
-
-    // fill half edges
-    EdgeSet additions(edges.size());
-    int i=0;
-    for (const auto & e : std::as_const(edges))
-    {
-        // the map may be used to create many dcels
-        e->dvisited = false;
-        e->twin.reset();
-        e->next.reset();
-        e->incident_face.reset();
-
-        VertexPtr v1 = e->v1;
-        VertexPtr v2 = e->v2;
-        v1->adjacent_vertices.push_back(v2);
-        v2->adjacent_vertices.push_back(v1);
-
-        EdgePtr e2 = e->createTwin();
-        e2->twin   = e;
-        e->twin    = e2;
-
-        additions[i++] = e2;
-    }
-
-    qDebug().noquote() << "DCEL: built OK" << info();
-    return true;
-}
-
-bool FilledDCEL::build()
-{
-    dtype = DCEL_FACES;
-    qDebug().noquote() << "FilledDCEL::build" << sDCELType[dtype] << info();
+    qDebug().noquote() << "DCEL::build" << info();
 
     cleanseEdges();
 
@@ -123,40 +69,6 @@ bool FilledDCEL::build()
     return true;
 }
 
-bool ThickDCEL::build()
-{
-    dtype = DCEL_TIPS;
-    qDebug().noquote() << "ThickDCEL::build" << sDCELType[dtype] << info();
-
-    // fill half edges
-    EdgeSet additions(edges.size());
-    int i=0;
-    for (const auto & e : std::as_const(edges))
-    {
-        // the map may be used to createB many dcels
-        e->dvisited = false;
-        e->twin.reset();
-        e->next.reset();
-        e->incident_face.reset();
-
-        VertexPtr v1 = e->v1;
-        VertexPtr v2 = e->v2;
-        v1->adjacent_vertices.push_back(v2);
-        v2->adjacent_vertices.push_back(v1);
-
-        EdgePtr e2 = e->createTwin();
-        e2->twin   = e;
-        e->twin    = e2;
-
-        additions[i++] = e2;
-    }
-
-    edges.append(additions);
-
-    qDebug().noquote() << "DCEL: built OK" << info();
-    return true;
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ///
 ///   DCEL  - doubly connected edge list
@@ -167,7 +79,6 @@ DCEL::DCEL(Map * map) : MapBase()
 {
     qDebug().noquote() << "Creating DCEL from" << map->info();
 
-    dtype       = DCEL_UNDEFINED;
     vertices    = map->vertices;
     edges       = map->edges;
 
@@ -901,5 +812,5 @@ void DCEL::print_edge(const EdgePtr & edge, QDebug & deb)
 
 QString DCEL::info() const
 {
-    return QString("%5 addr= %4 vertices=%1 edges=%2 faces=%3").arg(vertices.size()).arg(edges.size()).arg(faces.size()).arg(Utils::addr(this)).arg(sDCELType[dtype]);
+    return QString("addr= %4 vertices=%1 edges=%2 faces=%3").arg(vertices.size()).arg(edges.size()).arg(faces.size()).arg(Utils::addr(this));
 }

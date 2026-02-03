@@ -1,4 +1,28 @@
-﻿Version 4.0
+﻿Version 4.1
+============
+
+Improvements:
+
+- Addition of Mosaic distortion to fit into spaces (via mosaic maker and the prototype info page)
+- Additon of croping Background Images
+- Addition of a third tip type to the Rosette2 Style
+- Inmprovements to Mosiac and Painter crops and their interaction with Border crops
+- Addition of pressing 'b' and 'shift-b' for toggling view of background images
+- Further clarification of keyboard shortcuts (use F1 to look at these in context)
+- Major refactor of the Map Editor for 'pushes' back from the Mao Editor to Mosacs,
+  Motifs, and Tilings.
+
+Fixes:
+- Crops in the Crop Mker View were obscured by Borders
+- Borders should have had Primary rather than Derived Layer positioning
+
+Note:
+    Mosaic design Alh1485.v6 illustrates both the use of the new third Rosette tip
+    type and the use of Mosaic distorion.  Using b and shift-b shows the relation of the
+    rendered Mosiac to a photo of the original in the Alhambra used as a Background Image
+
+
+Version 4.0
 ===========
 
 This is a significant new release with hundreds of modifications and changes.  Emphasis again has been on improving

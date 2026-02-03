@@ -6,14 +6,12 @@
 
 typedef std::shared_ptr<class Motif>           MotifPtr;
 typedef std::shared_ptr<class RadialMotif>     RadialPtr;
-typedef std::shared_ptr<class DesignElement>   DesignElementPtr;
+typedef std::shared_ptr<class DesignElement>   DELPtr;
 typedef std::shared_ptr<class Map>             MapPtr;
 typedef std::shared_ptr<class Tile>            TilePtr;
 typedef std::shared_ptr<class Contact>         ContactPtr;
 
-typedef QVector<DesignElementPtr>   DesignUnit;
-
-class ProtoMakerData;
+typedef QVector<DELPtr>   DesignUnit;
 
 class MotifMakerView : public LayerController
 {
@@ -24,6 +22,8 @@ public:
     void paint(QPainter *painter) override;
 
     void iamaLayerController() override {}
+
+    QTransform getLayerTransform() override;
 
 public slots:
     void slot_mousePressed(QPointF spt, Qt::MouseButton btn) override;

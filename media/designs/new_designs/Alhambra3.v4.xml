@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Sat Mar 9 2024 06:27:11 -->
-<vector id="1" version="19">
+<!-- Written: Sun Jan 25 2026 21:03:26 -->
+<vector id="1" version="29">
 	<design>
 		<size>
 			<width>1240</width>
@@ -11,18 +11,6 @@
 		<background>
 			<color>#ffc2bcb0</color>
 		</background>
-		<border type="2Color" shape="Rectangle" useViewSize="f">
-			<color>#ff10100e</color>
-			<color>#ffc2bcb0</color>
-			<width>1</width>
-			<length>1.5</length>
-			<rect>
-				<X>-16.90341555873452</X>
-				<Y>-24.7467022057919</Y>
-				<width>26.4497722372367</width>
-				<height>50.21638182403571</height>
-			</rect>
-		</border>
 		<Crop embed="t" apply="t" clip="f">
 			<rect>
 				<X>-16.90341555873452</X>
@@ -43,24 +31,22 @@
 		<BackgroundImage name="IMG_1694-1ADJ.JPG">
 			<Scale>0.5237600236810447</Scale>
 			<Rot>0</Rot>
-			<X>-2</X>
-			<Y>510</Y>
-			<Center>0,0</Center>
+			<X>-3.818542671400871</X>
+			<Y>973.7283812072222</Y>
 		</BackgroundImage>
 	</design>
 	<style.Thick id="2">
 		<toolkit.GeoLayer>
-			<left__delta>-2</left__delta>
-			<top__delta>518</top__delta>
+			<left__delta>-3.818542671400871</left__delta>
+			<top__delta>989.0025518928256</top__delta>
 			<width__delta>0.5237600236810447</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>0,0</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype id="3">
 				<app.Prototype>
-					<string>Alhambra3.v1</string>
+					<Tiling>Alhambra3.v1</Tiling>
 					<entry>
 						<Tile id="4">
 							<regular>true</regular>
@@ -134,9 +120,6 @@
 							</edges>
 						</Tile>
 						<Rosette2 id="22" constrain="f">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>16</n>
@@ -188,9 +171,6 @@
 							</edges>
 						</Tile>
 						<Rosette id="33">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>8</n>
@@ -231,9 +211,6 @@
 							</edges>
 						</Tile>
 						<ExplicitMap id="42" type="Explicit Map Motif">
-							<boundarySides>6</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>10</n>
@@ -376,9 +353,6 @@
 							</edges>
 						</Tile>
 						<Star id="82">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>8</n>
@@ -403,11 +377,10 @@
 	</style.Thick>
 	<style.Filled id="83">
 		<toolkit.GeoLayer>
-			<left__delta>-2</left__delta>
-			<top__delta>518</top__delta>
+			<left__delta>-3.818542671400871</left__delta>
+			<top__delta>989.0025518928256</top__delta>
 			<width__delta>0.5237600236810447</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>0,0</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>

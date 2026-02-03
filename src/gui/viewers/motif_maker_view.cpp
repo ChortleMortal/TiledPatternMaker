@@ -36,6 +36,19 @@ MotifMakerView::~MotifMakerView()
     //qDebug() << "MotifView destructor";
 }
 
+QTransform MotifMakerView::getLayerTransform()
+{
+    DELPtr del = Sys::prototypeMaker->getSelectedDEL();
+
+    QTransform t;
+
+    if (Sys::config->motifMakerView == MOTIF_VIEW_SOLO && del)
+        t = DesignElementButton::resetViewport(-2,del,Sys::viewController->viewRect());
+    else
+        t  = LayerController::getLayerTransform();
+    return t;
+}
+
 void MotifMakerView::paint(QPainter *painter)
 {
     //qDebug() << "MotifMakerView::paint";
@@ -53,19 +66,7 @@ void MotifMakerView::paint(QPainter *painter)
     if (!proto) return;
     auto tiling = proto->getTiling();
 
-    DesignElementPtr del = Sys::prototypeMaker->getSelectedDEL();
-
-    QTransform baseT;
-
-    if (Sys::config->motifMakerView == MOTIF_VIEW_SOLO && del)
-    {
-        baseT = DesignElementButton::resetViewport(-2,del,Sys::viewController->viewRect());
-    }
-    else
-    {
-        baseT  = getLayerTransform();
-    }
-
+    QTransform baseT = getLayerTransform();
 
     // create design unit
     DesignUnit  designUnit;
@@ -298,7 +299,7 @@ void MotifMakerView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 
     auto tiling = proto->getTiling();
 
-    QVector<DesignElementPtr> dels;
+    QVector<DELPtr> dels;
     Placements                fillPlacements;
 
     if (Sys::config->motifMakerView == MOTIF_VIEW_DESIGN_UNIT)

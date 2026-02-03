@@ -56,7 +56,15 @@ QString Transform::info(QTransform t, int decimals)
     if (!t.isAffine())
         return "Not affine!";
 
-    QString s =  "scale=" + QString::number(scalex(t),'f',decimals) + " rot=" + QString::number(qRadiansToDegrees(rotation(t)),'f',decimals)
+    QString sscale;
+    QString qsx = QString::number(scalex(t),'f',decimals);
+    QString qsy = QString::number(scaley(t),'f',decimals);
+    if (qsx == qsy)
+        sscale = qsx;
+    else
+        sscale = qsx + " " + qsy;
+
+    QString s =  "scale=" + sscale + " rot=" + QString::number(qRadiansToDegrees(rotation(t)),'f',decimals)
               + " trans=" + QString::number(transx(t),'f',decimals) + " " + QString::number(transy(t),'f',decimals);
     return s;
 }

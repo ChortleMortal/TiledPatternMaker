@@ -7,6 +7,7 @@
 #include "model/prototypes/design_element.h"
 #include "model/settings/configuration.h"
 #include "model/tilings/tile.h"
+#include "model/tilings/tiling.h"
 #include "sys/geometry/circle.h"
 #include "sys/geometry/crop.h"
 #include "sys/geometry/dcel.h"
@@ -36,7 +37,7 @@ void MapEditorSelection::buildEditorDB()
     {
         for (const MapEditorLayer * layer : db->getDrawLayers())
         {
-            DesignElementPtr delp = layer->getDel();
+            DELPtr delp = layer->getDel();
             if (delp)
             {
                 Q_ASSERT(db->isMotif(layer->getLayerMapType()));
@@ -241,14 +242,17 @@ void MapEditorSelection::buildEditorDB()
     }
 }
 
-void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
+void MapEditorSelection::buildMotifDB(DELPtr delp)
 {
     Q_ASSERT(delp);
 
-    MotifPtr  motif = delp->getMotif();
-    TilePtr tile = delp->getTile();
+    MotifPtr  motif  = delp->getMotif();
+    TilePtr tile     = delp->getTile();
+    TilingPtr tiling = delp->getTiling();
+    Q_ASSERT(tiling);
 
-    QTransform placement  = Sys::mapEditorView->getPlacement(tile);
+    QTransform placement  = tiling->getFirstPlacement(tile);
+    qDebug() << "placement" << Transform::info(placement);
 
     for (ExtenderPtr ep : motif->getExtenders())
     {
@@ -438,7 +442,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
     // find point on circle near spt
     for (const MapEditorLayer * layer : db->getDrawLayers())
     {
-        DesignElementPtr delp = layer->getDel();
+        DELPtr delp = layer->getDel();
         if (delp)
         {
             Q_ASSERT (db->isMotif(layer->getLayerMapType()));
@@ -640,7 +644,7 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
     QPolygonF boundary;
 
     MapEditorLayer & layer = db->getEditLayer();
-    DesignElementPtr delp  = layer.getDel();
+    DELPtr delp  = layer.getDel();
     if (!delp)
         return true;    // no boundary
 

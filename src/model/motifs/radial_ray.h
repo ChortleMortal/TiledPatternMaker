@@ -20,12 +20,15 @@ public:
     void    set(const QVector<QPointF> & vPoints);
     void    addTail(const QPointF point);
     void    addTip(const QPointF point);
+    void    setPt(int idx, QPointF pt)  { if (idx < points.size()) points[idx] = pt;}
 
-    QPointF getTip() { return points[0]; }
-    QPointF getTail(){ return points.last(); }
-    QLineF  getRay() { return QLineF(points[1],points[0]); }
+    QPointF getTip()    { return points[0]; }
+    QPointF getTail()   { return points.last(); }
+    QPointF pt(int idx) { if (idx < points.size()) return points[idx]; else return points.last(); }
+    QLineF  getRay()    { return QLineF(points[1],points[0]); }
 
     const QVector<QPointF> & get() { return points; }
+
     MapPtr  getMap();
     void    addToMap(MapPtr map);
 

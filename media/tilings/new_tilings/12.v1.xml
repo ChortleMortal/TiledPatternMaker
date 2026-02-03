@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!-- Written: Thu Jan 15 2026 08:14:03 -->
+<Tiling version="13">
+	<Name>12.v1</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>-0.2099687860075297,2.904568206437489</T0>
+	<T1>-3.025357742103552e-15,-6.919999999999972</T1>
+	<T2>5.992895794188289,-3.459999999999987</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>10.49843930037647</left__delta>
+		<top__delta>-34.11992772622353</top__delta>
+		<width__delta>0.3810090133927394</width__delta>
+		<theta__delta>0</theta__delta>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="12" rotation="0" scale="3.459999999999986">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.2099687860075292</tranX>
+			<tranY>2.904568206437489</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+	<BackgroundImage name="IMG_1485_ADJ2.JPG">
+		<Scale>0.3810090133927394</Scale>
+		<Rot>0</Rot>
+		<X>10.49843930037647</X>
+		<Y>-34.11992772622353</Y>
+	</BackgroundImage>
+</Tiling>

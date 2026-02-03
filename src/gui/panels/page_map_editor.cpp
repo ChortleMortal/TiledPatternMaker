@@ -17,7 +17,7 @@
 #include "gui/panels/page_map_editor.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view_controller.h"
-#include "gui/viewers/crop_viewer.h"
+#include "gui/viewers/crop_maker_view.h"
 #include "gui/viewers/map_editor_view.h"
 #include "gui/widgets/crop_widget.h"
 #include "gui/widgets/dlg_cleanse.h"
@@ -52,6 +52,8 @@ using std::make_shared;
 
 typedef std::shared_ptr<RadialMotif>            RadialPtr;
 typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
+
+Q_DECLARE_METATYPE(std::weak_ptr<Style>)
 
 page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,PAGE_MAP_EDITOR,"Map Editor")
 {
@@ -468,17 +470,12 @@ QGroupBox * page_map_editor::createLoadGroup()
     QPushButton * loadFile     = new QPushButton("Load Map File");
     QPushButton * createMap    = new QPushButton("Create New Map");
 
-    styleBox    = new QSpinBox();
-    styleBox->setRange(0,9);
-    styleBox->setValue(0);
-
-    QHBoxLayout * hbox = new QHBoxLayout();
-    hbox->addWidget(loadMosaic);
-    hbox->addWidget(styleBox);
+    validStyles = new QComboBox();
 
     QVBoxLayout * vbox = new QVBoxLayout;
     vbox->addWidget(unload);
-    vbox->addLayout(hbox);
+    vbox->addWidget(validStyles);
+    vbox->addWidget(loadMosaic);
     vbox->addWidget(loadProto);
     vbox->addWidget(loadMotif);
     vbox->addWidget(loadTileRep);
@@ -498,12 +495,14 @@ QGroupBox * page_map_editor::createLoadGroup()
     connect(createMap,  &QPushButton::clicked, this, &page_map_editor::slot_createMap);
     connect(unload,     &QPushButton::clicked, this, &page_map_editor::slot_unloadMaps);
 
+    updateStyleSelections();
+
     return gbox;
 }
 
 QGroupBox * page_map_editor::createPushGroup()
 {
-    QPushButton * pbPushMap  = new QPushButton("Push Map");
+    QPushButton * pbPushMap  = new QPushButton("Push Edit Map");
     QPushButton * pbSaveMap  = new QPushButton("Save Edit Map");
     QLabel      * dummy1     = new QLabel;
 
@@ -581,13 +580,15 @@ void  page_map_editor::initPageStatusString()
 
 void  page_map_editor::onEnter()
 {
+    updateStyleSelections();
+
     setPageStatus();
 
     modeGroup->blockSignals(true);
     modeGroup->button(maped->getMapedMouseMode())->setChecked(true);
     modeGroup->blockSignals(false);
 
-    Sys::cropViewer->aquire(db,CM_MAPED);
+    Sys::cropMakerView->aquire(db,CM_MAPED);
 }
 
 void  page_map_editor::onExit()
@@ -596,8 +597,8 @@ void  page_map_editor::onExit()
 
     db->resetMouseInteraction();
 
-    Sys::cropViewer->setShowCrop(CM_MAPED,false);
-    Sys::cropViewer->release(CM_MAPED);
+    Sys::cropMakerView->setShowCrop(CM_MAPED,false);
+    Sys::cropMakerView->release(CM_MAPED);
 
     if (cropDlg)
     {
@@ -610,7 +611,7 @@ void page_map_editor::onRefresh()
 {
     static bool oldCropEditState = false;
 
-    bool currentCropEditState = Sys::cropViewer->getShowCrop(CM_MAPED);
+    bool currentCropEditState = Sys::cropMakerView->getShowCrop(CM_MAPED);
     if (currentCropEditState != oldCropEditState)
     {
         if (currentCropEditState)
@@ -693,15 +694,16 @@ void page_map_editor::refreshStatusBox()
     {
         QString emb = (crop->getEmbed()) ? "Embed" : QString();
         QString app = (crop->getApply()) ? "ApplY" : QString();
-        txt << QString("Editor mode: %1  Crop Mode: %2 %3 %4").arg(sMapEditorMode[mode]).arg(crop->getCropString()).arg(emb).arg(app);
+        txt << QString("Editor mode: %1  Crop Mode: %2 %3 %4").arg(sMapEditorMode[mode]).arg(crop->getContentString()).arg(emb).arg(app);
     }
     else
     {
         txt << QString("Editor mode: %1  Crop Mode: NONE").arg(sMapEditorMode[mode]);
     }
 
-    MapPtr map = db->getEditMap();
+    MapPtr map                = db->getEditMap();
     eMapEditorMapType mapType = db->getMapType(map);
+    MapEditorLayer & layer    = db->getLayer(map);
     txt << QString("Map status: %1").arg(sMapEditorMapType[mapType]);
 
     if (map)
@@ -728,7 +730,7 @@ void page_map_editor::refreshStatusBox()
     {
         for (auto & wdelp : std::as_const(db->getDesignElements()))
         {
-            DesignElementPtr delp = wdelp.lock();
+            DELPtr delp = wdelp.lock();
             if (delp)
             {
                 MotifPtr motif = delp->getMotif();
@@ -746,9 +748,9 @@ void page_map_editor::refreshStatusBox()
     }
         break;
 
-    case MAPED_LOADED_FROM_MOTIF_PROTOTYPE:
+    case MAPED_LOADED_FROM_PROTOTMAKER:
     {
-        ProtoPtr pp = db->getMotifPrototype();
+        ProtoPtr pp = layer.getProto();
         if (pp)
         {
             CropPtr cr;
@@ -761,14 +763,14 @@ void page_map_editor::refreshStatusBox()
     }
         break;
 
-    case MAPED_LOADED_FROM_MOSAIC:
+    case MAPED_LOADED_FROM_STYLE:
         txt << "Mosaic";
         break;
 
     case MAPED_LOADED_FROM_TILING_UNIT:
     case MAPED_LOADED_FROM_TILING_REPEATED:
     {
-        TilingPtr tp =  db->getTiling();
+        TilingPtr tp = layer.getTiling();
         if (tp)
         {
             txt << tp->info();
@@ -780,7 +782,7 @@ void page_map_editor::refreshStatusBox()
     case MAPED_LOADED_FROM_FILE_MOTIF:
     case MAPED_TYPE_CREATED:
     case MAPED_TYPE_CROP:
-    case MAPED_TYPE_UNKNOWN:
+    case MAPED_TYPE_NONE:
         break;
     }
 
@@ -812,7 +814,7 @@ void page_map_editor::refreshStatusBox()
         }
         else
         {
-            txt << crop->getCropString();
+            txt << crop->getContentString();
         }
     }
 
@@ -879,6 +881,22 @@ void page_map_editor::refreshStatusBox()
     statusBox->setText(txt.join("\n"));
 }
 
+void page_map_editor::updateStyleSelections()
+{
+    validStyles->clear();
+    auto mosaic     = mosaicMaker->getMosaic();
+    StyleSet styles = mosaic->getStyleSet();
+    for (StylePtr style : styles)
+    {
+        if (style->getStyleMap())
+        {
+            QString name = style->getStyleDesc();
+            WeakStylePtr wsp = style;
+            validStyles->addItem(name,QVariant::fromValue(wsp));
+        }
+    }
+}
+
 void page_map_editor::slot_chkViewMap(bool checked)
 {
     config->mapEditorMode = (checked) ? MAPED_MODE_MAP : MAPED_MODE_DCEL;
@@ -932,17 +950,19 @@ void page_map_editor::slot_mosaicLoaded(VersionedFile vfile)
 
 void page_map_editor::slot_mosaicChanged()
 {
+    updateStyleSelections();
+
     if (viewControl->isEnabled(VIEW_MAP_EDITOR))
     {
         eMapEditorMapType mtype = db->getMapType(db->getEditMap());
         switch (mtype)
         {
-        case MAPED_LOADED_FROM_MOSAIC:
-            maped->loadMosaicPrototype(styleBox->value());
+        case MAPED_LOADED_FROM_STYLE:
+            //maped->loadFromMosaicStyle(styleBox->value());
             break;
 
-        case MAPED_LOADED_FROM_MOTIF_PROTOTYPE:
-            maped->loadMotifPrototype();
+        case MAPED_LOADED_FROM_PROTOTMAKER:
+            maped->loadFromfPrototypeMaker();
             break;
 
         case MAPED_LOADED_FROM_TILING_UNIT:
@@ -959,7 +979,7 @@ void page_map_editor::slot_mosaicChanged()
 
         case MAPED_LOADED_FROM_FILE:
         case MAPED_LOADED_FROM_FILE_MOTIF:
-        case MAPED_TYPE_UNKNOWN:
+        case MAPED_TYPE_NONE:
         case MAPED_TYPE_COMPOSITE:
         case MAPED_TYPE_COMPOSITE_MOTIF:
         case MAPED_TYPE_CREATED:
@@ -986,7 +1006,7 @@ void page_map_editor::slot_tilingLoaded (VersionedFile vfile)
 void page_map_editor::slot_convertToExplicit()
 {
     MapEditorLayer & layer = db->getEditLayer();
-    DesignElementPtr delp  = layer.getDel();
+    DELPtr delp  = layer.getDel();
     if (delp)
     {
         Q_ASSERT(db->isMotif(layer.getLayerMapType()));
@@ -1232,7 +1252,7 @@ void page_map_editor::slot_editCrop(bool checked)
             db->setCrop(crop);
         }
 
-        Sys::cropViewer->setShowCrop(CM_MAPED,true);
+        Sys::cropMakerView->setShowCrop(CM_MAPED,true);
 
         cropDlg = new CropDlg(db->getCrop());
         cropDlg->show();
@@ -1245,7 +1265,7 @@ void page_map_editor::slot_editCrop(bool checked)
     }
     else
     {
-        Sys::cropViewer->setShowCrop(CM_MAPED,false);
+        Sys::cropMakerView->setShowCrop(CM_MAPED,false);
         if (cropDlg)
         {
             cropDlg->close();
@@ -1256,7 +1276,7 @@ void page_map_editor::slot_editCrop(bool checked)
 
 void page_map_editor::slot_completeCrop()
 {
-    Sys::cropViewer->setShowCrop(CM_MAPED,false);
+    Sys::cropMakerView->setShowCrop(CM_MAPED,false);
     cropDlg = nullptr;
     chkEditCrop->blockSignals(true);
     chkEditCrop->setChecked(false);
@@ -1266,7 +1286,7 @@ void page_map_editor::slot_completeCrop()
 
 void page_map_editor::slot_embedCrop()
 {
-    if (!Sys::cropViewer->getShowCrop(CM_MAPED))
+    if (!Sys::cropMakerView->getShowCrop(CM_MAPED))
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
@@ -1283,8 +1303,8 @@ void page_map_editor::slot_embedCrop()
     if (!map)
     {
         map = make_shared<Map>("Crop Map");
-        auto type = maped->getDb()->insertLayer(map,MAPED_TYPE_CROP);
-        if (type == COMPOSITE )
+        layer.setLayer(map,MAPED_TYPE_CROP);
+        if (layer.getId() == COMPOSITE )
         {
             rv = false;
         }
@@ -1308,7 +1328,7 @@ void page_map_editor::slot_embedCrop()
 
 void page_map_editor::slot_applyCrop()
 {
-    if (!Sys::cropViewer->getShowCrop(CM_MAPED))
+    if (!Sys::cropMakerView->getShowCrop(CM_MAPED))
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
@@ -1343,7 +1363,7 @@ void page_map_editor::slot_cleanseMap()
 
     switch(db->getMapType(map))
     {
-    case MAPED_LOADED_FROM_MOSAIC:
+    case MAPED_LOADED_FROM_STYLE:
     {
         MosaicPtr mosaic = mosaicMaker->getMosaic();
         if (mosaic)
@@ -1357,7 +1377,7 @@ void page_map_editor::slot_cleanseMap()
         }
     } break;
 
-    case MAPED_LOADED_FROM_MOTIF_PROTOTYPE:
+    case MAPED_LOADED_FROM_PROTOTMAKER:
     {
         ProtoPtr proto = prototypeMaker->getSelectedPrototype();
         if (proto)
@@ -1372,7 +1392,7 @@ void page_map_editor::slot_cleanseMap()
     case MAPED_LOADED_FROM_MOTIF:
     case MAPED_LOADED_FROM_FILE:
     case MAPED_LOADED_FROM_FILE_MOTIF:
-    case MAPED_TYPE_UNKNOWN:
+    case MAPED_TYPE_NONE:
     case MAPED_TYPE_COMPOSITE:
     case MAPED_TYPE_COMPOSITE_MOTIF:
     case MAPED_TYPE_CREATED:
@@ -1503,14 +1523,20 @@ void page_map_editor::slot_loadTemplate()
 
 void page_map_editor::slot_loadMosaicPrototype()
 {
-    int style = styleBox->value();
-    maped->loadMosaicPrototype(style);
-    panel->delegateView(VIEW_MAP_EDITOR,true);
+    int index = validStyles->currentIndex();
+    QVariant v = validStyles->itemData(index);
+    WeakStylePtr wsp =  v.value<WeakStylePtr>();
+    StylePtr style = wsp.lock();
+    if (style)
+    {
+        maped->loadFromMosaicStyle(style);
+        panel->delegateView(VIEW_MAP_EDITOR,true);
+    }
 }
 
 void page_map_editor::slot_loadMotifPrototype()
 {
-    maped->loadMotifPrototype();
+    maped->loadFromfPrototypeMaker();
     panel->delegateView(VIEW_MAP_EDITOR,true);
 }
 
@@ -1740,17 +1766,18 @@ void page_map_editor::slot_pushMap()
             case 1:
             {
                 msg = "Mosaic";
-                brv= maped->pushToMosaic(layer);
+                maped->pushToMosaic(layer);
+                brv = true;     // always does something
             }   break;
             case 2:
             {
                 msg = "Motif";
-                brv =  maped->pushToMotif(map);
+                brv =  maped->pushToMotif(layer);
 
             }   break;
             case 3:
                 msg = "Tiling";
-                brv = maped->pushToTiling(map,false);
+                brv = maped->pushToTiling(layer,false);
                 break;
             }
         }
@@ -1935,7 +1962,7 @@ void page_map_editor::tallySelects()
 
 void page_map_editor::tallyCropButtons()
 {
-    if (Sys::cropViewer->getShowCrop(CM_MAPED))
+    if (Sys::cropMakerView->getShowCrop(CM_MAPED))
     {
         pbEmbedCrop->setStyleSheet("QToolButton { background-color: yellow; color: red;}");
         pbApplyCrop->setStyleSheet("QToolButton { background-color: yellow; color: red;}");

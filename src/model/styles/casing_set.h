@@ -18,6 +18,7 @@ public:
     CasingPtr find(EdgePtr &edge)   { return this->at(edge->casingIndex); }
     CNeighboursPtr   getNeighbouringCasings(VertexPtr v) { return weavings.value(v); }
 
+    void      setMap(MapPtr map) { this->map = map; }
     void      buildMap();
     void      validate();
 

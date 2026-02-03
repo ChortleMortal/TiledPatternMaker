@@ -14,6 +14,7 @@
 #include "sys/enums/emapeditor.h"
 #include "sys/enums/emotiftype.h"
 #include "sys/enums/etilingmaker.h"
+#include "sys/enums/eviewtype.h"
 #include "sys/sys/load_unit.h"
 #include "sys/sys/versioning.h"
 #include "model/settings/worklist.h"
@@ -63,15 +64,16 @@ enum eColorTheme
 
 enum eProtoViewMode
 {
-    PROTO_DRAW_MAP      =  0x01,
-    PROTO_ALL_TILES     =  0x02,
-    PROTO_ALL_MOTIFS    =  0x04,
-    PROTO_DEL_TILES     =  0x08,
-    PROTO_DEL_MOTIFS    =  0x10,
-    PROTO_DRAW_PROTO    =  0x20,
-    PROTO_ALL_VISIBLE   =  0x40,
-    PROTO_VISIBLE_TILE  =  0x80,
-    PROTO_VISIBLE_MOTIF =  0x100
+    SHOW_MAP                =  0x01,
+    SHOW_TILES              =  0x02,
+    SHOW_MOTIFS             =  0x04,
+    SHOW_TU_TILES           =  0x08,
+    SHOW_TU_MOTIFS          =  0x10,
+    SHOW_TILING_UNIT        =  0x20,
+
+    SHOW_ALL_TU_TILES       =  0x40,
+    SHOW_SELECTED_TU_TILES  =  0x80,
+    SHOW_SELECTED_TU_MOTIFS =  0x100
 };
 
 class Configuration
@@ -139,7 +141,7 @@ public:
     int     gridScreenWidth;
     int     gridTilingWidth;
     int     gridScreenSpacing;
-    int     gridZLevel;
+    eZLevel gridZLevel;
 
     uint    debugViewConfig;
     uint    mapedCleanseLevel;
@@ -163,6 +165,7 @@ public:
     bool    limitViewSize;
     bool    disableSplash;
     bool    disableResizeNotify;
+    bool    debugMotifView;
 
     bool    verifyPopup;         // false pops up errors
     bool    forceVerifyProtos;

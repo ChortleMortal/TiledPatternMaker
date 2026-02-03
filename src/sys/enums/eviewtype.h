@@ -34,10 +34,21 @@ enum eModelType
 
 #define NUM_VIEW_TYPES  (VIEW_BMP_IMAGE +1)
 
-#define BKGD_IMG_ZLEVEL -20
-#define STANDARD_ZLEVEL   0
-#define MEASURE_ZLEVEL    9
-#define BORDER_ZLEVEL    10
-
+enum eZLevel
+{
+    BKGD_IMG_ZLEVEL     = -20,
+    STANDARD_ZLEVEL     = 0,
+    IMAGE_ZLEVEL        = 1,
+    LEGACY_Z1           = 1,
+    LEGACY_Z2           = 2,
+    LEGACY_Z3           = 3,
+    LEGACY_Z4           = 4,
+    LEGACY_Z5           = 5,
+    GRID_ZLEVEL         = 5,
+    MEASURE_ZLEVEL      = 9,
+    BORDER_ZLEVEL       = 10,
+    CROP_VIEW_ZLEVEL    = 11,
+    BKGD_IMG__LIFTED_ZLEVEL = 25,
+};
 
 #endif // EVIEWTYPE_H

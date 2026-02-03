@@ -27,7 +27,7 @@ public:
     Crop(const Crop & other);
 
     void         draw(QPainter * painter, QTransform t, bool active);
-    void        setPainterClip(QPainter * painter, QTransform transform);
+    void         clipPainter(QPainter * painter, QTransform transform);
 
     QPointF      getCenter();
 
@@ -43,7 +43,7 @@ public:
 
     void         setType(eCropType type)    { _cropType = type; }
     eCropType    getCropType()              { return _cropType; }
-    QString      getCropString();
+    QString      getContentString();
 
     void         setAspect(eAspectRatio ar) { _aspect = ar; adjust(); }
     eAspectRatio getAspect()                { return _aspect; }

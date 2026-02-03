@@ -54,7 +54,7 @@ void MapMouseAction::endDragging(QPointF spt)
     Q_UNUSED(spt)
 
     MapEditorLayer & layer = db->getEditLayer();
-    DesignElementPtr delp  = layer.getDel();
+    DELPtr delp  = layer.getDel();
     if (delp)
     {
         Q_ASSERT(db->isMotif(layer.getLayerMapType()));

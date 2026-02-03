@@ -219,11 +219,8 @@ void MosaicReader::processVector(xml_node & node)
             fail("Unexpected", str.c_str());
     }
 
-    if (_version < 23)
-    {
         auto style       = _mosaic->getFirstStyle();
         _firstStyleXform = style->getModelXform();
-    }
 
     // pass 2
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -367,16 +364,16 @@ void MosaicReader::processDesign(xml_node & node)
         {
             if (_version < 19)
             {
-                _crop = procCropV1(n);
+                _crop = processOldCrop(n);
             }
             else
             {
-                _crop = procCropV2(n);
+                _crop = processCrop(n);
             }
         }
         else if (str == "PainterCrop")
         {
-            _painterCrop = procCropV2(n);
+            _painterCrop = processCrop(n);
         }
         else if (str == "Fill")
         {
@@ -508,7 +505,7 @@ void MosaicReader::processThick(xml_node & node)
     QColor       outlineColor = Qt::black;
     ProtoPtr     proto;
     Xform        xf;
-    int          zlevel        = 0;
+    eZLevel      zlevel       = STANDARD_ZLEVEL;
     QPointF      legacyCenter;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -517,7 +514,7 @@ void MosaicReader::processThick(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
+            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -542,7 +539,7 @@ void MosaicReader::processThick(xml_node & node)
     thick->setLineWidth(width);
     thick->setJoinStyle(pjs);
     thick->setCapStyle(pcs);
-    thick->setZValue(zlevel);
+    thick->setZLevel(zlevel);
 
     if (_version < 29)
     {
@@ -572,7 +569,7 @@ void MosaicReader::processInterlace(xml_node & node)
     QColor       outlineColor    = Qt::black;
     qreal        gap             = 0.0;
     qreal        shadow          = 0.0;
-    int          zlevel          = 0;
+    eZLevel      zlevel       = STANDARD_ZLEVEL;
     Xform        xf;
     QPointF      legacyCenter;
 
@@ -582,7 +579,7 @@ void MosaicReader::processInterlace(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
+            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -613,7 +610,7 @@ void MosaicReader::processInterlace(xml_node & node)
     interlace->setGap(gap);
     interlace->setShadow(shadow);
     interlace->setIncludeTipVertices(includeTipVerts);
-    interlace->setZValue(zlevel);
+    interlace->setZLevel(zlevel);
 
     if (_version < 29)
     {
@@ -638,7 +635,7 @@ void MosaicReader::processOutline(xml_node & node)
     Qt::PenCapStyle pcs       = Qt::SquareCap;
     qreal        outlineWidth = 0.03;
     QColor       outlineColor = Qt::black;
-    int          zlevel       = 0;
+    eZLevel      zlevel       = STANDARD_ZLEVEL;
     ProtoPtr     proto;
     Xform        xf;
     QPointF      legacyCenter;
@@ -649,7 +646,7 @@ void MosaicReader::processOutline(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
+            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -674,7 +671,7 @@ void MosaicReader::processOutline(xml_node & node)
     outline->setLineWidth(width);
     outline->setJoinStyle(pjs);
     outline->setCapStyle(pcs);
-    outline->setZValue(zlevel);
+    outline->setZLevel(zlevel);
 
      if (_version < 29)
     {
@@ -693,7 +690,7 @@ void MosaicReader::processOutline(xml_node & node)
 void MosaicReader::processFilled(xml_node & node)
 {
     bool         oldFormat      = false;
-    int          zlevel         = 0;
+    eZLevel      zlevel         = STANDARD_ZLEVEL;
     eFillType    l_algorithm    = FILL_ORIGINAL;
     bool         l_draw_inside  = false;
     bool         l_draw_outside = true;
@@ -716,7 +713,7 @@ void MosaicReader::processFilled(xml_node & node)
 
         if (str == "toolkit.GeoLayer")
         {
-            procesToolkitGeoLayer(n,l_xf,zlevel,legacyCenter);
+             legacyCenter = procesToolkitGeoLayer(n,l_xf,zlevel);
         }
         else if (str == "style.Style")
         {
@@ -759,7 +756,7 @@ void MosaicReader::processFilled(xml_node & node)
     FillPtr filled = make_shared<Filled>(l_proto,l_algorithm);
     filled->setViewController(_vc);
     filled->setModelXform(l_xf,false,Sys::nextSigid());
-    filled->setZValue(zlevel);
+    filled->setZLevel(zlevel);
 
      if (_version < 29)
     {
@@ -834,9 +831,9 @@ void MosaicReader::processFilled(xml_node & node)
 void MosaicReader::processPlain(xml_node & node)
 {
     ColorSet     colorset;
-    ProtoPtr proto;
+    ProtoPtr     proto;
     Xform        xf;
-    int          zlevel = 0;
+    eZLevel      zlevel = STANDARD_ZLEVEL;
     QPointF      legacyCenter;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -845,7 +842,7 @@ void MosaicReader::processPlain(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
+            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -858,7 +855,7 @@ void MosaicReader::processPlain(xml_node & node)
     plain->setViewController(_vc);
     plain->setModelXform(xf,false,Sys::nextSigid());
     plain->setColorSet(colorset);
-    plain->setZValue(zlevel);
+    plain->setZLevel(zlevel);
 
     if (_version < 29)
     {
@@ -877,9 +874,9 @@ void MosaicReader::processPlain(xml_node & node)
 void MosaicReader::processSketch(xml_node & node)
 {
     ColorSet     colorset;
-    ProtoPtr proto;
+    ProtoPtr     proto;
     Xform        xf;
-    int          zlevel = 0;
+    eZLevel      zlevel = STANDARD_ZLEVEL;
     QPointF      legacyCenter;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -888,7 +885,7 @@ void MosaicReader::processSketch(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
+            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -901,7 +898,7 @@ void MosaicReader::processSketch(xml_node & node)
     sketch->setViewController(_vc);
     sketch->setModelXform(xf,false,Sys::nextSigid());
     sketch->setColorSet(colorset);
-    sketch->setZValue(zlevel);
+    sketch->setZLevel(zlevel);
 
      if (_version < 29)
     {
@@ -927,7 +924,7 @@ void MosaicReader::processEmboss(xml_node & node)
     qreal        outlineWidth = 0.03;
     QColor       outlineColor = Qt::black;
     qreal        angle        = 0.0;
-    int          zlevel       = 0;
+    eZLevel      zlevel       = STANDARD_ZLEVEL;
     ProtoPtr     proto;
     Xform        xf;
     QPointF      legacyCenter;
@@ -938,7 +935,7 @@ void MosaicReader::processEmboss(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
+            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -966,7 +963,7 @@ void MosaicReader::processEmboss(xml_node & node)
     emboss->setJoinStyle(pjs);
     emboss->setCapStyle(pcs);
     emboss->setAngle(angle);
-    emboss->setZValue(zlevel);
+    emboss->setZLevel(zlevel);
 
     if (_version < 29)
     {
@@ -984,11 +981,11 @@ void MosaicReader::processEmboss(xml_node & node)
 
 void MosaicReader::processTileColors(xml_node & node)
 {
-    ProtoPtr proto;
+    ProtoPtr     proto;
     Xform        xf;
     bool         outline = false;
     int          width   = 3;
-    int          zlevel  = 0;
+    eZLevel      zlevel  = STANDARD_ZLEVEL;
     QColor       color   = Qt::white;
     QPointF      legacyCenter;
 
@@ -998,7 +995,7 @@ void MosaicReader::processTileColors(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
+            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "outline")
@@ -1040,7 +1037,7 @@ void MosaicReader::processTileColors(xml_node & node)
         tc->setOutline(true,color,width);
     }
 
-    tc->setZValue(zlevel);
+    tc->setZLevel(zlevel);
 
     if (_version < 29)
     {
@@ -1062,7 +1059,7 @@ void MosaicReader::processBorder(xml_node & node)
     procBorder(n);
 }
 
-void MosaicReader::procesToolkitGeoLayer(xml_node & node, Xform & xf, int & zlevel, QPointF & legacyCenter)
+QPointF MosaicReader::procesToolkitGeoLayer(xml_node & node, Xform & xf, eZLevel & zlevel)
 {
     QString val;
     qreal   fval;
@@ -1110,11 +1107,11 @@ void MosaicReader::procesToolkitGeoLayer(xml_node & node, Xform & xf, int & zlev
         xf.setRotateRadians(fval);
     }
 
-    legacyCenter = QPointF();
+    QPointF legacyCenter;
     n = node.child("center");
     if (n)
     {
-        // depracated
+        // deprecated
         val          = n.child_value();
         QStringList qsl = val.split(",");
         qreal x = qsl[0].toDouble();
@@ -1128,8 +1125,10 @@ void MosaicReader::procesToolkitGeoLayer(xml_node & node, Xform & xf, int & zlev
     if (n)
     {
         val          = n.child_value();
-        zlevel       = val.toInt();
+        zlevel       = (eZLevel)val.toInt();
     }
+
+    return legacyCenter;
 }
 
 void MosaicReader::processStylePrototype(xml_node & node, ProtoPtr & proto)
@@ -1584,6 +1583,20 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
     ProtoPtr proto = make_shared<Prototype>(loadedTiling,_mosaic);
     setProtoReference(node,proto);
 
+    xml_node dnode = protonode.child("Distort");
+    if (dnode)
+    {
+
+        bool bStatus;
+        QString str = dnode.child_value("scalex");
+        qreal valx = str.toDouble(&bStatus);
+        str = dnode.child_value("scaley");
+        qreal valy = str.toDouble(&bStatus);
+        QTransform t = QTransform::fromScale(valx,valy);
+        proto->setDistortion(t);
+        proto->enableDistortion(true);
+    }
+
     xml_node cnode = protonode.child("Cleanse");
     if (cnode)
     {
@@ -1708,7 +1721,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
 
                     //create the desing element and put into the prototype
                     if (_debug) qDebug().noquote() << "adding to Proto" << motif->getMotifDesc();
-                    DesignElementPtr  dep = make_shared<DesignElement>(entryTile, motif);
+                    DELPtr  dep = make_shared<DesignElement>(loadedTiling,entryTile, motif);
 
                     if (_version < 27 && motif->isIrregular())
                     {
@@ -1746,13 +1759,13 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                         }
                     }
                 }
-                DesignElementPtr  del = make_shared<DesignElement>(entryTile, motif);
+                DELPtr  del = make_shared<DesignElement>(loadedTiling,entryTile, motif);
                 proto->addDesignElement(del);
             }
         }
     }
 
-    QVector<DesignElementPtr> & designElements = proto->getDesignElements();
+    QVector<DELPtr> & designElements = proto->getDesignElements();
     int numDesignElements                      = designElements.size();
 
     if (numLoadedTiles >> numDesignElements)
@@ -1768,7 +1781,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 continue;
             }
             // create new desigin element
-            DesignElementPtr  del = make_shared<DesignElement>(tile);
+            DELPtr  del = make_shared<DesignElement>(loadedTiling,tile);
             proto->addDesignElement(del);
         }
         numDesignElements = designElements.size(); // bumps the count
@@ -2038,7 +2051,7 @@ void MosaicReader::getMotifCommon(xml_node & node, MotifPtr motif, int tile_side
     }
 }
 
-void MosaicReader::fixupIrregularTransform(DesignElementPtr del)
+void MosaicReader::fixupIrregularTransform(DELPtr del)
 {
     // prior to version 27, motifs were unnecessarily transformed
     // by the tile transform, when actually the infer() method
@@ -2357,12 +2370,14 @@ Rosette2Ptr MosaicReader::getRosette2(xml_node & node, int tile_sides)
 
     int n,s;
     qreal x,y,k = 0;
-    eTipType ett;
+    uint tipTypes;
+    eTipMode tipMode;
     bool constrain;
-    getRosette2Common(node,n,x,y,k,s,ett,constrain);
+    getRosette2Common(node,n,x,y,k,s,tipTypes,tipMode,constrain);
 
     Rosette2Ptr rosette = make_shared<Rosette2>(n, x, y, s, k, constrain);
-    rosette->setTipType(ett);
+    rosette->setTipMode(tipMode);
+    rosette->setTipTypes(tipTypes);
 
     xml_attribute onpoint = node.attribute("onpoint");
     if (onpoint)
@@ -2433,7 +2448,7 @@ void  MosaicReader::getRosetteCommon(xml_node & node, int & n, qreal & q, int & 
     }
 }
 
-void  MosaicReader::getRosette2Common(xml_node & node, int & n, qreal & x, qreal & y, qreal & k, int & s, eTipType & tt, bool & constrain)
+void  MosaicReader::getRosette2Common(xml_node & node, int & n, qreal & x, qreal & y, qreal & k, int & s, uint &tipTypes, eTipMode &tipMode, bool & constrain)
 {
     QString str;
 
@@ -2455,18 +2470,50 @@ void  MosaicReader::getRosette2Common(xml_node & node, int & n, qreal & x, qreal
     str = node.child_value("s");
     s = str.toInt();
 
-    str = node.child_value("tip");
-    if (str == "alt")
+    if (node.child("tip"))
     {
-        tt = TIP_TYPE_ALTERNATE;
-    }
-    else if (str == "in")
-    {
-        tt = TIP_TYPE_INNER;
+
+        tipTypes = TIP_TYPE2_OUTER;
+        tipMode  = TIP_MODE_REGULAR;
+
+        str = node.child_value("tip");
+        if (str == "alt")
+        {
+            tipMode = TIP_MODE_ALTERNATE;
+            tipTypes = TIP_TYPE2_OUTER | TIP_TYPE2_INNER;
+        }
+        else if (str == "in")
+        {
+            tipTypes = TIP_TYPE2_INNER;
+        }
     }
     else
     {
-        tt = TIP_TYPE_OUTER;    // default
+        tipTypes = 0;
+        str = node.child_value("tiptypes");
+        QStringList qsl = str.split('|');
+        if (qsl.contains("outer"))
+        {
+            tipTypes |= TIP_TYPE2_OUTER;
+        }
+        if (qsl.contains("inner"))
+        {
+            tipTypes |= TIP_TYPE2_INNER;
+        }
+        if (qsl.contains("flipped"))
+        {
+            tipTypes |= TIP_TYPE2_FLIPPED;
+        }
+
+        str = node.child_value("tipmode");
+        if (str == "regular")
+        {
+            tipMode = TIP_MODE_REGULAR;
+        }
+        else if (str == "alternate")
+        {
+            tipMode = TIP_MODE_ALTERNATE;
+        }
     }
 }
 
@@ -2792,7 +2839,7 @@ void MosaicReader::procBorder(xml_node & node)
         int iType = atype.as_int();
         if (iType == 4 && _version < 11)
         {
-            _crop = procCropV1(node);
+            _crop = processOldCrop(node);
         }
         else
         {
@@ -2829,15 +2876,14 @@ void MosaicReader::procBorder(xml_node & node)
     if (_border)
     {
         Xform xf;
-        int zlevel = 0;
-        QPointF legacyCenter;
+        eZLevel zlevel = STANDARD_ZLEVEL;
 
         if (_version  >= 23)
         {
             xml_node n = node.child("toolkit.GeoLayer");
-            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
+            procesToolkitGeoLayer(n,xf,zlevel);
             _border->setModelXform(xf,false,Sys::nextSigid());
-            _border->setZValue(zlevel);
+            _border->setZLevel(zlevel);
         }
         else
         {
@@ -2850,7 +2896,7 @@ void MosaicReader::procBorder(xml_node & node)
 }
 
 // the old way of handling crops
-CropPtr MosaicReader::procCropV1(xml_node & node)
+CropPtr MosaicReader::processOldCrop(xml_node & node)
 {
     QRectF rect;
     xml_node bdry = node.child("boundary");
@@ -2913,7 +2959,7 @@ CropPtr MosaicReader::procCropV1(xml_node & node)
 }
 
 // the current way of handling crops
-CropPtr MosaicReader::procCropV2(xml_node & node)
+CropPtr MosaicReader::processCrop(xml_node & node)
 {
     auto crop = make_shared<Crop>();
 

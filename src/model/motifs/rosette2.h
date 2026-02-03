@@ -20,11 +20,17 @@
 
 #include "model/motifs/radial_motif.h"
 
-enum eTipType
+enum eTipTypes
 {
-    TIP_TYPE_OUTER,
-    TIP_TYPE_INNER,
-    TIP_TYPE_ALTERNATE
+    TIP_TYPE2_OUTER     = 0x01,
+    TIP_TYPE2_INNER     = 0x02,
+    TIP_TYPE2_FLIPPED   = 0x04,
+};
+
+enum eTipMode
+{
+    TIP_MODE_REGULAR,
+    TIP_MODE_ALTERNATE,
 };
 
 class Rosette2 : public RadialMotif
@@ -48,8 +54,13 @@ public:
     void    setS(int ss)            { s = ss; }
     void    setConstrain(bool c)    { constrain = c; }
 
-    void     setTipType(eTipType t) { tipType = t; }
-    eTipType getTipType()           { return tipType; }
+    void    addTipType(eTipTypes t)     { tipTypes |= t; }
+    void    removeTipType(eTipTypes t)  { tipTypes &= ~t; }
+    void    setTipTypes(uint tt)        { tipTypes = tt; }
+    uint    getTipTypes()               { return tipTypes; }
+
+    void    setTipMode(eTipMode mode)   { tipMode = mode; }
+    eTipMode getTipMode()               { return tipMode; }
 
     virtual QString getMotifDesc() override { return "Rosette2";}
     virtual void    dump()         override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "kneeX:" << kneeX << "kneeY:" << kneeY << "s:" << s << "k:" << k
@@ -65,7 +76,8 @@ protected:
     void    calcConstraintLine();
 
 private:
-    eTipType tipType;
+    eTipMode tipMode;
+    uint     tipTypes;
     bool     constrain;     // use Kaplan's constraint
     QLineF   constraint;    // Kaplan's aesthetic call of line where knee should lie on
 

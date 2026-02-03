@@ -58,7 +58,7 @@ bool MapEditorMapWriter::writeXML(VersionedFile xfile, MapEditorDb * db)
         const Xform & xf = Sys::mapEditorView->getModelXform();
         QString str = "ModelSettings";
         ts << "<" << str << ">" << endl;
-        procesToolkitGeoLayer(ts,xf,0);
+        procesToolkitGeoLayer(ts,xf,STANDARD_ZLEVEL);
         ts << "</" << str << ">" << endl;
 
         // background

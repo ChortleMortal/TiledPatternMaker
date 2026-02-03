@@ -33,6 +33,8 @@ public:
     void draw(GeoGraphics *gg ) override;
 
     virtual MapPtr     getStyleMap()  override;
+    virtual void       setStyleMap(MapPtr map) override { casings.setMap(map); }
+
     virtual eStyleType getStyleType() const override { return STYLE_OUTLINED; }
     QString            getStyleDesc() const override { return "Outlined"; }
     virtual void       dump()         const override { qDebug().noquote() << getStyleDesc() << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color << colors.colorsString(); }

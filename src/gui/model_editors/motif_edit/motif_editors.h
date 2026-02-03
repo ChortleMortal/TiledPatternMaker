@@ -15,9 +15,9 @@ class ExtenderEditor;
 class ConnectorEditor;
 
 typedef std::shared_ptr<class Motif>            MotifPtr;
-typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+typedef std::shared_ptr<class DesignElement>    DELPtr;
 typedef std::weak_ptr<class Motif>              WeakMotifPtr;
-typedef std::weak_ptr<class DesignElement>      WeakDesignElementPtr;
+typedef std::weak_ptr<class DesignElement>      WeakDELPtr;
 typedef std::weak_ptr<class Extender>           WeakExtenderPtr;
 
 // An abstract class for containing the controls related to the editing
@@ -55,7 +55,7 @@ public slots:
     void    slot_deleteConnector();
 
 protected:
-    WeakDesignElementPtr wDel;
+    WeakDELPtr wDel;
     WeakMotifPtr         wMotif;
     QString              name;
 

@@ -6,7 +6,6 @@
 
 #include "gui/panels/panel_page.h"
 
-class ProtoMakerData;
 class MotifMakerWidget;
 class SMXWidget;
 

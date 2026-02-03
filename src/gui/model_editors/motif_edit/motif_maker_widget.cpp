@@ -78,7 +78,7 @@ void MotifMakerWidget::delegate(DELBtnPtr btn, bool add, bool set)
 
     qDebug() << "MotifMakerWidget::delegate btn=" << btn->getIndex() << "multi" << add << "set" << set;
 
-    DesignElementPtr designElement = btn->getDesignElement(); // DAC taprats cloned here
+    DELPtr designElement = btn->getDesignElement(); // DAC taprats cloned here
 
     if (set)
     {
@@ -102,7 +102,7 @@ void MotifMakerWidget::delegate(DELBtnPtr btn, bool add, bool set)
     else
     {
         // Design Element Viewer button - do this first
-        DesignElementPtr np;
+        DELPtr np;
         viewerBtn->setDesignElement(np);
 
         // Prototype Maker data

@@ -1,7 +1,6 @@
 #include <QCheckBox>
 
 #include "gui/widgets/mouse_mode_widget.h"
-#include "gui/viewers/gui_modes.h"
 #include "sys/sys.h"
 #include "gui/panels/panel_misc.h"
 
@@ -47,28 +46,28 @@ void MouseModeWidget::display()
 {
     blockSignals(true);
 
-    chkRot->setChecked(Sys::guiModes->getMouseMode(MOUSE_MODE_ROTATE));
-    chkZoom->setChecked(Sys::guiModes->getMouseMode(MOUSE_MODE_SCALE));
-    chkPan->setChecked(Sys::guiModes->getMouseMode(MOUSE_MODE_TRANSLATE));
+    chkRot->setChecked(Sys::getSysMouseMode(MOUSE_MODE_ROTATE));
+    chkZoom->setChecked(Sys::getSysMouseMode(MOUSE_MODE_SCALE));
+    chkPan->setChecked(Sys::getSysMouseMode(MOUSE_MODE_TRANSLATE));
 
     blockSignals(false);
 }
 
 void MouseModeWidget::setTranslateMode(bool checked)
 {
-    Sys::guiModes->setMouseMode(MOUSE_MODE_TRANSLATE,checked);
+    Sys::setSysMouseMode(MOUSE_MODE_TRANSLATE,checked);
     display();
 }
 
 void MouseModeWidget::setRotateMode(bool checked)
 {
-    Sys::guiModes->setMouseMode(MOUSE_MODE_ROTATE,checked);
+    Sys::setSysMouseMode(MOUSE_MODE_ROTATE,checked);
     display();
 }
 
 void MouseModeWidget::setScaleMode(bool checked)
 {
-    Sys::guiModes->setMouseMode(MOUSE_MODE_SCALE,checked);
+    Sys::setSysMouseMode(MOUSE_MODE_SCALE,checked);
     display();
 }
 

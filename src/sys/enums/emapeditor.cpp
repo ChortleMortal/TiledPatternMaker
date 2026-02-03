@@ -4,9 +4,9 @@
 
 const QString sMapEditorMapType[] =
 {
-        "Unknown",          //E2STR(MAPED_TYPE_UNKNOWN),
-        "Mosaic:",           //E2STR(MAPED_LOADED_FROM_MOSIAC),
-        "Proto:",            //E2STR(MAPED_LOADED_FROM_MOTIF_PROTOTYPE),
+        "None",              //E2STR(MAPED_TYPE_NONE),
+        "Style:",            //E2STR(MAPED_LOADED_FROM_MOSIAC),
+        "Proto:",            //E2STR(MAPED_LOADED_FROM_PROTOTMAKER),
         "Motif:",            //E2STR(MAPED_LOADED_FROM_MOTIF),
         "Tiling unit:",      //E2STR(MAPED_LOADED_FROM_TILING_UNIT),
         "Tiling:",           //E2STR(MAPED_LOADED_FROM_TILING_REPEATED),

@@ -3,99 +3,126 @@
 #include <QPushButton>
 #include <QHBoxLayout>
 
-#include "model/prototypes/prototype.h"
-#include "model/makers/prototype_maker.h"
-#include "model/prototypes/design_element.h"
-#include "model/motifs/motif.h"
 #include "gui/panels/page_prototype_info.h"
+#include "gui/panels/panel_misc.h"
 #include "gui/top/controlpanel.h"
-#include "model/tilings/tile.h"
-#include "model/tilings/tiling.h"
 #include "gui/top/system_view_controller.h"
 #include "gui/widgets/layout_sliderset.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/viewers/prototype_view.h"
+#include "model/makers/mosaic_maker.h"
+#include "model/makers/prototype_maker.h"
+#include "model/makers/tiling_maker.h"
+#include "model/mosaics/mosaic.h"
+#include "model/motifs/motif.h"
+#include "model/prototypes/design_element.h"
+#include "model/prototypes/prototype.h"
+#include "model/tilings/tile.h"
+#include "model/tilings/tiling.h"
+#include "sys/geometry/transform.h"
 
-using std::string;
-
-typedef std::weak_ptr<class DesignElement>      WeakDesignElementPtr;
-Q_DECLARE_METATYPE(WeakDesignElementPtr);
+typedef std::weak_ptr<class DesignElement> WeakDELPtr;
+Q_DECLARE_METATYPE(WeakDELPtr);
 
 page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_PROTO_INFO,"Prototype Info")
 {
-    pageStatusString = "<body><span>Click on row to select tile  &nbsp;&nbsp; | &nbsp;&nbsp; Click on color to change</span></body>";
+    protoMaker = Sys::prototypeMaker;
 
-    protoMaker      = Sys::prototypeMaker;
-
-    //setMouseTracking(true);
-
-    SpinSet * widthSpin         = new SpinSet("Line Width",3,1,9);
+    // top row
+    SpinSet * widthSpin = new SpinSet("Line Width",3,1,9);
     widthSpin->setValue((int)config->protoviewWidth);
 
-    QPushButton * pbRender      = new QPushButton("Render Prototypes");
+    QPushButton * pbRender = new QPushButton("Render Prototypes");
     pbRender->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    QHBoxLayout * line1Layout   = new QHBoxLayout;
-    line1Layout->addLayout(widthSpin);
-    line1Layout->addStretch();
-    line1Layout->addWidget(pbRender);
+    QHBoxLayout * toprow   = new QHBoxLayout;
+    toprow->addLayout(widthSpin);
+    toprow->addStretch();
+    toprow->addWidget(pbRender);
 
-    QCheckBox * cbDrawMap       = new QCheckBox("Prototype Map");
-    QCheckBox * cbDrawTiles     = new QCheckBox("All Tiles");
-    QCheckBox * cbDrawMotifs    = new QCheckBox("All Motifs");
-    QCheckBox * cbDrawProto     = new QCheckBox("Prototype");
-    QCheckBox * cbHiliteTiles   = new QCheckBox("DEL Tiles");
-    QCheckBox * cbHiliteMotifs  = new QCheckBox("DEL Motifs");
+    auto box1 = buildPrototypeLayout();
 
-    QCheckBox * cbAllVisible    = new QCheckBox("All");
-    QCheckBox * cbVisibleMotifs = new QCheckBox("Motifs");
-    QCheckBox * cbVisibleTiles  = new QCheckBox("Tiles");
+    auto box2 = buildTilingUnitLayout();
 
-    QPushButton * hideBtn       = new QPushButton("Hide All");
-    QPushButton * showBtn       = new QPushButton("Show All");
+    auto box3 = buildDistortionsLayout();
+
+    connect(widthSpin,        &SpinSet::valueChanged,   this, &page_prototype_info::slot_widthChanged);
+    connect(pbRender,         &QPushButton::clicked,    this, [] { Sys::render(RENDER_RESET_PROTOTYPES);} );
+
+    connect(tilingMaker,   &TilingMaker::sig_tilingLoaded,      this,   &page_prototype_info::populateTables);
+    connect(mosaicMaker,   &MosaicMaker::sig_mosaicLoaded,      this,   &page_prototype_info::populateTables);
+    connect(viewControl,   &SystemViewController::sig_unloaded, this,   &page_prototype_info::populateTables);
+
+    vbox->addSpacing(5);
+    vbox->addLayout(toprow);
+    vbox->addSpacing(9);
+    vbox->addWidget(box1);
+    vbox->addSpacing(9);
+    vbox->addWidget(box3);
+    vbox->addSpacing(9);
+    vbox->addWidget(box2);
+    vbox->addStretch();
+}
+
+QGroupBox * page_prototype_info::buildDistortionsLayout()
+{
+    chkDistort = new QCheckBox("Distort");
+
+    xBox = new DoubleSpinSet("X:",1.0,-9.99,9.99);
+    xBox->setSingleStep(0.01);
+    yBox = new DoubleSpinSet("Y:",1.0,-9.99,9.99);
+    yBox->setSingleStep(0.01);
+
+    connect(xBox, &DoubleSpinSet::valueChanged, this, &page_prototype_info::setDistortion);
+    connect(yBox, &DoubleSpinSet::valueChanged, this, &page_prototype_info::setDistortion);
+    connect(chkDistort, &QCheckBox::clicked,    this, &page_prototype_info::enbDistortion);
+
+    QHBoxLayout * dist = new QHBoxLayout;
+    dist->addWidget(chkDistort);
+    dist->addLayout(xBox);
+    dist->addLayout(yBox);
+    dist->addStretch(10);
+
+    QGroupBox * gb = new QGroupBox("Distortions");
+    gb->setLayout(dist);
+
+    return gb;
+}
+
+QGroupBox * page_prototype_info::buildPrototypeLayout()
+{
+    QCheckBox * cbShowMap        = new QCheckBox("Show Map");
+    QCheckBox * cbShowTiles      = new QCheckBox("Show Tiles");
+    QCheckBox * cbShowMotifs     = new QCheckBox("Show Motifs");
+    QCheckBox * cbShowTilingUnit = new QCheckBox("Show TU");
+    QCheckBox * cbHiliteTiles    = new QCheckBox("Show TU Tiles");
+    QCheckBox * cbHiliteMotifs   = new QCheckBox("Show TU Motifs");
 
     int mode = config->protoViewMode;
 
-    if (mode & PROTO_DRAW_MAP)
-        cbDrawMap->setChecked(true);
-    if (mode & PROTO_ALL_TILES)
-        cbDrawTiles->setChecked(true);
-    if (mode & PROTO_ALL_MOTIFS)
-        cbDrawMotifs->setChecked(true);
-    if (mode & PROTO_DEL_TILES)
+    if (mode & SHOW_MAP)
+        cbShowMap->setChecked(true);
+    if (mode & SHOW_TILES)
+        cbShowTiles->setChecked(true);
+    if (mode & SHOW_MOTIFS)
+        cbShowMotifs->setChecked(true);
+    if (mode & SHOW_TILING_UNIT)
+        cbShowTilingUnit->setChecked(true);
+    if (mode & SHOW_TU_TILES)
         cbHiliteTiles->setChecked(true);
-    if (mode & PROTO_DEL_MOTIFS)
+    if (mode & SHOW_TU_MOTIFS)
         cbHiliteMotifs->setChecked(true);
-    if (mode & PROTO_DRAW_PROTO)
-        cbDrawProto->setChecked(true);
-
-    if (mode & PROTO_ALL_VISIBLE)
-        cbAllVisible->setChecked(true);
-    if (mode & PROTO_VISIBLE_TILE)
-        cbVisibleTiles->setChecked(true);
-    if (mode & PROTO_VISIBLE_MOTIF)
-        cbVisibleMotifs->setChecked(true);
 
     showSettings = new QGridLayout;
     int row = 0;
     int col = 0;
-    showSettings->addWidget(cbDrawMap,row,col++);
-    showSettings->addWidget(cbDrawTiles,row,col++);
-    showSettings->addWidget(cbDrawMotifs,row,col++);
-    showSettings->addWidget(cbDrawProto,row,col++);
+    showSettings->addWidget(cbShowMap,row,col++);
+    showSettings->addWidget(cbShowTiles,row,col++);
+    showSettings->addWidget(cbShowMotifs,row,col++);
+    showSettings->addWidget(cbShowTilingUnit,row,col++);
     showSettings->addWidget(cbHiliteTiles,row,col++);
     showSettings->addWidget(cbHiliteMotifs,row,col++);
 
     buildColorGrid();
-
-    QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addWidget(hideBtn);
-    hbox->addSpacing(3);
-    hbox->addWidget(showBtn);
-    hbox->addSpacing(3);
-    hbox->addWidget(cbVisibleMotifs);
-    hbox->addWidget(cbVisibleTiles);
-    hbox->addWidget(cbAllVisible);
-    hbox->addStretch();
 
     protoTable = new AQTableWidget(this);
     protoTable->setColumnCount(3);
@@ -108,6 +135,54 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
     protoTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     protoTable->setSelectionMode(QAbstractItemView::SingleSelection);
 
+    connect(cbShowTilingUnit, &QCheckBox::clicked,      this, &page_prototype_info::drawProtoClicked);
+    connect(cbShowMap,        &QCheckBox::clicked,      this, &page_prototype_info::drawMapClicked);
+    connect(cbShowTiles,      &QCheckBox::clicked,      this, &page_prototype_info::drawTileClicked);
+    connect(cbShowMotifs,     &QCheckBox::clicked,      this, &page_prototype_info::drawMotifClicked);
+    connect(cbHiliteTiles,    &QCheckBox::clicked,      this, &page_prototype_info::hiliteTileClicked);
+    connect(cbHiliteMotifs,   &QCheckBox::clicked,      this, &page_prototype_info::hiliteMotifClicked);
+
+    QVBoxLayout * vb = new QVBoxLayout;
+    vb->addWidget(protoTable);
+    vb->addLayout(showSettings);
+
+    QGroupBox * gb = new QGroupBox("Prototype and Tiling Unit (TU)");
+    gb->setLayout(vb);
+
+    return gb;
+}
+
+QGroupBox * page_prototype_info::buildTilingUnitLayout()
+{
+    QCheckBox * cbVisibleTiles  = new QCheckBox("Show Tiles");
+    QCheckBox * cbVisibleMotifs = new QCheckBox("Show Motifs");
+    QRadioButton *  rSingle     = new QRadioButton("Single");
+    QRadioButton *  rPlaced     = new QRadioButton("Placed");
+    QHBoxLayout *  hbox         = new QHBoxLayout;
+    hbox->addWidget(rSingle);
+    hbox->addWidget(rPlaced);
+
+    int mode = config->protoViewMode;
+
+    if (mode & SHOW_ALL_TU_TILES)
+        rPlaced->setChecked(true);
+    else
+        rSingle->setChecked(true);
+    if (mode & SHOW_SELECTED_TU_TILES)
+        cbVisibleTiles->setChecked(true);
+    if (mode & SHOW_SELECTED_TU_MOTIFS)
+        cbVisibleMotifs->setChecked(true);
+
+    showSettings2 = new QGridLayout;
+    showSettings2->addLayout(hbox,0,0);
+    showSettings2->addWidget(cbVisibleTiles,0,1);
+    showSettings2->addWidget(cbVisibleMotifs,0,2);
+    showSettings2->addWidget(new QLabel(),0,3);
+    showSettings2->addWidget(new QLabel(),0,4);
+    showSettings2->addWidget(new QLabel(),0,5);
+
+    buildColorGrid2();
+
     DELTable = new AQTableWidget(this);
     DELTable->setColumnCount(6);
     QStringList qslH;
@@ -119,33 +194,20 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
     DELTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     DELTable->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    vbox->addLayout(line1Layout);
-    vbox->addLayout(showSettings);
-    vbox->addSpacing(7);
-    vbox->addWidget(protoTable);
-    vbox->addSpacing(17);
-    vbox->addLayout(hbox);
-    vbox->addSpacing(5);
-    vbox->addWidget(DELTable);
-    vbox->addStretch();
-
-    connect(protoTable,    &AQTableWidget::cellClicked, this, &page_prototype_info::slot_protoSelected);
-    connect(DELTable,      &AQTableWidget::cellClicked, this, &page_prototype_info::slot_DELSelected);
-
-    connect(widthSpin,        &SpinSet::valueChanged,   this, &page_prototype_info::slot_widthChanged);
-    connect(pbRender,         &QPushButton::clicked,    this, [] { Sys::render(RENDER_RESET_PROTOTYPES);} );
-    connect(cbDrawProto,      &QCheckBox::clicked,      this, &page_prototype_info::drawProtoClicked);
-    connect(cbDrawMap,        &QCheckBox::clicked,      this, &page_prototype_info::drawMapClicked);
-    connect(cbDrawTiles,      &QCheckBox::clicked,      this, &page_prototype_info::drawTileClicked);
-    connect(cbDrawMotifs,     &QCheckBox::clicked,      this, &page_prototype_info::drawMotifClicked);
-    connect(cbHiliteTiles,    &QCheckBox::clicked,      this, &page_prototype_info::hiliteTileClicked);
-    connect(cbHiliteMotifs,   &QCheckBox::clicked,      this, &page_prototype_info::hiliteMotifClicked);
-
+    connect(DELTable,      &AQTableWidget::cellClicked, this, &page_prototype_info::DELChecked);
     connect(cbVisibleTiles,   &QCheckBox::clicked,      this, &page_prototype_info::visibleTilesClicked);
     connect(cbVisibleMotifs,  &QCheckBox::clicked,      this, &page_prototype_info::visibleMotifsClicked);
-    connect(cbAllVisible,     &QCheckBox::clicked,      this, &page_prototype_info::allVisibleClicked);
-    connect(hideBtn,          &QPushButton::clicked,    this, &page_prototype_info::slot_hide);
-    connect(showBtn,          &QPushButton::clicked,    this, &page_prototype_info::slot_show);
+    connect(rSingle,          &QRadioButton::clicked,   this, &page_prototype_info::singleClicked);
+    connect(rPlaced,          &QRadioButton::clicked,   this, &page_prototype_info::placedClicked);
+
+    QVBoxLayout * vb = new QVBoxLayout;
+    vb->addLayout(showSettings2);
+    vb->addWidget(DELTable);
+
+    QGroupBox * gb = new QGroupBox("Tiling Unit");
+    gb->setLayout(vb);
+
+    return gb;
 }
 
 void page_prototype_info::buildColorGrid()
@@ -201,44 +263,89 @@ void page_prototype_info::buildColorGrid()
     connect(defaultButton,    &QPushButton::clicked,    this, &page_prototype_info::setDefaultColors);
 }
 
+void page_prototype_info::buildColorGrid2()
+{
+    int row = 1;
+    int col = 1;
+    ProtoViewColors & colors = Sys::prototypeView->getColors();
+
+    ClickableLabel * label = new ClickableLabel();
+    QVariant variant = colors.visibleTileColor;
+    QString colcode  = variant.toString();
+    label->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    showSettings2->addWidget(label,row,col++);
+    connect(label,&ClickableLabel::clicked, this, [this, &colors] { pickColor(colors.visibleTileColor); });
+
+    label = new ClickableLabel();
+    variant = colors.visibleMotifColor;
+    colcode  = variant.toString();
+    label->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    showSettings2->addWidget(label,row,col++);
+    connect(label,&ClickableLabel::clicked, this, [this, &colors] { pickColor(colors.visibleMotifColor); });
+
+    QPushButton * defaultButton = new QPushButton("Default Colors");
+    showSettings2->addWidget(defaultButton,row,col++);
+    connect(defaultButton,    &QPushButton::clicked,    this, &page_prototype_info::setDefaultColors);
+}
+
 void  page_prototype_info::onRefresh()
 {
-//    auto  protoMakerData =  protoMaker->getProtoMakerData();
-
     for (int row = 0; row < protoTable->rowCount(); row++)
     {
-        auto item = protoTable->item(row,PROTO_COL_PROTO);
-        auto v    = item->data(Qt::UserRole);
+        QTableWidgetItem * item = protoTable->item(row,PROTO_COL_PROTO);
+        if (!item) continue;
+
+        QVariant v          = item->data(Qt::UserRole);
         WeakProtoPtr wproto = v.value<WeakProtoPtr>();
-        auto proto = wproto.lock();
-        QString txt = "hidden";
-        if (proto && !prototypeMaker->isHidden(MVD_PROTO,proto))
-        {
-            txt = "visible";
-        }
-        item = protoTable->item(row,PROTO_COL_SHOW);
-        item->setText(txt);
+        auto proto          = wproto.lock();
+        if(!proto) return;
+
+        bool hidden = prototypeMaker->isHidden(MVD_PROTO,proto);
+
+        QCheckBox * widget = dynamic_cast<QCheckBox*>(protoTable->cellWidget(row,PROTO_COL_SHOW));
+        if (!widget) return;
+
+        widget->setChecked(hidden);
     }
 
     for (int row = 0; row < DELTable->rowCount(); row++)
     {
-        auto item = DELTable->item(row,DEL_COL_DEL);
-        auto v    = item->data(Qt::UserRole);
-        WeakDesignElementPtr wdel = v.value<WeakDesignElementPtr>();
+        QTableWidgetItem * item = DELTable->item(row,DEL_COL_DEL);
+        if (!item) continue;
+
+        QVariant v      = item->data(Qt::UserRole);
+        WeakDELPtr wdel = v.value<WeakDELPtr>();
         auto del = wdel.lock();
-        QString txt = "hidden";
-        if (del && !prototypeMaker->isHidden(MVD_PROTO,del))
-        {
-            txt = "visible";
-        }
-        item = DELTable->item(row,DEL_COL_SHOW_MOTIF);
-        item->setText(txt);
+        if (!del) return;
+
+        bool hidden = prototypeMaker->isHidden(MVD_PROTO,del);
+
+        QCheckBox* widget = dynamic_cast<QCheckBox*>(DELTable->cellWidget(row,DEL_COL_SHOW_DEL));
+        if (!widget) return;
+
+        widget->setChecked(hidden);
+    }
+
+    auto proto  = protoMaker->getSelectedPrototype();
+    if (proto)
+    {
+        chkDistort->setChecked(proto->getDistortionEnable());
+        QTransform t = proto->getDistortion();
+        xBox->setValue(Transform::scalex(t));
+        yBox->setValue(Transform::scaley(t));
+    }
+    else
+    {
+        chkDistort->setChecked(false);
+        xBox->setValue(0);
+        yBox->setValue(0);
     }
 }
 
 void page_prototype_info::onEnter()
 {
     setPageStatus();
+
     populateTables();
 }
 
@@ -249,11 +356,11 @@ void page_prototype_info::onExit()
 
 void page_prototype_info::populateTables()
 {
-    setupProtoTable();
-    setupDelTable();
+    populateProtoTable();
+    populateDelTable();
 }
 
-void page_prototype_info::setupProtoTable()
+void page_prototype_info::populateProtoTable()
 {
     protoTable->clearContents();
 
@@ -273,8 +380,11 @@ void page_prototype_info::setupProtoTable()
         item = new QTableWidgetItem(proto->getTiling()->getVName().get());
         protoTable->setItem(row,PROTO_COL_TILING,item);
 
-        item = new QTableWidgetItem(prototypeMaker->isHidden(MVD_PROTO,proto) ? "hidden" : "visible");
-        protoTable->setItem(row, PROTO_COL_SHOW,item);
+        QCheckBox * cb = new QCheckBox("Hide");
+        cb->setStyleSheet("padding-left : 8px");
+        cb->setChecked(prototypeMaker->isHidden(MVD_PROTO,proto));
+        protoTable->setCellWidget(row, PROTO_COL_SHOW,cb);
+        connect(cb, &QCheckBox::clicked, this, [this, row](bool checked){ protoChecked(row, checked); });
 
         if (proto == selected_proto)
             protoTable->selectRow(row);
@@ -287,7 +397,7 @@ void page_prototype_info::setupProtoTable()
     updateGeometry();
 }
 
-void page_prototype_info::setupDelTable()
+void page_prototype_info::populateDelTable()
 {
     DELTable->clearContents();
 
@@ -298,7 +408,7 @@ void page_prototype_info::setupDelTable()
     QTableWidgetItem * item;
     for (const auto & proto : std::as_const(prototypes))
     {
-        const QVector<DesignElementPtr> & dels = proto->getDesignElements();
+        const QVector<DELPtr> & dels = proto->getDesignElements();
         for (const auto & del :  std::as_const(dels))
         {
             DELTable->setRowCount(row + 1);
@@ -311,7 +421,7 @@ void page_prototype_info::setupDelTable()
             DELTable->setItem(row,DEL_COL_TILING,item);
 
             item = new QTableWidgetItem(addr(del.get()));
-            item->setData(Qt::UserRole,QVariant::fromValue(WeakDesignElementPtr(del)));
+            item->setData(Qt::UserRole,QVariant::fromValue(WeakDELPtr(del)));
             DELTable->setItem(row,DEL_COL_DEL,item);
 
             TilePtr fp = del->getTile();
@@ -330,8 +440,11 @@ void page_prototype_info::setupDelTable()
             item = new QTableWidgetItem(astring);
             DELTable->setItem(row,DEL_COL_MOTIF,item);
 
-            item = new QTableWidgetItem(prototypeMaker->isHidden(MVD_PROTO,del) ? "hidden" : "visible");
-            DELTable->setItem(row, DEL_COL_SHOW_MOTIF,item);
+            QCheckBox * cb = new QCheckBox("Hide");
+            cb->setStyleSheet("padding-left : 8px");
+            cb->setChecked(prototypeMaker->isHidden(MVD_PROTO,del));
+            DELTable->setCellWidget(row, DEL_COL_SHOW_DEL,cb);
+            connect(cb, &QCheckBox::clicked, this, [this, row](bool checked){ DELChecked(row, checked); });
 
             if (del == selected_del)
                 DELTable->selectRow(row);
@@ -346,56 +459,30 @@ void page_prototype_info::setupDelTable()
     updateGeometry();
 }
 
-void page_prototype_info::slot_hide()
+void page_prototype_info::protoChecked(int row, bool checked)
 {
-    DELTable->clearSelection();
-
-    DesignElementPtr nullDELL;
-    prototypeMaker->select(MVD_PROTO,nullDELL,false);
-
-    emit sig_updateView();
-}
-
-void page_prototype_info::slot_show()
-{
-    for (int row = 0; row < DELTable->rowCount(); row++)
-    {
-        auto item = DELTable->item(row,DEL_COL_DEL);
-        auto v    = item->data(Qt::UserRole);
-        WeakDesignElementPtr wdel = v.value<WeakDesignElementPtr>();
-        auto del = wdel.lock();
-
-        prototypeMaker->select(MVD_PROTO,del,true);
-    }
-    emit sig_updateView();
-}
-
-void page_prototype_info::slot_protoSelected(int row, int col)
-{
-    Q_UNUSED(col);
-    qDebug() << "page_prototype_info::slot_protoSelected";
+    qDebug() << "page_prototype_info::protoChecked";
 
     auto item = protoTable->item(row,PROTO_COL_PROTO);
     auto v    = item->data(Qt::UserRole);
     WeakProtoPtr wproto = v.value<WeakProtoPtr>();
     auto proto = wproto.lock();
 
-    prototypeMaker->select(MVD_PROTO,proto,false,!prototypeMaker->isHidden(MVD_PROTO,proto));
+    prototypeMaker->select(MVD_PROTO,proto,false,checked);
 
     emit sig_reconstructView();
 }
 
-void page_prototype_info::slot_DELSelected(int row, int col)
+void page_prototype_info::DELChecked(int row, bool checked)
 {
-    Q_UNUSED(col);
-    qDebug() << "page_prototype_info::slot_DELSelected";
+    qDebug() << "page_prototype_info::DELChecked";
     
     auto item = DELTable->item(row,DEL_COL_DEL);
     auto v    = item->data(Qt::UserRole);
-    WeakDesignElementPtr wdel= v.value<WeakDesignElementPtr>();
+    WeakDELPtr wdel= v.value<WeakDELPtr>();
     auto del = wdel.lock();
 
-    prototypeMaker->select(MVD_PROTO,del,true, !prototypeMaker->isHidden(MVD_PROTO,del));
+    prototypeMaker->select(MVD_PROTO,del,true,checked);
 
     emit sig_reconstructView();
 }
@@ -408,51 +495,57 @@ void page_prototype_info::slot_widthChanged(int val)
 
 void  page_prototype_info::drawProtoClicked(bool enb)
 {
-    setProtoViewMode(PROTO_DRAW_PROTO,enb);
+    setProtoViewMode(SHOW_TILING_UNIT,enb);
 }
 
 void  page_prototype_info::drawMapClicked(bool enb)
 {
-    setProtoViewMode(PROTO_DRAW_MAP,enb);
+    setProtoViewMode(SHOW_MAP,enb);
 }
 
 void page_prototype_info::drawMotifClicked(bool enb)
 {
-    setProtoViewMode(PROTO_ALL_MOTIFS,enb);
+    setProtoViewMode(SHOW_MOTIFS,enb);
 }
 
 void page_prototype_info::drawTileClicked(bool enb)
 {
-    setProtoViewMode(PROTO_ALL_TILES,enb);
+    setProtoViewMode(SHOW_TILES,enb);
 }
 
 void page_prototype_info::hiliteMotifClicked(bool enb)
 {
-    setProtoViewMode(PROTO_DEL_MOTIFS,enb);
+    setProtoViewMode(SHOW_TU_MOTIFS,enb);
 }
 
 void page_prototype_info::hiliteTileClicked(bool enb)
 {
-    setProtoViewMode(PROTO_DEL_TILES,enb);
+    setProtoViewMode(SHOW_TU_TILES,enb);
 }
 
 void page_prototype_info::visibleTilesClicked(bool enb)
 {
-    setProtoViewMode(PROTO_VISIBLE_TILE,enb);
+    setProtoViewMode(SHOW_SELECTED_TU_TILES,enb);
 }
 
 void page_prototype_info::visibleMotifsClicked(bool enb)
 {
-    setProtoViewMode(PROTO_VISIBLE_MOTIF,enb);
+    setProtoViewMode(SHOW_SELECTED_TU_MOTIFS,enb);
 }
 
-void page_prototype_info::allVisibleClicked(bool enb)
+void page_prototype_info::placedClicked(bool enb)
 {
-    setProtoViewMode(PROTO_ALL_VISIBLE,enb);
+    setProtoViewMode(SHOW_ALL_TU_TILES,enb);
+}
+
+void page_prototype_info::singleClicked(bool enb)
+{
+    setProtoViewMode(SHOW_ALL_TU_TILES,!enb);
 }
 
 void  page_prototype_info::setProtoViewMode(eProtoViewMode mode, bool enb)
 {
+    qDebug() << "page_prototype_info::setProtoViewMode" << mode << enb;
     int pvm = config->protoViewMode;
     if (enb)
         pvm |= (int)mode;
@@ -500,4 +593,41 @@ void page_prototype_info::setDefaultColors()
     emit sig_reconstructView();
 }
 
+void page_prototype_info::setDistortion()
+{
+    // distortion is used to force desings into a fixed space
+    // by defornming regular polygons by transforming the map
 
+    qreal x = xBox->value();
+    qreal y = yBox->value();
+    QTransform t = QTransform::fromScale(x,y);
+    qDebug() << "scale x" << t.m11() << "y" << t.m22();
+
+    auto proto = protoMaker->getSelectedPrototype();
+    if (proto)
+    {
+        proto->setDistortion(t);
+
+        if (proto->getDistortionEnable())
+        {
+            auto mosaic = mosaicMaker->getMosaic();
+            mosaic->resetProtoMaps();   // really is wipeout
+            mosaic->resetStyleMaps();
+            emit sig_reconstructView();
+        }
+    }
+}
+
+void page_prototype_info::enbDistortion(bool checked)
+{
+    auto proto = protoMaker->getSelectedPrototype();
+    if (proto)
+    {
+        proto->enableDistortion(checked);
+
+        auto mosaic = mosaicMaker->getMosaic();
+        mosaic->resetProtoMaps();   // really is wipeout
+        mosaic->resetStyleMaps();
+        emit sig_reconstructView();
+    }
+}

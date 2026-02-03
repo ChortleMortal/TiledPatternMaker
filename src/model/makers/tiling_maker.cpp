@@ -16,7 +16,6 @@
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view_controller.h"
 #include "gui/viewers/debug_view.h"
-#include "gui/viewers/gui_modes.h"
 #include "gui/viewers/image_view.h"
 #include "gui/widgets/dlg_edgepoly_edit.h"
 #include "gui/widgets/dlg_magnitude.h"
@@ -46,6 +45,14 @@ static QString tm_states[] =
         E2STR(TM_MULTI)
     };
 
+const QString sTMModelMode[]  =
+    {
+        E2STR(TM_MODE_XFORM_ALL),
+        E2STR(TM_MODE_XFORM_TILING),
+        E2STR(TM_MODE_XFORM_UNIQUE_TILE),
+        E2STR(TM_MODE_XFORM_PLACED_TILE),
+};
+
 TilingMaker::TilingMaker()
 {
     //qDebug() << "TilingMaker::TilingMaker";
@@ -71,7 +78,9 @@ void TilingMaker::init()
     connect(this, &TilingMaker::sig_reconstructView, Sys::viewController, &SystemViewController::slot_reconstructView);
     connect(this, &TilingMaker::sig_raiseMenu,       Sys::controlPanel,   &ControlPanel::slot_raisePanel);
 
-    _tilingMakerMouseMode = TM_NO_MOUSE_MODE;
+    _tilingMakerMouseMode     = TM_NO_MOUSE_MODE;
+    _tilingMakerKeyboardMode  = TM_MODE_XFORM_ALL;
+
     _epolyEdit            = nullptr;
     poly_side_count       = Sys::config->polySides;
     poly_rotation         = 0.0;
@@ -144,8 +153,10 @@ void TilingMaker::reload()
         loadTiling(vf,TILM_RELOAD);
 }
 
-void TilingMaker::saveTiling(TilingPtr tiling, bool forceOverwrite)
+bool TilingMaker::saveTiling(TilingPtr tiling, bool forceOverwrite)
 {
+    removeExcludeds(); // remove excludeds before saving
+
     VersionedFile retSavedFile;
     TilingManager tm;
     bool rv = tm.saveTiling(tiling,retSavedFile,forceOverwrite); // Tiling Manager haandles OK/FAIL status
@@ -156,6 +167,8 @@ void TilingMaker::saveTiling(TilingPtr tiling, bool forceOverwrite)
     }
 
     tiling->getSaveStatus()->init();    // now it does not need saving
+
+    return rv;
 }
 
 QString TilingMaker::getStatus()
@@ -1852,6 +1865,32 @@ void TilingMaker::slot_editMagnitude()
 ///
 //////////////////////////////////////////////////////////////////
 
+void TilingMaker::setTMKbdMode(eTMKbdMode mode)
+{
+    if (mode != _tilingMakerKeyboardMode)
+    {
+        _tilingMakerKeyboardMode = mode;
+        qDebug().noquote() << "Keyboard Mode is:" << getTMKbdModeStr();
+        emit sig_TMKbdMode(mode);
+    }
+}
+
+void TilingMaker::resetTMKbdMode()
+{
+    setTMKbdMode(TM_MODE_XFORM_ALL);
+    emit sig_TMKbdMode(_tilingMakerKeyboardMode);
+}
+
+bool TilingMaker::isTMKbdMode(eTMKbdMode mode)
+{
+    return (mode == _tilingMakerKeyboardMode);
+}
+
+QString TilingMaker::getTMKbdModeStr()
+{
+    return sTMModelMode[_tilingMakerKeyboardMode];
+}
+
 bool TilingMaker::procKeyEvent(QKeyEvent * k)
 {
     if (!Sys::viewController->isEnabled(VIEW_TILING_MAKER))
@@ -1868,6 +1907,9 @@ bool TilingMaker::procKeyEvent(QKeyEvent * k)
         case 'F': Sys::tilingMakerView->setFill(!Sys::tm_fill); emit sig_updateView(); break;
         case 'I': toggleInclusion(Sys::tilingMakerView->findTileUnderMouse()); break;
         case 'M': emit sig_raiseMenu(); break;
+        case 'T': setTMKbdMode(TM_MODE_XFORM_TILING); break;
+        case 'V': setTMKbdMode(TM_MODE_XFORM_ALL); break;
+
         case 'X': clearTranslationVectors(); break;
         case '0': updatePolygonSides(0); break;
         case '1': updatePolygonSides(1); break;

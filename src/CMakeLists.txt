@@ -149,16 +149,15 @@ set(PROJECT_SOURCES
     gui/top/system_view_accessor.h
     gui/top/system_view_controller.cpp
     gui/top/system_view_controller.h
-    gui/viewers/crop_viewer.cpp
-    gui/viewers/crop_viewer.h
+    gui/viewers/crop_maker_view.cpp
+    gui/viewers/crop_maker_view.h
     gui/viewers/debug_view.cpp
     gui/viewers/debug_view.h
     gui/viewers/geo_graphics.cpp
     gui/viewers/geo_graphics.h
     gui/viewers/grid_view.cpp
     gui/viewers/grid_view.h
-    gui/viewers/gui_modes.cpp
-    gui/viewers/gui_modes.h
+
     gui/viewers/image_view.cpp
     gui/viewers/image_view.cpp
     gui/viewers/image_view.h
@@ -446,8 +445,8 @@ set(PROJECT_SOURCES
     sys/enums/efillmode.cpp
     sys/enums/efillmode.h
     sys/enums/efilltype.h
-    sys/enums/ekeyboardmode.cpp
-    sys/enums/ekeyboardmode.h
+
+
     sys/enums/elogmode.h
     sys/enums/emapeditor.cpp
     sys/enums/emapeditor.h
@@ -572,6 +571,12 @@ set (OTHER_FILES
     ../etc/models/styles.qmodel
     ../etc/models/Viewers.qmodel
     ../release-notes.txt
+    txt/legacy.txt
+    txt/mapeditor.txt
+    txt/mosaic.txt
+    txt/start-options.txt
+    txt/support.txt
+    txt/tilingmaker.txt
 )
 
 add_custom_target(Xtra-files SOURCES ${OTHER_FILES})

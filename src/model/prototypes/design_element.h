@@ -5,10 +5,13 @@
 #include <QString>
 #include <QTransform>
 
-typedef std::shared_ptr<class Motif>         MotifPtr;
-typedef std::shared_ptr<class Tile>          TilePtr;
-typedef std::shared_ptr<class DesignElement> DesignElementPtr;
-typedef std::shared_ptr<class Prototype>     ProtoPtr;
+typedef std::shared_ptr<class Motif>              MotifPtr;
+typedef std::shared_ptr<class Prototype>          ProtoPtr;
+typedef std::shared_ptr<class Tile>               TilePtr;
+typedef std::shared_ptr<class Tiling>             TilingPtr;
+typedef std::weak_ptr<class Tiling>           WeakTilingPtr;
+typedef std::shared_ptr<class DesignElement>      DELPtr;
+typedef std::weak_ptr<class DesignElement>    WeakDELPtr;
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -22,18 +25,20 @@ typedef std::shared_ptr<class Prototype>     ProtoPtr;
 class DesignElement
 {
 public:
-    DesignElement();
-    DesignElement(const TilePtr & tile, const MotifPtr & motif);
-    DesignElement(const TilePtr & tile);
-    DesignElement(const DesignElementPtr & dep);
-    DesignElement(const DesignElement & other);
+    DesignElement(const TilingPtr & tiling);
+    DesignElement(const TilingPtr & tiling, const TilePtr & tile, const MotifPtr & motif);
+    DesignElement(const TilingPtr & tiling, const TilePtr & tile);
+    DesignElement(const TilingPtr & tiling, const DELPtr & dep);
+    DesignElement(const TilingPtr & tiling, const DesignElement & other);
     ~DesignElement();
 
-    TilePtr     getTile() const;
+    TilePtr     getTile()   const   { return tile; }
+    MotifPtr    getMotif()  const   { return motif; }
+    TilingPtr   getTiling() const   { return  tiling.lock(); }
+
     void        replaceTile(const TilePtr & tile);
     void        exactReplaceTile(const TilePtr & tile);
 
-    MotifPtr    getMotif() const;
     void        setMotif(const MotifPtr & motif);
     bool        validMotifRegularity();
     void        createMotifFromTile();
@@ -46,8 +51,9 @@ public:
     static int  refs;
 
 protected:
-    TilePtr     tile;
-    MotifPtr	motif;
+    TilePtr       tile;
+    MotifPtr	  motif;
+    WeakTilingPtr tiling;  // 27JAN26 - if this was done earlier would have simplified code
 };
 
 #endif

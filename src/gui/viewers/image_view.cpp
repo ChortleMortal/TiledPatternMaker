@@ -13,7 +13,7 @@
 // An ImageViewer (based on QObject) takes a QPixmap and is added to the View
 ImageViewer::ImageViewer() : LayerController(VIEW_BMP_IMAGE,PRIMARY,"Image Viewer")
 {
-    setZValue(1);
+    setZLevel(IMAGE_ZLEVEL);
     connect(this, &ImageViewer::sig_reconstructView, viewControl(),    &SystemViewController::slot_reconstructView);
 }
 

@@ -37,9 +37,10 @@ Prototype::Prototype(TilingPtr t, MosaicPtr m)
     Q_ASSERT(m);
     _tiling         = t;
     wMosaic         = m;
-    _protoMap      = make_shared<Map>("ProtoMap ");
-    viewController = Sys::viewController;
-    cleanseLevel   = 0;
+    _protoMap       = make_shared<Map>("ProtoMap ");
+    viewController  = Sys::viewController;
+    cleanseLevel    = 0;
+    distort         = false;
     cleanseSensitivity = 0;
     refs++;
 }
@@ -48,10 +49,11 @@ Prototype::Prototype(TilingPtr t, MosaicPtr m)
 Prototype::Prototype(TilingPtr t)
 {
     Q_ASSERT(t);
-    _tiling        = t;
-    _protoMap      = make_shared<Map>("ProtoMap ");
-    viewController = Sys::viewController;
-    cleanseLevel   = 0;
+    _tiling         = t;
+    _protoMap       = make_shared<Map>("ProtoMap ");
+    viewController  = Sys::viewController;
+    cleanseLevel    = 0;
+    distort         = false;
     cleanseSensitivity = 0;
     refs++;
 }
@@ -62,6 +64,7 @@ Prototype::Prototype(MapPtr map)
     _protoMap      = map;
     viewController = Sys::viewController;
     cleanseLevel   = 0;
+    distort        = false;
     cleanseSensitivity = 0;
     refs++;
 }
@@ -86,8 +89,8 @@ bool Prototype::operator==(const Prototype & other)
 
     for (int i=0; i <  _designElements.size(); i++)
     {
-        DesignElementPtr ele  = _designElements[i];
-        DesignElementPtr eleo = other._designElements[i];
+        DELPtr ele  = _designElements[i];
+        DELPtr eleo = other._designElements[i];
 
         if (ele->getTile() != eleo->getTile())
             return  false;
@@ -100,7 +103,7 @@ bool Prototype::operator==(const Prototype & other)
 
 void Prototype::wipeoutProtoMap()
 {
-    _filledDCEL.reset();                  // dcel is subordinate so must be erased too.
+    _DCEL.reset();                  // dcel is subordinate so must be erased too.
     _protoMap->clear();
     Q_ASSERT(_protoMap->isEmpty());
 }
@@ -191,7 +194,13 @@ void Prototype::_createMap()
         if (!_protoMap->isEmpty())
             qDebug() << "PROTOTYPE merged";
         else
-            qDebug() << "PROTOTYPE emptu";
+            qDebug() << "PROTOTYPE empty";
+    }
+
+    if (distort && !distortionTransform.isIdentity())
+    {
+        qDebug() << "Prototype using distortion x" << distortionTransform.m11() << "y" << distortionTransform.m22();
+        _protoMap->transform(distortionTransform);
     }
 
     if (_crop)
@@ -323,21 +332,21 @@ void Prototype::buildPrototypeMap(Placements & fillPlacements)
     }
 }
 
-const FilledDCELPtr & Prototype::getFilledDCEL()
+const DCELPtr & Prototype::getDCEL()
 {
-    if (!_filledDCEL)
+    if (!_DCEL)
     {
         QMutexLocker locker(&dcelMutex);
 
         auto protomap = getProtoMap();
-        auto dcel     = std::make_shared<FilledDCEL>(protomap.get());
+        auto dcel     = std::make_shared<DCEL>(protomap.get());
         if (dcel->build())
         {
-            _filledDCEL = dcel;
+            _DCEL = dcel;
             protomap->setDerivedDCEL(dcel);
         }
     }
-    return _filledDCEL;
+    return _DCEL;
 }
 
 void Prototype::replaceTiling(const TilingPtr & newTiling)
@@ -354,7 +363,7 @@ void Prototype::replaceTiling(const TilingPtr & newTiling)
     _protoMap->clear();
 
     QVector<TilePtr>          unusedTiles;
-    QVector<DesignElementPtr> usedElements;
+    QVector<DELPtr> usedElements;
 
     // match elements to tiles
     const QVector<TilePtr> uniqueTiles = newTiling->unit().getUniqueTiles();
@@ -383,7 +392,7 @@ void Prototype::replaceTiling(const TilingPtr & newTiling)
     }
 
     // remove unused elements
-    QVector<DesignElementPtr> unusedElements;
+    QVector<DELPtr> unusedElements;
     for (const auto & element : std::as_const(_designElements))
     {
         if (!usedElements.contains(element))
@@ -400,7 +409,7 @@ void Prototype::replaceTiling(const TilingPtr & newTiling)
     // create new elements
     for (const auto & tile : std::as_const(unusedTiles))
     {
-        DesignElementPtr del = make_shared<DesignElement>(tile);
+        DELPtr del = make_shared<DesignElement>(newTiling,tile);
         addDesignElement(del);
     }
 }
@@ -412,7 +421,7 @@ void Prototype::exactReplaceTiling(const TilingPtr & newTiling)
 
     _protoMap->clear();
 
-    QVector<DesignElementPtr> usedElements;
+    QVector<DELPtr> usedElements;
 
     // match elements to tiles
     const QVector<TilePtr> uniqueTiles = newTiling->unit().getUniqueTiles();
@@ -453,12 +462,12 @@ void Prototype::analyze(TilingPtr newTiling)
     qDebug().noquote() <<  line;
 }
 
-void Prototype::addDesignElement(const DesignElementPtr & element )
+void Prototype::addDesignElement(const DELPtr & element )
 {
     _designElements.push_front(element);
 }
 
-void Prototype::removeDesignElement(const DesignElementPtr & element)
+void Prototype::removeDesignElement(const DELPtr & element)
 {
     _designElements.removeAll(element);
 }
@@ -469,7 +478,7 @@ QString Prototype::info() const
 }
 
 
-DesignElementPtr Prototype::getDesignElement(int index)
+DELPtr Prototype::getDesignElement(int index)
 {
     if (index < _designElements.size())
     {
@@ -477,11 +486,11 @@ DesignElementPtr Prototype::getDesignElement(int index)
     }
 
     //qDebug() << "Prototype::getDesignElement" << "- not found";
-    DesignElementPtr del;
+    DELPtr del;
     return del;
 }
 
-bool  Prototype::containsDesignElement(DesignElementPtr del)
+bool  Prototype::containsDesignElement(DELPtr del)
 {
     if (!del)
         return false;

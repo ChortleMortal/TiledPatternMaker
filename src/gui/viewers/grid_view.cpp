@@ -1,7 +1,6 @@
 #include "gui/top/system_view_controller.h"
 #include "gui/viewers/geo_graphics.h"
 #include "gui/viewers/grid_view.h"
-#include "gui/viewers/gui_modes.h"
 #include "model/makers/tiling_maker.h"
 #include "model/settings/configuration.h"
 #include "model/tilings/placed_tile.h"
@@ -21,7 +20,7 @@ GridView::GridView() : LayerController(VIEW_GRID,DERIVED,"Grid")
 {
     config  = Sys::config;
     genMap  = false;
-    setZValue(config->gridZLevel);
+    setZLevel(config->gridZLevel);
 }
 
 GridView::~GridView()
@@ -39,66 +38,52 @@ void GridView::draw(QPainter * painter)
         gridMap = make_shared<Map>("Grid");
     }
 
-    this->painter = painter;
-    gg = new GeoGraphics(painter,getLayerTransform());
-
     switch (config->gridUnits)
     {
     case GRID_UNITS_TILE:
         if (config->gridTilingAlgo == FLOOD)
-        {
-            drawFromTilingFlood();
-        }
+            drawFromTilingFlood(painter);
         else
-        {
-            drawFromTilingRegion();
-        }
+            drawFromTilingRegion(painter);
         break;
 
     case GRID_UNITS_MODEL:
         if (config->gridModelCenter)
-        {
-            drawModelUnitsCanvasCentered();
-        }
+            drawModelUnitsCentered(painter);
         else
-        {
-            drawModelUnitsModelCentered();
-        }
+            drawModelUnits(painter);
         break;
 
     case GRID_UNITS_SCREEN:
         if (config->gridScreenCenter)
-        {
-            drawScreenUnitsModelCentered();
-        }
+            drawScreenUnitsCentered(painter);
         else
-        {
-            drawScreenUnitsCanvasCentered();
-        }
+            drawScreenUnits(painter);
         break;
 
     case GRID_UNITS_OFF:
-        break;  // do nothing
+        break;
     }
 
-    drawCenters();
+    drawCenters(painter);
 
     if (genMap)
     {
         MapVerifier mv(gridMap);
         mv.verify();
     }
-    delete gg;
 }
 
-void GridView::drawCenters()
+void GridView::drawCenters(QPainter * painter)
 {
     if (config->showGridModelCenter)
     {
+        auto gg = new GeoGraphics(painter,getLayerTransform());
         corners[0] = QLineF(QPointF(-10,10),QPointF(10,-10));
         corners[1] = QLineF(QPointF(-10,-10),QPointF(10,10));
-        ggdrawLine(corners[0],QPen(Qt::green,3));
-        ggdrawLine(corners[1],QPen(Qt::green,3));
+        ggdrawLine(gg,corners[0],QPen(Qt::green,3));
+        ggdrawLine(gg,corners[1],QPen(Qt::green,3));
+        delete gg;
     }
 
     if (config->showGridViewCenter)
@@ -109,12 +94,12 @@ void GridView::drawCenters()
 
         QPen pen(Qt::blue,3);
         painter->setPen(pen);
-        ppdrawLine(corners[0]);
-        ppdrawLine(corners[1]);
+        ppdrawLine(painter,corners[0]);
+        ppdrawLine(painter,corners[1]);
     }
 }
 
-void GridView::drawFromTilingFlood()
+void GridView::drawFromTilingFlood(QPainter *painter)
 {
     qDebug() << "Grid::drawFromTilingFlood()";
 
@@ -149,13 +134,15 @@ void GridView::drawFromTilingFlood()
     qreal gridAngle = qAbs(angle1 - angle2);
     qDebug() << "Line angles:" << angle1 << angle2 << "Grid angle" << gridAngle << "sin" << qAbs(qSin(gridAngle));
     
+    auto gg = new GeoGraphics(painter,getLayerTransform());
+
     QLineF l1 = Geo::extendAsRay(line1,5.0);
     qreal offset = line2.length() * qAbs(qSin(gridAngle));
     l1 = Geo::shiftParallel(l1,offset * -10.0);
     for (int i=0; i <20; i++)
     {
         l1 = Geo::shiftParallel(l1,offset);
-        ggdrawLine(l1,pen);
+        ggdrawLine(gg,l1,pen);
     }
     
     QLineF l2 = Geo::extendAsRay(line2,5.0);
@@ -164,11 +151,13 @@ void GridView::drawFromTilingFlood()
     for (int i=0; i <20; i++)
     {
         l2 = Geo::shiftParallel(l2,offset2);
-        ggdrawLine(l2,pen);
+        ggdrawLine(gg,l2,pen);
     }
+
+    delete gg;
 }
 
-void GridView::drawFromTilingRegion()
+void GridView::drawFromTilingRegion(QPainter *painter)
 {
     qDebug() << "Grid::drawFromTilingRegion()";
 
@@ -248,57 +237,66 @@ void GridView::drawFromTilingRegion()
     p << lineG.p2();
     Q_ASSERT(Loose::equalsPt(lineG.p1(),lineR.p1()));
 
+    auto gg = new GeoGraphics(painter,getLayerTransform());
+
     FillRegion flood(tiling.get(),tiling->hdr().getCanvasSettings().getFillData());
     const Placements & placements = flood.getPlacements(config->repeatMode);
     for (const auto & t : std::as_const(placements))
     {
         auto poly = t.map(p);
-        ggdrawPoly(poly,pen);
+        ggdrawPoly(gg,poly,pen);
     }
 
     static constexpr QColor normal_color = QColor(217,217,255,128);
     gg->fillPolygon(p,normal_color);
+
+    delete gg;
 }
 
 // this is relative to model(0,0)
-void GridView::drawModelUnitsModelCentered()
+void GridView::drawModelUnits(QPainter *painter)
 {
     qreal step = config->gridModelSpacing;
 
-    // this centers on scene
-    QRectF modelRect(-10,-10,20,20);
-    QPointF center = modelRect.center();
+    QPoint pt(0,0);
+    QRect vrect(pt,Sys::viewController->viewSize());
+    QRect mrect = screenToModel(vrect);
 
-    int x_steps = qCeil(modelRect.width()  / step);
-    int y_steps = qCeil(modelRect.height() / step);
+    int x_steps = qCeil(mrect.width()  / step);
+    int y_steps = qCeil(mrect.height() / step);
 
-    drawModelUnits(modelRect,modelRect,center,x_steps,y_steps,step);
+    auto gg = new GeoGraphics(painter,getLayerTransform());
+    drawModelUnits(gg,mrect,mrect,pt,x_steps,y_steps,step);
+    delete gg;
 }
 
-void GridView::drawModelUnitsCanvasCentered()
+void GridView::drawModelUnitsCentered(QPainter *painter)
 {
     qreal step = config->gridModelSpacing;
 
+    QTransform t = getCanvasTransform();     // implies unity model transform
     QRectF viewRect(Sys::viewController->viewRect());
-    viewRect = screenToModel(viewRect);
+    viewRect = t.inverted().mapRect(viewRect);
     QPointF center = viewRect.center();
 
     QRectF modelRect(-10,-10,20,20);
     int x_steps = qCeil(viewRect.width()  / step);
     int y_steps = qCeil(viewRect.height() / step);
 
-    drawModelUnits(modelRect,viewRect,center,x_steps,y_steps,step);
+    auto gg = new GeoGraphics(painter,t);
+    drawModelUnits(gg,modelRect,viewRect,center,x_steps,y_steps,step);
+    delete gg;
 }
 
-void GridView::drawModelUnits(QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step)
+void GridView::drawModelUnits(GeoGraphics *gg, QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step)
 {
     QPen pen(QColor(config->gridColorModel),config->gridModelWidth);
-    painter->setPen(pen);
+    gg->getPainter()->setPen(pen);
 
-    ggdrawLine(r.topLeft(),r.topRight(),pen);
-    ggdrawLine(r.topRight(),r.bottomRight(),pen);
-    ggdrawLine(r.bottomRight(),r.bottomLeft(),pen);
-    ggdrawLine(r.bottomLeft(),r.topLeft(),pen);
+    ggdrawLine(gg,r.topLeft(),r.topRight(),pen);
+    ggdrawLine(gg,r.topRight(),r.bottomRight(),pen);
+    ggdrawLine(gg,r.bottomRight(),r.bottomLeft(),pen);
+    ggdrawLine(gg,r.bottomLeft(),r.topLeft(),pen);
 
     QVector<QLineF> edges = toEdges(r1);
 
@@ -311,7 +309,7 @@ void GridView::drawModelUnits(QRectF r, QRectF r1, QPointF center, int x_steps, 
         {
             QLineF l(QPointF(x,r.top()),QPointF(x,r.bottom()));
             if (intersects(edges,l))
-                ggdrawLine(l,pen);
+                ggdrawLine(gg,l,pen);
             x += step;
         }
     }
@@ -325,7 +323,7 @@ void GridView::drawModelUnits(QRectF r, QRectF r1, QPointF center, int x_steps, 
         {
             QLineF l(QPointF(r.left(),y),QPointF(r.right(),y));
             if (intersects(edges,l))
-                ggdrawLine(l,pen);
+                ggdrawLine(gg,l,pen);
             y += step;
         }
     }
@@ -346,7 +344,7 @@ void GridView::drawModelUnits(QRectF r, QRectF r1, QPointF center, int x_steps, 
 
             QLineF line2 = t.map(line);
             if (intersects(edges,line2))
-                ggdrawLine(line2,pen);
+                ggdrawLine(gg,line2,pen);
 
             QTransform t2;
             t2.translate(mid.x(),mid.y());
@@ -355,14 +353,14 @@ void GridView::drawModelUnits(QRectF r, QRectF r1, QPointF center, int x_steps, 
 
             QLineF line3 = t2.map(line);
             if (intersects(edges,line3))
-                ggdrawLine(line3,pen);
+                ggdrawLine(gg,line3,pen);
 
             y += step;
         }
     }
 }
 
-void GridView::drawScreenUnitsCanvasCentered()
+void GridView::drawScreenUnitsCentered(QPainter *painter)
 {
     qreal step     = config->gridScreenSpacing;
     if (step < 10.0)
@@ -373,14 +371,14 @@ void GridView::drawScreenUnitsCanvasCentered()
 
     QRectF viewRect  = Sys::viewController->viewRect();
     QPointF center   = viewRect.center();
+    {
+        int x_steps = qCeil(viewRect.width()  / step);
+        int y_steps = qCeil(viewRect.height() / step);
 
-    int x_steps = qCeil(viewRect.width()  / step);
-    int y_steps = qCeil(viewRect.height() / step);
-
-    drawScreenUnits(viewRect, viewRect, center, x_steps, y_steps, step);
+        drawScreenUnits(painter,viewRect, viewRect, center, x_steps, y_steps, step);
+    }
 }
-
-void GridView::drawScreenUnitsModelCentered()
+void GridView::drawScreenUnits(QPainter *painter)
 {
     qreal step     = config->gridScreenSpacing;
     if (step < 10.0)
@@ -389,20 +387,22 @@ void GridView::drawScreenUnitsModelCentered()
         return;
     }
 
-    QTransform t = getLayerTransform();
-    QRectF modelRect(-10,-10,20,20);
-    modelRect = t.mapRect(modelRect);
-    QPointF center = modelRect.center();
-
     QRectF viewRect(Sys::viewController->viewRect());
+    QPointF center = viewRect.center();
 
     int x_steps = qCeil(viewRect.width()  / step);
     int y_steps = qCeil(viewRect.height() / step);
 
-    drawScreenUnits(viewRect, modelRect, center, x_steps, y_steps, step);
+    QPointF pt = getModelXform().getTranslate();
+    QTransform t = QTransform::fromTranslate(pt.x(),pt.y());
+
+    painter->save();
+    painter->setWorldTransform(t);
+    drawScreenUnits(painter,viewRect, viewRect, center, x_steps, y_steps, step);
+    painter->restore();
 }
 
-void GridView::drawScreenUnits(QRectF r, QRectF r1, QPointF center,int x_steps, int y_steps, qreal step)
+void GridView::drawScreenUnits(QPainter * painter, QRectF r, QRectF r1, QPointF center,int x_steps, int y_steps, qreal step)
 {
     QPen pen(QColor(config->gridColorScreen),config->gridScreenWidth);
     painter->setPen(pen);
@@ -418,7 +418,7 @@ void GridView::drawScreenUnits(QRectF r, QRectF r1, QPointF center,int x_steps, 
         {
             QLineF l(QPointF(x,r.top()),QPointF(x,r.bottom()));
             if (intersects(edges,l))
-                ppdrawLine(l);
+                ppdrawLine(painter,l);
             x += step;
         }
     }
@@ -431,7 +431,7 @@ void GridView::drawScreenUnits(QRectF r, QRectF r1, QPointF center,int x_steps, 
         {
             QLineF l(QPointF(r.left(),y),QPointF(r.right(),y));
             if (intersects(edges,l))
-                ppdrawLine(l);
+                ppdrawLine(painter,l);
             y += step;
         }
     }
@@ -452,7 +452,7 @@ void GridView::drawScreenUnits(QRectF r, QRectF r1, QPointF center,int x_steps, 
 
             QLineF line2 = t.map(line);
             if (intersects(edges,line2))
-                ppdrawLine(line2);
+                ppdrawLine(painter,line2);
 
             QTransform t2;
             t2.translate(mid.x(),mid.y());
@@ -461,7 +461,7 @@ void GridView::drawScreenUnits(QRectF r, QRectF r1, QPointF center,int x_steps, 
 
             QLineF line3 = t2.map(line);
             if (intersects(edges,line3))
-                ppdrawLine(line3);
+                ppdrawLine(painter,line3);
 
             y += step;
         }
@@ -536,7 +536,7 @@ bool GridView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
     return false;
 }
 
-void GridView::ggdrawLine(QLineF line, QPen pen)
+void GridView::ggdrawLine(GeoGraphics * gg, QLineF line, QPen pen)
 {
     gg->drawLine(line,pen);
     if (genMap)
@@ -547,7 +547,7 @@ void GridView::ggdrawLine(QLineF line, QPen pen)
     }
 }
 
-void GridView::ggdrawLine(QPointF p1, QPointF p2, QPen  pen)
+void GridView::ggdrawLine(GeoGraphics *gg, QPointF p1, QPointF p2, QPen  pen)
 {
     gg->drawLine(p1, p2, pen);
     if (genMap)
@@ -558,7 +558,7 @@ void GridView::ggdrawLine(QPointF p1, QPointF p2, QPen  pen)
     }
 }
 
-void GridView::ggdrawPoly(QPolygonF & poly, QPen  pen)
+void GridView::ggdrawPoly(GeoGraphics *gg, QPolygonF & poly, QPen  pen)
 {
     gg->drawPolygon(poly,pen);
     if (genMap)
@@ -574,7 +574,7 @@ void GridView::ggdrawPoly(QPolygonF & poly, QPen  pen)
     }
 }
 
-void GridView::ppdrawLine(QLineF & line)
+void GridView::ppdrawLine(QPainter * painter, QLineF & line)
 {
     painter->drawLine(line);
     if (genMap)
@@ -585,7 +585,7 @@ void GridView::ppdrawLine(QLineF & line)
     }
 }
 
-void GridView::ppdrawLine(QPointF p1, QPointF p2)
+void GridView::ppdrawLine(QPainter *painter, QPointF p1, QPointF p2)
 {
     painter->drawLine(p1,p2);
     if (genMap)

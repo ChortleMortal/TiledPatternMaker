@@ -8,6 +8,7 @@
 #include "gui/panels/panel_misc.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view_controller.h"
+#include "gui/top/system_view.h"
 #include "gui/viewers/grid_view.h"
 #include "gui/widgets/layout_sliderset.h"
 #include "gui/widgets/smx_widget.h"
@@ -17,14 +18,14 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Gri
 {
     QRadioButton * gridScreen          = new QRadioButton("Screen Units");
     QRadioButton * gridModel           = new QRadioButton("Model Units");
-    QRadioButton * gridTiling          = new QRadioButton("Tiling Repeat Units");
+    QRadioButton * gridTiling          = new QRadioButton("Repeat Unit");
     QRadioButton * gridNone            = new QRadioButton("No Grid");
 
-    QCheckBox    * gridScreenCentered  = new QCheckBox("Model Centered");
+    QCheckBox    * gridScreenCentered  = new QCheckBox("Centered (fixed)");
     SpinSet      * gridScreenSpacing   = new SpinSet("Spacing",100,10,990);
     SpinSet      * gridScreenWidth     = new SpinSet("Width",config->gridScreenWidth,1,9);
 
-    QCheckBox    * gridModelCentered   = new QCheckBox("Canvas Centered");
+    QCheckBox    * gridModelCentered   = new QCheckBox("Centered (fixed)");
     DoubleSpinSet* gridModelSpacing    = new DoubleSpinSet("Spacing",1.0,0.0001,900);
     SpinSet      * gridModelWidth      = new SpinSet("Width",config->gridModelWidth,1,9);
 
@@ -33,7 +34,7 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Gri
     SpinSet      * gridTilingWidth     = new SpinSet("Width",config->gridTilingWidth,1,9);
 
     QCheckBox    * chkDrawModelCenter  = new QCheckBox("Show Model Center");
-    QCheckBox    * chkDrawViewCenter   = new QCheckBox("Show View Center");
+    QCheckBox    * chkDrawViewCenter   = new QCheckBox("Show Window Center");
 
     chkDrawModelCenter->setStyleSheet("color: green");
     chkDrawViewCenter->setStyleSheet("color: blue");
@@ -127,16 +128,6 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Gri
     layout->addWidget(gridNone,row,0);
     row++;
 
-    layout->addWidget(gridTiling,row,0);
-    layout->addWidget(labelT,row,2);
-    layout->addLayout(gridTilingWidth,row,3);
-    QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addWidget(gridTilingAlgo1);
-    hbox->addWidget(gridTilingAlgo2);
-    hbox->addStretch();
-    layout->addLayout(hbox,row,4);
-    row++;
-
     layout->addWidget(gridScreen,row,0);
     layout->addWidget(gridScreenCentered,row,1);
     layout->addWidget(labelS,row,2);
@@ -149,6 +140,16 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Gri
     layout->addWidget(labelM,row,2);
     layout->addLayout(gridModelWidth,row,3);
     layout->addLayout(gridModelSpacing,row,4);
+    row++;
+
+    layout->addWidget(gridTiling,row,0);
+    layout->addWidget(labelT,row,2);
+    layout->addLayout(gridTilingWidth,row,3);
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(gridTilingAlgo1);
+    hbox->addWidget(gridTilingAlgo2);
+    hbox->addStretch();
+    layout->addLayout(hbox,row,4);
     row++;
 
     QGroupBox * gridBox = new QGroupBox("Grid Type");
@@ -179,6 +180,7 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Gri
     QHBoxLayout * hbox3 = new QHBoxLayout();
     hbox3->addWidget(chkDrawModelCenter);
     hbox3->addWidget(chkDrawViewCenter);
+    hbox3->addStretch();
 
     centerBox = new QGroupBox("Centers");
     centerBox->setLayout(hbox3);
@@ -243,18 +245,21 @@ void page_grid::slot_gridUnitsChanged(int id)
 {
     config->gridUnits = eGridUnits(id);
     emit sig_reconstructView();
+    Sys::sysview->setFocus(Qt::MouseFocusReason);
 }
 
 void page_grid::slot_gridScreenCenteredChanged(bool checked)
 {
     config->gridScreenCenter = checked;
     emit sig_reconstructView();
+    Sys::sysview->setFocus(Qt::MouseFocusReason);
 }
 
 void page_grid::slot_gridModelCenteredChanged(bool checked)
 {
     config->gridModelCenter = checked;
     emit sig_reconstructView();
+    Sys::sysview->setFocus(Qt::MouseFocusReason);
 }
 
 void page_grid::slot_drawModelCenterChanged(bool checked)
@@ -283,8 +288,8 @@ void page_grid::slot_gridAngleChanged(qreal angle)
 
 void page_grid::slot_zValueChanged(int value)
 {
-    config->gridZLevel = value;
-    Sys::gridViewer->setZValue(value);
+    config->gridZLevel = (eZLevel)value;
+    Sys::gridViewer->setZLevel((eZLevel)value);
     emit sig_reconstructView();
 }
 

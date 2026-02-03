@@ -6,6 +6,19 @@
 #include <QMap>
 #include "sys/enums/edesign.h"
 
+extern const QString sLegacyMode[];
+
+enum eLegacyMode
+{
+    LEGACY_MODE_DES_POS,
+    LEGACY_MODE_DES_LAYER_SELECT,
+    LEGACY_MODE_DES_ZLEVEL,
+    LEGACY_MODE_DES_STEP,
+    LEGACY_MODE_MODE_DES_SEPARATION,
+    LEGACY_MODE_DES_ORIGIN,
+    LEGACY_MODE_DES_OFFSET
+};
+
 class LoadUnit;
 
 typedef std::shared_ptr<class Design> DesignPtr;
@@ -47,10 +60,17 @@ public:
     LoadUnit * getLoadUnit() { return loadUnit; }
     void reload();
 
+    void     setLegacyKbdMode(eLegacyMode mode);
+    bool     isLegacyKbdMode(eLegacyMode mode);
+    eLegacyMode  getLegacyKbdMode() { return _legacyKeyboardMode; }
+    QString  getLegacyKbdModeStr();
+    void     resetLegacyKbdMode();
+
 signals:
     void sig_loadedDesign(eDesign design);
     void sig_updateView();
     void sig_reconstructView();
+    void sig_LegacyKbdMode(eLegacyMode);
 
 public slots:
     void slot_loadDesign(eDesign design);
@@ -72,8 +92,9 @@ private:
     QVector<DesignPtr>          activeDesigns;
     QString                     designName;
 
-    int stepsTaken;
-    int selectedLayer;
+    eLegacyMode                 _legacyKeyboardMode;
+    int                         stepsTaken;
+    int                         selectedLayer;
 };
 
 #endif // DESIGNCONTROL_H

@@ -12,7 +12,6 @@
 
 #include "gui/top/system_view_controller.h"
 #include "gui/viewers/geo_graphics.h"
-#include "gui/viewers/gui_modes.h"
 #include "model/makers/tiling_maker.h"
 #include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_writer.h"
@@ -188,7 +187,7 @@ MapPtr Tiling::createMapFull()
         motif->setN(tile->numEdges());
         motif->setTile(tile);
         motif->buildMotifMap();
-        DesignElementPtr  dep = make_shared<DesignElement>(tile, motif);
+        DELPtr  dep = make_shared<DesignElement>(ptr,tile, motif);
         proto->addDesignElement(dep);
     }
 
@@ -281,7 +280,7 @@ MapPtr Tiling::debug_createProtoMap()
         motif->setN(tile->numEdges());
         motif->setTile(tile);
         motif->buildMotifMap();
-        DesignElementPtr  dep = make_shared<DesignElement>(tile, motif);
+        DELPtr  dep = make_shared<DesignElement>(ptr,tile, motif);
         proto.addDesignElement(dep);
     }
 
@@ -496,7 +495,7 @@ void Tiling::slot_mouseTranslate(uint sigid, QPointF spt)
 {
     if (!validateSignal()) return;
 
-    if (Sys::guiModes->getTMKbdMode(TM_MODE_XFORM_TILING))
+    if (Sys::tilingMaker->isTMKbdMode(TM_MODE_XFORM_TILING))
     {
         QTransform T              = getCanvasTransform();
         qreal scale               = Transform::scalex(T);
@@ -531,7 +530,7 @@ void Tiling::slot_wheel_scale(uint sigid, qreal delta)
 {
     if (!validateSignal()) return;
 
-    if (Sys::guiModes->getTMKbdMode(TM_MODE_XFORM_TILING))
+    if (Sys::tilingMaker->isTMKbdMode(TM_MODE_XFORM_TILING))
     {
         qreal sc = 1.0 + delta;
         QTransform ts;
@@ -558,7 +557,7 @@ void Tiling::slot_wheel_rotate(uint sigid, qreal delta)
 {
     if (!validateSignal()) return;
 
-    if (Sys::guiModes->getTMKbdMode(TM_MODE_XFORM_TILING))
+    if (Sys::tilingMaker->isTMKbdMode(TM_MODE_XFORM_TILING))
     {
         qWarning() << "FIXME" << "TM_MODE_XFORM_TILING" << "Tiling::slot_wheel_rotate";
 #if 0 // FIXME Tiling::slot_wheel_rotate
@@ -590,7 +589,7 @@ void Tiling::slot_scale(uint sigid, int amount)
 {
     if (!validateSignal()) return;
 
-    if (Sys::guiModes->getTMKbdMode(TM_MODE_XFORM_TILING))
+    if (Sys::tilingMaker->isTMKbdMode(TM_MODE_XFORM_TILING))
     {
         qreal scale = 1.0 + (0.01 * amount);
         PlacedTiles tilingUnit = unit().getIncluded();
@@ -626,7 +625,7 @@ void Tiling::slot_rotate(uint sigid, int amount)
     if (!validateSignal()) return;
 
     qDebug() << "TilingMaker::slot_rotate" << amount;
-    if (Sys::guiModes->getTMKbdMode(TM_MODE_XFORM_TILING))
+    if (Sys::tilingMaker->isTMKbdMode(TM_MODE_XFORM_TILING))
     {
         qreal qdelta = 0.01 * amount;
         PlacedTiles tilingUnit = unit().getIncluded();
@@ -650,7 +649,7 @@ void Tiling:: slot_moveX(uint sigid, qreal amount)
 {
     if (!validateSignal()) return;
 
-    if (Sys::guiModes->getTMKbdMode(TM_MODE_XFORM_TILING))
+    if (Sys::tilingMaker->isTMKbdMode(TM_MODE_XFORM_TILING))
     {
         qreal qdelta = 0.01 * amount;
         PlacedTiles tilingUnit = unit().getIncluded();
@@ -675,7 +674,7 @@ void Tiling::slot_moveY(uint sigid, qreal amount)
 {
     if (!validateSignal()) return;
 
-    if (Sys::guiModes->getTMKbdMode(TM_MODE_XFORM_TILING))
+    if (Sys::tilingMaker->isTMKbdMode(TM_MODE_XFORM_TILING))
     {
         qreal qdelta = 0.01 * amount;
         PlacedTiles tilingUnit = unit().getIncluded();

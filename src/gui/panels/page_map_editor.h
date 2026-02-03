@@ -6,7 +6,7 @@ class MapEditor;
 class MapEditorDb;
 class MapEditorView;
 class CropMaker;
-class CropViewer;
+class CropMakerView;
 class SMXWidget;
 
 #include "gui/panels/panel_page.h"
@@ -103,6 +103,7 @@ protected:
     QGroupBox   * createPushGroup();
     QGroupBox   * createConstructionGroup();
 
+    void updateStyleSelections();
     void refreshStatusBox();
     void tallySelects();
     void tallyCropButtons();
@@ -145,7 +146,7 @@ private:
     QButtonGroup   * viewGroup;
     QButtonGroup   * modeGroup;
 
-    QSpinBox       * styleBox;
+    QComboBox     * validStyles;    // styles which have style maps
 
     VersionedFile   lastNamedTemplate;
     VersionedName   lastNamedMap;

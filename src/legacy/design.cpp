@@ -135,9 +135,9 @@ void  Design::zPlus(int layerNum)
         LayerPtr layer = t->geSubLayer(layerNum);
         if (layer)
         {
-            int zlevel = layer->zValue() + 1;
-            layer->setZValue(zlevel);
-            qDebug() << layerNum << "z-level:" << layer->zValue();
+            eZLevel z = layer->getZLevel();
+            layer->setZLevel(eZLevel(z + 1));
+            qDebug() << layerNum << "z-level:" << layer->getZLevel();
         }
     }
 }
@@ -150,9 +150,9 @@ void  Design::zMinus(int layerNum)
         LayerPtr layer = t->geSubLayer(layerNum);
         if (layer)
         {
-            int zlevel = layer->zValue() - 1;
-            layer->setZValue(zlevel);
-            qDebug() << layerNum << "z-level:" << layer->zValue();
+            eZLevel zlevel = layer->getZLevel();
+            layer->setZLevel(eZLevel(zlevel-1));
+            qDebug() << layerNum << "z-level:" << layer->getZLevel();
         }
     }
 }

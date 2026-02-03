@@ -5,7 +5,7 @@
 #include <QWidget>
 #include "gui/model_editors/motif_edit/design_element_selector.h"
 
-typedef std::shared_ptr<class DesignElement>       DesignElementPtr;
+typedef std::shared_ptr<class DesignElement>       DELPtr;
 typedef std::shared_ptr<class DesignElementButton> DELBtnPtr;
 typedef std::shared_ptr<class Motif>               MotifPtr;
 typedef std::shared_ptr<class Prototype>           ProtoPtr;
@@ -37,7 +37,7 @@ public:
 
     void delegate(DELBtnPtr btn, bool add, bool set);
 
-    DELBtnPtr getButton(DesignElementPtr del) { return delSelector->getButton(del); }
+    DELBtnPtr getButton(DELPtr del) { return delSelector->getButton(del); }
     DELBtnPtr getDelegatedButton()            { return delSelector->getDelegated(); }
 
     void   update();

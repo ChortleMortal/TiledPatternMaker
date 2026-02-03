@@ -3,6 +3,7 @@
 #define MAP_EDITOR_H
 
 #include "sys/enums/emapeditor.h"
+#include "sys/enums/estatemachineevent.h"
 #include "model/tilings/tiling.h"
 #include "gui/map_editor/map_editor_mouseactions.h"
 #include "gui/map_editor/map_editor_stash.h"
@@ -10,6 +11,7 @@
 
 typedef std::shared_ptr<class Tiling>        TilingPtr;
 typedef std::shared_ptr<class Mosaic>        MosaicPtr;
+typedef std::shared_ptr<class Style>         StylePtr;
 typedef std::shared_ptr<class Prototype>     ProtoPtr;
 
 class MapEditorSelection;
@@ -32,8 +34,8 @@ public:
     ~MapEditor();
     void    init();
 
-    bool    loadMosaicPrototype(int style);
-    void    loadMotifPrototype();
+    bool    loadFromMosaicStyle(StylePtr style);
+    void    loadFromfPrototypeMaker();
     bool    loadSelectedMotifs();
     void    loadTilingUnit();
     void    loadTilingRepeated();
@@ -45,8 +47,8 @@ public:
     bool    createLocalDCEL(MapPtr map);
 
     bool    pushToMosaic(MapEditorLayer & layer);
-    bool    pushToMotif(MapPtr map);
-    bool    pushToTiling(MapPtr map, bool outer);
+    bool    pushToMotif(MapEditorLayer & layer);
+    bool    pushToTiling(MapEditorLayer &layer, bool outer);
 
 
     QString  getStatus();
@@ -78,8 +80,7 @@ signals:
     void    sig_styleMapUpdated(MapPtr map);
 
 protected:
-    ProtoPtr createPrototypeFromMap(MapPtr map);
-    bool     createMosiacFromPrototypes(QVector<ProtoPtr> &protos);
+    void     updateMosiacWithPrototype(ProtoPtr proto, eMOSM_Event event);
 
 private:
     MapEditorStash         _stash;                // stash of construction lines

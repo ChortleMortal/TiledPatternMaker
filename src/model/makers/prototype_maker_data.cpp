@@ -39,7 +39,7 @@ void ProtoMakerData::setPrototypes(QVector<ProtoPtr> & protos)
     prototypes.clear();
     bool first = true;
 
-    QVector<DesignElementPtr> dels;
+    QVector<DELPtr> dels;
 
     for (const auto & proto : std::as_const(protos))
     {
@@ -108,7 +108,7 @@ void ProtoMakerData::remove(ProtoPtr proto)
     }
     prototypes = cleaned;
 
-    QVector<DesignElementPtr> & dels = proto->getDesignElements();
+    QVector<DELPtr> & dels = proto->getDesignElements();
 
     for (DelInfo & dinfo : designElements)
     {
@@ -198,7 +198,7 @@ void ProtoMakerData::select(eMVDType type, ProtoPtr proto, bool multi, bool hidd
     }
 }
 
-void ProtoMakerData::select(eMVDType type, DesignElementPtr designElement, bool multi, bool hidden)
+void ProtoMakerData::select(eMVDType type, DELPtr designElement, bool multi, bool hidden)
 {
     selectedDesignElement = designElement;
 
@@ -230,7 +230,7 @@ void ProtoMakerData::select(eMVDType type, DesignElementPtr designElement, bool 
     }
 }
 
-void ProtoMakerData::deselect(eMVDType type, DesignElementPtr designElement, bool multi, bool hidden)
+void ProtoMakerData::deselect(eMVDType type, DELPtr designElement, bool multi, bool hidden)
 {
     Q_ASSERT(multi);
 
@@ -323,7 +323,7 @@ void ProtoMakerData::rebuildCurrentMotif()
     }
 }
 
-DesignElementPtr ProtoMakerData::getDesignElement(TilePtr tile)
+DELPtr ProtoMakerData::getDesignElement(TilePtr tile)
 {
     for (const auto & info : std::as_const(designElements))
     {
@@ -336,10 +336,10 @@ DesignElementPtr ProtoMakerData::getDesignElement(TilePtr tile)
             }
         }
     }
-    return DesignElementPtr();
+    return DELPtr();
 }
 
-void ProtoMakerData::hide(eMVDType type, DesignElementPtr del, bool hide)
+void ProtoMakerData::hide(eMVDType type, DELPtr del, bool hide)
 {
     for (auto & info : designElements)
     {
@@ -390,7 +390,7 @@ bool ProtoMakerData::isHidden(eMVDType type, MotifPtr motif)
     return false;
 }
 
-bool ProtoMakerData::isHidden(eMVDType type, DesignElementPtr dep)
+bool ProtoMakerData::isHidden(eMVDType type, DELPtr dep)
 {
     for (const auto & info : designElements)
     {

@@ -15,6 +15,7 @@ Style::Style(const ProtoPtr & proto) : LayerController(VIEW_MOSAIC,PRIMARY,"Styl
     paintSVG   = false;
     created    = false;
     generator  = nullptr;
+    setClipable(true);
     refs++;
 
     connect(Sys::mapEditor, &MapEditor::sig_styleMapUpdated, this, &Style::slot_styleMapUpdated);
@@ -23,6 +24,7 @@ Style::Style(const ProtoPtr & proto) : LayerController(VIEW_MOSAIC,PRIMARY,"Styl
 Style::Style(eModelType modelType, QString name) : LayerController(VIEW_MOSAIC,modelType,name)
 {
     created    = false;
+    setClipable(true);
     refs++;
     connect(Sys::mapEditor, &MapEditor::sig_styleMapUpdated, this, &Style::slot_styleMapUpdated);
 }
@@ -33,6 +35,7 @@ Style::Style(const StylePtr & other) : LayerController(other)
     paintSVG   = false;
     created    = false;
     generator  = nullptr;
+    setClipable(true);
     connect(Sys::mapEditor, &MapEditor::sig_styleMapUpdated, this, &Style::slot_styleMapUpdated);
     refs++;
 }

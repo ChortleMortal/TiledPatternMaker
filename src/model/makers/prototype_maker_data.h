@@ -6,14 +6,14 @@
 
 typedef std::shared_ptr<class Motif>            MotifPtr;
 typedef std::shared_ptr<class Prototype>        ProtoPtr;
-typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+typedef std::shared_ptr<class DesignElement>    DELPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Tile>             TilePtr;
 
 typedef std::weak_ptr<class Prototype>          WeakProtoPtr;
 typedef std::weak_ptr<class DesignElement>      WeakDELPtr;
 
-typedef QVector<DesignElementPtr>   DesignUnit;
+typedef QVector<DELPtr>   DesignUnit;
 
 class MotifMakerWidget;
 class PrototypeMaker;
@@ -29,7 +29,7 @@ enum eMVDType
  * The Prototype Maker puts information into the ProtoTypeData which is
  * read (shared) directly by both the PrototypeMakerView and the Motif Maker View.
  * The controlling menus for these makers use specific indices into the data
- * MVD_DELEM the Motif (designEelement) view and MVP_PROT for the proto view)
+ * MVD_DELEM the Motif (designElement) view and MVP_PROT for the proto view)
  *
  */
 
@@ -66,18 +66,18 @@ public:
     DesignUnit                  getAllDELs();
 
     ProtoPtr                    getSelectedPrototype()  { return selectedPrototype.lock(); }
-    DesignElementPtr            getSelectedDEL()        { return selectedDesignElement.lock(); }
+    DELPtr            getSelectedDEL()        { return selectedDesignElement.lock(); }
     DesignUnit                  getSelectedDELs(eMVDType type);
 
     bool isHidden(eMVDType type,ProtoPtr proto);
-    bool isHidden(eMVDType type,DesignElementPtr del);
+    bool isHidden(eMVDType type,DELPtr del);
     bool isHidden(eMVDType type,MotifPtr motif);
 
     void select(  eMVDType type, ProtoPtr proto,                 bool multi, bool hidden = false);
-    void select(  eMVDType type, DesignElementPtr designElement, bool multi, bool hidden = false);
-    void deselect(eMVDType type, DesignElementPtr designElement, bool multi, bool hidden = false);
+    void select(  eMVDType type, DELPtr designElement, bool multi, bool hidden = false);
+    void deselect(eMVDType type, DELPtr designElement, bool multi, bool hidden = false);
 
-    bool isSelected(DesignElementPtr designElement)     { return (designElement == selectedDesignElement.lock()); }
+    bool isSelected(DELPtr designElement)     { return (designElement == selectedDesignElement.lock()); }
     bool isSelected(ProtoPtr proto)                     { return (proto == selectedPrototype.lock()); }
 
     void                        dumpData(eMVDType type);
@@ -99,10 +99,10 @@ protected:
     ProtoPtr                    remove(TilingPtr tiling);
     void                        remove(ProtoPtr proto);
 
-    DesignElementPtr            getDesignElement(TilePtr tile);
+    DELPtr            getDesignElement(TilePtr tile);
 
     void                        hide(eMVDType type,ProtoPtr proto,       bool hide);
-    void                        hide(eMVDType type,DesignElementPtr del, bool hide);
+    void                        hide(eMVDType type,DELPtr del, bool hide);
 
 private:
     PrototypeMaker *    parent;

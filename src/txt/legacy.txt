@@ -1,30 +1,18 @@
+<H1>Legacy Keyboard Shortcuts</H1>
+These keyboard actions operate when a legacy design is visible. They are in addtion to the common keyboard shortcuts
+
 <pre>
     A   MODE_ORIGIN    up/alt-up/down/alt-down/left/alt-left/right/alt-right
     B   MODE_OFFSET    up/down/left/right
-    D   Duplicate (in new window)
-    G   Grid (toggle)
     H   Hide Circles (toggle)
     I   Layer In (show)
     L   MODE_LAYER  0-9
-    M   Raise Menu
-    N   Bring to center of primary screen
     O   Layer Out (hide)
-    P   Print (actually Save Image)
-    Q   Quit app (or quit cycler)
-ALT-R   Run (start timer and mode layer)
     S   MODE_SEPARATION  up/down/left/right
 ALT-S   MODE_STEP  up/down  0-9
-    X   Show Center/Show circle (X toggle)
-    Y   Save as SVG
-    Z   MODE_ZLEVEL   up/down
 
-    0   Toggle Design 0 visibility
+    0-9 Layer select
     1   Toggle Design 0 visibility
     2   Toggle Design 2 visibility
     3   Toggle Design 3 visibility
-    ESC MODE_DEFAULT
-    F1  Help (show this)
-    F2  MODE_TRANSFORM up/down/left/right/,/./-/=
-    F4  Dump info
-    F5  Unload canvas (drain the swamp)
 </pre>

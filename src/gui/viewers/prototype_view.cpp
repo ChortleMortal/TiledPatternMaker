@@ -49,16 +49,28 @@ void PrototypeView::draw()
     //qDebug() << "PrototypeView::draw  mode=" << config->protoViewMode;
     //Sys::prototypeMaker->dumpData(MVD_PROTO);
 
+    const int mode = Sys::config->protoViewMode;
+
     for (const auto & proto : Sys::prototypeMaker->getPrototypes())
     {
         if (proto->hasContent() && !Sys::prototypeMaker->isHidden(MVD_PROTO,proto))
         {
-            drawProto(proto);
+            drawProto(mode, proto);
+        }
+    }
+    for (const auto & proto : Sys::prototypeMaker->getPrototypes())
+    {
+        for (const auto & del : proto->getDesignElements())
+        {
+            if (!Sys::prototypeMaker->isHidden(MVD_PROTO,del))
+            {
+                drawDEL(mode,proto,del);
+            }
         }
     }
 }
 
-void PrototypeView::drawProto(ProtoPtr proto)
+void PrototypeView::drawProto(const int mode, ProtoPtr proto)
 {
     Q_ASSERT(proto);
 
@@ -69,13 +81,10 @@ void PrototypeView::drawProto(ProtoPtr proto)
         return;
     }
 
-    //qDebug() << "PrototypeView  proto="  << proto.get();
-
-    mode = Sys::config->protoViewMode;
-
-    if (mode & PROTO_DRAW_MAP)
+    if (mode & SHOW_MAP)
     {
         MapPtr map = proto->getProtoMap();
+
         //qDebug() << "PrototypeView  proto="  << proto.get() << "protoMap" << map.get();
 
         QPen pen(colors.mapColor,lineWidth);
@@ -85,7 +94,7 @@ void PrototypeView::drawProto(ProtoPtr proto)
         for (const auto & edge : std::as_const(map->getEdges()))
         {
             gg->drawEdge(edge,pen);
-
+#if 0
             QColor c1,c2;
 
             int num1 = nmap.getNeighbours(edge->v1)->numNeighbours();
@@ -126,13 +135,17 @@ void PrototypeView::drawProto(ProtoPtr proto)
             gg->drawCircle(edge->v2->pt,6,QPen(Qt::red),QBrush(c2));
             gg->drawCircle(edge->v1->pt,3,pen, QBrush(pen.color()));
             gg->drawCircle(edge->v2->pt,3,pen, QBrush(pen.color()));
+#else
+            gg->drawCircle(edge->v1->pt,2,QPen(Qt::red),QBrush(Qt::red));
+            gg->drawCircle(edge->v2->pt,2,QPen(Qt::red),QBrush(Qt::red));
+#endif
         }
     }
 
-    FillRegion flood(proto->getTiling().get(),proto->getMosaic()->getCanvasSettings().getFillData());
+    FillRegion flood(tiling.get(),proto->getMosaic()->getCanvasSettings().getFillData());
     Placements fillPlacements = flood.getPlacements(Sys::config->repeatMode);
 
-    if (mode & (PROTO_ALL_TILES | PROTO_ALL_MOTIFS))
+    if (mode & (SHOW_TILES | SHOW_MOTIFS))
     {
         for (const auto & T1 : std::as_const(fillPlacements))
         {
@@ -147,12 +160,12 @@ void PrototypeView::drawProto(ProtoPtr proto)
                     QTransform T2 = T0 * T1;
                     gg->pushAndCompose(T2);
 
-                    if (mode & PROTO_ALL_TILES)
+                    if (mode & SHOW_TILES)
                     {
                         ViewerServices::drawTile(gg,tile,QBrush(),QPen(colors.tileColor,lineWidth));
                     }
 
-                    if (mode & PROTO_ALL_MOTIFS)
+                    if (mode & SHOW_MOTIFS)
                     {
                         ViewerServices::drawMotif(gg,motif,QPen(colors.motifColor,lineWidth));
                     }
@@ -163,7 +176,7 @@ void PrototypeView::drawProto(ProtoPtr proto)
         }
     }
 
-    if (mode & PROTO_DRAW_PROTO)
+    if (mode & SHOW_TILING_UNIT)
     {
         QPen motifTile(colors.delTileColor,1,         Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         QPen motifPen(colors.delMotifColor,lineWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
@@ -185,12 +198,12 @@ void PrototypeView::drawProto(ProtoPtr proto)
                 gg->fillEdgePoly(ep,pen);
                 gg->drawEdgePoly(ep,pen2);
 
-                if (mode & PROTO_DEL_TILES)
+                if (mode & SHOW_TU_TILES)
                 {
                     gg->drawEdgePoly(ep,motifTile);
                 }
 
-                if (mode & PROTO_DEL_MOTIFS)
+                if (mode & SHOW_TU_MOTIFS)
                 {
                     ViewerServices::drawMotif(gg,motif,motifPen);
                 }
@@ -199,68 +212,66 @@ void PrototypeView::drawProto(ProtoPtr proto)
             }
         }
     }
+}
 
-    if (mode & PROTO_ALL_VISIBLE)
+void PrototypeView::drawDEL(const int mode, ProtoPtr proto, DELPtr del)
+{
+    TilingPtr tiling = proto->getTiling();
+    if (!tiling)
     {
-        for (const auto & del : std::as_const(proto->getDesignElements()))
-        {
-            if (!Sys::prototypeMaker->isHidden(MVD_PROTO,del))
-            {
-                auto motif = del->getMotif();
-                auto tile  = del->getTile();
-                auto tilePlacements = tiling->unit().getPlacements(tile);
-                for (const auto & T0 : std::as_const(tilePlacements))
-                {
-                    gg->pushAndCompose(T0);
+        qWarning() << "Tiling not found in Prototype";
+        return;
+    }
 
-                    if (mode & PROTO_VISIBLE_TILE)
-                    {
-                        QPen pen(colors.visibleTileColor,lineWidth);
-                        ViewerServices::drawTile(gg,tile,QBrush(),pen);
-                    }
-                    if  (mode & PROTO_VISIBLE_MOTIF)
-                    {
-                        QPen pen(colors.visibleMotifColor,lineWidth);
-                        ViewerServices::drawMotif(gg,motif,pen);
-                    }
-                    gg->pop();
-                }
+    if (mode & SHOW_ALL_TU_TILES)
+    {
+        auto motif = del->getMotif();
+        auto tile  = del->getTile();
+        auto tilePlacements = tiling->unit().getPlacements(tile);
+        for (const auto & T0 : std::as_const(tilePlacements))
+        {
+            gg->pushAndCompose(T0);
+
+            if (mode & SHOW_SELECTED_TU_TILES)
+            {
+                QPen pen(colors.visibleTileColor,lineWidth);
+                ViewerServices::drawTile(gg,tile,QBrush(),pen);
             }
+            if  (mode & SHOW_SELECTED_TU_MOTIFS)
+            {
+                QPen pen(colors.visibleMotifColor,lineWidth);
+                ViewerServices::drawMotif(gg,motif,pen);
+            }
+            gg->pop();
         }
     }
     else
     {
-        for (const auto & del : std::as_const(proto->getDesignElements()))
+        auto motif = del->getMotif();
+        auto tile  = del->getTile();
+        auto placements = tiling->unit().getPlacements(tile);
+        QTransform T0;
+        if (placements.size())
         {
-            if (!Sys::prototypeMaker->isHidden(MVD_PROTO,del))
+            T0 = placements.first();
+            if (!T0.isIdentity())
             {
-                auto motif = del->getMotif();
-                auto tile  = del->getTile();
-                auto placements = tiling->unit().getPlacements(tile);
-                QTransform T0;
-                if (placements.size())
-                {
-                    T0 = placements.first();
-                    if (!T0.isIdentity())
-                    {
-                        gg->pushAndCompose(T0);
-                    }
-                }
-                if (mode & PROTO_VISIBLE_TILE)
-                {
-                    QPen pen(colors.visibleTileColor,lineWidth);
-                    ViewerServices::drawTile(gg,tile,QBrush(),pen);
-                }
-                if  (mode & PROTO_VISIBLE_MOTIF)
-                {
-                    QPen pen(colors.visibleMotifColor,lineWidth);
-                    ViewerServices::drawMotif(gg,motif,pen);
-                }
-                if (!T0.isIdentity())
-                {
-                    gg->pop();
-                }
+                gg->pushAndCompose(T0);
             }
+        }
+        if (mode & SHOW_SELECTED_TU_TILES)
+        {
+            QPen pen(colors.visibleTileColor,lineWidth);
+            ViewerServices::drawTile(gg,tile,QBrush(),pen);
+        }
+        if  (mode & SHOW_SELECTED_TU_MOTIFS)
+        {
+            QPen pen(colors.visibleMotifColor,lineWidth);
+            ViewerServices::drawMotif(gg,motif,pen);
+        }
+        if (!T0.isIdentity())
+        {
+            gg->pop();
         }
     }
 }
@@ -278,7 +289,7 @@ void PrototypeView::slot_mouseDoublePressed(QPointF spt)
 
 ProtoViewColors::ProtoViewColors()
 {
-    visibleTileColor = QColor(Qt::darkCyan);
+    visibleTileColor = QColor(Qt::black);
     visibleMotifColor = QColor(Qt::darkBlue);
 }
 

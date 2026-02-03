@@ -262,12 +262,26 @@ void page_save::slot_saveMosaic()
             box.setWindowTitle("Save Mosaic");
             box.setText("Tiling requires saving");
             box.setInformativeText("Please save tiling first");
-            box.setStandardButtons(QMessageBox::Ignore | QMessageBox::Cancel);
-            box.setDefaultButton(QMessageBox::Cancel);
-            int rv = box.exec();
-            if (rv == QMessageBox::Cancel)
+            auto tilingButton  = box.addButton("SaveTiling First",QMessageBox::ActionRole);
+            auto mosaicButton  = box.addButton("Just Save Mosaic",QMessageBox::YesRole);
+            auto cancelButton  = box.addButton("Cancel",QMessageBox::NoRole);
+            box.setDefaultButton(tilingButton);
+            box.exec();
+            if (box.clickedButton() == cancelButton)
             {
                 return;
+            }
+            else if (box.clickedButton() == tilingButton)
+            {
+                bool rv = saveTiling();
+                if (!rv)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                Q_ASSERT(box.clickedButton() == mosaicButton);
             }
         }
     }
@@ -298,6 +312,11 @@ void page_save::slot_tilingChanged(int idx)
 
 void page_save::slot_saveTiling()
 {
+    saveTiling();
+}
+
+bool page_save::saveTiling()
+{
     // name to be saved overwrites name currently in tile
     VersionedName vname(tile_names->currentText());
     if (vname.isEmpty() || vname.get().contains(Sys::defaultTilingName))
@@ -307,7 +326,7 @@ void page_save::slot_saveTiling()
         box.setWindowTitle("Save Tiling");
         box.setText("There is no tiling name. A tiling name is required.");
         box.exec();
-        return;
+        return false;
     }
 
     // the tiling selectet in this page is saved, irregardless
@@ -326,7 +345,7 @@ void page_save::slot_saveTiling()
         box.exec();
 
         setup();
-        return;
+        return false;
     }
 
     if (tiling->unit().numIncluded() == 0)
@@ -336,7 +355,7 @@ void page_save::slot_saveTiling()
         box.setWindowTitle("Save Tiling");
         box.setText("There are no placed tiles.  Please add some tiles.");
         box.exec();
-        return;
+        return false;
     }
 
     int count = tiling->unit().getUniqueTiles().count();
@@ -352,7 +371,7 @@ void page_save::slot_saveTiling()
         int rv = box.exec();
         if (rv == QMessageBox::Cancel)
         {
-            return;
+            return false;
         }
     }
 
@@ -361,9 +380,13 @@ void page_save::slot_saveTiling()
     tiling->setAuthor(tile_author->text());
     tiling->setDescription(tile_desc->toPlainText());
 
-    tilingMaker->saveTiling(tiling,false);
+    bool rv = tilingMaker->saveTiling(tiling,false);
+
+    emit sig_updateView();
 
     setup();
+
+    return rv;
 }
 
 void page_save::slot_saveImage()

@@ -43,6 +43,7 @@ public:
     QPointF     screenToModel(QPointF pt);
     QPoint      screenToModel(QPoint pt);
     QPointF     screenToModel(int x, int y);
+    QRect       screenToModel(QRect rect);
     QRectF      screenToModel(QRectF rect);
     qreal       screenToModel(qreal val);
     QPolygonF   screenToModel(QPolygonF poly);
@@ -50,6 +51,7 @@ public:
 
     QPointF     modelToScreen(QPointF pt);
     QLineF      modelToScreen(QLineF line);
+    QRect       modelToScreen(QRect rect);
     QRectF      modelToScreen(QRectF rect);
     QPolygonF   modelToScreen(QPolygonF poly);
     Circle      modelToScreen(Circle c);
@@ -65,14 +67,13 @@ public:
     virtual QTransform  getCanvasTransform();
     virtual QTransform  getModelTransform();
     virtual QTransform  getLayerTransform();
-            QTransform  getLayerInvertedTransform()  { return invertedLayer; }
 
     virtual QString layerName()         { return _name; }
 
     bool        correctLegacyLayer(QPointF mpt);
 
-    void        setZValue(int z);
-    int         zValue()                { return zlevel; }
+    void        setZLevel(eZLevel z)    { _zlevel = z; }
+    eZLevel     getZLevel()             { return _zlevel; }
 
     void        setVisible(bool enb)    { visible = enb; }
     bool        isVisible()             { return visible; }
@@ -88,6 +89,9 @@ public:
     bool        isBreakaway()           { return !_useSMX; }
     bool        isLocked()              { return (_lockState > 0); }
     bool        isSolo()                { return _solo; }
+
+    bool        isClipable()            { return _clipable; }
+    void        setClipable(bool set)   { _clipable = set; }
 
     void        addSubLayer(LayerPtr item);
     void        removeSubLayer(LayerPtr item);
@@ -138,15 +142,16 @@ private:
     void        computeLayerTransform();
 
     QTransform  layerTransform;     // calculated
-    QTransform  invertedLayer;      // calculated
 
     bool        visible;
-    int         zlevel;
+    eZLevel     _zlevel;
 
     eModelType  _modelType;     // PRIMARY or DERIVED
     bool        _useSMX;        // System Model Xform true: use xf_model, false: use local xform;
     bool        _solo;
     uint        _lockState;
+
+    bool        _clipable;
 
     QString     _name;
 

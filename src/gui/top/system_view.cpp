@@ -6,15 +6,14 @@
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
 #include "gui/top/system_view_controller.h"
-#include "gui/viewers/crop_viewer.h"
-#include "gui/viewers/gui_modes.h"
+#include "gui/viewers/crop_maker_view.h"
 #include "gui/viewers/image_view.h"
-#include "gui/widgets/mouse_mode_widget.h"
 #include "gui/widgets/transparent_widget.h"
 #include "legacy/design_maker.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/tiling_maker.h"
 #include "model/settings/configuration.h"
+#include "model/tilings/backgroundimage.h"
 #include "sys/engine/image_engine.h"
 #include "sys/engine/stepping_engine.h"
 #include "sys/geometry/crop.h"
@@ -103,7 +102,6 @@ void SystemView::unloadViewers()
     viewSuspendPaint(true);
     clearLayers();
     clearLayout();
-    _painterCrop.reset();
     viewSuspendPaint(false);
 }
 
@@ -189,15 +187,10 @@ void SystemView::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
-    auto crop = getPainterClip();
-    if (crop)
-    {
-        auto transform = Sys::cropViewer->getLayerTransform();
-        crop->setPainterClip(&painter,transform);
-    }
+    CropPtr painterCrop = getPainterCrop();
 
     // paints the View
-    activeLayers.paint(painter);
+    activeLayers.paint(&painter,painterCrop);
 
     processLoadState(Sys::designMaker->getLoadUnit());
     processLoadState(Sys::tilingMaker->getLoadUnit());
@@ -343,6 +336,18 @@ bool SystemView::procCommonKey(QKeyEvent *k)
     int key = k->key();
     switch (key)
     {
+    case 'B':
+    {
+        auto bip = Sys::getBackgroundImageFromSource();
+        if (bip)
+        {
+            if (k->modifiers() & Qt::ShiftModifier)
+                bip->setZLevel(BKGD_IMG__LIFTED_ZLEVEL);
+            else
+               bip->setZLevel(BKGD_IMG_ZLEVEL);
+        }
+        Sys::controlPanel->delegateView(VIEW_BKGD_IMG,!parent->isEnabled(VIEW_BKGD_IMG));
+    }   break;
     case 'D':  duplicateView(); break;
     case 'E':  parent->slot_reconstructView(); break;    // just for debug
     case 'G':  Sys::controlPanel->delegateView(VIEW_GRID,!parent->isEnabled(VIEW_GRID)); break;
@@ -377,13 +382,9 @@ bool SystemView::procCommonKey(QKeyEvent *k)
                     emit sig_close();
                break;
     case 'R':  Sys::dontReplicate = !Sys::dontReplicate; emit sig_rebuildMotif(); break;
-    case 'T':  Sys::guiModes->setTMKbdMode(TM_MODE_XFORM_TILING); break;
-    case 'V':  Sys::guiModes->setTMKbdMode(TM_MODE_XFORM_ALL); break;
     case 'Y':  emit sig_saveSVG(); break;
 
-    case Qt::Key_Escape: Sys::guiModes->setTMKbdMode(TM_MODE_XFORM_ALL); break;
     case Qt::Key_F1: Shortcuts::popup(VIEW_MOSAIC); break;
-    case Qt::Key_F2: Sys::guiModes->setTMKbdMode(TM_MODE_XFORM_ALL); break;
     case Qt::Key_F4: Sys::dumpRefs(); break;
     case Qt::Key_Space: if (SteppingEngine::isRunning()) emit sig_stepperKey(key); break;
     default:
@@ -399,15 +400,15 @@ bool SystemView::procLegacyKeyEvent(QKeyEvent *k)
     int key = k->key();
     switch (key)
     {
-    case 'A':  Sys::guiModes->setLegacyKbdMode(LEGACY_MODE_DES_ORIGIN); break;
-    case 'B':  Sys::guiModes->setLegacyKbdMode(LEGACY_MODE_DES_OFFSET); break;
+    case 'A':  Sys::designMaker->setLegacyKbdMode(LEGACY_MODE_DES_ORIGIN); break;
+    case 'B':  Sys::designMaker->setLegacyKbdMode(LEGACY_MODE_DES_OFFSET); break;
     case 'H':  Sys::hideCircles = !Sys::hideCircles; QWidget::update(); break;
     case 'I':  Sys::designMaker->designLayerShow(); break;  // I=in
-    case 'L':  Sys::guiModes->setLegacyKbdMode(LEGACY_MODE_DES_LAYER_SELECT); break;
+    case 'L':  Sys::designMaker->setLegacyKbdMode(LEGACY_MODE_DES_LAYER_SELECT); break;
     case 'O':  Sys::designMaker->designLayerHide(); break; // o=out
-    case 'S':  Sys::guiModes->setLegacyKbdMode(LEGACY_MODE_MODE_DES_SEPARATION); break;
+    case 'S':  Sys::designMaker->setLegacyKbdMode(LEGACY_MODE_MODE_DES_SEPARATION); break;
 
-    case Qt::Key_Return: if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_STEP)) Sys::designMaker->setStep(val); val = 0; break; // always val=0
+    case Qt::Key_Return: if (Sys::designMaker->isLegacyKbdMode(LEGACY_MODE_DES_STEP)) Sys::designMaker->setStep(val); val = 0; break; // always val=0
     case Qt::Key_F1: Shortcuts::popup(VIEW_LEGACY); break;
     case '0':
     case '1':
@@ -420,11 +421,11 @@ bool SystemView::procLegacyKeyEvent(QKeyEvent *k)
     case '8':
     case '9':
         // keys 0-9
-        if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_LAYER_SELECT))
+        if (Sys::designMaker->isLegacyKbdMode(LEGACY_MODE_DES_LAYER_SELECT))
         {
             Sys::designMaker->designLayerSelect(key-'0');
         }
-        else if (Sys::guiModes->getLegacyKbdMode(LEGACY_MODE_DES_STEP))
+        else if (Sys::designMaker->isLegacyKbdMode(LEGACY_MODE_DES_STEP))
         {
             val *= 10;
             val += (key - '0');
@@ -482,7 +483,7 @@ void SystemView::mousePressEvent(QMouseEvent *event)
     gPos = event->globalPosition();
     lPos = event->position();
 
-    if (Sys::guiModes->getMouseMode(MOUSE_MODE_TRANSLATE))
+    if (Sys::getSysMouseMode(MOUSE_MODE_TRANSLATE))
     {
         sLast = gPos;
     }
@@ -508,7 +509,7 @@ void SystemView::mouseMoveEvent(QMouseEvent *event)
     {
         emit sig_mouseDragged(lPos);
 
-        if (Sys::guiModes->getMouseMode(MOUSE_MODE_TRANSLATE))
+        if (Sys::getSysMouseMode(MOUSE_MODE_TRANSLATE))
         {
             QPointF spt  = gPos;
             QPointF translate = spt - sLast;
@@ -549,7 +550,7 @@ void SystemView::wheelEvent(QWheelEvent *event)
     Qt::KeyboardModifiers kms = event->modifiers();
     bool shift = (kms & Qt::SHIFT);
 
-    if (Sys::guiModes->getMouseMode(MOUSE_MODE_SCALE))
+    if (Sys::getSysMouseMode(MOUSE_MODE_SCALE))
     {
         qreal delta = 0.01;
         if (shift)
@@ -562,7 +563,7 @@ void SystemView::wheelEvent(QWheelEvent *event)
             emit sig_wheel_scale(Sys::nextSigid(), -delta);
         QWidget::update();
     }
-    else if (Sys::guiModes->getMouseMode(MOUSE_MODE_ROTATE))
+    else if (Sys::getSysMouseMode(MOUSE_MODE_ROTATE))
     {
         qreal delta = 0.5;
         if (shift)
@@ -906,19 +907,8 @@ const  QVector<Layer*> ActiveLayers::get()
     return vec;
 }
 
-void ActiveLayers::paint(QPainter & painter)
+void ActiveLayers::paint(QPainter * painter, CropPtr painterCrop)
 {
-#if 0
-    int  count = layers.size();
-    qDebug() <<  "ActiveLayers::paint" << "count = " << count;
-
-    for (Layer * layer : std::as_const(layers))
-    {
-        QString name =  layer->getLayerName();
-        qDebug() <<  "ActiveLayers::paint" << "before sort" << name;
-    }
-#endif
-
     QVector<Layer *> layers2 = get();
     std::stable_sort(layers2.begin(),layers2.end(),Layer::sortByZlevelP);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
 
@@ -926,12 +916,19 @@ void ActiveLayers::paint(QPainter & painter)
     {
         if (layer->isVisible())
         {
-            //QString name =  layer->getLayerName();
-            //qDebug() <<  "ActiveLayers::paint" << name;
+            //qDebug() <<  "ActiveLayers::paint" << layer->layerName();
             layer->forceLayerRecalc(false);
-            painter.save();
-            layer->paint(&painter);
-            painter.restore();
+
+            painter->save();
+
+            if (layer->isClipable() && painterCrop)
+            {
+                painterCrop->clipPainter(painter,layer->getLayerTransform());
+            }
+
+            layer->paint(painter);
+
+            painter->restore();
         }
     }
 }

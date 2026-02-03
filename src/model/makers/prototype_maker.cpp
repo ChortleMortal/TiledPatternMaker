@@ -94,7 +94,7 @@ ProtoPtr PrototypeMaker::createPrototypeFromTililing(const TilingPtr &tiling)
     for (auto & tile : std::as_const(uniqueTiles))
     {
         // NOTE this takes order from order of unique tiles
-        DesignElementPtr dep = make_shared<DesignElement>(tile);
+        DELPtr dep = make_shared<DesignElement>(tiling,tile);
         prototype->addDesignElement(dep);
         if (++count > MAX_UNIQUE_TILE_INDEX) qWarning() << "Large number of unique tiles in tiling count:" << count;
     }
@@ -130,12 +130,12 @@ void PrototypeMaker::recreatePrototypeFromTiling(const TilingPtr &tiling, ProtoP
         if (!found)
         {
             // creates a default TileMotif
-            DesignElementPtr dep = make_shared<DesignElement>(tile);
+            DELPtr dep = make_shared<DesignElement>(tiling,tile);
             prototype->addDesignElement(dep);
         }
     }
 
-    QVector<DesignElementPtr> forDeletion;
+    QVector<DELPtr> forDeletion;
     for (const auto & del : std::as_const(prototype->getDesignElements()))
     {
         TilePtr tile = del->getTile();
@@ -641,7 +641,7 @@ PrototypeMaker::eMMState PrototypeMaker::sm_getState()
     }
 }
 
-void PrototypeMaker::selectDesignElement(DesignElementPtr delp)
+void PrototypeMaker::selectDesignElement(DELPtr delp)
 {
     auto motifmaker = getWidget();
     auto btn        = motifmaker->getButton(delp);

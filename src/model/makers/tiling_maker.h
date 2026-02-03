@@ -29,7 +29,16 @@ typedef std::shared_ptr<class Prototype>        ProtoPtr;
 typedef std::shared_ptr<class TilingMouseAction>MouseActionPtr;
 typedef std::shared_ptr<class Tile>              TilePtr;
 
-#define E2STR(x) #x
+extern const QString sTMModelMode[];
+
+enum eTMKbdMode
+{
+    TM_MODE_XFORM_ALL,
+    TM_MODE_XFORM_TILING,
+    TM_MODE_XFORM_UNIQUE_TILE,
+    TM_MODE_XFORM_PLACED_TILE
+};
+
 
 enum eTMState
 {
@@ -69,7 +78,7 @@ public:
     void        unload();
 
     TilingPtr   loadTiling(VersionedFile vfile, eTILM_Event event);
-    void        saveTiling(TilingPtr tiling, bool forceOverwrite);
+    bool        saveTiling(TilingPtr tiling, bool forceOverwrite);
 
     void        sm_takeUp(const TilingEvent & tilingEvent);
     void        sm_takeDown(QVector<TilingPtr> &proto_tilings, eTILM_Event event);
@@ -176,6 +185,13 @@ public:
 
     void moveTileTo(QPointF pt);
 
+    // keyboard view modes
+    void     setTMKbdMode(eTMKbdMode mode);
+    bool     isTMKbdMode(eTMKbdMode mode);
+    eTMKbdMode  getTMKbdMode() { return _tilingMakerKeyboardMode; }
+    QString  getTMKbdModeStr();
+    void     resetTMKbdMode();
+
     void forceRedraw();
 
 signals:
@@ -191,6 +207,8 @@ signals:
     void sig_reconstructView();
 
     void sig_tileSelected(PlacedTilePtr ptp);
+
+    void sig_TMKbdMode(eTMKbdMode);
 
 public slots:
     void updatePolygonSides(int number);
@@ -259,6 +277,8 @@ private:
     TMStack                     tmStack;
 
     eTilingMakerMouseMode       _tilingMakerMouseMode;
+    eTMKbdMode                  _tilingMakerKeyboardMode;
+
     bool                        _tm_propagate;
 
     DlgEdgePolyEdit *           _epolyEdit;

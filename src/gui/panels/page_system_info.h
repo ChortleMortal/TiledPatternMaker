@@ -13,7 +13,7 @@ typedef std::shared_ptr<class Crop>             CropPtr;
 typedef std::shared_ptr<class Prototype>        ProtoPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Layer>            LayerPtr;
-typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+typedef std::shared_ptr<class DesignElement>    DELPtr;
 typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
 
 class page_system_info : public panel_page
@@ -50,14 +50,14 @@ protected:
 
     void populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QString name, bool summary, bool terse);
     void populatePrototype(QTreeWidgetItem * parent, ProtoPtr pp, QString name, QString state, bool summary);
-    void populateDEL(QTreeWidgetItem * parent, DesignElementPtr del, QString name, QString state, bool summary);
+    void populateDEL(QTreeWidgetItem * parent, DELPtr del, QString name, QString state, bool summary);
 
     void populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic);
     void populateStylesSummary(QTreeWidgetItem * parent, MosaicPtr mosaic);
 
     void populateBackgroundImage(QTreeWidgetItem * parent, BkgdImagePtr bip);
     void populateBorder(QTreeWidgetItem * parent, MosaicPtr mosaic);
-    void populateCrop(QTreeWidgetItem * parent, CropPtr crop);
+    void populateCrop(QTreeWidgetItem * parent, QString name, CropPtr crop);
     void populateLayer(QTreeWidgetItem * parent, Layer * layer);
     void populateMap(QTreeWidgetItem *parent, MapPtr mp, QString name);
     void populateViews(QTreeWidgetItem * parent);

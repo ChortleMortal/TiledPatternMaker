@@ -15,7 +15,7 @@ LegacyBorder::LegacyBorder() : Layer(VIEW_LEGACY,PRIMARY,"Border")
 {
     borderType  = BORDER_NONE;
 
-    setZValue(BORDER_ZLEVEL);
+    setZLevel(BORDER_ZLEVEL);
     sp = std::make_shared<ShapeFactory>(2.0);
     addSubLayer(sp);
 }
