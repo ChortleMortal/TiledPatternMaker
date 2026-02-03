@@ -10,7 +10,7 @@ In terms of copyright, this software is freely given without warranty.  In keepi
 
 Download pre-built win11 executable [here]( https://github.com/ChortleMortal/TiledPatternMaker/releases )
 
-Version 4.0 was build with Qt 6.10.1.  Builds with Qt5 are no longer supported.
+Version 4.1 was build with Qt 6.10.2.  Builds with Qt5 are no longer supported.
 
 
 
