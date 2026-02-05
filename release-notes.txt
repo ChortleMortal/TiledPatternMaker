@@ -4,22 +4,22 @@
 Improvements:
 
 - Addition of Mosaic distortion to fit into spaces (via mosaic maker and the prototype info page)
-- Additon of croping Background Images
+- Additon of cropping Background Images
 - Addition of a third tip type to the Rosette2 Style
-- Inmprovements to Mosiac and Painter crops and their interaction with Border crops
+- Improvements to Mosaic and Painter crops and their interaction with Border crops
 - Addition of pressing 'b' and 'shift-b' for toggling view of background images
 - Further clarification of keyboard shortcuts (use F1 to look at these in context)
-- Major refactor of the Map Editor for 'pushes' back from the Mao Editor to Mosacs,
+- Major refactor of the Map Editor for 'pushes' back from the Map Editor to Mosaics,
   Motifs, and Tilings.
 
 Fixes:
-- Crops in the Crop Mker View were obscured by Borders
+- Crops in the Crop Maker View were obscured by Borders
 - Borders should have had Primary rather than Derived Layer positioning
 
 Note:
     Mosaic design Alh1485.v6 illustrates both the use of the new third Rosette tip
-    type and the use of Mosaic distorion.  Using b and shift-b shows the relation of the
-    rendered Mosiac to a photo of the original in the Alhambra used as a Background Image
+    type and the use of Mosaic distortion.  Using b and shift-b shows the relation of the
+    rendered Mosaic to a photo of the original in the Alhambra used as a Background Image
 
 
 Version 4.0
@@ -33,19 +33,19 @@ in the analysis and re-creation of the imported design.
 
 Core functionality has been enhanced to:
     - support creation and of curved lines
-    - support overlapping tiles in tilings and compositing tiling layers (more than one tiling in  a design), thus
+    - support overlapping tiles in tilings and compositing tiling layers (more than one tiling in a design), thus
       going further than the use of 'polygons in contact' described by Hankin
     - Support of 'lawful inexactitudes' by using the map editor to fit together regular polygons that don’t exactly
       align, so making them irregular polygons in the manner described by Hankin.
     - implementation of crops, together with a rudimentary implementation of borders for placing designs into
       a defined space.
-    - The alignment of layers (views) has been improved. Each layer has a transform of translation, scale, and rotataion,
-      applied to it. Tilings, Mosaic Styles, and Background Image layers are considered primaray and all other views are derived.
-      In general layers are aligned to one primaray layer the SYS transform. However layers can break away from SYS and become
-      independant (INDP). When a layer is independant, keyboard/mouse positioning is not applied to independant layers.
+    - The alignment of layers (views) has been improved. Each layer has a transform of translation, scale, and rotation,
+      applied to it. Tilings, Mosaic Styles, and Background Image layers are considered primary and all other views are derived.
+      In general layers are aligned to one primary layer the SYS transform.  However layers can break away from SYS and become
+      independent (INDP).  When a layer is independent, keyboard/mouse positioning is not applied to independent layers.
       Also, a layer can be made SOLO, so that keyboard/mouse positioning is only applied to this layer. When SOLO is turned off
-      it becomes independeant.  Examples of use are having mosiac style layers be offset from one another, or a motif pattern
-      be enlarged to work on it using  the motif maker. Positioning can also be locked for any layer except the current primary.
+      it becomes independent.  Examples of use are having mosaic style layers be offset from one another, or a motif pattern
+      be enlarged to work on it using the motif maker. Positioning can also be locked for any layer except the current primary.
 
 Improvements:
 
@@ -63,9 +63,9 @@ Improvements:
                         place rather than repair the generated casing.
     Interlace Style     Substantially improved to handle curves. But still a work in progress.
     Startup             Faster
-    Control Panel       All control panel pages can now be floated.  Either double-click  or right click on
-                        item in Menu Select to detach.  Similarly menu which have tabs, can have each tab floated
-                        by double clicking in the tab. To re-attach, simple dismiss (close) the menu pop up.
+    Control Panel       All control panel pages can now be floated.  Either double-click or right-click on
+                        item in Menu Select to detach.  Similarly, menus which have tabs can have each tab floated
+                        by double clicking in the tab. To re-attach, simply dismiss (close) the menu pop up.
     Layer Control       Emphasis on controlling the relationship between viewable layers such as mosaic layers of styles,
                         background images. Most layers are synchronized such that keyboard actions to position, scale,
                         or rotate are coordinated. This is especially important for background image layers.
@@ -126,14 +126,14 @@ Improvements:
 Fixes:
     Control Panel       Fix crash on 'Clear All'
     Control Panel       Fix for detached (floating) pages not detached on application startup
-    TilingMaker         Stack save/undo/redo operations much improved
+    Tiling Maker        Stack save/undo/redo operations much improved
     Tiling Maker        Limit 'Show All' to 30 tiles
     Tiling Maker        Prevent unwanted fills when vectors changed
     Motif Maker         Regularity flip of Rosette2 and Star2 repaired
     Map Editor          Force template loads to be visible
-    MotifView           Fix display of Extended Boundary and highlight unify
+    Motif View          Fix display of Extended Boundary and highlight unify
     Borders             Model Xform was not being set in XML write/read
-    DebugView           DebugView and debug maps repaired
+    Debug View          Debug View and debug maps repaired
     Image Tools         Fixes for '2nd use loaded' comparisons and views
     System Info         Removes limit on height when floated
     Log                 Restores vertical scrollbar
@@ -203,7 +203,7 @@ Improvements:
     Motif Maker         Added ability in Rosette2 to constrain knee (aka neck) to same locations as in Rosette
 
 Fixes:
-    Motfis              ExtendedRosette2 was missing
+    Motifs              ExtendedRosette2 was missing
     Motifs              Several motifs had incorrect copy constructors
     Motifs              Extended Boundary sides could not be changed and was incorrectly tied to number of sides
     Motif View          Motifs with non-unity scales were not displayed correctly, needed DesignElement transform
