@@ -59,8 +59,8 @@ public:
     void    setTipTypes(uint tt)        { tipTypes = tt; }
     uint    getTipTypes()               { return tipTypes; }
 
-    void    setTipMode(eTipMode mode)   { tipMode = mode; }
-    eTipMode getTipMode()               { return tipMode; }
+    void    setTipMode(eTipMode mode)   { _tipMode = mode; }
+    eTipMode getTipMode() const         { return _tipMode; }
 
     virtual QString getMotifDesc() override { return "Rosette2";}
     virtual void    dump()         override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "kneeX:" << kneeX << "kneeY:" << kneeY << "s:" << s << "k:" << k
@@ -76,7 +76,7 @@ protected:
     void    calcConstraintLine();
 
 private:
-    eTipMode tipMode;
+    eTipMode _tipMode;
     uint     tipTypes;
     bool     constrain;     // use Kaplan's constraint
     QLineF   constraint;    // Kaplan's aesthetic call of line where knee should lie on

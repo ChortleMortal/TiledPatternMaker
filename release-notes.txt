@@ -1,4 +1,11 @@
-﻿Version 4.1
+﻿Version 4.1.1
+=============
+
+Fixes
+    Rosette2    Unuinitialised tip mode caused crash
+    Rosette2    Duuplicated rotation transform caused motif to be incorrect
+
+Version 4.1
 ============
 
 Improvements:

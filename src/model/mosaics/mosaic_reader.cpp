@@ -2472,7 +2472,7 @@ void  MosaicReader::getRosette2Common(xml_node & node, int & n, qreal & x, qreal
 
     if (node.child("tip"))
     {
-
+        // older - two tip types
         tipTypes = TIP_TYPE2_OUTER;
         tipMode  = TIP_MODE_REGULAR;
 
@@ -2489,30 +2489,48 @@ void  MosaicReader::getRosette2Common(xml_node & node, int & n, qreal & x, qreal
     }
     else
     {
+
         tipTypes = 0;
         str = node.child_value("tiptypes");
-        QStringList qsl = str.split('|');
-        if (qsl.contains("outer"))
+        if (!str.isEmpty())
         {
-            tipTypes |= TIP_TYPE2_OUTER;
+            // current three tip types
+            QStringList qsl = str.split('|');
+            if (qsl.contains("outer"))
+            {
+                tipTypes |= TIP_TYPE2_OUTER;
+            }
+            if (qsl.contains("inner"))
+            {
+                tipTypes |= TIP_TYPE2_INNER;
+            }
+            if (qsl.contains("flipped"))
+            {
+                tipTypes |= TIP_TYPE2_FLIPPED;
+            }
         }
-        if (qsl.contains("inner"))
+        else
         {
-            tipTypes |= TIP_TYPE2_INNER;
-        }
-        if (qsl.contains("flipped"))
-        {
-            tipTypes |= TIP_TYPE2_FLIPPED;
+            // original - single tip type
+            tipTypes = TIP_TYPE2_OUTER;
         }
 
         str = node.child_value("tipmode");
-        if (str == "regular")
+        if (!str.isEmpty())
         {
-            tipMode = TIP_MODE_REGULAR;
+            if (str == "regular")
+            {
+                tipMode = TIP_MODE_REGULAR;
+            }
+            else if (str == "alternate")
+            {
+                tipMode = TIP_MODE_ALTERNATE;
+            }
         }
-        else if (str == "alternate")
+        else
         {
-            tipMode = TIP_MODE_ALTERNATE;
+            // original - single tip type
+            tipMode = TIP_MODE_REGULAR;
         }
     }
 }
