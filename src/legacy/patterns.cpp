@@ -1578,7 +1578,7 @@ void PatternKumiko2::build()
 
     ProtoPtr proto = make_shared<Prototype>(t,mosaic);
     proto->addDesignElement(dep);
-    proto->createProtoMap(false);
+    proto->getProtoMap();
 
     ThickPtr thick = make_shared<Thick>(proto);
     thick->setColor(QColor(0xa2,0x79,0x67));

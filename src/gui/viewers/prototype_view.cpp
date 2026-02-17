@@ -83,7 +83,7 @@ void PrototypeView::drawProto(const int mode, ProtoPtr proto)
 
     if (mode & SHOW_MAP)
     {
-        MapPtr map = proto->getProtoMap();
+        MapPtr map = proto->getProtoMap();  // builds on demand
 
         //qDebug() << "PrototypeView  proto="  << proto.get() << "protoMap" << map.get();
 

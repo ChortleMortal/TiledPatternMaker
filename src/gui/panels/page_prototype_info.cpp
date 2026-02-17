@@ -65,7 +65,7 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
 
 QGroupBox * page_prototype_info::buildDistortionsLayout()
 {
-    chkDistort = new QCheckBox("Distort");
+    chkDistort = new QCheckBox("Distort Map ");
 
     xBox = new DoubleSpinSet("X:",1.0,-9.99,9.99);
     xBox->setSingleStep(0.01);
@@ -82,7 +82,7 @@ QGroupBox * page_prototype_info::buildDistortionsLayout()
     dist->addLayout(yBox);
     dist->addStretch(10);
 
-    QGroupBox * gb = new QGroupBox("Distortions");
+    QGroupBox * gb = new QGroupBox("Map Distortions");
     gb->setLayout(dist);
 
     return gb;

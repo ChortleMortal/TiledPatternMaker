@@ -884,16 +884,14 @@ void page_map_editor::refreshStatusBox()
 void page_map_editor::updateStyleSelections()
 {
     validStyles->clear();
-    auto mosaic     = mosaicMaker->getMosaic();
-    StyleSet styles = mosaic->getStyleSet();
-    for (StylePtr style : styles)
+    auto mosaic             = mosaicMaker->getMosaic();
+    const StyleSet & styles = mosaic->getStyleSet();
+    for (const StylePtr & style : styles)
     {
-        if (style->getStyleMap())
-        {
-            QString name = style->getStyleDesc();
-            WeakStylePtr wsp = style;
-            validStyles->addItem(name,QVariant::fromValue(wsp));
-        }
+        QString name     = style->getStyleDesc();
+        WeakStylePtr wsp = style;
+        validStyles->addItem(name,QVariant::fromValue(wsp));
+        validStyles->setItemData(validStyles->count() - 1, Qt::AlignCenter, Qt::TextAlignmentRole);
     }
 }
 

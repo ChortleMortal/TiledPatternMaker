@@ -66,6 +66,7 @@ bool DCEL::build()
     fill_face_table_inner_components();
 
     qDebug().noquote() << "DCEL: built OK" << info();
+
     return true;
 }
 

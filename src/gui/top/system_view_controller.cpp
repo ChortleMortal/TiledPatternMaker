@@ -321,24 +321,27 @@ void SystemViewController::reconstructView()
 void SystemViewController::enableLayer(eViewType view)
 {
     //qDebug().noquote() << "SystemViewController::enableLayer" << sViewerType[view];
-
-    MosaicPtr mosaic = Sys::mosaicMaker->getMosaic();
-    if (!mosaic->isBuilt())
-    {
-        // build the mosaic
-        QString name = mosaic->getName().get();
-        QString astring    = QString("Preparing Mosaic: %1").arg(name);
-        Sys::splash->display(astring,true);
-
-        mosaic->build(); // important
-
-        Sys::splash->remove(true);
-    }
-
+    
     switch (view)
     {
     case VIEW_MOSAIC:
     {
+        MosaicPtr mosaic = Sys::mosaicMaker->getMosaic();
+        QString name = mosaic->getName().get();
+        //qDebug().noquote() << "Viewing mosaic: " << name;
+    
+        if (!mosaic->isBuilt())
+        {
+            // build the mosaic
+       
+            QString astring    = QString("Preparing Mosaic: %1").arg(name);
+            Sys::splash->display(astring,true);
+
+            mosaic->build(); // important
+
+            Sys::splash->remove(true);
+        }
+
         // setup clip region
         theView->setPainterCrop(mosaic->getPainterCrop());
 

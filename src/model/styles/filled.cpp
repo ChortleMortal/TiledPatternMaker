@@ -246,6 +246,19 @@ void Filled::drawDCELDirectColor(GeoGraphics *gg)
             gg->fillEdgePoly(ep, pen);
         }
     }
+
+#if 0
+    // debug code
+    for (const FacePtr & face : faces)
+    {
+        if (face->outer)
+        {
+            QPen pen(Qt::blue, 4, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+            const EdgePoly & ep = *face.get();
+            gg->drawEdgePoly(ep, pen);
+        }
+    }
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////

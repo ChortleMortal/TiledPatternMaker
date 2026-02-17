@@ -57,22 +57,18 @@ public:
     bool operator!=(const Prototype & other) { return !(*this == other); }
 
     // Maps
-    void    createProtoMap(bool splash);
-    void    wipeoutProtoMap();
-
-    MapPtr getProtoMap(bool splash = false);
-    MapPtr getExistingProtoMap()   { return _protoMap; }
-    void   setProtoMap(MapPtr map) { _protoMap = map; }
-
-    const DCELPtr & getDCEL();          // builds on demand
-    const DCELPtr & getExistingDCEL()   { return _DCEL; }
-
+    void            wipeoutProtoMap();
+    MapPtr          getProtoMap(bool splash = false);       // builds on demand
+    MapPtr          getExistingProtoMap()   { return _protoMap; }
+    void            setProtoMap(MapPtr map) { _protoMap = map; }
+    const DCELPtr & getDCEL();                              // builds on demand
+    const DCELPtr & getExistingDCEL()       { return _DCEL; }
 
     // Design Elements
     void              addDesignElement(const DELPtr & element);
     void              removeDesignElement(const DELPtr &element);
-    QVector<DELPtr> &  getDesignElements() { return _designElements; }
-    DELPtr  getDesignElement(int index);
+    QVector<DELPtr> & getDesignElements()   { return _designElements; }
+    DELPtr            getDesignElement(int index);
     bool              containsDesignElement(DELPtr del);
 
     bool              hasContent()          { return (_designElements.size() > 0); }
@@ -115,14 +111,15 @@ public:
     static int refs;
 
 protected:
-
-private:
-    void    resetMotifMaps();
+    void    createProtoMap(bool splash);
     void    buildMotifMaps();
     void    buildPrototypeMap(Placements &fillPlacements);
     void    analyze(TilingPtr newTiling);
 
     void    _createMap();
+
+private:
+    void    resetMotifMaps();
 
     // prototype data
     QVector<DELPtr>             _designElements;

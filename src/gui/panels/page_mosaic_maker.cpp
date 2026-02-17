@@ -161,7 +161,7 @@ QHBoxLayout *page_mosaic_maker::createBackgroundInfo()
 
 QHBoxLayout * page_mosaic_maker::buildDistortionsLayout()
 {
-    chkDistort = new QCheckBox("Distort");
+    chkDistort = new QCheckBox("Distort Prototype ");
 
     xBox = new DoubleSpinSet("X:",1.0,-9.99,9.99);
     xBox->setSingleStep(0.01);
@@ -180,6 +180,7 @@ QHBoxLayout * page_mosaic_maker::buildDistortionsLayout()
 
     return dist;
 }
+
 void  page_mosaic_maker::onRefresh()
 {
     static WeakMosaicPtr wmp;
@@ -313,7 +314,9 @@ void  page_mosaic_maker::onRefresh()
     }
 
     if (currentEditor)
+    {
         currentEditor->onRefresh();
+    }
 }
 
 void  page_mosaic_maker::onEnter()

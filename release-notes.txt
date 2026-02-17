@@ -2,8 +2,15 @@
 =============
 
 Fixes
-    Rosette2    Unuinitialised tip mode caused crash
-    Rosette2    Duuplicated rotation transform caused motif to be incorrect
+    SystemView  Reverted 4.1 code which caused performance hit
+    Map Editor  Fixed 4.1 code causing another performance hit
+
+Version 4.1.1
+=============
+
+Fixes
+    Rosette2    Uninitialised tip mode in 4.1 caused crash
+    Rosette2    Duplicated rotation transform in 4.1 caused motif to be incorrect
 
 Version 4.1
 ============
