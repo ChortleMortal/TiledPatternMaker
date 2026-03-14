@@ -27,7 +27,7 @@ Outline::Outline(const ProtoPtr &proto) : Thick (proto)
     outline_width   = 0.03;
     join_style      = Qt::BevelJoin;
     cap_style       = Qt::SquareCap;
-    created         = false;
+    styled         = false;
 
         connect(Sys::flags, &DebugFlags::sig_dbgChanged, this, &Outline::slot_dbgChanged);
         connect(Sys::flags, &DebugFlags::sig_dbgTrigger, this, &Outline::slot_dbgTrigger);
@@ -42,7 +42,7 @@ Outline::Outline(const StylePtr & other) : Thick(other)
         join_style      = Qt::BevelJoin;
         cap_style       = Qt::SquareCap;
     }
-    created = false;
+    styled = false;
 
         connect(Sys::flags, &DebugFlags::sig_dbgChanged, this, &Outline::slot_dbgChanged,Qt::QueuedConnection);
         connect(Sys::flags, &DebugFlags::sig_dbgTrigger, this, &Outline::slot_dbgTrigger);
@@ -59,14 +59,14 @@ Outline::~Outline()
 void Outline::resetStyleRepresentation()
 {
     casings.clear();
-    created = false;
+    styled = false;
 }
 
 void Outline::createStyleRepresentation()
 {
     qDebug() << "Outline::createStyleRepresentation()";
 
-    if (created)
+    if (styled)
         return;
 
     Sys::debugMapCreate->wipeout();
@@ -121,7 +121,7 @@ void Outline::createStyleRepresentation()
     if (Sys::flags->flagged(DUMP_CASINGS))
         casings.dump("Complete");
 
-    created = true;
+    styled = true;
 }
 
 void Outline::draw(GeoGraphics *gg)
@@ -131,11 +131,13 @@ void Outline::draw(GeoGraphics *gg)
     if (!isVisible())
         return;
 
-    if (!created)
+    if (!styled)
         return;
 
-    for (auto & casing : std::as_const(casings))
+    for (int i=0; i < casings.size(); i++)
     {
+        auto & casing = casings[i];
+
         EdgePtr edge = casing->getEdge();
         if (!edge)
             continue;
@@ -152,7 +154,7 @@ void Outline::draw(GeoGraphics *gg)
                     continue;
         }
 
-        QColor color  = colors.getNextTPColor().color;
+        QColor color  = colors.getTPColor(i).color;
         QPen pen(color, 1, Qt::SolidLine, cap_style, join_style);
 
         casing->setPainterPath();

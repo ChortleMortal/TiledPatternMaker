@@ -19,68 +19,84 @@ using std::shared_ptr;
 // The code to build the faces from the map is contained in
 // geometry.Faces.
 
-Filled::Filled(const ProtoPtr & proto, eFillType algorithm ) : Style(proto)
+Filled::Filled(const ProtoPtr & proto, eFillType algorithm ) : Style(proto),original(this),new1(this),new2(this),new3(this),direct(this),deprecated(this)
 {
-    draw_inside_blacks    = true;
-    draw_outside_whites   = true;
-    this->algorithm       = algorithm;
-    colorMaker            = new ColorMaker(this);
+    setAlgorithm(algorithm);
+    initAlgorithmFrom(algorithm);   // sets initialised
 }
 
-Filled::Filled(const StylePtr & other) : Style(other)
+Filled::Filled(const StylePtr & other) : Style(other),original(this),new1(this),new2(this),new3(this),direct(this),deprecated(this)
 {
-    shared_ptr<Filled> filled = std::dynamic_pointer_cast<Filled>(other);
+    FilledPtr filled = std::dynamic_pointer_cast<Filled>(other);
     if (filled)
     {
-        draw_inside_blacks    = filled->draw_inside_blacks;
-        draw_outside_whites   = filled->draw_outside_whites;
-        algorithm             = filled->algorithm;
+        setAlgorithm(filled->getAlgorithm());
+        initAlgorithmFrom(filled->getAlgorithm());   // sets initialised
     }
     else
     {
-        draw_inside_blacks    = true;
-        draw_outside_whites   = true;
-        algorithm             = FILL_ORIGINAL;
+        setAlgorithm(FILL_ORIGINAL);
+        initAlgorithmFrom(FILL_ORIGINAL);   // sets initialised
     }
-    colorMaker                = new ColorMaker(this);
 }
 
 Filled::~Filled()
 {
 #ifdef EXPLICIT_DESTRUCTOR
-    qDebug() << "deleting Filled";
-    whiteColorSet.clear();
-    blackColorSet.clear();
-    colorGroup.clear();
+    qDebug() >> "Filled destructor";
 #endif
-    delete colorMaker;
 }
 
-
-void  Filled::setAlgorithm(eFillType val)
+ void Filled::setAlgorithm(eFillType algorithm)
 {
-    algorithm = val;
-    resetStyleRepresentation();
+     _algorithm = algorithm;
+
+    switch (algorithm)
+    {
+    case FILL_ORIGINAL:
+        currentColoring = &original;
+        break;
+    case FILL_TWO_FACE:
+        currentColoring = &new1;
+        break;
+    case FILL_MULTI_FACE:
+        currentColoring = &new2;
+        break;
+    case FILL_MULTI_FACE_MULTI_COLORS:
+        currentColoring = &new3;
+        break;
+    case DEPRECATED_FILL_FACE_DIRECT:   // DEPRECATED
+        currentColoring = &deprecated;
+        break;
+    case FILL_FACE_DIRECT:
+        currentColoring = &direct;
+        break;
+    }
+}
+
+void Filled::initAlgorithmFrom(eFillType old)
+{
+    currentColoring->initFrom(old);
 }
 
 // Style overrides.
 
 void Filled::resetStyleRepresentation()
 {
-    colorMaker->clear();
-    created = false;
+    currentColoring->resetStyleRepresentation();
+    styled = false;
 }
 
 void Filled::createStyleRepresentation()
 {
-    if (!created)
+    if (!styled)
     {
         DCELPtr dcel = prototype->getDCEL();
         if (dcel)
         {
-            colorMaker->buildFaceSets(algorithm, dcel);
+            currentColoring->createStyleRepresentation(dcel);
         }
-        created = true;
+        styled = true;
     }
 }
 
@@ -91,206 +107,5 @@ void Filled::draw(GeoGraphics * gg)
         return;
     }
 
-    switch (algorithm)
-    {
-    case FILL_ORIGINAL:
-        //qDebug() << "Filled::draw() algorithm=" << algorithm;
-        drawDCEL(gg);
-        break;
-
-    case FILL_TWO_FACE:
-        //qDebug() << "Filled::draw() algorithm=" << algorithm;
-        drawDCEL(gg);
-        break;
-
-    case FILL_MULTI_FACE:
-        //qDebug() << "Filled::draw() algorithm 2 :" << faceGroups.size() << faceGroups.totalSize();
-        drawDCELNew2(gg);
-        break;
-
-    case FILL_MULTI_FACE_MULTI_COLORS:
-        //qDebug() << "Filled::draw() algorithm 3 :" << faceGroups.size() << faceGroups.totalSize();
-        drawDCELNew3(gg);
-        break;
-
-    case FILL_DIRECT_FACE:
-        drawDCELDirectColor(gg);
-        break;
-    }
-}
-
-void Filled::drawDCEL(GeoGraphics * gg)
-{
-    if (draw_outside_whites)
-    {
-        QColor color =  whiteColorSet.getFirstTPColor().color;
-        QPen pen(color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-        for (auto & face : std::as_const(colorMaker->whiteFaces))
-        {
-            const EdgePoly & ep = *face.get();
-            gg->fillEdgePoly(ep, pen);
-            color = whiteColorSet.getNextTPColor().color;
-            pen.setColor(color);
-        }
-    }
-
-    if (draw_inside_blacks)
-    {
-        QColor color = blackColorSet.getFirstTPColor().color;
-        QPen pen(color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-        for (auto & face : std::as_const(colorMaker->blackFaces))
-        {
-            const EdgePoly & ep = *face.get();
-            gg->fillEdgePoly(ep, pen);
-            color = blackColorSet.getNextTPColor().color;
-            pen.setColor(color);
-        }
-    }
-}
-
-void Filled::drawDCELNew2(GeoGraphics *gg)
-{
-    // each face set has a single color in whiteColorSet
-    int row = 0;
-    for (FaceSetPtr & fset : colorMaker->faceGroups)
-    {
-        if (fset->selected)
-        {
-            QPen pen(Qt::red, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-            for (const FacePtr & face : std::as_const(*fset))
-            {
-                EdgeSet & ep = *face.get();
-                gg->fillEdgePoly(ep,pen);
-            }
-        }
-        else
-        {
-            TPColor tpcolor =  whiteColorSet.getTPColor(row);
-            if (!tpcolor.hidden)
-            {
-                QPen pen(tpcolor.color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-                for (const FacePtr & face : std::as_const(*fset))
-                {
-                    EdgeSet & ep = *face.get();
-                    gg->fillEdgePoly(ep,pen);
-                }
-            }
-        }
-        row++;
-    }
-}
-
-void Filled::drawDCELNew3(GeoGraphics *gg)
-{
-    // each face set has a set of colors
-    for (const FaceSetPtr & fset : std::as_const(colorMaker->faceGroups))
-    {
-        if (fset->selected)
-        {
-            QPen pen(Qt::red, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-            for (FacePtr & face : *fset)
-            {
-                EdgeSet & ep = *face.get();
-                gg->fillEdgePoly(ep,pen);
-            }
-            continue;
-        }
-
-        ColorSet * cset = fset->colorSet;
-        if (!cset)
-        {
-            continue;
-        }
-
-        if (cset->isHidden())
-        {
-            continue;
-        }
-
-        cset->resetIndex();
-
-        for (const FacePtr & face : std::as_const(*fset))
-        {
-            TPColor tpc = cset->getNextTPColor();
-            if (tpc.hidden)
-            {
-
-                continue;
-            }
-            QPen pen(tpc.color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-            EdgeSet & ep = *face.get();
-            gg->fillEdgePoly(ep,pen);
-        }
-    }
-}
-
-void Filled::drawDCELDirectColor(GeoGraphics *gg)
-{
-    DCELPtr dcel = getPrototype()->getDCEL();
-    if (!dcel) return;
-
-    const FaceSet & faces = dcel->getFaceSet();
-    if (faces.size() != numColorIndices())
-    {
-        qWarning() << "Filled faces=" << faces.size() << "indices" << numColorIndices();
-    }
-
-    for (const FacePtr & face : faces)
-    {
-        int index = face->iPalette;
-        if (index >=0)
-        {
-            QColor color = getColorFromPalette(index);
-            QPen pen(color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-            const EdgePoly & ep = *face.get();
-            gg->fillEdgePoly(ep, pen);
-        }
-    }
-
-#if 0
-    // debug code
-    for (const FacePtr & face : faces)
-    {
-        if (face->outer)
-        {
-            QPen pen(Qt::blue, 4, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-            const EdgePoly & ep = *face.get();
-            gg->drawEdgePoly(ep, pen);
-        }
-    }
-#endif
-}
-
-/////////////////////////////////////////////////////////////////////////////////
-//
-// Palette colors
-//
-//////////////////////////////////////////////////////////////////////////////////
-
-int  Filled::getColorIndex(int faceIndex)
-{
-    if (faceIndex < faceColorIndices.size())
-    {
-        return faceColorIndices[faceIndex];
-    }
-    else
-    {
-        return -1;
-    }
-}
-
-void Filled::setColorIndex(int faceIndex,int colorIndex)
-{
-    if (faceIndex < faceColorIndices.size())
-    {
-        faceColorIndices[faceIndex] = colorIndex;
-    }
-}
-
-void Filled::removeColorIndex(int index)
-{
-    DCELPtr dcel = getPrototype()->getDCEL();
-    if (!dcel) return;
-
-    colorMaker->removePaletteIndex(dcel,index);
+    currentColoring->draw(gg);
 }

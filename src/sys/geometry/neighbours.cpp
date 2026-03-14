@@ -112,7 +112,7 @@ BeforeAndAfter Neighbours::getBeforeAndAfter(const EdgePtr &edge )
 EdgePtr Neighbours::getContinuation(EdgePtr edge, int type)
 {
     EdgePtr result;
-    qreal   angle;
+    qreal   angle = 0;
 
     for (auto & wedge : *this)
     {

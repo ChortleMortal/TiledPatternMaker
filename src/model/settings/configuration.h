@@ -192,7 +192,7 @@ public:
     bool    tilingWorklistXCheck;
     bool    lockView;
     bool    multiView;
-    bool    splitScreen;
+    bool    integratedScreen;
     bool    bigScreen;
 
     bool    showMotif;

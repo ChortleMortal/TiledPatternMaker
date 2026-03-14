@@ -1,7 +1,7 @@
 #include "mouse_edit_border.h"
 #include "sys/geometry/crop.h"
 #include "sys/geometry/geo.h"
-#include "model/mosaics/border.h"
+#include "model/borders/border.h"
 
 #include <QDebug>
 

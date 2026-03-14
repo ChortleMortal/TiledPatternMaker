@@ -5,7 +5,7 @@
 #include <QCheckBox>
 
 #include "gui/panels/page_grid.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view_controller.h"
 #include "gui/top/system_view.h"

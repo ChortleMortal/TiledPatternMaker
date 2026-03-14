@@ -2,7 +2,7 @@
 #include <QCheckBox>
 
 #include "gui/panels/page_layer_alignmentl.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
 #include "model/makers/mosaic_maker.h"

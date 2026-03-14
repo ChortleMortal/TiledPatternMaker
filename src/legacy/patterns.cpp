@@ -3,23 +3,22 @@
 
 #include "legacy/patterns.h"
 #include "legacy/shapefactory.h"
+#include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/motifs/explicit_map_motif.h"
 #include "model/motifs/irregular_motif.h"
-#include "model/motifs/star.h"
-#include "sys/geometry/map.h"
-#include "model/mosaics/border.h"
 #include "model/motifs/tile_color_defs.h"
-#include "sys/geometry/geo.h"
 #include "model/prototypes/design_element.h"
 #include "model/prototypes/prototype.h"
 #include "model/settings/configuration.h"
 #include "model/styles/thick.h"
 #include "model/styles/thick.h"
-#include "model/tilings/tile.h"
 #include "model/tilings/placed_tile.h"
+#include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
 #include "model/tilings/tiling_manager.h"
+#include "sys/geometry/geo.h"
+#include "sys/geometry/map.h"
 #include "sys/sys/fileservices.h"
 
 int Pattern::refs = 0;
@@ -31,7 +30,6 @@ typedef std::shared_ptr<Thick> ThickPtr;
 /////////////////////////////////////////////////////////////
 //	  Pattern
 /////////////////////////////////////////////////////////////
-
 
 Pattern::Pattern(qreal Diameter, QBrush Brush, int Row, int Col)
 {

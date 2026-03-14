@@ -27,12 +27,12 @@
 
 Plain::Plain(ProtoPtr proto) : Colored(proto)
 {
-    created = false;
+    styled = false;
 }
 
 Plain::Plain(StylePtr other) : Colored(other)
 {
-    created = false;
+    styled = false;
 }
 
 Plain::~Plain()
@@ -45,7 +45,7 @@ Plain::~Plain()
 
 void Plain::createStyleRepresentation()
 {
-    if (created)
+    if (styled)
         return;
 
     MapPtr map = prototype->getProtoMap();
@@ -64,7 +64,7 @@ void Plain::createStyleRepresentation()
         }
     }
 #endif
-    created = true;
+    styled = true;
 }
 
 void Plain::draw(GeoGraphics *gg)
@@ -82,7 +82,7 @@ void Plain::draw(GeoGraphics *gg)
         return;
     }
 
-    QPen pen(colors.getNextTPColor().color);
+    QPen pen(colors.getFirstTPColor().color);
 
     for (const auto &edge : std::as_const(map->getEdges()))
     {

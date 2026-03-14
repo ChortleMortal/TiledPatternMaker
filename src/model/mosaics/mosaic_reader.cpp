@@ -2,7 +2,9 @@
 
 #include "gui/top/controlpanel.h"   // required
 #include "gui/top/system_view_controller.h"
-#include "model/mosaics/border.h"
+#include "model/borders/border_plain.h"
+#include "model/borders/border_2color.h"
+#include "model/borders/border_blocks.h"
 #include "model/mosaics/legacy_loader.h"
 #include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_reader.h"
@@ -84,6 +86,7 @@ MosaicPtr MosaicReader::readXML(VersionedFile xfile)
     {
         // load the Mosaic
         _mosaic = make_shared<Mosaic>();
+        _mosaic->setName(xfile.getVersionedName());
         parseXML(doc);
 
         correctMotifScaleandRotation();
@@ -529,7 +532,7 @@ void MosaicReader::processThick(xml_node & node)
     auto thick = make_shared<Thick>(proto);
     thick->setViewController(_vc);
     thick->setModelXform(xf,false,Sys::nextSigid());
-    thick->setColorSet(colorset);
+    thick->setColorSet(&colorset);
     thick->setDrawOutline(draw_outline);
     if (draw_outline)
     {
@@ -597,7 +600,7 @@ void MosaicReader::processInterlace(xml_node & node)
     interlace->setViewController(_vc);
     interlace->setInitialStartUnder(start_under);
     interlace->setModelXform(xf,false,Sys::nextSigid());
-    interlace->setColorSet(colorset);
+    interlace->setColorSet(&colorset);
     interlace->setDrawOutline(draw_outline);
     if (draw_outline)
     {
@@ -661,7 +664,7 @@ void MosaicReader::processOutline(xml_node & node)
     auto outline = make_shared<Outline>(proto);
     outline->setViewController(_vc);
     outline->setModelXform(xf,false,Sys::nextSigid());
-    outline->setColorSet(colorset);
+    outline->setColorSet(&colorset);
     outline->setDrawOutline(draw_outline);
     if (draw_outline)
     {
@@ -694,17 +697,10 @@ void MosaicReader::processFilled(xml_node & node)
     eFillType    l_algorithm    = FILL_ORIGINAL;
     bool         l_draw_inside  = false;
     bool         l_draw_outside = true;
-
-    ColorSet     l_colorSet;
-    ColorSet     l_colorsB;
-    ColorSet     l_colorsW;
-    ColorGroup   l_colorGroup;
-
+    QPointF      legacyCenter;
     ProtoPtr     l_proto;
     Xform        l_xf;
-    QPointF      legacyCenter;
-
-    QVector<int> faceColorIndices;
+    ColorSet     l_colorSet;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -713,7 +709,7 @@ void MosaicReader::processFilled(xml_node & node)
 
         if (str == "toolkit.GeoLayer")
         {
-             legacyCenter = procesToolkitGeoLayer(n,l_xf,zlevel);
+            legacyCenter = procesToolkitGeoLayer(n,l_xf,zlevel);
         }
         else if (str == "style.Style")
         {
@@ -721,35 +717,26 @@ void MosaicReader::processFilled(xml_node & node)
         }
         else if (str == "style.Colored")
         {
+            // original taprats had only one color for fiiled
+            // which was either inner or outer
+            // so two instances of filled for two colors
             oldFormat = true;
             processColorSet(n,l_colorSet);
         }
         else if (str == "style.Filled")
         {
+            // if no algorithm then is algo 0 (FILL_ORIGINAL)
+            // but these have two colors
             processsStyleFilled(n,l_draw_inside,l_draw_outside,l_algorithm);
-            if (l_algorithm == FILL_DIRECT_FACE)
-            {
-                processsStyleFilledFaces(n,faceColorIndices);
-            }
         }
-        else if (str == "ColorBlacks")
+        else if (str == "algorithm")
         {
-            oldFormat = false;
-            processColorSet(n,l_colorsB);
-        }
-        else if (str == "ColorWhites")
-        {
-            oldFormat = false;
-            processColorSet(n,l_colorsW);
-        }
-        else if (str == "ColorGroup")
-        {
-            oldFormat = false;
-            processColorGroup(n,l_colorGroup);
+            QString algo = n.child_value();
+            l_algorithm = eFillType(algo.toInt());
         }
         else
         {
-            fail("Unexpected", str.c_str());
+            if (_debug) qDebug() << "ignored";
         }
     }
 
@@ -758,67 +745,158 @@ void MosaicReader::processFilled(xml_node & node)
     filled->setModelXform(l_xf,false,Sys::nextSigid());
     filled->setZLevel(zlevel);
 
-     if (_version < 29)
+    if (_version < 29)
     {
         qInfo() << "legacy correction for" << _xfile.getVersionedName().get();
         if (filled->correctLegacyLayer(legacyCenter))
             _legacyCenterConverted = true;
     }
 
-    if (oldFormat)
+    switch (l_algorithm)
     {
-        // old - redundant way of dealing with colors
-        ColorSet * csetW = filled->getWhiteColorSet();
-        csetW->addColor(l_colorSet.getTPColor(0));
+    case FILL_ORIGINAL:
+    {
+        ColorSet csetB;
+        ColorSet csetW;
+        if (oldFormat)
+        {
+            // old - redundant way of dealing with colors
+            csetW.addColor(l_colorSet.getTPColor(0));
+            if (l_colorSet.size() >= 2)
+                csetB.addColor(l_colorSet.getTPColor(1));
+            else
+                csetB.addColor(l_colorSet.getTPColor(0));
+        }
+        auto n = node.child("ColorBlacks");
+        if (n)
+        {
+            processColorSet(n,csetB);
+        }
+        n = node.child("ColorWhites");
+        if (n)
+        {
+            processColorSet(n,csetW);
+        }
+        n = node.child("draw__inside");
+        if (n)
+        {
+            QString str = n.child_value();
+            l_draw_inside  = (str == "true");
+        }
+        n = node.child("draw__outside");
+        if (n)
+        {
+            QString str = n.child_value();
+            l_draw_outside  = (str == "true");
+        }
+        filled->original.whiteColorSet = csetW;
+        filled->original.blackColorSet = csetB;
+        filled->original.draw_inside_blacks  = l_draw_inside;
+        filled->original.draw_outside_whites = l_draw_outside;
+    }   break;
 
-        ColorSet * csetB = filled->getBlackColorSet();
-        if (l_colorSet.size() >= 2)
-            csetB->addColor(l_colorSet.getTPColor(1));
+    case FILL_TWO_FACE:
+    {
+        auto n = node.child("ColorBlacks");
+        if (n)
+        {
+            ColorSet csetB;
+            processColorSet(n,csetB);
+            filled->new1.blackColorSet = csetB;
+        }
+        n = node.child("ColorWhites");
+        if (n)
+        {
+            ColorSet csetW;
+            processColorSet(n,csetW);
+            filled->new1.whiteColorSet = csetW;
+        }
+        n = node.child("draw__inside");
+        if (n)
+        {
+            QString str = n.child_value();
+            l_draw_inside  = (str == "true");
+        }
+        n = node.child("draw__outside");
+        if (n)
+        {
+            QString str = n.child_value();
+            l_draw_outside  = (str == "true");
+        }
+        filled->new1.draw_inside_blacks  = l_draw_inside;
+        filled->new1.draw_outside_whites = l_draw_outside;
+    }   break;
+
+    case FILL_MULTI_FACE:
+    {
+        auto n = node.child("ColorWhites");
+        if (n)
+        {
+            ColorSet cset;
+            processColorSet(n,cset);
+            filled->new2.colorSet = cset;
+        }
+    } break;
+
+    case FILL_MULTI_FACE_MULTI_COLORS:
+    {
+        auto n = node.child("ColorGroup");
+        if (n)
+        {
+            ColorGroup   cGroup;
+            processColorGroup(n,cGroup);
+            filled->new3.colorGroup = cGroup;
+        }
+    }
+    break;
+
+    case DEPRECATED_FILL_FACE_DIRECT: // DEPRECATED
+    {
+        xml_node fnode;
+        xml_node n = node.child("style.Filled");
+        if (n)
+        {
+            fnode = n.child("FaceColors");
+        }
         else
-            csetB->addColor(l_colorSet.getTPColor(0));
-    }
-    else
-    {
-        ColorSet * csetW = filled->getWhiteColorSet();
-        csetW->setColors(l_colorsW);
-
-        ColorSet * csetB = filled->getBlackColorSet();
-        csetB->setColors(l_colorsB);
-
-        ColorGroup * cgroup = filled->getColorGroup();
-        *cgroup = l_colorGroup;
-
-        if (cgroup->size()== 0)
         {
-            // for backwards compatabililts
-            ColorSet ll_csw;
-            if (l_colorsW.size())
-            {
-                ll_csw.setColors(l_colorsW);
-                cgroup->addColorSet(ll_csw);
-            }
-            ColorSet ll_csb;
-            if (l_colorsB.size())
-            {
-                ll_csw.setColors(l_colorsB);
-                cgroup->addColorSet(ll_csb);
-            }
+            fnode = node.child("FaceColors");
         }
-        if (cgroup->size()== 0)
+
+        if (fnode)
         {
-            // last resort
-            ColorSet cs;
-            cs.addColor(Qt::black);
-            cgroup->addColorSet(cs);
+            QVector<int>  faceColorIndices;
+            processsStyleFilledFaces(fnode,faceColorIndices);
+            filled->deprecated.setPaletteIndices(faceColorIndices);
         }
-    }
 
-    filled->setDrawInsideBlacks(l_draw_inside);
-    filled->setDrawOutsideWhites(l_draw_outside);
+        n = node.child("ColorWhites");
+        if (n)
+        {
+            ColorSet cset;
+            processColorSet(n,cset);
+            filled->deprecated.palette.setColors(cset);
+        }
+    }   break;
 
-    if (l_algorithm == FILL_DIRECT_FACE)
+    case FILL_FACE_DIRECT:
     {
-        filled->setPaletteIndices(faceColorIndices);
+        xml_node n = node.child("FaceMap");
+        if (n)
+        {
+            FaceColorList colorList;
+            processsStyleFilledFaces2(n,colorList);
+            filled->direct.setColorList(colorList);
+        }
+
+        n = node.child("ColorWhites");
+        if (n)
+        {
+            ColorSet cset;
+            processColorSet(n,cset);
+            filled->direct.palette = cset;
+        }
+    }   break;
     }
 
     if (_debug) qDebug().noquote() << "XmlServices created Style(Filled)" << filled->getInfo();
@@ -854,7 +932,7 @@ void MosaicReader::processPlain(xml_node & node)
     auto plain = make_shared<Plain>(proto);
     plain->setViewController(_vc);
     plain->setModelXform(xf,false,Sys::nextSigid());
-    plain->setColorSet(colorset);
+    plain->setColorSet(&colorset);
     plain->setZLevel(zlevel);
 
     if (_version < 29)
@@ -897,7 +975,7 @@ void MosaicReader::processSketch(xml_node & node)
     auto sketch = make_shared<Sketch>(proto);
     sketch->setViewController(_vc);
     sketch->setModelXform(xf,false,Sys::nextSigid());
-    sketch->setColorSet(colorset);
+    sketch->setColorSet(&colorset);
     sketch->setZLevel(zlevel);
 
      if (_version < 29)
@@ -952,7 +1030,7 @@ void MosaicReader::processEmboss(xml_node & node)
     auto emboss = make_shared<Emboss>(proto);
     emboss->setViewController(_vc);
     emboss->setModelXform(xf,false,Sys::nextSigid());
-    emboss->setColorSet(colorset);
+    emboss->setColorSet(&colorset);
     emboss->setDrawOutline(draw_outline);
     if (draw_outline)
     {
@@ -995,9 +1073,13 @@ void MosaicReader::processTileColors(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
+        {
             legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
+        }
         else if (str == "style.Style")
+        {
             processStylePrototype(n,proto);
+        }
         else if (str == "outline")
         {
             outline = true;
@@ -1024,31 +1106,34 @@ void MosaicReader::processTileColors(xml_node & node)
 
     if (_debug) qDebug() << "Constructing TileColors from prototype and poly";
 
-    auto tc  = make_shared<TileColors>(proto);
-    tc->setViewController(_vc);
+    auto tileColors  = make_shared<TileColors>(proto);
+    tileColors->setViewController(_vc);
 
-    auto & colorGroup = tc->getTileColors();
-    colorGroup = _tilingColorGroup;
+    tileColors->setColorGroup(_tilingColorGroup);
+    qInfo() << _xfile.getVersionedName().get()
+            <<  "tiling color group size="
+            << _tilingColorGroup.size()
+            << "mosaic version" << _version;
 
-    tc->setModelXform(xf,false,Sys::nextSigid());
+    tileColors->setModelXform(xf,false,Sys::nextSigid());
 
     if (outline)
     {
-        tc->setOutline(true,color,width);
+        tileColors->setOutline(true,color,width);
     }
 
-    tc->setZLevel(zlevel);
+    tileColors->setZLevel(zlevel);
 
     if (_version < 29)
     {
         qInfo() << "legacy correction for" << _xfile.getVersionedName().get();
-        if (tc->correctLegacyLayer(legacyCenter))
+        if (tileColors->correctLegacyLayer(legacyCenter))
             _legacyCenterConverted = true;
     }
 
-    if (_debug) qDebug().noquote() << "XmlServices created Style(TileColors)" << tc->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(TileColors)" << tileColors->getInfo();
 
-    _mosaic->addStyle(tc);
+    _mosaic->addStyle(tileColors);
 
     if (_debug) qDebug() << "end TileColors";
 }
@@ -1158,26 +1243,8 @@ void MosaicReader::processColorSet(xml_node & node, ColorSet &colorSet)
     xml_node n;
     for (n = node.child("color"); n; n = n.next_sibling("color"))
     {
-        bool hide = false;
-        if (_version >= 1)
-        {
-            xml_attribute attr = n.attribute("hide");
-            if (attr)
-            {
-                QString str = attr.value();
-                hide = (str == "t");
-            }
-        }
-        QColor color = processColor(n);
-        if (_version == 0)
-        {
-            qreal alpha = color.alphaF();
-            if (alpha < 1.0)
-            {
-                hide = true;
-            }
-        }
-        colorSet.addColor(color,hide);
+        TPColor tpc = processTPColor(n);
+        colorSet.addColor(tpc);
     }
 }
 
@@ -1197,6 +1264,30 @@ QColor MosaicReader::processColor(xml_node & n)
     QString str = n.child_value();
     QColor color(str);
     return color;
+}
+
+TPColor MosaicReader::processTPColor(xml_node & n)
+{
+    bool hide = false;
+    if (_version >= 1)
+    {
+        xml_attribute attr = n.attribute("hide");
+        if (attr)
+        {
+            QString str = attr.value();
+            hide = (str == "t");
+        }
+    }
+    QColor color = processColor(n);
+    if (_version == 0)
+    {
+        qreal alpha = color.alphaF();
+        if (alpha < 1.0)
+        {
+            hide = true;
+        }
+    }
+    return TPColor(color,hide);
 }
 
 qreal MosaicReader::procWidth(xml_node & node)
@@ -1310,16 +1401,16 @@ void MosaicReader::processsStyleFilled(xml_node & node, bool & draw_inside, bool
     }
 }
 
-void  MosaicReader::processsStyleFilledFaces(xml_node & node, QVector<int> &paletteIndices)
+void  MosaicReader::processsStyleFilledFaces(xml_node & fnode, QVector<int> &paletteIndices)
 {
-    xml_node fnode = node.child("FaceColors");
-    xml_attribute attr = fnode.attribute("faces");
     int numFaces = 0;
+    xml_attribute attr = fnode.attribute("faces");
     if (attr)
     {
         QString str = attr.value();
         numFaces = str.toInt();
     }
+
     QString str = fnode.child_value();
     QStringList qsl = str.split(',');
     for (auto & str : qsl)
@@ -1329,6 +1420,19 @@ void  MosaicReader::processsStyleFilledFaces(xml_node & node, QVector<int> &pale
     if (numFaces && numFaces != paletteIndices.size())
     {
         qWarning() << "MosaicReader::processsStyleFilledFaces count mismatch" << numFaces << paletteIndices.size();
+    }
+}
+
+void  MosaicReader::processsStyleFilledFaces2(xml_node & fnode, FaceColorList & list)
+{
+    for (xml_node n = fnode.first_child(); n; n = n.next_sibling())
+    {
+        QString str = n.child_value();
+        QStringList qsl = str.split(',');
+        qreal x = qsl[0].toDouble();
+        qreal y = qsl[1].toDouble();
+        int   i = qsl[2].toInt();
+        list.push_back(QPair(QPointF(x,y),i));
     }
 }
 
@@ -1542,8 +1646,8 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
         if (!vfile.isEmpty())
         {
             // load tiling
-            TilingReader tm(_vc);
-            loadedTiling = tm.readTilingXML(vfile,&mrbase);
+            TilingReader tilingReader(_vc);
+            loadedTiling = tilingReader.readTilingXML(vfile,&mrbase);
 
             if (loadedTiling)
             {
@@ -1555,7 +1659,12 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 }
                 if (loadedTiling->getVersion() < 8)
                 {
-                    _tilingColorGroup = tm.getTileColors();
+                    _tilingColorGroup = loadedTiling->legacyTileColors();
+                    qInfo() << _xfile.getVersionedName().get()
+                            <<  "tiling color group size="
+                            << _tilingColorGroup.size()
+                            << "tiling version" << loadedTiling->getVersion()
+                            << "mosaic version" << _version;
                 }
 #ifdef LEGACY_CONVERT_XML
                 if (loadedTiling->legacyModelConverted())
@@ -2909,7 +3018,6 @@ void MosaicReader::procBorder(xml_node & node)
         }
 
         _border->setUseViewSize(useViewSize);
-        _border->createStyleRepresentation();
     }
 }
 

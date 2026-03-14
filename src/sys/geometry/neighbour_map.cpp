@@ -69,8 +69,7 @@ void NeighbourMap::examine()
         i.next();
         auto neighbours = i.value();
         uint ncount = neighbours->numNeighbours();
-        if (ncount > 4)
-            qDebug() << "LOG2" << ncount;
+        qDebug() << "NeighbourMap::examine() ncouont =" << ncount;
     }
 }
 

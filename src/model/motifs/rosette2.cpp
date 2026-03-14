@@ -269,7 +269,7 @@ void Rosette2::buildUnitMap()
         raySet2.transform(t);
     }
 
-    raySet1.debug();
+    if (motifDebug & 0x01) raySet1.debug();
 }
 
 void  Rosette2::buildRay(RaySet &  set, QPointF tip, const QVector<QPointF> & epoints)

@@ -63,7 +63,7 @@ void Sketch::draw(GeoGraphics * gg)
         return;
     }
 
-    QPen pen(colors.getNextTPColor().color);
+    QPen pen(colors.getFirstTPColor().color);
 
     qreal jitter = Transform::distFromInvertedZero(gg->getTransform(),5.0);
     qreal halfjit = jitter / 2.0;

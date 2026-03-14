@@ -27,7 +27,7 @@
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/prototype_maker.h"
 #include "model/makers/tiling_maker.h"
-#include "model/mosaics/border.h"
+#include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/prototypes/prototype.h"
 #include "model/settings/canvas_settings.h"

@@ -24,8 +24,15 @@ public:
     Mosaic();
     ~Mosaic();
 
+    void        resetStyleMaps();
+    void        resetProtoMaps();
+    void        build();
+    bool        isBuilt();
+
     bool        hasContent() { return (styleSet.size() > 0); }
     int         numStyles()  { return styleSet.size(); }
+
+    void        enginePaint(QPainter * painter);      // called by MosaicBMPEngine
 
     // loaded styles
     void        addStyle(StylePtr style);   // adds at front
@@ -34,14 +41,9 @@ public:
     int         moveDown(StylePtr style);
     void        deleteStyle(StylePtr style);
 
-    bool        isBuilt();
-    void        build();
-    void        enginePaint(QPainter * painter);      // called by MosaicBMPEngine
-
     QVector<ProtoPtr>   getPrototypes();
+    ProtoPtr            getFirstExistingPrototype();
     MapPtr              getFirstExistingPrototypeMap();
-    void                resetStyleMaps();
-    void                resetProtoMaps();
 
     CanvasSettings &    getCanvasSettings()                   { return _canvasSettings; };
     void                setCanvasSettings(CanvasSettings& ms) { _canvasSettings = ms; }

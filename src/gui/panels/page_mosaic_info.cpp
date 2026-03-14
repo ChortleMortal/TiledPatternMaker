@@ -8,7 +8,7 @@
 #include "model/motifs/motif.h"
 #include "gui/top/controlpanel.h"
 #include "gui/panels/page_mosaic_info.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "model/styles/style.h"
 #include "model/tilings/tiling.h"
 

@@ -42,7 +42,7 @@ public:
     CanvasSettings & getCanvasSettings();
 
     // operations
-    StylePtr    makeStyle(eStyleType type, StylePtr oldStyle);
+    StylePtr    makeStyle(StylePtr style, eStyleType newType);
 
 signals:
     void        sig_mosaicLoaded(VersionedFile vfile);

@@ -1,6 +1,8 @@
 #include <QHeaderView>
+#include <QPushButton>
 
 #include "gui/widgets/dlg_colorSet.h"
+#include "gui/widgets/panel_misc.h"
 #include "model/styles/colorset.h"
 
 DlgColorSet::DlgColorSet(ColorSet *cset, QWidget * parent) :  QDialog(parent)
@@ -68,11 +70,10 @@ void DlgColorSet::displayTable()
     dlg_table->clear();
     int count = colorSet->size();
     dlg_table->setRowCount(count);
-    colorSet->resetIndex();
     int row = 0;
     for (int i=0; i < count; i++)
     {
-        TPColor tpcolor = colorSet->getNextTPColor();
+        TPColor tpcolor = colorSet->getTPColor(i);
         QColor color    = tpcolor.color;
         QColor fullColor= color;
         fullColor.setAlpha(255);

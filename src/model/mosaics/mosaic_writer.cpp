@@ -1,6 +1,10 @@
+#include <QMessageBox>
+
 #include "gui/map_editor/map_editor.h"
 #include "gui/top/system_view_controller.h"
-#include "model/mosaics/border.h"
+#include "model/borders/border_plain.h"
+#include "model/borders/border_2color.h"
+#include "model/borders/border_blocks.h"
 #include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_writer.h"
 #include "model/motifs/explicit_map_motif.h"
@@ -67,7 +71,8 @@ MosaicWriter::MosaicWriter()
     //currentXMLVersion = 26; // 18MAR25 cleanse level and sensitivity stored in prototype
     //currentXMLVersion = 27; // 14APR25 fixes double multiply for irregular sale and rotate
     //currentXMLVersion = 28; // 30SEP25 does not save rotate centres and legacy center conversion
-      currentXMLVersion = 29; // 30OCT25 has background alignment conversion
+    //currentXMLVersion = 29; // 30OCT25 has background alignment conversion
+      currentXMLVersion = 30; // 10FEB26 Revised fill
 }
 
 MosaicWriter::~MosaicWriter()
@@ -222,7 +227,7 @@ bool MosaicWriter::processVector(QTextStream &ts)
             ts << "<" << str <<  mwbase.nextId() << " >" << endl;
             procBorder(ts,s);
             break;
-        case STYLE_STYLE:
+        case STYLE_NONE:
             qCritical() << "Unexpected style" << est;
             break;
         }
@@ -558,61 +563,111 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
     }
 
     eFillType algorithm     = filled->getAlgorithm();
+    ts << "<algorithm>" << algorithm << "</algorithm>" << endl;
 
-    ColorSet * colorSetB    = filled->getBlackColorSet();
-    ColorSet * colorSetW    = filled->getWhiteColorSet();
-    ColorGroup * colorGroup = filled->getColorGroup();
-
-    bool    draw_inside     = filled->getDrawInsideBlacks();
-    bool    draw_outside    = filled->getDrawOutsideWhites();
-
-    ProtoPtr proto          = filled->getPrototype();
-    Xform   xf              = filled->getModelXform();
-
-    QString str;
-
-    str = "toolkit.GeoLayer";
+    QString str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
+    Xform   xf              = filled->getModelXform();
     procesToolkitGeoLayer(ts,xf,filled->getZLevel());
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
     ts << "<" << str << ">" << endl;
+    ProtoPtr proto          = filled->getPrototype();
     setPrototype(ts,proto);
     ts << "</" << str << ">" << endl;
 
-    if (colorSetB->size())
+    switch (algorithm)
     {
-        str = "ColorBlacks";
-        ts << "<" << str << ">" << endl;
-        procColorSet(ts,colorSetB);
-        ts << "</" << str << ">" << endl;
-    }
+    case FILL_ORIGINAL:
+    {
+        bool    draw_inside     = filled->original.draw_inside_blacks;
+        bool    draw_outside    = filled->original.draw_outside_whites;
+        QString drawi = (draw_inside) ? "true" : "false";
+        QString drawo = (draw_outside) ? "true" : "false";
+        ts << "<draw__inside>" << drawi << "</draw__inside>" << endl;
+        ts << "<draw__outside>" << drawo << "</draw__outside>" << endl;
 
-    if (colorSetW->size())
+        ColorSet * colorSetB = &filled->original.blackColorSet;
+        if (colorSetB->size())
+        {
+            str = "ColorBlacks";
+            ts << "<" << str << ">" << endl;
+            procColorSet(ts,colorSetB);
+            ts << "</" << str << ">" << endl;
+        }
+
+        ColorSet * colorSetW = &filled->original.whiteColorSet;
+        if (colorSetW->size())
+        {
+            str = "ColorWhites";
+            ts << "<" << str << ">" << endl;
+            procColorSet(ts,colorSetW);
+            ts << "</" << str << ">" << endl;
+        }
+    }   break;
+
+    case FILL_TWO_FACE:
     {
-        str = "ColorWhites";
+        bool    draw_inside     = filled->new1.draw_inside_blacks;
+        bool    draw_outside    = filled->new1.draw_outside_whites;
+        QString drawi = (draw_inside) ? "true" : "false";
+        QString drawo = (draw_outside) ? "true" : "false";
+        ts << "<draw__inside>" << drawi << "</draw__inside>" << endl;
+        ts << "<draw__outside>" << drawo << "</draw__outside>" << endl;
+
+        ColorSet * colorSetB = &filled->new1.blackColorSet;
+        if (colorSetB->size())
+        {
+            str = "ColorBlacks";
+            ts << "<" << str << ">" << endl;
+            procColorSet(ts,colorSetB);
+            ts << "</" << str << ">" << endl;
+        }
+
+        ColorSet * colorSetW = &filled->new1.whiteColorSet;
+        if (colorSetW->size())
+        {
+            str = "ColorWhites";
+            ts << "<" << str << ">" << endl;
+            procColorSet(ts,colorSetW);
+            ts << "</" << str << ">" << endl;
+        }
+    }   break;
+
+    case FILL_MULTI_FACE:
+    {
+        ColorSet * colorSetW = &filled->new2.colorSet;
+        QString str = "ColorWhites";
         ts << "<" << str << ">" << endl;
         procColorSet(ts,colorSetW);
         ts << "</" << str << ">" << endl;
-    }
+    }   break;
 
-    if (colorGroup->size())
+    case FILL_MULTI_FACE_MULTI_COLORS:
     {
-        str = "ColorGroup";
+        ColorGroup * colorGroup = &filled->new3.colorGroup;
+
+        QString str = "ColorGroup";
         ts << "<" << str << ">" << endl;
         procColorGroup(ts,colorGroup);
         ts << "</" << str << ">" << endl;
-    }
+    } break;
 
-    str = "style.Filled";
-    ts << "<" << str << ">" << endl;
-    processsStyleFilled(ts,draw_inside,draw_outside,algorithm);
-    if (algorithm == FILL_DIRECT_FACE)
+    case FILL_FACE_DIRECT:
     {
-        processsStyleFilledFaces(ts,filled);
+        ColorSet * cset = &filled->direct.palette;
+        QString str = "ColorWhites";
+        ts << "<" << str << ">" << endl;
+        procColorSet(ts,cset);
+        ts << "</" << str << ">" << endl;
+
+        processsStyleFilledFaces2(ts,filled);
+    }   break;
+
+    case DEPRECATED_FILL_FACE_DIRECT: // DEPRECATED
+        break;
     }
-    ts << "</" << str << ">" << endl;
 
     if (debug) qDebug() << "end filled";
     return true;
@@ -769,17 +824,16 @@ bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr style)
         ts << "</outline>";
     }
 
-    ColorGroup &  group = tc->getTileColors();
+    ColorGroup &  group = tc->getColorGroup();
     for (ColorSet & set : group)
     {
         QString s = "<BkgdColors>";
-        set.resetIndex();
-        QColor color = set.getNextTPColor().color;
+        QColor color = set.getTPColor(0).color;
         s += color.name();
         for (int i=1; i < set.size(); i++)
         {
             s += ",";
-            QColor color = set.getNextTPColor().color;
+            QColor color = set.getTPColor(i+i).color;
             s += color.name();
         }
         s += "</BkgdColors>";
@@ -801,10 +855,9 @@ void MosaicWriter::procesToolkitGeoLayer(QTextStream & ts, const Xform & xf, eZL
 void MosaicWriter::procColorSet(QTextStream &ts, ColorSet * colorSet)
 {
     int count = colorSet->size();
-    colorSet->resetIndex();
     for (int i=0; i < count; i++)
     {
-        TPColor tpcolor = colorSet->getNextTPColor();
+        TPColor tpcolor = colorSet->getTPColor(i);
         procColor(ts,tpcolor);
     }
 }
@@ -812,15 +865,17 @@ void MosaicWriter::procColorSet(QTextStream &ts, ColorSet * colorSet)
 void MosaicWriter::procColorGroup(QTextStream &ts, ColorGroup * colorGroup)
 {
     int count = colorGroup->size();
-    colorGroup->resetIndex();
     for (int i=0; i < count; i++)
     {
-        ColorSet * cs = colorGroup->getNextColorSet();
-        bool hide = cs->isHidden();
-        QString qs = QString("<Group hideSet=\"%1\">").arg( (hide) ? "t" : "f");
-        ts << qs << endl;
-        procColorSet(ts,cs);
-        ts << "</Group>" << endl;
+        ColorSet * cs = colorGroup->getColorSet(i);
+        if (cs)
+        {
+            bool hide = cs->isHidden();
+            QString qs = QString("<Group hideSet=\"%1\">").arg( (hide) ? "t" : "f");
+            ts << qs << endl;
+            procColorSet(ts,cs);
+            ts << "</Group>" << endl;
+        }
     }
 }
 
@@ -872,15 +927,7 @@ void MosaicWriter::processsStyleInterlace(QTextStream &ts, qreal gap, qreal shad
     ts << "<startUnder>" << sunder << "</startUnder>" << endl;
 }
 
-void MosaicWriter::processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, eFillType algorithm)
-{
-    QString drawi = (draw_inside) ? "true" : "false";
-    QString drawo = (draw_outside) ? "true" : "false";
-    ts << "<draw__inside>" << drawi << "</draw__inside>" << endl;
-    ts << "<draw__outside>" << drawo << "</draw__outside>" << endl;
-    ts << "<algorithm>" << algorithm << "</algorithm>" << endl;
-}
-
+#if 1   // DEPRECATED
 void MosaicWriter::processsStyleFilledFaces(QTextStream &ts, class Filled * filled)
 {
     DCELPtr dcel = filled->getPrototype()->getDCEL();
@@ -889,25 +936,44 @@ void MosaicWriter::processsStyleFilledFaces(QTextStream &ts, class Filled * fill
         qWarning() << "DCEL not found - cannot save face data";
         return;
     }
-    FaceSet & faces = dcel->getFaceSet();
-    int size        = faces.size();
+    const FaceSet & faces = dcel->getFaceSet();
+    int size = faces.size();
 
     QString str = QString("<FaceColors faces=\"%1\">").arg(size);
     ts << str << endl;
 
-    // get these color indices directly from the visible faces
-    int count = 0;
-    while (count < size)
+    for (auto & face : faces)
     {
-        ts << QString::number(faces[count]->iPalette);
-        count++;
-        if (count < size)
+        qDebug() << face->iPalette;
+        QString str = QString::number(face->iPalette);
+        // get these color palette indices directly from the faces
+        if (face != faces.last())
         {
-            ts << ",";
+            ts << str << ",";
+        }
+        else
+        {
+            ts << str << endl;
         }
     }
-    ts << endl;
     ts << "</FaceColors>" << endl;
+}
+#endif
+
+void MosaicWriter::processsStyleFilledFaces2(QTextStream &ts, class Filled * filled)
+{
+    const QHash<PointKey, FacePtr> & fmap  = filled->direct.faceMap;
+
+    ts << "<FaceMap>" << endl;
+
+    // get these color indices directly from the visible faces
+    for (auto it = fmap.begin(); it != fmap.end(); it++)
+    {
+        QPointF pt = it.key().p;
+        FacePtr face = it.value();
+        ts << "<Face>" << pt.x() << "," << pt.y() << "," << face->iPalette << "</Face>" << endl;
+    }
+    ts << "</FaceMap>" << endl;
 }
 
 void MosaicWriter::processsStyleEmboss(QTextStream &ts, qreal  angle)

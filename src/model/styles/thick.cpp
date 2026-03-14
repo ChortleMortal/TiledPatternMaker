@@ -58,15 +58,15 @@ Thick::~Thick()
 
 void Thick::resetStyleRepresentation()
 {
-    created  = false;
+    styled  = false;
 }
 
 void Thick::createStyleRepresentation()
 {
-    if (!created)
+    if (!styled)
     {
-        created = true;
         prototype->getProtoMap(true);
+        styled = true;
     }
 }
 
@@ -104,7 +104,7 @@ void Thick::draw(GeoGraphics * gg )
         draw(gg,pen,pwidth);
     }
 
-    QPen pen(colors.getNextTPColor().color);
+    QPen pen(colors.getFirstTPColor().color);
     pen.setJoinStyle(join_style);
     pen.setCapStyle(cap_style);
     draw(gg,pen,width*2.0);

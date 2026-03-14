@@ -6,7 +6,7 @@
 #include <QSlider>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <gui/panels/panel_misc.h>
+#include <gui/widgets/panel_misc.h>
 
 class AQSpinBox : public QSpinBox
 {

@@ -1,10 +1,14 @@
+12-6-4.v2
+6.5.v6
+Alh1485
+Alh1485.v1
+Alh1485.v6
+Alh1485.v8
+Alh1485.v9
 Alhambra3
 Alhambra3.v1
 Alhambra3.v2
 Alhambra3.v3
-Alhambra3.v4
-Alhambra3.v5
-Alhambra3.v6
 Alhambra3.v7
 Kumiko.v1
 Museum2.v3
@@ -17,5 +21,6 @@ Test Pattern.v7
 Test12Rect.v5
 Test12Rect.v6
 Test12Rect.v8
+Vanda.v10
 wonka.v5
 wonka.v9

@@ -2,7 +2,7 @@
 #ifndef DLG_EDGE_POLY_EDIT_H
 #define DLG_EDGE_POLY_EDIT_H
 
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "model/makers/tiling_maker.h"
 #include "sys/geometry/edge_poly.h"
 

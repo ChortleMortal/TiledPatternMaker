@@ -2,7 +2,7 @@
 
 #include "gui/widgets/mouse_mode_widget.h"
 #include "sys/sys.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 
 MouseModeWidget::MouseModeWidget() : QWidget()
 {

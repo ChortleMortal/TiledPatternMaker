@@ -113,12 +113,12 @@ MapPtr Prototype::getProtoMap(bool splash)
     Q_ASSERT(_protoMap);
     if (_protoMap->isEmpty())
     {
-        createProtoMap(splash);
+        _createProtoMap(splash);    // build on demnd
     }
     return _protoMap;
 }
 
-void Prototype::createProtoMap(bool splash)
+void Prototype::_createProtoMap(bool splash)
 {
     QMutexLocker locker(&protoMutex);
 
@@ -187,9 +187,9 @@ void Prototype::_createMap()
 
     if (_protoMap->isEmpty() && (_designElements.size() > 0))
     {
-        buildMotifMaps();
+        _buildMotifMaps();
 
-        buildPrototypeMap(fillPlacements);
+        _buildPrototypeMap(fillPlacements);
 
         if (!_protoMap->isEmpty())
             qDebug() << "PROTOTYPE merged";
@@ -265,16 +265,7 @@ void Prototype::_createMap()
     mv.verifyAndFix(Sys::config->forceVerifyProtos);
 }
 
-void Prototype::resetMotifMaps()
-{
-    for (auto & del : _designElements)
-    {
-        auto motif = del->getMotif();
-        motif->resetMotifMap();
-    }
-}
-
-void Prototype::buildMotifMaps()
+void Prototype::_buildMotifMaps()
 {
     // The InferredMotif type is dependant on its surrounding motifs.
     // So these need to be prepared before the prototype map
@@ -305,7 +296,7 @@ void Prototype::buildMotifMaps()
     }
 }
 
-void Prototype::buildPrototypeMap(Placements & fillPlacements)
+void Prototype::_buildPrototypeMap(Placements & fillPlacements)
 {
     for (auto & designElement : _designElements)
     {

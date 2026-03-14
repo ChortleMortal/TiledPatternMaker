@@ -755,8 +755,3 @@ void TilingReader::getViewSettings(xml_node & node)
 
     if (debug) qDebug().noquote() << "tiling model xform:" << xf.info();
 }
-
-ColorGroup & TilingReader::getTileColors()
-{
-    return tiling->legacyTileColors();
-}

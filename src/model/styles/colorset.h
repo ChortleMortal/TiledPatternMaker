@@ -3,50 +3,34 @@
 #define COLORSET_H
 
 #include <QColor>
-#include "gui/panels/panel_misc.h"
-
-class ColorSet;
 
 class TPColor
 {
 public:
-    TPColor()                        { color = Qt::cyan;    hidden = false; }
+    TPColor()                        { color = Qt::yellow;  hidden = false; }
     TPColor(QColor col)              { color = col;         hidden = false; }
     TPColor(QColor col, bool hide)   { color = col;         hidden = hide; }
     TPColor(const TPColor & other)   { color = other.color; hidden = other.hidden; }
 
     TPColor & operator=(const TPColor & other) { color = other.color; hidden = other.hidden; return *this; }
 
+    bool operator==(const TPColor&) const = default;
+    bool operator!=(const TPColor&) const = default;
+
+    void    dump();
+    QString info();
+
     QColor color;
     bool   hidden;
-};
-
-class  ColorGroup : public  QVector<ColorSet>
-{
-public:
-    ColorGroup();
-
-    void          addColorSet(ColorSet & cset);
-    void          setColorSet(int idx, ColorSet & cset);
-    ColorSet *    getNextColorSet();
-    ColorSet *    getColorSet(int idx);
-    void          removeColorSet(int idx);
-
-    void          hide(int idx, bool hide);
-    bool          isHidden(int idx);
-
-    void          resetIndex();
-
-    void          dump();
-
-private:
-    QVector<ColorSet>::iterator  pos;
 };
 
 class ColorSet : public QVector<TPColor>
 {
 public:
     ColorSet();
+
+    bool operator==(const ColorSet&) const = default;
+    bool operator!=(const ColorSet&) const = default;
 
     void            addColor(QColor color, bool hide=false);
     void            addColor(TPColor color);
@@ -62,25 +46,40 @@ public:
 
     TPColor         getFirstTPColor();
     TPColor         getLastTPColor();
-    TPColor         getNextTPColor();
-    TPColor         getTPColor(int index) { return at(index % size()); }
-    QColor          getQColor(int index)  { if (!size()) return QColor(Qt::red); else return getTPColor(index).color;}
+    TPColor         getTPColor(int index) { if (!size()) return QColor(Qt::red); else return at(index % size()); }
+    QColor          getQColor(int index)  { if (!size()) return QColor(Qt::red); else return getTPColor(index %size()).color;}
 
-    void            resetIndex();
     void            clear();
 
     void            hide(bool hide) { hidden = hide; }
     bool            isHidden() { return hidden; }
 
-    AQHBoxLayout *  createLayout();
-    QWidget      *  createWidget();
-
+    QString         info();
     void            dump();
     QString         colorsString() const;
 
 private:
     bool             hidden;
-    QVector<TPColor>::iterator pos;
 };
+
+class  ColorGroup : public  QVector<ColorSet>
+{
+public:
+    ColorGroup();
+
+    bool operator==(const ColorGroup&) const = default;
+    bool operator!=(const ColorGroup&) const = default;
+
+    void          addColorSet(ColorSet & cset);
+    void          setColorSet(int idx, ColorSet & cset);
+    ColorSet *    getColorSet(int idx);
+    void          removeColorSet(int idx);
+
+    void          hide(int idx, bool hide);
+    bool          isHidden(int idx);
+
+    void          dump();
+};
+
 
 #endif // COLORSET_H

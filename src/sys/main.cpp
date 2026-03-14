@@ -72,16 +72,16 @@ namespace
     };
 #endif
 
+#if defined(Q_OS_WINDOWS)
     void stackInfo()
     {
-#if defined(Q_OS_WINDOWS)
         PROCESS_MEMORY_COUNTERS pmc;
         if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
         {
             qInfo() << "Stack size        :" << (static_cast<double>(pmc.WorkingSetSize) / static_cast<double>(1024 * 1024)) << "MB";
         }
-#endif
     }
+#endif
 
     QString runGitCommand(const QStringList& args, int timeoutMs = 1000)
     {
@@ -244,12 +244,18 @@ int main(int argc, char* argv[])
         {
             if (mods & Qt::AltModifier)
             {
+                // shift-alt
                 firstBirthday();
+            }
+            if (mods & Qt::ControlModifier)
+            {
+                // shift-ctrl
+                primaryDisplay = true;
             }
             else
             {
+                // shift
                 noAutoLoad = true;
-                primaryDisplay = true;
             }
         }
 

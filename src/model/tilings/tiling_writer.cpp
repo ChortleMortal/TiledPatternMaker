@@ -96,7 +96,9 @@ void TilingWriter::writeXML(QTextStream & out)
     tunit.removeExcludeds();
     const QVector<UnitPlacedTiles> &  group = tunit.getUnitPlacedTiles();
     //structure is tile then placements. so tile is not duplicated. I dont know if this adds any value
+#if 0
     int index = 0;
+#endif
     for (auto & apair : group)
     {
         TilePtr tile              = apair.first;
@@ -121,6 +123,7 @@ void TilingWriter::writeXML(QTextStream & out)
             setEdgeSet(out,eset);
         }
 
+#if 0   // this should have been removed starting with tiling version 8
         // legacy storage of background colors
         ColorGroup & cg = tiling->legacyTileColors();
         if (cg.size() > index)
@@ -142,7 +145,7 @@ void TilingWriter::writeXML(QTextStream & out)
                 out << s << endl;
             }
         }
-
+#endif
         for(auto it= placemnets .begin(); it != placemnets .end(); it++ )
         {
             PlacedTilePtr & pf = *it;

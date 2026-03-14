@@ -7,7 +7,7 @@
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
 #include "gui/panels/panel_page.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 
 SplitScreen::SplitScreen(QWidget *parent) : QFrame(parent)
 {
@@ -20,7 +20,7 @@ SplitScreen::SplitScreen(QWidget *parent) : QFrame(parent)
     vboxL = new AQVBoxLayout();
     vboxL->addWidget(Sys::controlPanel,0,Qt::AlignTop);
     dummy = new QWidget();
-    vboxL->addWidget(dummy,0,Qt::AlignHCenter);
+    vboxL->addWidget(dummy,0,Qt::AlignRight);
     vboxL->addStretch();
 
     LHS = new QWidget();

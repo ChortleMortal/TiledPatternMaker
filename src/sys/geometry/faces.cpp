@@ -78,7 +78,7 @@ QPolygonF Face::getPolygon()
 
 QPointF Face::center()
 {
-    if (_center .isNull())
+    if (_center.isNull())
     {
         QPolygonF pts = getPolygon();
         _center = Geo::center(pts);
@@ -97,6 +97,11 @@ void Face::dump()
 bool lessThanPoint(const QPointF &p1, const QPointF & p2)
 {
     return ( p1.manhattanLength() < p2.manhattanLength());
+}
+
+bool  Face::contains(QPointF mpt)
+{
+    return getPolygon().containsPoint(mpt,Qt::OddEvenFill);
 }
 
 bool  Face::overlaps(FacePtr other)
@@ -129,6 +134,19 @@ bool  Face::overlaps(FacePtr other)
 /// Face Set
 ///
 ////////////////////////////////////////
+
+
+FacePtr FaceSet::findByCenter(QPointF pt) const
+{
+    for (auto & fp : std::as_const(*this))
+    {
+        if (pt == fp->center())
+            return fp;
+    }
+
+    FacePtr fp;
+    return fp;
+}
 
 void FaceSet::sortByPositon()
 {
@@ -268,7 +286,13 @@ void FaceSet::dump(DCELPtr dcel)
     qDebug().noquote() << astring;
 }
 
-void FaceGroups::select(int idx)
+////////////////////////////////////////
+///
+/// Face Groups
+///
+////////////////////////////////////////
+
+void FaceGroup::select(int idx)
 {
     if (idx >= 0 && idx < size())
     {
@@ -285,7 +309,7 @@ void FaceGroups::select(int idx)
     }
 }
 
-void FaceGroups::deselect()
+void FaceGroup::deselect()
 {
     QVector<FaceSetPtr> & self = *this;
     for (int i=0; i < size(); i++)
@@ -295,7 +319,7 @@ void FaceGroups::deselect()
     }
 }
 
-void FaceGroups::deselect(int idx)
+void FaceGroup::deselect(int idx)
 {
     if (idx >= 0 && idx < size())
     {
@@ -305,7 +329,7 @@ void FaceGroups::deselect(int idx)
     }
 }
 
-bool FaceGroups::isSelected(int idx)
+bool FaceGroup::isSelected(int idx)
 {
     if (idx >= 0 && idx < size())
     {
@@ -316,7 +340,7 @@ bool FaceGroups::isSelected(int idx)
     return false;
 }
 
-int FaceGroups::totalSize()
+int FaceGroup::totalSize()
 {
     int tot = 0;
     for (const auto & fset : std::as_const(*this))
@@ -325,3 +349,4 @@ int FaceGroups::totalSize()
     }
     return tot;
 }
+

@@ -1,6 +1,6 @@
 #include "gui/panels/page_backgrounds.h"
 #include "gui/panels/page_borders.h"
-#include "gui/panels/page_config.h"
+#include "gui/panels/page_settings.h"
 #include "gui/panels/page_crop_maker.h"
 #include "gui/panels/page_debug.h"
 #include "gui/panels/page_grid.h"
@@ -119,22 +119,24 @@ void PanelPageController::populatePages()
 
     pageList->addSeparator();
 
-    wp = new page_config(panel);
+    wp = new page_settings(panel);
     pageList->addPage(wp);
 
     if (config->insightMode)
     {
         wp = new page_image_tools(panel);
         pageList->addPage(wp);
+        page_image_tools * imageTools= dynamic_cast<page_image_tools*>(wp);
 
         wp = new page_log(panel);
         pageList->addPage(wp);
-
         page_log * pageLog = dynamic_cast<page_log*>(wp);
         connect(panel, &ControlPanel::sig_saveLog, pageLog, &page_log::slot_copyLog);
 
         wp = new page_debug(panel);
         pageList->addPage(wp);
+        page_debug * pageDebug = dynamic_cast<page_debug*>(wp);
+        connect(pageDebug, &page_debug::sig_regenerateMosaicXML, imageTools, &page_image_tools::slot_regenMosaicXML);
     }
 
     pageList->adjustSize();
@@ -239,7 +241,7 @@ void PanelPageController::slot_detachWidget(QString name)
 
     updateLocked = true;
 
-    if (config->splitScreen && config->bigScreen)
+    if (config->integratedScreen && config->bigScreen)
     {
         // this sub-attaches in the splitter
         Q_ASSERT(Sys::splitter);

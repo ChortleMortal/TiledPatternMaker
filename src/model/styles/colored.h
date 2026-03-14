@@ -16,8 +16,8 @@
 class Colored : public Style
 {
 public:
-    void   setColor(QColor color);
-    void   setColorSet(ColorSet & cset) { colors = cset; }
+    virtual void setColor(QColor color);
+    virtual void setColorSet(ColorSet * cset) { colors = *cset; }
 
     ColorSet * getColorSet() { return &colors; }
 

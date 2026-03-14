@@ -14,19 +14,10 @@ typedef std::weak_ptr<PlacedTile> wPlacedPtr;
 class ColoredPlacement
 {
 public:
-    ColoredPlacement(EdgePoly & ep, QColor col);
+    ColoredPlacement(EdgePoly & ep, QColor col) { epoly = ep; color = col; }
 
     EdgePoly    epoly;
     QColor      color;
-};
-
-class TileColorSet
-{
-public:
-    TileColorSet(PlacedTilePtr tile, ColorSet * colorset);
-
-    wPlacedPtr  wtile;
-    ColorSet *  cset;
 };
 
 class TileColors : public Style
@@ -38,12 +29,12 @@ public:
 
     void            draw(GeoGraphics * gg) override;
 
-    void            createStyleRepresentation() override;
     void            resetStyleRepresentation() override;
+    void            createStyleRepresentation() override;
 
-    ColorGroup    & getTileColors() { return tileColors; }
-    ColorSet *      getColorSet(TilePtr tile);
-    ColorSet *      getColorSet(PlacedTilePtr tile);
+    ColorGroup &    getColorGroup()                { return colorGroup; }
+    void            setColorGroup(ColorGroup & cg) { colorGroup = cg; }
+    ColorSet *      getColorSet(int index)         { return &colorGroup[index % colorGroup.size()]; }
 
     void            setOutline(bool enable,QColor color = Qt::white, int width = 3);
     bool            getOutline(QColor & color, int & width);
@@ -52,15 +43,17 @@ public:
     QString         getStyleDesc() const override;
     void            dump()         const override { qDebug().noquote() << getStyleDesc() << "outline:" << outlineEnb  << "width:" << outlineWidth << "color:" << outlineColor; }
 
-private:
-    ColorGroup                tileColors;           // defined
-    QVector<TileColorSet>     colorSets;            // calculated
-    QVector<ColoredPlacement> coloredPlacements;    // calculated
+protected:
+    void            adjustColorGroupSize();
 
+    // defined (XML r/w and used by menu)
+    ColorGroup      colorGroup;
     bool            outlineEnb;
     QColor          outlineColor;
     int             outlineWidth;
 
+private:
+    QVector<ColoredPlacement> _coloredPlacements;   // calculated - color for each placed tile
 };
 #endif
 

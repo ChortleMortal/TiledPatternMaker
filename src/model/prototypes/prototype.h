@@ -111,15 +111,13 @@ public:
     static int refs;
 
 protected:
-    void    createProtoMap(bool splash);
-    void    buildMotifMaps();
-    void    buildPrototypeMap(Placements &fillPlacements);
     void    analyze(TilingPtr newTiling);
 
-    void    _createMap();
-
 private:
-    void    resetMotifMaps();
+    void    _createProtoMap(bool splash);
+    void    _createMap();
+    void    _buildMotifMaps();
+    void    _buildPrototypeMap(Placements &fillPlacements);
 
     // prototype data
     QVector<DELPtr>             _designElements;

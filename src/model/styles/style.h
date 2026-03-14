@@ -39,17 +39,17 @@ public:
 
     virtual ~Style();
 
+    bool                isStyled()                  { return styled; }
+
     // Geometry data.
-    ProtoPtr            getPrototype() const {return prototype;}
-    void                setPrototype(ProtoPtr pp);
+    ProtoPtr            getPrototype() const        {return prototype;}
+    void                setPrototype(ProtoPtr pp)   { prototype = pp; }
 
     virtual MapPtr      getProtoMap()           { return prototype->getProtoMap(); }  // can build map
     virtual MapPtr      getStyleMap()           { return prototype->getProtoMap(); }  // same but can be overridenb
     virtual void        setStyleMap(MapPtr map) { prototype->setProtoMap(map); }
 
     TilingPtr           getTiling();
-
-    bool                isCreated() { return created; }
 
     // Overridable behaviours
     virtual void        resetStyleRepresentation()  = 0; // Called when the map is changed to clear any internal map representation.
@@ -83,7 +83,7 @@ public slots:
 
 protected:
     ProtoPtr    prototype; // Contains the map to be rendered (the input geometry)
-    bool        created;
+    bool        styled;
 
 private:
     bool        paintSVG;

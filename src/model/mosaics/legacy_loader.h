@@ -4,6 +4,7 @@
 
 #include <string>
 #include "sys/enums/estyletype.h"
+#include "sys/enums/eviewtype.h"
 #include "sys/sys/pugixml.hpp"
 #include "sys/geometry/xform.h"
 #include <QtCore>
@@ -59,7 +60,7 @@ protected:
     void processEmboss(xml_node & node);
 
     // styles
-    void    procesToolkitGeoLayer(xml_node & node, Xform & xf, int &zlevel);
+    void    procesToolkitGeoLayer(xml_node & node, Xform & xf, eZLevel &zlevel);
     QColor  processStyleColored(xml_node & node);
     void    processsStyleThick(xml_node & node, eDrawOutline &draw_outline, qreal & width);
     void    processsStyleInterlace(xml_node & node, qreal & gap, qreal & shadow);

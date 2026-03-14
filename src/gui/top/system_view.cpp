@@ -49,7 +49,7 @@ SystemView::SystemView() : QWidget()
 
 SystemView::~SystemView()
 {
-    if (!Sys::config->splitScreen)
+    if (!Sys::config->integratedScreen)
     {
         QPoint pt = pos();
         QSettings s;
@@ -72,7 +72,7 @@ void SystemView::init(SystemViewController *parent)
 
     QSize sz(Sys::DEFAULT_WIDTH, Sys::DEFAULT_HEIGHT);
     setSize(sz);
-    if (Sys::config->splitScreen)
+    if (Sys::config->integratedScreen)
     {
         setFixedSize(sz);
     }

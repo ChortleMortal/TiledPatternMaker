@@ -2,13 +2,18 @@
 #include <QCheckBox>
 #include <QHeaderView>
 
-#include "gui/model_editors/style_edit/style_editors.h"
+#include "gui/model_editors/style_edit/colored_editor.h"
+#include "gui/model_editors/style_edit/emboss_editor.h"
+#include "gui/model_editors/style_edit/fill_editor.h"
+#include "gui/model_editors/style_edit/interlace_editor.h"
+#include "gui/model_editors/style_edit/style_editor.h"
+#include "gui/model_editors/style_edit/tile_colors_editor.h"
 #include "gui/panels/page_mosaic_maker.h"
-#include "gui/panels/panel_misc.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view_controller.h"
 #include "gui/widgets/dlg_cleanse.h"
 #include "gui/widgets/layout_sliderset.h"
+#include "gui/widgets/panel_misc.h"
 #include "gui/widgets/smx_widget.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/tiling_maker.h"
@@ -19,9 +24,7 @@
 #include "sys/geometry/map.h"
 #include "sys/geometry/transform.h"
 
-Q_DECLARE_METATYPE(WeakStylePtr)
-
-typedef std::weak_ptr<Mosaic>          WeakMosaicPtr;
+typedef std::weak_ptr<Mosaic> WeakMosaicPtr;
 
 using std::make_shared;
 
@@ -61,13 +64,41 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
     styleTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     styleTable->setFocusPolicy(Qt::StrongFocus);
     QStringList qslH;
-    qslH << "" << "Tiling" << "Style type" << "Layer Control" << "Transform" << "Style Addr";
+    qslH << "" << "Tiling" << "Style Type" << "Layer Control" << "Transform" << "Style Addr";
     styleTable->setHorizontalHeaderLabels(qslH);
     styleTable->verticalHeader()->setVisible(false);
 
+    styleTable->setRowCount(1);
+
+    connect(styleTable->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, [this](const QItemSelection &sel, const QItemSelection &desel)
+            {
+                // Newly selected cells
+                for (const QModelIndex &idx : sel.indexes())
+                {
+                    if (auto *w = styleTable->cellWidget(idx.row(), idx.column()))
+                    {
+                        if (auto *cw = qobject_cast<SMXWidget*>(w))
+                            cw->setSelected(true);
+                    }
+                }
+
+                // Newly deselected cells
+                for (const QModelIndex &idx : desel.indexes())
+                {
+                    if (auto *w = styleTable->cellWidget(idx.row(), idx.column()))
+                    {
+                        if (auto *cw = qobject_cast<SMXWidget*>(w))
+                            cw->setSelected(false);
+                    }
+                }
+            });
+
+
     // fourth row - style editor
     AQHBoxLayout * hbox2 = new AQHBoxLayout();
-    currentEditor = new StyleEditor();
+    StylePtr sp;
+    currentEditor = new StyleEditor(sp,STYLE_NONE);
     hbox2->addWidget(currentEditor);
 
     lowerWidget   = new QWidget();
@@ -83,11 +114,11 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
     wvbox->addLayout(fillBox);
     wvbox->addSpacing(10);
     wvbox->addLayout(hbox);
-    wvbox->addSpacing(5);
+    wvbox->addSpacing(10);
     wvbox->addWidget(styleTable);
-    wvbox->addSpacing(5);
+    wvbox->addSpacing(15);
     wvbox->addWidget(lowerWidget);
-    wvbox->addSpacing(5);
+    wvbox->addSpacing(10);
     wvbox->addLayout(hbl);
     wvbox->addStretch();
 
@@ -234,43 +265,21 @@ void  page_mosaic_maker::onRefresh()
         pbExam->setText("Add Background Image");
     }
 
-    StylePtr style = getStyleRow(styleTable->currentRow());
-    if (style)
-    {
-        ProtoPtr proto = style->getPrototype();
-        if (proto)
-        {
-            uint level = proto->getCleanseLevel();
-            if (level > 0)
-            {
-                pbClean->setText("Cleanse : ON ");
-                qreal sensitivity = proto->getCleanseSensitivity();
-                QString str = QString("0x%1 : %2").arg(QString::number(level,16)).arg(sensitivity);
-                cleanseStatus->setText(str);
-            }
-            else
-            {
-                pbClean->setText("Cleanse : OFF");
-                cleanseStatus->setText(" ");
-            }
-
-
-        }
-        else
-        {
-            pbClean->setText("Cleanse : OFF");
-            cleanseStatus->setText(" ");
-        }
-    }
-    else
-    {
-        pbClean->setText("Cleanse : OFF");
-        cleanseStatus->setText(" ");
-    }
+    pbClean->setText("Cleanse : OFF");
+    cleanseStatus->setText(" ");
 
     ProtoPtr proto = getCurrentPrototype();
     if (proto)
     {
+        uint level = proto->getCleanseLevel();
+        if (level > 0)
+        {
+            pbClean->setText("Cleanse : ON ");
+            qreal sensitivity = proto->getCleanseSensitivity();
+            QString str = QString("0x%1 : %2").arg(QString::number(level,16)).arg(sensitivity);
+            cleanseStatus->setText(str);
+        }
+
         chkDistort->setChecked(proto->getDistortionEnable());
         QTransform t = proto->getDistortion();
         xBox->setValue(Transform::scalex(t));
@@ -285,21 +294,18 @@ void  page_mosaic_maker::onRefresh()
 
     if (mosaic == wmp.lock())
     {
+        // same mosaic as before
         int row = 0;
         const StyleSet & sset = mosaic->getStyleSet();
         for (auto & style : std::as_const(sset))
         {
             QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANSFORM);
-            if (item)
-            {
-                Xform xf = style->getModelXform();
-                item->setText(xf.info(8));
-            }
+            Xform xf = style->getModelXform();
+            item->setText(xf.info(8));
 
             QWidget * w = styleTable->cellWidget(row,STYLE_COL_LAYER_CONTROL);
-            SMXWidget * smx = dynamic_cast<SMXWidget*>(w);
-            if (smx)
-                smx->refresh();
+            SMXWidget * smx = static_cast<SMXWidget*>(w);
+            smx->refresh();
 
             row++;
         }
@@ -309,6 +315,7 @@ void  page_mosaic_maker::onRefresh()
     }
     else
     {
+        // mosiac has changed, start again
         wmp = mosaic;
         reEnter();
     }
@@ -464,47 +471,50 @@ void page_mosaic_maker::displayStyleParams()
 
     // set current editor
     StyleEditor * newEditor = nullptr;
-    switch (style->getStyleType())
+    eStyleType stype = style->getStyleType();
+
+    switch (stype)
     {
     case STYLE_PLAIN:
-        newEditor = new ColoredEditor(style);
+        newEditor = new ColoredEditor(style,stype);
         break;
     case STYLE_THICK:
-        newEditor = new ThickEditor(style);
+        newEditor = new ThickEditor(style,stype);
         break;
     case STYLE_FILLED:
-        newEditor = new FilledEditor(style);
+        newEditor = new FilledEditor(style,stype);
         break;
     case STYLE_EMBOSSED:
-        newEditor = new EmbossEditor(style);
+        newEditor = new EmbossEditor(style,stype);
         break;
     case STYLE_INTERLACED:
-        newEditor = new InterlaceEditor(style);
+        newEditor = new InterlaceEditor(style,stype);
         break;
     case STYLE_OUTLINED:
-        newEditor = new ThickEditor(style);
+        newEditor = new ThickEditor(style,stype);
         break;
     case STYLE_SKETCHED:
-        newEditor = new ColoredEditor(style);
+        newEditor = new ColoredEditor(style,stype);
         break;
     case STYLE_TILECOLORS:
-        newEditor =  new TileColorsEditor(style);
+        newEditor = new TileColorsEditor(style,stype);
         break;
     case STYLE_BORDER:
-        newEditor = new StyleEditor();  // does nothing
+        newEditor = new StyleEditor(style,stype);  // does nothing
         break;
-    case STYLE_STYLE:
+    case STYLE_NONE:
         qCritical("unexpected style");
         break;
     }
+
+    Q_ASSERT(newEditor);
 
     lowerWidget->layout()->replaceWidget(currentEditor,newEditor);
     if (currentEditor)
         delete currentEditor;
 
     currentEditor = newEditor;
-    if (currentEditor)
-        currentEditor->onEnter();
+    currentEditor->onEnter();
 }
 
 void page_mosaic_maker::tilingChanged(int row)
@@ -544,13 +554,12 @@ void page_mosaic_maker::styleChanged(int row)
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if (mosaic)
     {
-        QComboBox * qcb = dynamic_cast<QComboBox*>(styleTable->cellWidget(row,STYLE_COL_STYLE_TYPE));
-        eStyleType esc  = static_cast<eStyleType>(qcb->currentData().toUInt());
+        QComboBox * qcb    = static_cast<QComboBox*>(styleTable->cellWidget(row,STYLE_COL_STYLE_TYPE));
+        eStyleType newType = static_cast<eStyleType>(qcb->currentData().toUInt());
+        StylePtr style     = getStyleRow(row);
+        StylePtr newStyle  = mosaicMaker->makeStyle(style,newType);
 
-        StylePtr oldStyle = getStyleRow(row);
-        StylePtr newStyle = mosaicMaker->makeStyle(esc,oldStyle);
-
-        mosaic->replaceStyle(oldStyle,newStyle);
+        mosaic->replaceStyle(style,newStyle);
     }
 
     emit sig_reconstructView();
@@ -667,12 +676,10 @@ void  page_mosaic_maker::slot_duplicateStyle()
 {
     int row = styleTable->currentRow();
     if (row == -1) return;
-    StylePtr style = getStyleRow(row);
 
-    StylePtr style2 = copyStyle(style);
-
+    StylePtr style   = getStyleRow(row);
+    StylePtr style2  = mosaicMaker->makeStyle(style, style->getStyleType());
     MosaicPtr mosaic = mosaicMaker->getMosaic();
-    if  (!mosaic) return;
     mosaic->addStyle(style2);
 
     reEnter();
@@ -681,11 +688,6 @@ void  page_mosaic_maker::slot_duplicateStyle()
 
     styleTable->selectRow(row);
     styleTable->setFocus();
-}
-
-StylePtr page_mosaic_maker::copyStyle(const StylePtr style)
-{
-    return mosaicMaker->makeStyle(style->getStyleType(),style);
 }
 
 void page_mosaic_maker::slot_set_reps()

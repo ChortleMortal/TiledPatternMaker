@@ -24,7 +24,7 @@ public:
 
     void draw(GeoGraphics * gg) override;
 
-    virtual void        resetStyleRepresentation()  override { created = false; };
+    virtual void        resetStyleRepresentation()  override { styled = false; };
     virtual void        createStyleRepresentation() override;
 
     virtual eStyleType getStyleType() const override { return STYLE_PLAIN; }

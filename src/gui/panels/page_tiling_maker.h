@@ -1,7 +1,7 @@
 #ifndef PAGE_TILING_MAKER_H
 #define PAGE_TILING_MAKER_H
 
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "gui/panels/panel_page.h"
 #include "gui/widgets/layout_sliderset.h"
 #include "model/makers/tiling_maker.h"

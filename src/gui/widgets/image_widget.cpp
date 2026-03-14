@@ -80,6 +80,7 @@ void ImageWidget::mouseMoveEvent(QMouseEvent *event)
 
 void ImageWidget::mousePressEvent(QMouseEvent *event)
 {
+    // FIXME - connect this
     QPoint pt;
     pt = event->position().toPoint();
 

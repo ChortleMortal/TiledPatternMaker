@@ -150,7 +150,6 @@ const QString Sys::defaultTilingName    = "The Unnamed";
 ///
 ///////////////////////////////////////////////////////////////
 
-
 Sys::Sys()
 {
     // Configuration and log have already been instantiated
@@ -201,7 +200,7 @@ Sys::Sys()
     // init control panel
     controlPanel->init();
 
-    if (config->splitScreen)
+    if (config->integratedScreen)
     {
         splitter = new SplitScreen();
         splitter->show();

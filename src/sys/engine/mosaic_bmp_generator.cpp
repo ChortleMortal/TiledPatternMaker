@@ -2,7 +2,7 @@
 #include <QFile>
 #include <QPainter>
 #include "gui/top/system_view_controller.h"
-#include "model/mosaics/border.h"
+#include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_reader.h"
 #include "model/mosaics/mosaic_writer.h"

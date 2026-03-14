@@ -11,7 +11,9 @@
 #include "gui/widgets/layout_sliderset.h"
 #include "gui/widgets/smx_widget.h"
 #include "model/makers/mosaic_maker.h"
-#include "model/mosaics/border.h"
+#include "model/borders/border_plain.h"
+#include "model/borders/border_2color.h"
+#include "model/borders/border_blocks.h"
 #include "model/mosaics/mosaic.h"
 #include "model/motifs/tile_color_defs.h"
 #include "model/styles/style.h"
@@ -726,7 +728,6 @@ void page_borders::createBorder()
     if (bp)
     {
         bp->setModelXform(Sys::viewController->getSystemModelXform(),true,Sys::nextSigid());
-        bp->createStyleRepresentation();
         mosaic->setBorder(bp);
 
         emit sig_reconstructView();

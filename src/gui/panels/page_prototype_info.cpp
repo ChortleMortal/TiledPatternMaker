@@ -4,7 +4,7 @@
 #include <QHBoxLayout>
 
 #include "gui/panels/page_prototype_info.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view_controller.h"
 #include "gui/widgets/layout_sliderset.h"

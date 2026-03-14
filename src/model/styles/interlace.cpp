@@ -241,14 +241,14 @@ void Interlace::resetStyleRepresentation()
     Thick::resetStyleRepresentation();
     casings.reset();
     threads.clear();
-    created = false;
+    styled = false;
 }
 
 void Interlace::createStyleRepresentation()
 {
     qDebug() << "Interlace::createStyleRepresentation";
 
-    if (created)
+    if (styled)
         return;
 
     MapPtr map = getProtoMap();
@@ -385,7 +385,7 @@ void Interlace::createStyleRepresentation()
     if (Sys::flags->flagged(VALIDATE)) casings.validate();
     if (Sys::flags->flagged(DUMP_CASINGS)) casings.dump("Complete");
 
-    created = true;
+    styled = true;
 }
 
 #if 0 // FIXME - delete unused
@@ -588,6 +588,7 @@ void Interlace::slot_dbgChanged(eDbgType type)
         break;
 
     case FLAG_CREATE_MOTIF:
+    case NUM_DFLAG_TYPES:
         // not handled here
         break;
     }

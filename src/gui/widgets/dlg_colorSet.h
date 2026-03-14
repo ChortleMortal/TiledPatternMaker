@@ -13,7 +13,7 @@ class DlgColorSet : public QDialog
     Q_OBJECT
 
 public:
-    DlgColorSet(ColorSet * cset, QWidget * parent = nullptr);
+    DlgColorSet(ColorSet * cset, QWidget * parent);
 
 protected:
     void displayTable();

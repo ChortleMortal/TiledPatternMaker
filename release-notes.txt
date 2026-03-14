@@ -1,4 +1,23 @@
-﻿Version 4.1.1
+Version 4.2
+===========
+
+Version 4.2 is a maintenance release with a focus on Styles. In particular, the different types of
+Fill Style have had their control panel menu page revised to be more responsive. The Fill styles are
+now characterised as:
+- Original Inside/Outside Coloring
+- Alternative Inside/Outside Coloring  - no better just different
+- Single-Color per Shape
+- Multi-Color per Shape
+- Color per Face.
+
+The 'Color per Face' fill type has been rewritten to make the assignment of colors to faces more
+stable than previously.  Thr older version is deprecated and older mosaic XML files are converted
+on load.  If re-saved they will be saved in the new format.
+
+Tiling Color code has also been substantially simplified and revised.
+
+
+Version 4.1.2
 =============
 
 Fixes

@@ -17,7 +17,7 @@
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/prototype_maker.h"
 #include "model/makers/tiling_maker.h"
-#include "model/mosaics/border.h"
+#include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/motifs/motif.h"
 #include "model/prototypes/design_element.h"
@@ -466,11 +466,8 @@ void page_system_info::populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic
         {
             FilledPtr fp = std::dynamic_pointer_cast<Filled>(style);
             Q_ASSERT(fp);
-            ColorMaker * cm = fp->getColorMaker();
-            QString astring = QString("Filled: algo=%1 blacks=%2 whites=%3")
-                .arg(fp->getAlgorithm())
-                .arg(cm->getBlackFaces().size())
-                .arg(cm->getWhiteFaces().size());
+            ColorMaker * cm = fp->currentColoring;
+            QString astring = QString("Filled: algo=%1 %2").arg(fp->getAlgorithm()).arg(cm->sizeInfo());
             item->setText(2,astring);  // overwrites
         }
 

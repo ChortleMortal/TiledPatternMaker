@@ -3,7 +3,7 @@
 #define MOTIF_EDITORS_H
 
 #include <QComboBox>
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "sys/enums/emotiftype.h"
 #include "model/motifs/extender.h"
 #include "model/motifs/motif_connector.h"

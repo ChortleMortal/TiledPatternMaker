@@ -124,7 +124,7 @@ void Emboss::setAngle(qreal angle )
     light_y = qSin( angle );
 }
 
-void Emboss::setColorSet(ColorSet & cset)
+void Emboss::setColorSet(ColorSet * cset)
 {
     Outline::setColorSet(cset);
     setGreys();
@@ -135,8 +135,8 @@ void Emboss::setGreys()
     float h;
     float s;
     float b;
-
-    getColorSet()->getFirstTPColor().color.getHsvF(&h,&s,&b);
+    float a;
+    getColorSet()->getFirstTPColor().color.getHsvF(&h,&s,&b,&a);
 
     greys.clear();
 
@@ -149,7 +149,7 @@ void Emboss::setGreys()
         float bb = b * b1;
 
         QColor c;
-        c.setHsvF(h, ss, bb);
+        c.setHsvF(h, ss, bb,a);
         greys << c;
     }
 }

@@ -4,10 +4,11 @@
 #include "gui/top/system_view_controller.h"
 #include "gui/viewers/debug_view.h"
 #include "gui/viewers/image_view.h"
+#include "model/borders/border_plain.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/prototype_maker.h"
 #include "model/makers/tiling_maker.h"
-#include "model/mosaics/border.h"
+#include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_manager.h"
 #include "model/prototypes/prototype.h"
@@ -134,7 +135,7 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
     Canvas & canvas = Sys::viewController->getCanvas();
     canvas.setCanvasSize(csettings.getCanvasSize());
 
-    if (Sys::config->splitScreen)
+    if (Sys::config->integratedScreen)
     {
         Sys::viewController->setFixedSize(csettings.getViewSize());
     }
@@ -260,11 +261,7 @@ void MosaicMaker::sm_replacePrototype(ProtoPtr prototype)
 
 void MosaicMaker::sm_resetStyles()
 {
-    const StyleSet & sset = _mosaic->getStyleSet();
-    for (auto & style : std::as_const(sset))
-    {
-        style->resetStyleRepresentation();
-    }
+    _mosaic->resetStyleMaps();
 }
 
 void MosaicMaker::sm_takeUp(MosaicEvent & mosEvent)
@@ -342,38 +339,40 @@ void MosaicMaker::resetMosaic()
     _mosaic = make_shared<Mosaic>();
 }
 
-StylePtr MosaicMaker::makeStyle(eStyleType type, StylePtr oldStyle)
+StylePtr MosaicMaker::makeStyle(StylePtr style, eStyleType newType)
 {
     StylePtr newStyle;
 
-    switch (type)
+    switch (newType)
     {
     case STYLE_PLAIN:
-        newStyle = make_shared<Plain>(oldStyle);
+        newStyle = make_shared<Plain>(style);
         break;
     case STYLE_THICK:
-        newStyle = make_shared<Thick>(oldStyle);
+        newStyle = make_shared<Thick>(style);
         break;
     case STYLE_OUTLINED:
-        newStyle = make_shared<Outline>(oldStyle);
+        newStyle = make_shared<Outline>(style);
         break;
     case STYLE_INTERLACED:
-        newStyle = make_shared<Interlace>(oldStyle);
+        newStyle = make_shared<Interlace>(style);
         break;
     case STYLE_EMBOSSED:
-        newStyle = make_shared<Emboss>(oldStyle);
+        newStyle = make_shared<Emboss>(style);
         break;
     case STYLE_SKETCHED:
-        newStyle = make_shared<Sketch>(oldStyle);
+        newStyle = make_shared<Sketch>(style);
         break;
     case STYLE_FILLED:
-        newStyle = make_shared<Filled>(oldStyle);
+        newStyle = make_shared<Filled>(style);
         break;
     case STYLE_TILECOLORS:
-        newStyle = make_shared<TileColors>(oldStyle);
+        newStyle = make_shared<TileColors>(style);
         break;
-    case STYLE_STYLE:
     case STYLE_BORDER:
+        newStyle = make_shared<BorderPlain>(_mosaic.get());
+        break;
+    case STYLE_NONE:
         Q_ASSERT(false);
         break;
     }

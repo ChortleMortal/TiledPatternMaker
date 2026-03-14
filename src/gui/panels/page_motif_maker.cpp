@@ -9,7 +9,7 @@
 #include "gui/model_editors/motif_edit/motif_editor_widget.h"
 #include "gui/model_editors/motif_edit/motif_maker_widget.h"
 #include "gui/panels/page_motif_maker.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
 #include "gui/top/system_view_controller.h"

@@ -65,7 +65,6 @@ protected:
 
     StylePtr getStyleRow(int row);
     StylePtr getStyleIndex(int index);
-    StylePtr copyStyle(const StylePtr style);
 
     ProtoPtr getCurrentPrototype();
 

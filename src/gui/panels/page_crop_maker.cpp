@@ -7,7 +7,7 @@
 #include "gui/viewers/crop_maker_view.h"
 #include "gui/widgets/crop_widget.h"
 #include "model/makers/mosaic_maker.h"
-#include "model/mosaics/border.h"
+#include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/prototypes/prototype.h"
 #include "sys/geometry/crop.h"

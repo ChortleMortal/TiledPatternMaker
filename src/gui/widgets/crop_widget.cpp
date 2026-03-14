@@ -8,7 +8,7 @@
 #include "sys/enums/eborder.h"
 #include "sys/geometry/crop.h"
 #include "sys/sys.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 
 CropWidget::CropWidget()
 {

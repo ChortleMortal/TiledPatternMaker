@@ -436,7 +436,7 @@ void TilingMaker::sm_takeUp(const TilingEvent & tilingEvent)
     Canvas & canvas = Sys::viewController->getCanvas();
     canvas.setCanvasSize(csettings.getCanvasSize());
 
-    if (Sys::config->splitScreen)
+    if (Sys::config->integratedScreen)
     {
         Sys::viewController->setFixedSize(size);
     }

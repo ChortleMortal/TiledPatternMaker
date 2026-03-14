@@ -3,9 +3,14 @@
 #define FILLED_H
 
 #include "sys/enums/efilltype.h"
-#include "model/styles/colormaker.h"
+#include "model/styles/fill_color_maker.h"
+#include "model/styles/fill_original.h"
+#include "model/styles/fill_new1.h"
+#include "model/styles/fill_color_set.h"
+#include "model/styles/fill_color_group.h"
+#include "model/styles/fill_faces.h"
+#include "model/styles/fill_deprecated.h"
 #include "model/styles/style.h"
-#include "model/styles/colorset.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -22,9 +27,6 @@
 
 class Filled : public Style
 {
-    friend class FilledEditor;
-    friend class page_system_info;
-
 public:
     Filled(const ProtoPtr &  proto, eFillType algorithm);
     Filled(const StylePtr &other);
@@ -35,54 +37,34 @@ public:
 
     void draw(GeoGraphics *gg) override;
 
-    ColorSet   * getWhiteColorSet()         { return &whiteColorSet; }
-    ColorSet   * getBlackColorSet()         { return &blackColorSet; }
-    ColorGroup * getColorGroup()            { return &colorGroup; }
-
-    bool getDrawOutsideWhites()             { return draw_outside_whites; }
-    bool getDrawInsideBlacks()              { return draw_inside_blacks; }
-
-    void setDrawOutsideWhites(bool draw)    { draw_outside_whites = draw; }
-    void setDrawInsideBlacks(bool  draw)    { draw_inside_blacks  = draw; }
-
-    void resetColorIndices() { faceColorIndices.fill(-1);}
-    int  getColorIndex(int faceIndex);
-    void setColorIndex(int faceIndex,int colorIndex);
-    int  numColorIndices() { return faceColorIndices.size(); }
-    void removeColorIndex(int faceIndex);
-
-    void            setPaletteIndices(QVector<int> & indices) { faceColorIndices = indices; }
-    QVector<int> &  getPaletteIndices()                       { return faceColorIndices; }
-    QColor          getColorFromPalette(int index)            { return whiteColorSet.getQColor(index); }
-
-    void            setAlgorithm(eFillType val);
-    eFillType       getAlgorithm()          { return algorithm; }
-
-    ColorMaker *    getColorMaker()         { return colorMaker; };
+    eFillType    getAlgorithm() const        { return _algorithm; }
+    void         setAlgorithm(eFillType algo);
+    void         initAlgorithmFrom(eFillType old);
 
     virtual eStyleType getStyleType() const override { return STYLE_FILLED; }
     QString            getStyleDesc() const override { return "Filled";}
-    void               dump()         const override { qDebug().noquote() << getStyleDesc(); }
+    void               dump()         const override { qDebug().noquote() << getStyleDesc() << "algo =" << getAlgorithm(); }
 
 protected:
     void drawDCEL(GeoGraphics *gg);
     void drawDCELNew2(GeoGraphics *gg);
     void drawDCELNew3(GeoGraphics *gg);
     void drawDCELDirectColor(GeoGraphics *gg);
+    void drawDCELDirectColor2(GeoGraphics *gg);
 
-private:
-    ColorMaker *    colorMaker;
+public:
+    ColorMaker  *       currentColoring;
+    OriginalColoring    original;
+    New1Coloring        new1;
+    New2Coloring        new2;
+    New3Coloring        new3;
+    DirectColoring      direct;
+    DeprecatedDirectColoring  deprecated;
 
-    // Parameters of the rendering. Control what gets drawn.
-    bool            draw_outside_whites;
-    bool            draw_inside_blacks;
-    eFillType       algorithm;
-
-    ColorSet        whiteColorSet;
-    ColorSet        blackColorSet;
-    ColorGroup      colorGroup;
-
-    QVector<int>    faceColorIndices;
+    eFillType           _algorithm;
 };
+
+typedef std::shared_ptr<Filled> FilledPtr;
+
 #endif
 

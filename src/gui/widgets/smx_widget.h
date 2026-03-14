@@ -6,6 +6,28 @@
 #include <QPainter>
 class Layer;
 
+//////////////////////////////////////////////////////////
+///
+///   BQCheckBox
+///
+//////////////////////////////////////////////////////////
+class BQCheckBox : public QCheckBox
+{
+    Q_OBJECT
+
+public:
+    BQCheckBox(const QString &text, QWidget *parent = nullptr);
+
+    void paintEvent(QPaintEvent *e) override;
+
+    bool selected;
+};
+
+//////////////////////////////////////////////////////////
+///
+///   SMXWidget
+///
+//////////////////////////////////////////////////////////
 class SMXWidget : public QWidget
 {
     Q_OBJECT
@@ -14,8 +36,9 @@ public:
     SMXWidget(Layer *layer, bool abbrev, bool box);
 
     void    setLayer(Layer * layer) { _layer = layer; }
-
     void    refresh();
+
+    void    setSelected(bool s);
 
 protected:
     void    paintEvent(QPaintEvent *event) override;
@@ -28,10 +51,11 @@ private slots:
 private:
     Layer * _layer;
     bool    _box;
+    bool    _selected;
 
-    QCheckBox   * chkLock;
-    QCheckBox   * chkSolo;
-    QCheckBox   * chkBreakaway;
+    BQCheckBox   * chkLock;
+    BQCheckBox   * chkSolo;
+    BQCheckBox   * chkBreakaway;
 
 };
 

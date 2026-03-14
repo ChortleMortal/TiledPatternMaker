@@ -38,8 +38,8 @@ bool DCEL::build()
 
         VertexPtr v1 = e->v1;
         VertexPtr v2 = e->v2;
-        v1->adjacent_vertices.push_back(v2);
-        v2->adjacent_vertices.push_back(v1);
+        addAdjacentVertex(v1, v2);
+        addAdjacentVertex(v2, v1);
 
         EdgePtr e2 = e->createTwin();
         e2->twin   = e;
@@ -94,6 +94,20 @@ DCEL::~DCEL()
     faces.clear();
 #endif
     refs--;
+}
+
+void DCEL::addAdjacentVertex(const VertexPtr &from, const VertexPtr &to)
+{
+    auto & adj = from->adjacent_vertices;
+
+    for (const auto & wv : std::as_const(adj))
+    {
+        VertexPtr v = wv.lock();
+        if (v == to)
+            return;    // already present
+    }
+
+    adj.push_back(to);
 }
 
 void DCEL::cleanseEdges()
@@ -192,40 +206,35 @@ bool DCEL::fill_half_edge_table()
 
 EdgePtr DCEL::next_half_edge(NeighbourMap & nmap, const EdgePtr & edge)
 {
-    qreal max_angle = 0.0;
+    qreal max_angle = -1.0;
 
-    VertexPtr v1    = edge->v1;
-    VertexPtr v2    = edge->v2;
-    QPointF p1      = v1->pt;
-    QPointF p2      = v2->pt;
+    VertexPtr v1 = edge->v1;
+    VertexPtr v2 = edge->v2;
+    QPointF p1   = v1->pt;
+    QPointF p2   = v2->pt;
 
     VertexPtr next;
+
     for (const auto & weakv : std::as_const(v2->adjacent_vertices))
     {
         VertexPtr v = weakv.lock();
-        if (v == v1)
-        {
+        if (!v || v == v1)
             continue;
-        }
-        else
+
+        qreal temp_angle = angle(p1, p2, v->pt);
+        if (temp_angle > max_angle)
         {
-            qreal temp_angle = angle(p1, p2, v->pt);
-            if(max_angle < temp_angle)
-            {
-                max_angle = temp_angle;
-                next = v;
-            }
+            max_angle = temp_angle;
+            next = v;
         }
     }
+
     if (next)
-    {
-        return findEdge(nmap,v2,next,true);
-    }
-    else
-    {
-        EdgePtr dp;
-        return dp;     // edge is not connected
-    }
+        return findEdge(nmap, v2, next, true);
+
+    // no valid next edge from this vertex
+    EdgePtr dp;
+    return dp;
 }
 
 void DCEL::fill_half_edge_faces()
@@ -253,49 +262,39 @@ void DCEL::fill_half_edge_faces()
     }
 
     faces.sortByPositon();
-    qDebug() << "DCEL: faces=" << faces.count();
 }
 
 void DCEL::createFace(const EdgePtr & head)
 {
-    double signedArea = 0;
+    double signedArea = 0.0;
 
     FacePtr aface = make_shared<Face>();
     faces.push_back(aface);
 
-    EdgePtr oedge = head;
+    EdgePtr e = head;
 
-    double x1 = 0;
-    double y1 = 0;
     do
     {
-        //cout << "adding edge " << edgeIndex(oedge) << endl;
-        //print_edge(oedge);
-        oedge->incident_face = aface;
-        oedge->dvisited = true;
-        aface->push_back(oedge);
+        e->incident_face = aface;
+        e->dvisited      = true;
+        aface->push_back(e);
 
-        double x1 = oedge->v1->pt.x();
-        double y1 = oedge->v1->pt.y();
-        double x2 = oedge->v2->pt.x();
-        double y2 = oedge->v2->pt.y();
+        double x1 = e->v1->pt.x();
+        double y1 = e->v1->pt.y();
+        double x2 = e->v2->pt.x();
+        double y2 = e->v2->pt.y();
+
         signedArea += (x1 * y2 - x2 * y1);
 
-        oedge = oedge->next.lock();
+        e = e->next.lock();
     }
-    while (oedge != head);
+    while (e != head);
 
-    double x2 = head->v1->pt.x();
-    double y2 = head->v1->pt.y();
-    signedArea += (x1 * y2 - x2 * y1);
-
-    aface->area          = abs(signedArea / 2);
+    aface->area          = std::abs(signedArea) / 2.0;
     aface->incident_edge = head;
 
-    if (signedArea > 0) // Assuming no standalone edge
-        aface->outer = false;
-    else
-        aface->outer = true;
+    // For a standard CCW outer boundary, signedArea > 0
+    aface->outer = (signedArea < 0);  // or > 0 depending on your coordinate system
 }
 
 void DCEL::fill_face_table_inner_components()
@@ -305,35 +304,43 @@ void DCEL::fill_face_table_inner_components()
     for (const auto & hedge : std::as_const(edges))
     {
         EdgePtr edge = hedge;
+
+        // Skip edges already assigned to a face
         if (edge->incident_face.lock())
             continue;
 
-        EdgePtr head  = edge;
-
+        // Walk the loop starting at this edge
+        EdgePtr head = edge;
         QVector<VertexPtr> verts;
         verts.push_back(edge->v1);
+
         edge = edge->next.lock();
-        while (edge != head)
+        while (edge && edge != head)
         {
             verts.push_back(edge->v1);
             edge = edge->next.lock();
         }
 
-        FacePtr aface = check_if_inside(verts);
-        if (!aface)
+        // Find containing face (if any)
+        FacePtr container = check_if_inside(verts);
+
+        // If no containing face, this is a top-level outer boundary
+        if (!container)
         {
-            aface = findOuterFace();
+            container = make_shared<Face>();
+            container->outer = true;   // top-level region
+            container->incident_edge = head;
+            faces.push_back(container);
         }
 
-        aface->incident_edge = edge;
-
-        edge->incident_face = aface;
-        edge = edge->next.lock();
-        while (edge != head)
+        // Assign this loop to the container face
+        edge = head;
+        do
         {
-            edge->incident_face = aface;
+            edge->incident_face = container;
             edge = edge->next.lock();
         }
+        while (edge && edge != head);
     }
 }
 
@@ -350,58 +357,52 @@ bool DCEL::check_if_point_is_inside(const VertexPtr & ver, const QVector<VertexP
 
 FacePtr DCEL::check_if_inside(const QVector<VertexPtr> & verts)
 {
-    double   min_area    = 100021.1;
-    double   self_area   = area_poly(verts);
+    double self_area = area_poly(verts);
+    double best_area = std::numeric_limits<double>::max();
 
-    FacePtr insideFace;
+    FacePtr best_face;
 
-    for (auto & aface : std::as_const(faces))
-    {
-        EdgePtr edge = aface->incident_edge.lock();
-        if (!edge)
-            edge = edges[0];       // king  of kludges
-        EdgePtr head = edge;
-
-        QVector<VertexPtr> key2;
-        while(1)
-        {
-            key2.push_back(edge->v1);
-            edge = edge->next.lock();
-            if (edge == head)
-                break;
-        }
-
-        bool flag = 1;
-        for(int k = 0 ; k < verts.size() ; k++)
-        {
-            flag = flag & check_if_point_is_inside(verts[k] , key2);
-            if(flag == 0)
-                break;
-        }
-        if(flag)
-        {
-            double a = area_poly(key2);
-            if(min_area > a && self_area != a && self_area < a)
-            {
-                min_area = a;
-                insideFace = aface;
-            }
-        }
-    }
-    return insideFace;
-}
-
-FacePtr DCEL::findOuterFace()
-{
     for (const auto & face : std::as_const(faces))
     {
-        if (face->outer)
+        EdgePtr head = face->incident_edge.lock();
+        if (!head)
+            continue;
+
+        // Reconstruct boundary of candidate face
+        QVector<VertexPtr> boundary;
+        EdgePtr e = head;
+        do
         {
-            return face;
+            boundary.push_back(e->v1);
+            e = e->next.lock();
+        }
+        while (e && e != head);
+
+        // Check if all verts lie inside this boundary
+        bool all_inside = true;
+        for (const auto & v : verts)
+        {
+            if (!check_if_point_is_inside(v, boundary))
+            {
+                all_inside = false;
+                break;
+            }
+        }
+
+        if (!all_inside)
+            continue;
+
+        double area = area_poly(boundary);
+
+        // Choose smallest containing face
+        if (area > self_area && area < best_area)
+        {
+            best_area = area;
+            best_face = face;
         }
     }
-    FacePtr fp;
-    return fp;
+
+    return best_face;
 }
 
 double DCEL::area_poly(const QVector<VertexPtr> &key)
@@ -532,7 +533,6 @@ double DCEL::angle(const QPointF &p1, const QPointF &p2, const QPointF &p3)
     return ((result < 0) ? (result * 180 / 3.141592) + 360 : (result * 180 / 3.141592));
 }
 
-
 void DCEL::displayDCEL(int  val)
 {
     if (val & 0x01) print_vertices();
@@ -583,7 +583,6 @@ VertexPtr DCEL::validAdjacent(const VertexPtr & vert)
 
 EdgePtr DCEL::findEdge(NeighbourMap & nmap, const VertexPtr &start , const VertexPtr&  end, bool expected)
 {
-
     NeighboursPtr np = nmap.getNeighbours(start);
 
     for (WeakEdgePtr & wep : *np)
@@ -783,7 +782,6 @@ void DCEL::print_neighbouring_faces(const EdgePtr &edge)
         deb << endl;
     }
     qDebug().noquote() << astring;
-
 }
 
 void DCEL::print_edge_detail(const EdgePtr &e, QString && name, QDebug & deb)

@@ -1,4 +1,4 @@
-#include "edesign.h"
+#include "sys/enums/edesign.h"
 
 #define E2STR(x) #x
 

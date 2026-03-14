@@ -43,63 +43,35 @@ bool TileColors::getOutline(QColor & color, int & width)
     return outlineEnb;
 }
 
+eStyleType TileColors::getStyleType() const
+{
+    return STYLE_TILECOLORS;
+}
+
+QString TileColors::getStyleDesc() const
+{
+    return "Tile Colors";
+}
+
 void TileColors::resetStyleRepresentation()
 {
-    colorSets.clear();
-    coloredPlacements.clear();
-    created = false;
+    _coloredPlacements.clear();
+    styled = false;
 }
 
 void TileColors::createStyleRepresentation()
 {
-    if (created)
+    if (styled)
     {
         return;
     }
 
     qInfo() << "TileColors::createStyleRepresentation()";
 
-    ProtoPtr  pp              = getPrototype();
-    TilingPtr tiling          = pp->getTiling();
+    adjustColorGroupSize();
+
+    TilingPtr tiling          = prototype->getTiling();
     QVector<TilePtr> uniques  = tiling->unit().getUniqueTiles();
-    int unSize                = uniques.size();
-
-    if (tileColors.size() == 0)
-    {
-        tileColors = tiling->legacyTileColors();
-        if (tileColors.size() == 0)
-        {
-            qWarning() << "TileColors:: empty ColorGroup - addding" << unSize << "default ColorSets";
-            ColorSet cset;
-            for (int i = 0; i < unSize; i++)
-            {
-                tileColors.addColorSet(cset);
-            }
-        }
-        else
-            qInfo() << "Loaded tile colors from legacy tiling";
-    }
-
-    if (unSize > tileColors.size())
-    {
-        int diff = unSize - tileColors.size();
-        qWarning() << "adding" << diff << "ColorSets";
-        ColorSet cset;
-        for (int i = 0; i < diff; i++)
-        {
-            tileColors.addColorSet(cset);
-        }
-    }
-    else if (unSize < tileColors.size())
-    {
-        int diff = tileColors.size() - unSize;
-        qWarning() << "removing" << diff << "ColorSets";
-        tileColors.resize(unSize);
-    }
-
-    Q_ASSERT(tileColors.size() == uniques.size());
-
-    tileColors.resetIndex();
 
     FillRegion flood(tiling.get(),getPrototype()->getMosaic()->getCanvasSettings().getFillData());
     Placements placements = flood.getPlacements(Sys::config->repeatMode);
@@ -114,62 +86,63 @@ void TileColors::createStyleRepresentation()
         TilePtr tile        = placedTile->getTile();
 
         uint tileIndex      = uniques.indexOf(tile);
-        ColorSet * cset     = tileColors.getColorSet(tileIndex);
+        ColorSet * cset     = colorGroup.getColorSet(tileIndex);
 
-        TileColorSet tcs(placedTile ,cset);
-        colorSets << tcs;
-
-        // this is twitchy code - reset needs to be done here - do not move
-        cset->resetIndex();
-        for (QTransform & t : placements)
+        // this is twitchy code - do not move
+        for (int i=0; i < placements.size(); i++)
         {
             // fetch tile colors and store
-            QColor color   = cset->getNextTPColor().color;
+            QTransform & t = placements[i];
             EdgePoly  ep2  = ep.map(t);
+            QColor color   = cset->getTPColor(i).color;
             ColoredPlacement pl(ep2, color);
-            coloredPlacements << pl;
+            _coloredPlacements << pl;
         }
     }
-    created = true;
+    styled = true;
 }
 
-eStyleType TileColors::getStyleType() const
+void TileColors::adjustColorGroupSize()
 {
-    return STYLE_TILECOLORS;
-}
+    TilingPtr tiling          = prototype->getTiling();
+    QVector<TilePtr> uniques  = tiling->unit().getUniqueTiles();
+    int numUniques            = uniques.size();
 
-QString TileColors::getStyleDesc() const
-{
-    return "Tile Colors";
-}
-
-ColorSet * TileColors::getColorSet(PlacedTilePtr tile)
-{
-    static ColorSet emptyCset;
-
-    for (auto & tcs : colorSets)
+    if (colorGroup.size() == 0)
     {
-        if (tcs.wtile.lock() == tile)
+        colorGroup = tiling->legacyTileColors();
+        if (colorGroup.size() == 0)
         {
-            return tcs.cset;
+            qWarning() << "TileColors:: empty ColorGroup - addding" << numUniques << "default ColorSets";
+            ColorSet cset;
+            cset.addColor(TPColor());
+            for (int i = 0; i < numUniques; i++)
+            {
+                colorGroup.addColorSet(cset);
+            }
         }
+        else
+            qInfo() << "Loaded tile colors from legacy tiling";
     }
-    return &emptyCset;
-}
 
-ColorSet * TileColors::getColorSet(TilePtr tile)
-{
-    static ColorSet emptyCset;
-
-    for (auto & tcs : colorSets)
+    if (numUniques > colorGroup.size())
     {
-        auto placed = tcs.wtile.lock();
-        if (placed && (placed->getTile() == tile))
+        int diff = numUniques - colorGroup.size();
+        qWarning() << "adding" << diff << "ColorSets";
+        ColorSet cset;
+        for (int i = 0; i < diff; i++)
         {
-            return tcs.cset;
+            colorGroup.addColorSet(cset);
         }
     }
-    return &emptyCset;
+    else if (numUniques < colorGroup.size())
+    {
+        int diff = colorGroup.size() - numUniques;
+        qWarning() << "removing" << diff << "ColorSets";
+        colorGroup.resize(numUniques);
+    }
+
+    Q_ASSERT(colorGroup.size() == uniques.size());
 }
 
 void TileColors::draw(GeoGraphics * gg)
@@ -199,28 +172,17 @@ void TileColors::draw(GeoGraphics * gg)
         }
     }
 
-    for (auto & bpc : coloredPlacements)
+    QPen pen2(outlineColor,outlineWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+
+    for (ColoredPlacement & coloredPlacement : _coloredPlacements)
     {
-        QPen pen(bpc.color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-        gg->fillEdgePoly(bpc.epoly,pen);
+        QPen pen(coloredPlacement.color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        gg->fillEdgePoly(coloredPlacement.epoly,pen);
+
         if (outlineEnb)
         {
-            QPen pen2(outlineColor,outlineWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-            gg->drawEdgePoly(bpc.epoly,pen2);
+            gg->drawEdgePoly(coloredPlacement.epoly,pen2);
         }
     }
     painter->restore();
 }
-
-
-ColoredPlacement::ColoredPlacement(EdgePoly & ep, QColor col)
-{
-    epoly = ep;
-    color = col;
-};
-
-TileColorSet::TileColorSet(PlacedTilePtr tile, ColorSet * colorset)
-{
-    wtile = tile;
-    cset  = colorset;
-};

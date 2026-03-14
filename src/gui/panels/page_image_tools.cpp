@@ -9,7 +9,7 @@
 #include <QFuture>
 
 #include "gui/panels/page_image_tools.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/splash_screen.h"
 #include "gui/top/system_view.h"
@@ -28,6 +28,7 @@
 #include "sys/engine/image_engine.h"
 #include "sys/engine/mosaic_bmp_generator.h"
 #include "sys/engine/mosaic_stepper.h"
+#include "sys/engine/mosaic_xml_regenerator.h"
 #include "sys/engine/png_stepper.h"
 #include "sys/engine/stepping_engine.h"
 #include "sys/engine/tiling_bmp_generator.h"
@@ -1791,33 +1792,39 @@ void page_image_tools::slot_next()
 
 bool takeAction(sAction action)
 {
+    bool rv = false;
+
     if (Sys::imgGeneratorInUse)
     {
         if (action.type ==  ACT_GEN_MOSAIC_BMP)
         {
+            AQElapsedTimer et;
+            et.start();
             MosaicBMPGenerator engine;
-            bool rv = engine.saveBitmap(action.name,action.path);
-            return rv;
+            rv = engine.saveBitmap(action.name,action.path);
+            action.timer->add(action.name,et.getElapsedSeconds());
         }
         else if (action.type == ACT_GEN_TILING_BMP)
         {
             TilingBMPGenerator engine;
-            bool rv = engine.saveBitmap(action.name,action.path);
-            return rv;
+            rv = engine.saveBitmap(action.name,action.path);
         }
-        else
+        else if (action.type == ACT_GEN_COMPARE_WLIST)
         {
-            Q_ASSERT(action.type == ACT_GEN_COMPARE_WLIST);
             CompareBMPEngine engine;
-            bool rv = engine.compareBMPs(action.name,action.path,action.path2);
-            return rv;
+            rv = engine.compareBMPs(action.name,action.path,action.path2);
+        }
+        else if (action.type == ACT_REGEN_MOSAIC_XML)
+        {
+            MosaicXMLRegenerator engine;
+            rv = engine.regemerateXML(action.name);
         }
     }
     else
     {
         qInfo() << "Cancelled" << action.name.get();
-        return false;
     }
+    return rv;
 }
 
 void page_image_tools::processActionList(QList<sAction> &actions)
@@ -1856,7 +1863,7 @@ void page_image_tools::processActionList(QList<sAction> &actions)
         QString str = QString("Pocesses took %1 seconds").arg(etimer->getElapsed().trimmed());
         QString str2 =        "Cycle complete";
         qInfo().noquote() << str;
-        QMessageBox box(this);
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Information);
         box.setText(str2);
         box.setInformativeText(str);
@@ -1884,6 +1891,7 @@ void page_image_tools::slot_engineComplete()
     {
     case ACT_GEN_MOSAIC_BMP:
         panel->delegateView(VIEW_MOSAIC,true);
+        timerResults.dump();
         break;
 
     case ACT_GEN_TILING_BMP:
@@ -1891,6 +1899,7 @@ void page_image_tools::slot_engineComplete()
         break;
 
     case ACT_GEN_COMPARE_WLIST:
+    {
         Sys::viewController->appSuspendPaint(false);
         auto size = comparisonList.count();
         if (size)
@@ -1899,13 +1908,16 @@ void page_image_tools::slot_engineComplete()
             slot_toggle_useWL(true);
         }
         str2 += QString(" - %1 differences put into worklist").arg(size);
-        break;
+    }   break;
+
+    case ACT_REGEN_MOSAIC_XML:
+        break;  // nothing to do
     }
 
     qInfo().noquote() << str;
     qInfo().noquote() << str2;
 
-    QMessageBox box(this);
+    QMessageBox box(Sys::controlPanel);
     box.setIcon(QMessageBox::Information);
     box.setText(str2);
     box.setInformativeText(str);
@@ -1929,6 +1941,7 @@ void page_image_tools::saveMosaicBitmaps()
 {
     qInfo() << "saveMosaicBitmaps";
 
+    timerResults.clear();
     etimer->start();
 
     eLoadType id = config->imageFileFilter;
@@ -1961,9 +1974,31 @@ void page_image_tools::saveMosaicBitmaps()
         }
 
         sAction action;
-        action.type = ACT_GEN_MOSAIC_BMP;
-        action.name = name;
-        action.path = pixmapPath;
+        action.type  = ACT_GEN_MOSAIC_BMP;
+        action.name  = name;
+        action.path  = pixmapPath;
+        action.timer = &timerResults;
+        actions.push_back(action);
+    }
+
+    processActionList(actions);
+}
+
+void page_image_tools::regenerateMosaicXML()
+{
+    qInfo() << "regenerateMosaicXML";
+
+    etimer->start();
+
+    eLoadType id      = config->imageFileFilter;
+    VersionList files = FileServices::getMosaicNames(id);
+
+    QList<sAction> actions;
+    for (const VersionedName & name : std::as_const(files))
+    {
+        sAction action;
+        action.type  = ACT_REGEN_MOSAIC_XML;
+        action.name  = name;
         actions.push_back(action);
     }
 
@@ -2070,6 +2105,15 @@ void page_image_tools::slot_genBMPs()
     secondDir->setCurrentText(Sys::getBMPPath(generatorType));
 }
 
+void page_image_tools::slot_regenMosaicXML()
+{
+    Sys::flags->enable(false); // turn off debug
+
+    generatorType = ACT_REGEN_MOSAIC_XML;
+
+    setupActions();
+}
+
 void page_image_tools::slot_generateComparisonWL()
 {
     if (bmpView->isChecked())
@@ -2134,6 +2178,15 @@ void page_image_tools::setupActions()
         Sys::localCycle        = true;
         Sys::viewController->appSuspendPaint(true);
         createComparedWorklist();
+    }
+    else if (generatorType == ACT_REGEN_MOSAIC_XML)
+    {
+        Q_ASSERT(!Sys::imgGeneratorInUse);
+        Sys::imgGeneratorInUse = true;
+        Sys::localCycle        = true;
+        Sys::viewController->disableAllViews();
+        emit sig_reconstructView();
+        regenerateMosaicXML();
     }
 }
 

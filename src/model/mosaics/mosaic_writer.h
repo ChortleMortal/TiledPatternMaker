@@ -80,8 +80,8 @@ protected:
     void    procesToolkitGeoLayer(QTextStream &ts, const Xform &xf, eZLevel zlevel);
     void    processsStyleThick(QTextStream &ts, eDrawOutline draw_outline, qreal width, qreal outlineWidth, QColor outlineColor, Qt::PenJoinStyle join_style, Qt::PenCapStyle cap_style);
     void    processsStyleInterlace(QTextStream &ts, qreal gap, qreal shadow, bool includeSVerts, bool startUnder);
-    void    processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, eFillType algorithm);
     void    processsStyleFilledFaces(QTextStream &ts, class Filled * filled);
+    void    processsStyleFilledFaces2(QTextStream &ts, class Filled * filled);
     void    processsStyleEmboss(QTextStream &ts, qreal angle);
 
     // tiles

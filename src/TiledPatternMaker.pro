@@ -28,16 +28,22 @@ SOURCES += \
     gui/model_editors/motif_edit/motif_editors.cpp \
     gui/model_editors/motif_edit/motif_maker_widget.cpp \
     gui/model_editors/motif_edit/regular_motif_editors.cpp \
-    gui/model_editors/style_edit/style_color_fill_face.cpp \
-    gui/model_editors/style_edit/style_color_fill_group.cpp \
-    gui/model_editors/style_edit/style_color_fill_original.cpp \
-    gui/model_editors/style_edit/style_color_fill_set.cpp \
-    gui/model_editors/style_edit/style_editors.cpp \
+    gui/model_editors/style_edit/colored_editor.cpp \
+    gui/model_editors/style_edit/emboss_editor.cpp \
+    gui/model_editors/style_edit/fill_editor.cpp \
+    gui/model_editors/style_edit/fill_face_editor.cpp \
+    gui/model_editors/style_edit/fill_group_editor.cpp \
+    gui/model_editors/style_edit/fill_new1_editor.cpp \
+    gui/model_editors/style_edit/fill_original_editor.cpp \
+    gui/model_editors/style_edit/fill_set_editor.cpp \
+    gui/model_editors/style_edit/interlace_editor.cpp \
+    gui/model_editors/style_edit/style_editor.cpp \
+    gui/model_editors/style_edit/thick_editor.cpp \
+    gui/model_editors/style_edit/tile_colors_editor.cpp \
     gui/model_editors/tiling_edit/tile_selection.cpp \
     gui/model_editors/tiling_edit/tiling_mouseactions.cpp \
     gui/panels/page_backgrounds.cpp \
     gui/panels/page_borders.cpp \
-    gui/panels/page_config.cpp \
     gui/panels/page_crop_maker.cpp \
     gui/panels/page_debug.cpp \
     gui/panels/page_grid.cpp \
@@ -53,9 +59,9 @@ SOURCES += \
     gui/panels/page_motif_maker.cpp \
     gui/panels/page_prototype_info.cpp \
     gui/panels/page_save.cpp \
+    gui/panels/page_settings.cpp \
     gui/panels/page_system_info.cpp \
     gui/panels/page_tiling_maker.cpp \
-    gui/panels/panel_misc.cpp \
     gui/panels/panel_page.cpp \
     gui/panels/panel_page_controller.cpp \
     gui/panels/panel_page_list_widget.cpp \
@@ -83,6 +89,7 @@ SOURCES += \
     gui/viewers/shape_view.cpp \
     gui/viewers/tiling_maker_view.cpp \
     gui/viewers/viewer_services.cpp \
+    gui/widgets/colorset_widget.cpp \
     gui/widgets/crop_widget.cpp \
     gui/widgets/dlg_cleanse.cpp \
     gui/widgets/dlg_colorSet.cpp \
@@ -108,6 +115,7 @@ SOURCES += \
     gui/widgets/layout_transform.cpp \
     gui/widgets/memory_combo.cpp \
     gui/widgets/mouse_mode_widget.cpp \
+    gui/widgets/panel_misc.cpp \
     gui/widgets/smx_widget.cpp \
     gui/widgets/rounded_polygon.cpp \
     gui/widgets/transparent_widget.cpp \
@@ -122,12 +130,15 @@ SOURCES += \
     legacy/patterns.cpp \
     legacy/shapefactory.cpp \
     legacy/shapes.cpp \
+    model/borders/border.cpp \
+    model/borders/border_2color.cpp \
+    model/borders/border_blocks.cpp \
+    model/borders/border_plain.cpp \
     model/makers/crop_maker.cpp \
     model/makers/mosaic_maker.cpp \
     model/makers/prototype_maker.cpp \
     model/makers/prototype_maker_data.cpp \
     model/makers/tiling_maker.cpp \
-    model/mosaics/border.cpp \
     model/mosaics/legacy_loader.cpp \
     model/mosaics/mosaic.cpp \
     model/mosaics/mosaic_manager.cpp \
@@ -169,9 +180,15 @@ SOURCES += \
     model/styles/casing_set.cpp \
     model/styles/casing_side.cpp \
     model/styles/colored.cpp \
-    model/styles/colormaker.cpp \
     model/styles/colorset.cpp \
     model/styles/emboss.cpp \
+    model/styles/fill_color_group.cpp \
+    model/styles/fill_color_maker.cpp \
+    model/styles/fill_color_set.cpp \
+    model/styles/fill_deprecated.cpp \
+    model/styles/fill_faces.cpp \
+    model/styles/fill_new1.cpp \
+    model/styles/fill_original.cpp \
     model/styles/filled.cpp \
     model/styles/interlace.cpp \
     model/styles/interlace_casing.cpp \
@@ -200,6 +217,7 @@ SOURCES += \
     sys/engine/image_engine.cpp \
     sys/engine/mosaic_bmp_generator.cpp \
     sys/engine/mosaic_stepper.cpp \
+    sys/engine/mosaic_xml_regenerator.cpp \
     sys/engine/png_stepper.cpp \
     sys/engine/stepping_engine.cpp \
     sys/engine/tiling_bmp_generator.cpp \
@@ -211,6 +229,7 @@ SOURCES += \
     sys/enums/edesign.cpp \
     sys/enums/edgetype.cpp \
     sys/enums/efillmode.cpp \
+    sys/enums/efilltype.cpp \
     sys/enums/emapeditor.cpp \
     sys/enums/emotiftype.cpp \
     sys/enums/epanelpage.cpp \
@@ -272,16 +291,22 @@ HEADERS += \
     gui/model_editors/motif_edit/motif_editors.h \
     gui/model_editors/motif_edit/motif_maker_widget.h \
     gui/model_editors/motif_edit/regular_motif_editors.h \
-    gui/model_editors/style_edit/style_color_fill_face.h \
-    gui/model_editors/style_edit/style_color_fill_group.h \
-    gui/model_editors/style_edit/style_color_fill_original.h \
-    gui/model_editors/style_edit/style_color_fill_set.h \
-    gui/model_editors/style_edit/style_editors.h \
+    gui/model_editors/style_edit/colored_editor.h \
+    gui/model_editors/style_edit/emboss_editor.h \
+    gui/model_editors/style_edit/fill_editor.h \
+    gui/model_editors/style_edit/fill_face_editor.h \
+    gui/model_editors/style_edit/fill_group_editor.h \
+    gui/model_editors/style_edit/fill_new1_editor.h \
+    gui/model_editors/style_edit/fill_original_editor.h \
+    gui/model_editors/style_edit/fill_set_editor.h \
+    gui/model_editors/style_edit/interlace_editor.h \
+    gui/model_editors/style_edit/style_editor.h \
+    gui/model_editors/style_edit/thick_editor.h \
+    gui/model_editors/style_edit/tile_colors_editor.h \
     gui/model_editors/tiling_edit/tile_selection.h \
     gui/model_editors/tiling_edit/tiling_mouseactions.h \
     gui/panels/page_backgrounds.h \
     gui/panels/page_borders.h \
-    gui/panels/page_config.h \
     gui/panels/page_crop_maker.h \
     gui/panels/page_debug.h \
     gui/panels/page_grid.h \
@@ -297,9 +322,9 @@ HEADERS += \
     gui/panels/page_motif_maker.h \
     gui/panels/page_prototype_info.h \
     gui/panels/page_save.h \
+    gui/panels/page_settings.h \
     gui/panels/page_system_info.h \
     gui/panels/page_tiling_maker.h \
-    gui/panels/panel_misc.h \
     gui/panels/panel_page.h \
     gui/panels/panel_page_controller.h \
     gui/panels/panel_page_list_widget.h \
@@ -327,6 +352,7 @@ HEADERS += \
     gui/viewers/shape_view.h \
     gui/viewers/tiling_maker_view.h \
     gui/viewers/viewer_services.h \
+    gui/widgets/colorset_widget.h \
     gui/widgets/crop_widget.h \
     gui/widgets/dlg_cleanse.h \
     gui/widgets/dlg_colorSet.h \
@@ -352,6 +378,7 @@ HEADERS += \
     gui/widgets/layout_transform.h \
     gui/widgets/memory_combo.h \
     gui/widgets/mouse_mode_widget.h \
+    gui/widgets/panel_misc.h \
     gui/widgets/rounded_polygon.h \
     gui/widgets/smx_widget.h \
     gui/widgets/transparent_widget.h \
@@ -366,12 +393,15 @@ HEADERS += \
     legacy/patterns.h \
     legacy/shapefactory.h \
     legacy/shapes.h \
+    model/borders/border.h \
+    model/borders/border_2color.h \
+    model/borders/border_blocks.h \
+    model/borders/border_plain.h \
     model/makers/crop_maker.h \
     model/makers/mosaic_maker.h \
     model/makers/prototype_maker.h \
     model/makers/prototype_maker_data.h \
     model/makers/tiling_maker.h \
-    model/mosaics/border.h \
     model/mosaics/legacy_loader.h \
     model/mosaics/mosaic.h \
     model/mosaics/mosaic_manager.h \
@@ -416,9 +446,15 @@ HEADERS += \
     model/styles/casing_set.h \
     model/styles/casing_side.h \
     model/styles/colored.h \
-    model/styles/colormaker.h \
     model/styles/colorset.h \
     model/styles/emboss.h \
+    model/styles/fill_color_group.h \
+    model/styles/fill_color_maker.h \
+    model/styles/fill_color_set.h \
+    model/styles/fill_deprecated.h \
+    model/styles/fill_faces.h \
+    model/styles/fill_new1.h \
+    model/styles/fill_original.h \
     model/styles/filled.h \
     model/styles/interlace.h \
     model/styles/interlace_casing.h \
@@ -447,6 +483,7 @@ HEADERS += \
     sys/engine/image_engine.h \
     sys/engine/mosaic_bmp_generator.h \
     sys/engine/mosaic_stepper.h \
+    sys/engine/mosaic_xml_regenerator.h \
     sys/engine/png_stepper.h \
     sys/engine/stepping_engine.h \
     sys/engine/tiling_bmp_generator.h \

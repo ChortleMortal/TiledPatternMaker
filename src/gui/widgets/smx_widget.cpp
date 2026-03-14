@@ -1,6 +1,6 @@
 #include <QHBoxLayout>
 
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "gui/widgets/smx_widget.h"
 #include "gui/viewers/layer.h"
 
@@ -8,20 +8,21 @@ SMXWidget::SMXWidget(Layer * layer, bool abbrev, bool box)
 {
     _layer = layer;
     _box   = box;
+    _selected = false;
 
     setContentsMargins(0,0,0,0);
 
     if (abbrev)
     {
-        chkLock      = new QCheckBox("Lock");
-        chkSolo      = new QCheckBox("Solo");
-        chkBreakaway = new QCheckBox("Indp");
+        chkLock      = new BQCheckBox("Lock");
+        chkSolo      = new BQCheckBox("Solo");
+        chkBreakaway = new BQCheckBox("Indp");
     }
     else
     {
-        chkLock      = new QCheckBox("Lock View");
-        chkSolo      = new QCheckBox("Solo View");
-        chkBreakaway = new QCheckBox("Independent");
+        chkLock      = new BQCheckBox("Lock View");
+        chkSolo      = new BQCheckBox("Solo View");
+        chkBreakaway = new BQCheckBox("Independent");
     }
 
     connect(chkLock,  &QCheckBox::clicked, this, &SMXWidget::slot_lock);
@@ -35,6 +36,21 @@ SMXWidget::SMXWidget(Layer * layer, bool abbrev, bool box)
     hbox->addWidget(chkSolo);
 
     setLayout(hbox);
+}
+
+void SMXWidget::setSelected(bool s)
+{
+    if (_selected == s)
+        return;
+
+    _selected = s;
+
+    chkLock->selected = s;
+    chkLock->update();
+    chkSolo->selected = s;
+    chkSolo->update();
+    chkBreakaway->selected = s;
+    chkBreakaway->update();
 }
 
 void SMXWidget::paintEvent(QPaintEvent *event)
@@ -91,4 +107,27 @@ void SMXWidget::slot_solo(bool enb)
         emit Sys::viewController->sig_solo(_layer,enb);
         emit _layer->sig_updateView();
     }
+}
+
+//////////////////////////////////////////////////////////
+///
+///   BQCheckBox
+///
+//////////////////////////////////////////////////////////
+
+BQCheckBox::BQCheckBox(const QString &text, QWidget *parent)  : QCheckBox(text, parent)
+{
+    selected = false;
+}
+
+void BQCheckBox::paintEvent(QPaintEvent *e)
+{
+    if (Sys::isDarkTheme)
+    {
+        // Force the text color before painting
+        QPalette pal = this->palette();
+        pal.setColor(QPalette::WindowText, selected ? Qt::red : Qt::white);
+        this->setPalette(pal);
+    }
+    QCheckBox::paintEvent(e);
 }

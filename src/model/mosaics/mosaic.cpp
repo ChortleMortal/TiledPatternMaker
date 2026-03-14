@@ -2,7 +2,7 @@
 #include <QPainterPath>
 
 #include "model/makers/mosaic_maker.h"
-#include "model/mosaics/border.h"
+#include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_writer.h"
 #include "model/prototypes/prototype.h"
@@ -36,7 +36,7 @@ bool Mosaic::isBuilt()
 {
     for (auto & style : std::as_const(styleSet))
     {
-        if (!style->isCreated())
+        if (!style->isStyled())
         {
             return false;
         }
@@ -117,25 +117,33 @@ void  Mosaic::addStyle(StylePtr style)
 
 void Mosaic::replaceStyle(StylePtr oldStyle, StylePtr newStyle)
 {
-    for (auto it = styleSet.begin(); it != styleSet.end(); it++)
+    for (StylePtr & style :  styleSet)
     {
-        StylePtr existingStyle = *it;
-        if (existingStyle == oldStyle)
+        if (style == oldStyle)
         {
-            *it = newStyle;
+            style = newStyle;
 
             ProtoPtr pp = newStyle->getPrototype();
-            if (pp)
+            if (!pp)
             {
-                CropPtr cp = pp->getCrop();
-                if (cp)
-                {
-                    setCrop(cp);
-                }
+                pp = getFirstExistingPrototype();
+                style->setPrototype(pp);
             }
-            return;
+            if (!pp)
+            {
+                qWarning() << "could not replace style (no prototype)";
+                style = oldStyle;
+                break;
+            }
+            CropPtr cp = pp->getCrop();
+            if (cp)
+            {
+                setCrop(cp);
+            }
+            break;
         }
     }
+    qWarning() << "could not replace style (no match)";
 }
 
 void Mosaic::setName(VersionedName & vname)
@@ -185,16 +193,19 @@ QVector<TilingPtr> Mosaic::getTilings()
 
 void Mosaic::setBorder(BorderPtr bp)
 {
-    auto border = getBorder();
+    BorderPtr border = getBorder();
     if (border)
     {
+        // there is only one border
         styleSet.removeOne(border);
     }
+    // sets the new border
     addStyle(bp);
 }
 
 BorderPtr Mosaic::getBorder()
 {
+    // looks for a border in  the style set
     for (auto & style : styleSet)
     {
         if (style->getStyleType() == STYLE_BORDER)
@@ -264,6 +275,20 @@ QVector<ProtoPtr> Mosaic::getPrototypes()
             vec.push_back(pp);
     }
     return static_cast<QVector<ProtoPtr>>(vec);
+}
+
+ProtoPtr Mosaic::getFirstExistingPrototype()
+{
+    ProtoPtr pp;
+    for (const auto & style : std::as_const(styleSet))
+    {
+        pp = style->getPrototype();
+        if (pp)
+        {
+            break;
+        }
+    }
+    return pp;
 }
 
 MapPtr Mosaic::getFirstExistingPrototypeMap()

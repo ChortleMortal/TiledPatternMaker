@@ -194,7 +194,7 @@ QGroupBox * page_debug::createDebugTests()
 
     QPushButton * pbReformatDesXMLBtn   = new QPushButton("Reformat Mosaics");
     QPushButton * pbReformatTileXMLBtn  = new QPushButton("Reformat Tilings");
-    QPushButton * pbReprocessDesXMLBtn  = new QPushButton("Reprocess Mosaics");
+    QPushButton * pbReprocessDesXMLBtn  = new QPushButton("Regenerate Mosaic XML");
     QPushButton * pbReprocessTileXMLBtn = new QPushButton("Reprocess Tilings");
     QPushButton * pbReformatTemplates   = new QPushButton("Reformat Old Templates");
 
@@ -940,7 +940,8 @@ void page_debug::reprocessMosaicXML()
 {
     QMessageBox box(this);
     box.setIcon(QMessageBox::Question);
-    box.setText("Reprocessing Design XML: this is very drastic. Are you sure?");
+    box.setText("Regenerating Mosaic XML: this is very drastic. Are you sure?");
+    box.setInformativeText("This takes its file list from Image Tools top selection");
     box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     box.setDefaultButton(QMessageBox::No);
     if (box.exec() == QMessageBox::No)
@@ -948,8 +949,9 @@ void page_debug::reprocessMosaicXML()
         return;
     }
 
-    qDebug() << "Reprocessing designs...";
-
+    qDebug() << "Regenerating Mosaic XML ....";
+    emit sig_regenerateMosaicXML();
+#if 0
     int goodDes = 0;
     int badDes  = 0;
     VersionFileList files = FileServices::getMosaicFiles(ALL_MOSAICS);
@@ -977,6 +979,7 @@ void page_debug::reprocessMosaicXML()
     box2.setText(QString("Reprocess Design XML: %1 good designs, %2 bad designs").arg(goodDes).arg(badDes));
     box2.setStandardButtons(QMessageBox::Ok);
     box2.exec();
+#endif
 }
 
 void page_debug::examineMosaicXML()

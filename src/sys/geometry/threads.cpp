@@ -6,8 +6,6 @@
 #include "sys/geometry/edge.h"
 #include "sys/geometry/neighbours.h"
 
-extern void stackInfo();
-
 //  Creating threads is recursive
 //  Genuinesly complicated recursions can cause stack overflows
 //  Putting in qDebug() calls is particularly expenseive
@@ -173,7 +171,7 @@ bool Threads::meetsThis(CasingSet &casings, EdgePtr edge, ThreadPtr & thread, Ne
 EdgePtr Threads::getContinuation(EdgePtr edge, EdgeSet & eset, int type)
 {
     EdgePtr result;
-    qreal   angle;
+    qreal   angle = 0;
 
     for (auto & nedge : eset)
     {
@@ -217,12 +215,13 @@ EdgePtr Threads::getContinuation(EdgePtr edge, EdgeSet & eset, int type)
     }
     return result;
 }
+
 void Threads::assignColors(ColorSet & colors)
 {
-    colors.resetIndex();
     QVector<ThreadPtr> & threads = *this;
-    for (const auto & thread : std::as_const(threads))
+    for (int i=0; i < threads.size(); i++)
     {
-        thread->color = colors.getNextTPColor().color;
+        auto & thread = threads[i];
+        thread->color = colors.getTPColor(i).color;
     }
 }

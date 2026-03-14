@@ -25,7 +25,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Taken from:  https://github.com/AnkurRyder/DCEL.git
+Derived from:  https://github.com/AnkurRyder/DCEL.git
 */
 
 #include "sys/geometry/map.h"
@@ -62,23 +62,24 @@ public:
 
     FaceSet                  & getFaceSet()  { return faces; }
     const QVector<VertexPtr> & getVertices() { return vertices; }
-    const EdgeSet   & getEdges()             { return edges; }
+    const EdgeSet            & getEdges()    { return edges; }
 
     virtual   QString info() const override;
 
     static int refs;
 
 protected:
+
     void    cleanseEdges();
     bool    fill_half_edge_table();
     void    fill_face_table_inner_components();
     void    fill_half_edge_faces();
+    void    addAdjacentVertex(const VertexPtr &from, const VertexPtr &to);
 
     EdgePtr next_half_edge(NeighbourMap &nmap, const EdgePtr & edge);
     EdgePtr findEdge(NeighbourMap & nmap, const VertexPtr & start, const VertexPtr &end, bool expected = true);
 
     void    createFace(const EdgePtr & head);
-    FacePtr findOuterFace();
     FacePtr check_if_inside(const QVector<VertexPtr> & verts);
 
     double  angle(const QPointF & p1, const QPointF & p2, const QPointF & p3);

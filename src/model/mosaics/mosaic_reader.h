@@ -96,7 +96,8 @@ protected:
     void    processsStyleThick(xml_node & node, eDrawOutline & draw_outline, qreal & width, qreal &outlineWidth, QColor &outlineColor, Qt::PenJoinStyle & pjs, Qt::PenCapStyle & pcs);
     void    processsStyleInterlace(xml_node & node, qreal & gap, qreal & shadow, bool & includeSVerts, bool &start_under);
     void    processsStyleFilled(xml_node & node, bool &draw_inside, bool &draw_outside, eFillType &algorithm);
-    void    processsStyleFilledFaces(xml_node & node, QVector<int> &paletteIndices);
+    void    processsStyleFilledFaces(xml_node & fnode, QVector<int> &paletteIndices);
+    void    processsStyleFilledFaces2(xml_node & fnode, FaceColorList & list);
     void    processsStyleEmboss(xml_node & node, qreal & angle);
     void    processStylePrototype(xml_node & node, ProtoPtr &proto);
 
@@ -160,6 +161,7 @@ protected:
     TilingPtr       getFirstTiling() { return _tilings.first(); }
 
     QColor          processColor(xml_node & n);
+    TPColor         processTPColor(xml_node & n);
     void            procBorderPlain(xml_node & n);
     void            procBorderTwoColor(xml_node & n);
     void            procBorderBlocks(xml_node & n);

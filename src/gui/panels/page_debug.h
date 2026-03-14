@@ -42,6 +42,7 @@ public:
 signals:
     void    sig_testA();
     void    sig_testB();
+    void    sig_regenerateMosaicXML();
 
 public slots:
 

@@ -6,7 +6,7 @@
 #include "gui/map_editor/map_editor.h"
 #include "gui/map_editor/map_editor_db.h"
 #include "gui/panels/page_backgrounds.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view_controller.h"
 #include "gui/widgets/dlg_name.h"

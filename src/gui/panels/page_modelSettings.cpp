@@ -8,7 +8,7 @@
 #include <QTreeWidgetItem>
 
 #include "gui/panels/page_modelSettings.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view_controller.h"
 #include "gui/widgets/layout_sliderset.h"
@@ -466,7 +466,7 @@ void page_modelSettings::slot_viewViewChanged(int)
     canvas.setViewSize(sz);
 #endif
 #if 1
-    if (config->splitScreen)
+    if (config->integratedScreen)
         viewControl->setFixedSize(sz);
     else
         viewControl->setSize(sz);

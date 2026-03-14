@@ -1,17 +1,18 @@
 #include <QDebug>
 #include <QGroupBox>
-#include "gui/model_editors/motif_edit/motif_maker_widget.h"
+
 #include "gui/model_editors/motif_edit/motif_editor_widget.h"
-#include "model/prototypes/prototype.h"
+#include "gui/model_editors/motif_edit/motif_maker_widget.h"
+#include "gui/panels/page_motif_maker.h"
+#include "gui/top/system_view.h"
+#include "gui/widgets/layout_sliderset.h"
+#include "gui/widgets/panel_misc.h"
 #include "model/makers/prototype_maker.h"
-#include "model/prototypes/design_element.h"
 #include "model/motifs/motif.h"
 #include "model/motifs/radial_motif.h"
-#include "gui/panels/page_motif_maker.h"
+#include "model/prototypes/design_element.h"
+#include "model/prototypes/prototype.h"
 #include "model/settings/configuration.h"
-#include "gui/widgets/layout_sliderset.h"
-#include "gui/panels/panel_misc.h"
-#include "gui/top/system_view.h"
 
 
 Q_DECLARE_METATYPE(NamedMotifEditor *)

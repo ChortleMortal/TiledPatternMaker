@@ -2,6 +2,8 @@
 #ifndef FACES_H
 #define FACES_H
 
+#include <QHash>
+#include <QHashFunctions>
 #include "model/styles/colorset.h"
 #include "sys/geometry/edge_poly.h"
 
@@ -9,7 +11,6 @@ typedef std::shared_ptr<class Face>         FacePtr;
 typedef std::shared_ptr<class FaceSet>      FaceSetPtr;
 typedef std::weak_ptr<class Edge>           WeakEdgePtr;
 typedef std::shared_ptr<class DCEL>         DCELPtr;
-
 
 class FaceSet;
 class FaceGroups;
@@ -43,7 +44,7 @@ public:
 
     QPointF     center();
     QPolygonF   getPolygon();
-
+    bool        contains(QPointF mpt);
     bool        overlaps(FacePtr other);
 
     void        dump();
@@ -72,24 +73,20 @@ private:
 class FaceSet : public QVector<FacePtr>
 {
 public:
-    FaceSet() { selected = false; colorSet = nullptr; }
-    qreal            area;
-    TPColor          tpcolor;   // algo 0/1/2
-    ColorSet *       colorSet;	// algo3
-    int              sides;     // all members of the group have same number of vertices
-    bool             selected;  // volatile
+    FaceSet() { selected = false; }
 
     static bool sort(const FaceSetPtr& d1, const FaceSetPtr& d2) { return (d1->area * d1->sides) > (d2->area * d2->sides); }
+    void        sortByPositon();
+    FacePtr     findByCenter(QPointF pt) const;
+    void        dump(DCELPtr dcel);
 
-    void sortByPositon();
-
-    void   dump(DCELPtr dcel);
+    qreal       area;
+    int         sides;     // all members of the group have same number of vertices
+    bool        selected;  // volatile
 
 protected:
     void sortByPositon(FacePtr fp, QVector<FacePtr> & newSet);
-
 };
-
 
 /////////////////////////////////////////////////
 ///
@@ -97,7 +94,7 @@ protected:
 ///
 /////////////////////////////////////////////////
 
-class FaceGroups : public QVector<FaceSetPtr>
+class FaceGroup : public QVector<FaceSetPtr>
 {
 public:
     bool isSelected(int idx);
@@ -108,4 +105,3 @@ public:
 };
 
 #endif
-

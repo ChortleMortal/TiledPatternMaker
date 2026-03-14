@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Mon Nov 4 2024 20:45:27 -->
-<vector id="1" version="25">
+<!-- Written: Sun Feb 22 2026 08:26:01 -->
+<vector id="1" version="30">
 	<design>
 		<size>
 			<width>900</width>
@@ -19,22 +19,21 @@
 			</circle>
 		</Crop>
 		<Fill singleton="t">0,0,0,0</Fill>
-		<Cleanse>4</Cleanse>
-		<Sensitivity>0.0001</Sensitivity>
 	</design>
 	<style.Thick id="2">
 		<toolkit.GeoLayer>
-			<left__delta>52</left__delta>
-			<top__delta>30</top__delta>
+			<left__delta>40.99237165869594</left__delta>
+			<top__delta>23.64944518770919</top__delta>
 			<width__delta>1.268528701704649</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>0,0</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype id="3">
 				<app.Prototype>
 					<Tiling>Hank8.v4</Tiling>
+					<Cleanse>4</Cleanse>
+					<Sensitivity>0.0001</Sensitivity>
 					<entry>
 						<Tile id="4">
 							<regular>true</regular>
@@ -641,38 +640,65 @@
 		</style.Thick>
 	</style.Thick>
 	<style.Filled id="135">
+		<algorithm>5</algorithm>
 		<toolkit.GeoLayer>
-			<left__delta>52</left__delta>
-			<top__delta>30</top__delta>
+			<left__delta>40.99237165869594</left__delta>
+			<top__delta>23.64944518770919</top__delta>
 			<width__delta>1.268528701704649</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>0,0</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype reference="3" />
 		</style.Style>
-		<ColorBlacks>
-			<color hide="f">#ffffff00</color>
-		</ColorBlacks>
 		<ColorWhites>
 			<color hide="f">#ffc59c0c</color>
 			<color hide="f">#ffc2bcb0</color>
 			<color hide="f">#ffde7a28</color>
 		</ColorWhites>
-		<ColorGroup>
-			<Group hideSet="f">
-				<color hide="f">#ffffff00</color>
-			</Group>
-			<Group hideSet="f" />
-		</ColorGroup>
-		<style.Filled>
-			<draw__inside>true</draw__inside>
-			<draw__outside>true</draw__outside>
-			<algorithm>4</algorithm>
-			<FaceColors faces="43">
--1,2,0,0,1,2,1,0,1,1,1,0,-1,0,1,2,2,1,1,0,1,1,0,1,0,0,1,1,1,1,1,1,0,1,0,1,0,1,1,1,2,1,-1
-</FaceColors>
-		</style.Filled>
+		<FaceMap>
+			<Face>4.777300968346762,0.9800886199295401,1</Face>
+			<Face>-3.826292891152058,-3.082811816388142,1</Face>
+			<Face>-3.669895618330426,0.8622439665276633,1</Face>
+			<Face>2.975189936554234,-2.284122212023446,0</Face>
+			<Face>-2.596958962004853,-2.044653868075364,0</Face>
+			<Face>-1.952411624637313,-3.520755507039787,1</Face>
+			<Face>-4.414916706276509,1.978960464392286,1</Face>
+			<Face>-2.188119258139772,-0.5277604550569936,1</Face>
+			<Face>0.988947772199496,-2.025829964402873,1</Face>
+			<Face>3.226921241468271,0.7153912160026452,0</Face>
+			<Face>-1.026482776954992,-2.003179995501871,2</Face>
+			<Face>1.612152276553299,3.294970114923874,1</Face>
+			<Face>3.282748358377436,2.321243725937257,0</Face>
+			<Face>3.106297178140637,4.320465164244363,2</Face>
+			<Face>-3.875483314233426,-1.065595373943977,1</Face>
+			<Face>-3.002249399594099,2.685818912662754,0</Face>
+			<Face>1.793976252048315,1.359428627347088,1</Face>
+			<Face>-1.724542184520938,1.446496194109012,1</Face>
+			<Face>2.205263294604989,-0.4735524552720296,1</Face>
+			<Face>0.4517522194543956,-5.278202489314467,2</Face>
+			<Face>5.718296509367264,-0.665587855059984,0</Face>
+			<Face>6.31356542448319,0.8608146037800842,0</Face>
+			<Face>2.583178845776806,-5.234673763521401,0</Face>
+			<Face>1.885522310179598,-3.740396514891883,1</Face>
+			<Face>-0.1731719133539025,4.017642648262752,1</Face>
+			<Face>-2.008860926300804,4.09926527092654,1</Face>
+			<Face>1.566018214273222,4.891979103429046,0</Face>
+			<Face>-1.586032892321652e-16,-9.516197353929913e-17,0</Face>
+			<Face>-0.02286505774875243,-3.668152151993095,0</Face>
+			<Face>-4.640017335578534,-1.699677812900269,2</Face>
+			<Face>-0.2915378119141894,4.876070121769652,1</Face>
+			<Face>4.577469543323017,2.64859002287791,1</Face>
+			<Face>-1.415512393065664,2.986826067190786,1</Face>
+			<Face>3.734604526061875,-4.09309597433187,1</Face>
+			<Face>4.967725885406538,-2.521379434915344,1</Face>
+			<Face>-2.574652803885894,-4.465960196683022,0</Face>
+			<Face>-4.882486182181917,0.2188747704993306,0</Face>
+			<Face>-3.543080633427647,3.241083157309865,0</Face>
+			<Face>3.644699942257435,-5.470922600298496,2</Face>
+			<Face>5.021431065659051,-3.857066888853693,2</Face>
+			<Face>4.01643508864226,-0.7175560838115441,1</Face>
+			<Face>-0.02762605765178418,2.250696289307539,1</Face>
+		</FaceMap>
 	</style.Filled>
 </vector>

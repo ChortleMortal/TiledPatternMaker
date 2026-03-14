@@ -6,7 +6,6 @@
 #include "sys/geometry/xform.h"
 #include "sys/sys/pugixml.hpp"
 #include "model/settings/filldata.h"
-#include "model/styles/colorset.h"
 #include "sys/sys/versioning.h"
 #include "sys/engine/tiling_bmp_generator.h"
 
@@ -26,8 +25,6 @@ public:
     TilingPtr    readTiling(QString file);
     TilingPtr    readTiling(QTextStream & st);
     TilingPtr    readTilingXML(VersionedFile & xfile, ReaderBase * mrbase);
-
-    ColorGroup & getTileColors();
 
     BkgdImagePtr getBackgroundImage(pugi::xml_node & node);
 

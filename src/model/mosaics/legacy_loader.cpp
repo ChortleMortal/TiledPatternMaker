@@ -17,7 +17,7 @@
 #include "model/motifs/rosette.h"
 #include "model/motifs/star.h"
 #include "sys/geometry/map.h"
-#include "model/mosaics/border.h"
+#include "model/borders/border.h"
 #include "sys/sys/fileservices.h"
 #include "model/styles/emboss.h"
 #include "model/styles/filled.h"
@@ -115,11 +115,10 @@ void LegacyLoader::processThick(xml_node & node)
 {
     QColor  color;
     eDrawOutline  draw_outline = OUTLINE_NONE;
-    qreal   width        = 0.0;
+    eZLevel zlevel             = STANDARD_ZLEVEL;
+    qreal width                = 0.0;
     ProtoPtr proto;
     Xform   xf;
-    int     zlevel        = 0;
-
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -155,12 +154,12 @@ void LegacyLoader::processInterlace(xml_node & node)
 {
     QColor  color;
     eDrawOutline  draw_outline = OUTLINE_NONE;
+    eZLevel zlevel             = STANDARD_ZLEVEL;
     qreal   width        = 0.0;
     qreal   gap          = 0.0;
     qreal   shadow       = 0.0;
     ProtoPtr proto;
     Xform   xf;
-    int     zlevel        = 0;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -199,10 +198,10 @@ void LegacyLoader::processOutline(xml_node & node)
 {
     QColor  color;
     eDrawOutline  draw_outline = OUTLINE_NONE;
-    qreal   width        = 0.0;
+    eZLevel zlevel             = STANDARD_ZLEVEL;
+    qreal   width              = 0.0;
     ProtoPtr proto;
     Xform   xf;
-    int     zlevel        = 0;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -238,11 +237,11 @@ void LegacyLoader::processOutline(xml_node & node)
 void LegacyLoader::processFilled(xml_node & node)
 {
     QColor  color;
-    bool    draw_inside = false;
-    bool    draw_outside = true;
+    bool    draw_inside  = false;
+    bool    draw_outside = false;
+    eZLevel zlevel       = STANDARD_ZLEVEL;
     ProtoPtr proto;
     Xform   xf;
-    int     zlevel        = 0;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -263,17 +262,21 @@ void LegacyLoader::processFilled(xml_node & node)
 
     Filled * filled = new Filled(proto,FILL_ORIGINAL);
     filled->setModelXform(xf,false,Sys::nextSigid());
-    //filled->setColor(color);
-    filled->setDrawInsideBlacks(draw_inside);
-    filled->setDrawOutsideWhites(draw_outside);
+    filled->setZLevel(zlevel);
+
+    OriginalColoring * cm = &filled->original;
+
+    TPColor tpw(color,!draw_outside);
+    cm->whiteColorSet.clear();
+    cm->whiteColorSet.addColor(tpw);
+    cm->draw_outside_whites = draw_outside;
+
+    TPColor tpb(color,!draw_inside);
+    cm->blackColorSet.clear();
+    cm->blackColorSet.addColor(tpb);
+    cm->draw_inside_blacks = draw_inside;
+
     if (_debug) qDebug().noquote() << "XmlServices created Style(Filled)" << filled->getInfo();
-
-    ColorSet * csetW = filled->getWhiteColorSet();
-    csetW->addColor(color);
-
-    ColorSet * csetB = filled->getBlackColorSet();
-    csetB->addColor(color);
-
     _mosaic->addStyle(StylePtr(filled));
 
     if (_debug) qDebug() << "end filled";
@@ -284,7 +287,7 @@ void LegacyLoader::processPlain(xml_node & node)
     QColor  color;
     ProtoPtr proto;
     Xform   xf;
-    int     zlevel        = 0;
+    eZLevel zlevel = STANDARD_ZLEVEL;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -315,7 +318,7 @@ void LegacyLoader::processSketch(xml_node & node)
     QColor  color;
     ProtoPtr proto;
     Xform   xf;
-    int     zlevel        = 0;
+    eZLevel zlevel = STANDARD_ZLEVEL;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -345,11 +348,11 @@ void LegacyLoader::processEmboss(xml_node & node)
 {
     QColor          color;
     eDrawOutline    draw_outline = OUTLINE_NONE;
+    eZLevel         zlevel       = STANDARD_ZLEVEL;
     qreal           width        = 0.0;
     qreal           angle        = 0.0;
-    ProtoPtr    proto;
+    ProtoPtr        proto;
     Xform           xf;
-    int             zlevel        = 0;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -375,7 +378,7 @@ void LegacyLoader::processEmboss(xml_node & node)
     emboss->setModelXform(xf,false,Sys::nextSigid());
     ColorSet cs;
     cs.addColor(color);
-    emboss->setColorSet(cs);
+    emboss->setColorSet(&cs);
     emboss->setDrawOutline(draw_outline);
     emboss->setLineWidth(width);
     emboss->setAngle(angle);
@@ -386,7 +389,7 @@ void LegacyLoader::processEmboss(xml_node & node)
     if (_debug) qDebug() << "end emboss";
 }
 
-void LegacyLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf, int & zlevel)
+void LegacyLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf, eZLevel & zlevel)
 {
     xml_node def = node.child("default");
     if (!def)
@@ -438,7 +441,7 @@ void LegacyLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf, int & zlev
     if (n)
     {
         val          = n.child_value();
-        zlevel       = val.toInt();
+        zlevel       = (eZLevel)val.toInt();
     }
 }
 

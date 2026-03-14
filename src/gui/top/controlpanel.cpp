@@ -49,7 +49,7 @@ ControlPanel::~ControlPanel()
 {
     mpTimer->stop();
 
-    if (!Sys::config->splitScreen)
+    if (!Sys::config->integratedScreen)
     {
         QPoint pt = pos();
         QSettings s;
@@ -112,7 +112,7 @@ void ControlPanel::paintEvent(QPaintEvent *event)
     {
         // first time only
         isShown = true;
-        if (!Sys::config->splitScreen)
+        if (!Sys::config->integratedScreen)
         {
             QSettings s;
             QPoint pt = s.value((QString("panelPos/%1").arg(Sys::appInstance))).toPoint();

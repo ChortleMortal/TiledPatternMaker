@@ -286,7 +286,7 @@ const QString darkColors[QPalette::NColorRoles] = {
         palette.setColor(QPalette::ButtonText,      Qt::white);
         palette.setColor(QPalette::BrightText,      Qt::red);
         palette.setColor(QPalette::Link,            QColor(42, 130, 218));
-        palette.setColor(QPalette::Highlight,       QColor(0x777777));
+      //palette.setColor(QPalette::Highlight,       QColor(0x777777));
         palette.setColor(QPalette::Highlight,       Qt::yellow);
         palette.setColor(QPalette::HighlightedText, Qt::red);
     }

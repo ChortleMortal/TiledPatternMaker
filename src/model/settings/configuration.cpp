@@ -84,7 +84,7 @@ Configuration::Configuration()
     tm_tileColorMode    = static_cast<eTileColorModes>(s.value("tm_tileColorMode",TILE_COLOR_TOUCHING).toUInt());
     lockView            = s.value("lockView",false).toBool();
     multiView           = s.value("multiView",false).toBool();
-    splitScreen         = s.value("screenIsSplit",false).toBool();
+    integratedScreen    = s.value("integratedScreen",false).toBool();
     bigScreen           = s.value("bigScreen",false).toBool();
     showTileBoundary    = s.value("showTileBoundary",true).toBool();
     showMotifBoundary   = s.value("showMotifBoundary",true).toBool();
@@ -262,7 +262,7 @@ void Configuration::save()
     s.setValue("tm_tileColorMode",tm_tileColorMode);
     s.setValue("lockView",lockView);
     s.setValue("multiView",multiView);
-    s.setValue("screenIsSplit",splitScreen);
+    s.setValue("integratedScreen",integratedScreen);
     s.setValue("bigScreen",bigScreen);
     s.setValue("showTileBoundary",showTileBoundary);
     s.setValue("showMotifBoundary",showMotifBoundary);

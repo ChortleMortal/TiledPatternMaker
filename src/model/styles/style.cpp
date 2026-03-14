@@ -13,7 +13,7 @@ Style::Style(const ProtoPtr & proto) : LayerController(VIEW_MOSAIC,PRIMARY,"Styl
 {
     prototype  = proto;
     paintSVG   = false;
-    created    = false;
+    styled    = false;
     generator  = nullptr;
     setClipable(true);
     refs++;
@@ -23,7 +23,7 @@ Style::Style(const ProtoPtr & proto) : LayerController(VIEW_MOSAIC,PRIMARY,"Styl
 
 Style::Style(eModelType modelType, QString name) : LayerController(VIEW_MOSAIC,modelType,name)
 {
-    created    = false;
+    styled    = false;
     setClipable(true);
     refs++;
     connect(Sys::mapEditor, &MapEditor::sig_styleMapUpdated, this, &Style::slot_styleMapUpdated);
@@ -33,7 +33,7 @@ Style::Style(const StylePtr & other) : LayerController(other)
 {
     prototype  = other->prototype;
     paintSVG   = false;
-    created    = false;
+    styled    = false;
     generator  = nullptr;
     setClipable(true);
     connect(Sys::mapEditor, &MapEditor::sig_styleMapUpdated, this, &Style::slot_styleMapUpdated);
@@ -47,11 +47,6 @@ Style::~Style()
     qDebug() << "style destructor";
     prototype.reset();
 #endif
-}
-
-void Style::setPrototype(ProtoPtr pp)
-{
-    prototype = pp;
 }
 
 TilingPtr Style::getTiling()

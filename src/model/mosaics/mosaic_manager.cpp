@@ -7,6 +7,7 @@
 #include "model/mosaics/mosaic_manager.h"
 #include "model/mosaics/mosaic_reader.h"
 #include "model/mosaics/mosaic_writer.h"
+#include "model/styles/filled.h"
 #include "model/settings/configuration.h"
 #include "sys/sys.h"
 #include "sys/sys/fileservices.h"
@@ -63,6 +64,26 @@ MosaicPtr MosaicManager::loadMosaic(VersionedFile vfile)
 
 bool MosaicManager::saveMosaic(MosaicPtr mosaic, VersionedFile & rvSavedFile, bool forceOverwrite)
 {
+    // first ensure not saving a mosaic with derpecated fill algortithm
+    const StyleSet &  styles = mosaic->getStyleSet();
+    for (auto & style : styles)
+    {
+        if (style->getStyleType() == STYLE_FILLED)
+        {
+            FillPtr filled = std::dynamic_pointer_cast<Filled>(style);
+            if (filled->getAlgorithm() == DEPRECATED_FILL_FACE_DIRECT)
+            {
+                QMessageBox box(Sys::controlPanel);
+                box.setIcon( QMessageBox::Warning);
+                box.setText("Cannot save Mosaic with deprecated fill type");
+                box.setInformativeText("Select Mosiac Maker in Control Panel and select another Algorithm for Filled Style Type");
+                box.exec();
+                return false;
+            }
+        }
+    }
+
+    // proceed to save
     VersionedName vname = mosaic->getName();
 
     VersionedFile mosaicFile = FileServices::getFile(vname,FILE_MOSAIC);

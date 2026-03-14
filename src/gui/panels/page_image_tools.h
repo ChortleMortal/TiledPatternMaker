@@ -6,6 +6,7 @@
 #include "gui/panels/panel_page.h"
 #include "sys/engine/image_engine.h"
 #include "sys/enums/ecyclemode.h"
+#include "sys/qt/timers.h"
 #include "sys/sys/versioning.h"
 
 class MemoryCombo;
@@ -17,6 +18,7 @@ struct sAction
     VersionedName   name;
     QString         path;
     QString         path2;
+    TimerResults *  timer;
 };
 
 class page_image_tools : public panel_page
@@ -41,6 +43,7 @@ public slots:
     void    slot_setImageLeftCombo(QString name);
     void    slot_setImageRightCombo(QString name);
     void    slot_deleteCurrentWLEntry(bool confirm);
+    void    slot_regenMosaicXML();
 
 private slots:
     void    slot_cycleIntervalChanged(int value);
@@ -55,9 +58,9 @@ private slots:
     void    slot_BMPCompare0_changed(int index);
     void    slot_BMPCompare1_changed(int index);
 
+    void    slot_genBMPs();
     void    slot_viewImageLeft();
     void    slot_viewImageRight();
-    void    slot_genBMPs();
     void    slot_startStepping();
     void    slot_opendir();
     void    slot_compareSelectedBMPs();
@@ -130,6 +133,7 @@ protected:
     void processActionList(QList<sAction> & actions);
     void saveTilingBitmaps();
     void saveMosaicBitmaps();
+    void regenerateMosaicXML();
     void createComparedWorklist();
 
 private:
@@ -196,6 +200,8 @@ private:
     class AQElapsedTimer* etimer;
 
     ImageEngine     engine;
+    TimerResults   timerResults;
+
 };
 
 #endif

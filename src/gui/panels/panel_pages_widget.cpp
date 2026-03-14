@@ -1,6 +1,6 @@
 #include "gui/panels/panel_pages_widget.h"
 #include "gui/panels/panel_page.h"
-#include "gui/panels/panel_misc.h"
+#include "gui/widgets/panel_misc.h"
 
 PanelPagesWidget::PanelPagesWidget()
 {
