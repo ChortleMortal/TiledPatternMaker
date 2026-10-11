@@ -6,6 +6,7 @@
 #include "gui/top/split_screen.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "gui/panels/panel_page.h"
 #include "gui/widgets/panel_misc.h"
 
@@ -29,7 +30,7 @@ SplitScreen::SplitScreen(QWidget *parent) : QFrame(parent)
     // together
     hbox  = new AQHBoxLayout();
     hbox->addWidget(LHS,0,Qt::AlignLeft);
-    hbox->addWidget(Sys::sysview,0,Qt::AlignLeft | Qt::AlignTop);
+    hbox->addWidget(Sys::systemViewController->getWidget(),0,Qt::AlignLeft | Qt::AlignTop);
     setLayout(hbox);
 
     QList<QScreen *> screens = qApp->screens();
@@ -37,7 +38,7 @@ SplitScreen::SplitScreen(QWidget *parent) : QFrame(parent)
     QRect rec                = screen->geometry();
     move(rec.topLeft());
 
-    connect(Sys::sysview, &SystemView::sig_viewSizeChanged, this, &SplitScreen::adjustMe);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_viewSizeChanged, this, &SplitScreen::adjustMe);
     connect(this,         &SplitScreen::sig_adjust,         this, &SplitScreen::adjustMe2, Qt::QueuedConnection);
 }
 

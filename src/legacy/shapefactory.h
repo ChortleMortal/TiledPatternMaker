@@ -1,6 +1,4 @@
 #pragma once
-#ifndef SHAPEFACTORY_H
-#define SHAPEFACTORY_H
 
 #include "legacy/shapes.h"
 #include "gui/viewers/shape_view.h"
@@ -111,6 +109,3 @@ private:
     qreal  _diameter;
     qreal  _radius;
 };
-
-
-#endif // SHAPEFACTORY_H

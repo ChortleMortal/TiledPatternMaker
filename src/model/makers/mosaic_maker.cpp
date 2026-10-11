@@ -1,17 +1,20 @@
+#include <QFile>
 #include "gui/map_editor/map_editor.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/debug_view.h"
 #include "gui/viewers/image_view.h"
 #include "model/borders/border_plain.h"
 #include "model/makers/mosaic_maker.h"
-#include "model/makers/prototype_maker.h"
+#include "model/makers/motif_maker.h"
 #include "model/makers/tiling_maker.h"
 #include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
-#include "model/mosaics/mosaic_manager.h"
+#include "model/mosaics/mosaic_reader.h"
+#include "model/mosaics/mosaic_writer.h"
 #include "model/prototypes/prototype.h"
+#include "model/settings/canvas.h"
 #include "model/settings/configuration.h"
 #include "model/styles/emboss.h"
 #include "model/styles/filled.h"
@@ -22,7 +25,6 @@
 #include "model/styles/thick.h"
 #include "model/styles/tile_colors.h"
 #include "model/tilings/tiling.h"
-#include "sys/engine/image_engine.h"
 #include "sys/sys.h"
 #include "sys/sys/load_unit.h"
 
@@ -42,24 +44,24 @@ MosaicMaker::~MosaicMaker()
 
 void MosaicMaker::init()
 {
-    connect(this, &MosaicMaker::sig_updateView,      Sys::viewController, &SystemViewController::slot_updateView);
-    connect(this, &MosaicMaker::sig_reconstructView, Sys::viewController, &SystemViewController::slot_reconstructView);
+    connect(this, &MosaicMaker::sig_updateView,      Sys::systemViewController, &ViewController::slot_updateView);
+    connect(this, &MosaicMaker::sig_reconstructView, Sys::systemViewController, &ViewController::slot_reconstructView);
 }
 
 // This the most complete load of a Mosaic - it does everything needed
 // and notifies other pages with sig_mosaicLoaded
-MosaicPtr MosaicMaker::loadMosaic(VersionedFile &file)
+MosaicPtr MosaicMaker::load(VersionedFile &file)
 {
     qDebug().noquote() << "MosaicMaker::loadMosaic" << file.getVersionedName().get();
 
     Sys::debugView->unloadLayerContent();
 
+    emit sig_mosaicLoading(file);
     loadUnit->start(file);
 
-    // the advantage of using the manager is that it does not persist
-    MosaicPtr mosaic;
-    MosaicManager mm;
-    mosaic = mm.loadMosaic(file);
+    QString failMsg;
+    QString warnMsg;
+    MosaicPtr mosaic = loadMosaic(file,failMsg,warnMsg);
     if (mosaic)
     {
         Sys::imageViewer->unloadLayerContent();
@@ -70,11 +72,15 @@ MosaicPtr MosaicMaker::loadMosaic(VersionedFile &file)
         emit sig_reconstructView();
         emit sig_mosaicLoaded(file);
 
+        if (!warnMsg.isEmpty())
+            emit sig_messageBox(warnMsg,QString(),QMessageBox::Warning,false);
+
         loadUnit->end(LS_LOADED);
     }
     else
     {
         loadUnit->end(LS_FAILED);
+        emit sig_messageBox(failMsg,QString(),QMessageBox::Critical,false);
     }
 
     return mosaic;
@@ -84,33 +90,53 @@ void MosaicMaker::reload()
 {
     VersionedFile vf = loadUnit->getLoadFile();
     if (!vf.isEmpty())
-        loadMosaic(vf);
+    {
+        load(vf);
+    }
 }
 
-bool MosaicMaker::saveMosaic(MosaicPtr mosaic, bool forceOverwrite)
+bool MosaicMaker::save(VersionedFile mosaicFile, QString & failMsg, bool cleanseMaps, QStringList & unverifiedMaps)
 {
-    qDebug() << "TiledPatternMaker::saveMosaic"  << mosaic->getName().get();
+    qDebug() << "TiledPatternMaker::saveMosaic"  << _mosaic->getName().get();
 
-    // match size of mosaic view
-    auto & canvas    = Sys::viewController->getCanvas();
-    QSize size       = canvas.getViewSize();
-    QSize zsize      = canvas.getCanvasSize();
-
-    CanvasSettings cs = _mosaic->getCanvasSettings();
-    cs.setViewSize(size);
-    cs.setCanvasSize(zsize);
-    _mosaic->setCanvasSettings(cs);
-
-    VersionedFile retSavedFile;
-    MosaicManager mm;
-    bool rv = mm.saveMosaic(mosaic,retSavedFile,forceOverwrite);
-    if (rv)
+    // if a tiling is still the active canvas (i.e. this mosaic was built fresh from a
+    // tiling this session and never activated - see sm_createMosaic()), the mosaic's
+    // own canvas may be stale (only seeded once, at creation time) - bring it up to
+    // date from the tiling actually being edited before saving, and only then make
+    // the mosaic active, since saving it is a deliberate "this is the current thing" signal
+    if (Sys::getActiveCanvasOwner() == ACTIVE_TILING)
     {
-        Sys::mapEditor->keepStash(retSavedFile.getVersionedName());
-        loadUnit->declareLoaded(retSavedFile);
+        TilingPtr tiling = Sys::tilingMaker->getSelectedTiling();
+        if (tiling && _mosaic->getTilings().contains(tiling))
+        {
+            Canvas * mos_canvas = _mosaic->getMosaicCanvas();
+            *mos_canvas = *(tiling->hdr().getTilingCanvas());
+            Sys::setActiveCanvas(ACTIVE_MOSAIC);
+        }
+    }
 
-        emit sig_mosaicWritten();
-        emit sig_mosaicLoaded(retSavedFile);
+    _mosaic->setBkgdRecord(Sys::backgroundImage->toRecord());
+
+    qDebug() << "Saving XML to:"  << mosaicFile.getPathedName();
+
+    MosaicWriter writer;
+    writer.setCleanseMaps(cleanseMaps);
+    bool rv = writer.writeXML(mosaicFile,_mosaic);
+    unverifiedMaps = writer.getUnverifiedMaps();
+    if (!rv)
+    {
+        failMsg = writer.getFailMsg();
+    }
+    else
+    {
+        VersionedName vname = mosaicFile.getVersionedName();
+        _mosaic->setName(vname);
+        loadUnit->declareLoaded(mosaicFile);
+
+        // note: sig_mosaicLoaded is NOT emitted here - the in-memory mosaic is unchanged by a
+        // save, only its file name/version may have. Consumers that need to resync (e.g. the
+        // Map Editor's stash, page_loaders' file list) should react to sig_mosaicWritten instead.
+        emit sig_mosaicWritten(mosaicFile);
     }
     return rv;
 }
@@ -123,28 +149,15 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
 
     qDebug() << "MosaicMaker::sm_takeDown styles=" << _mosaic->numStyles() << "protos=" << protos.size();
 
-    if (mosaic->getBkgdImage())
-        Sys::currentBkgImage = BKGD_IMAGE_MOSAIC;
-    else
-        Sys::currentBkgImage = BKGD_IMAGE_NONE;
+    // the mosaic's background image (or its tiling's, if it has none) becomes the one image
+    Sys::backgroundImage->load(mosaic->getBkgdRecord());
 
-    Sys::prototypeMaker->sm_takeDown(protos);
+    Sys::motifMaker->sm_takeDown(protos);
 
-    CanvasSettings csettings = mosaic->getCanvasSettings();
+    Sys::setActiveCanvas(ACTIVE_MOSAIC);
+    Sys::systemViewController->setTakerViewSize(Sys::getActiveCanvas()->getViewSize());
 
-    Canvas & canvas = Sys::viewController->getCanvas();
-    canvas.setCanvasSize(csettings.getCanvasSize());
-
-    if (Sys::config->integratedScreen)
-    {
-        Sys::viewController->setFixedSize(csettings.getViewSize());
-    }
-    else
-    {
-        Sys::viewController->setSize(csettings.getViewSize());
-    }
-
-    Sys::viewController->setBackgroundColor(VIEW_MOSAIC,csettings.getBackgroundColor());
+    Sys::config->setBkgdColor(Layer::Type::Mosaic,mosaic->getBkgdColor());
 
     auto border = mosaic->getBorder();
     if (border && border->getRequiresConversion())
@@ -157,8 +170,8 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
         border->resetStyleRepresentation();
     }
 
-    emit Sys::viewController->sig_resetLayers();
-    Sys::viewController->setSelectedPrimaryLayer(mosaic->getFirstRegularStyle());
+    emit Sys::systemViewController->sig_resetLayers();
+    Sys::systemViewController->setSelectedPrimaryLayer(mosaic->getFirstRegularStyle());
 }
 
 /* actions are
@@ -169,34 +182,38 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
 
 void MosaicMaker::sm_createMosaic(ProtoPtr prototype)
 {
-    QColor oldColor = _mosaic->getCanvasSettings().getBackgroundColor();
-
     // This is a new mosaic
     _mosaic = make_shared<Mosaic>();
+    _mosaic->setBkgdColor(Sys::config->getBkgdColor(Layer::Type::Mosaic));
 
-    CanvasSettings csettings = _mosaic->getCanvasSettings();
 
     prototype->setMosaic(_mosaic);
 
     StylePtr thick = make_shared<Plain>(prototype);
     _mosaic->addStyle(thick);
 
+    Canvas * mos_canvas = _mosaic->getMosaicCanvas();
+
     TilingPtr tp = prototype->getTiling();
     if (tp)
     {
         thick->setModelXform(tp->getModelXform(),false,Sys::nextSigid());
-        csettings = tp->hdr().getCanvasSettings();
+        // the mosaic has its own Canvas (it is what gets saved), so its content - not its
+        // pointer - must be seeded from the tiling's canvas or the saved view size defaults
+        *mos_canvas = *(tp->hdr().getTilingCanvas());
     }
     else
     {
         // whaddya gonna do?
-        Xform  xf = Sys::viewController->getSystemModelXform();
+        Xform  xf = Sys::systemViewController->getSystemModelXform();
         thick->setModelXform(xf,false,Sys::nextSigid());
     }
 
-    // tiling has no intrinsic background color
-    csettings.setBackgroundColor(oldColor);
-    _mosaic->setCanvasSettings(csettings);
+
+    // deliberately does NOT activate the mosaic's canvas - while creating/editing a
+    // tiling, the tiling stays the active canvas even though a mosaic now silently
+    // exists alongside it; see MosaicMaker::save() for when the mosaic canvas is
+    // actually brought up to date and made active
 }
 
 void MosaicMaker::sm_addPrototype(ProtoPtr prototype)
@@ -245,17 +262,26 @@ void MosaicMaker::sm_removePrototype(ProtoPtr prototype)
     }
 }
 
-void MosaicMaker::sm_replacePrototype(ProtoPtr prototype)
+void MosaicMaker::sm_replacePrototype(const QVector<ProtoPtr> & oldPrototypes, ProtoPtr newPrototype)
 {
-    prototype->setMosaic(_mosaic);
+    newPrototype->setMosaic(_mosaic);
+
+    if (oldPrototypes.isEmpty())
+    {
+        // defensive fallback only - every caller should supply the old prototype(s) it is replacing
+        qWarning() << "MosaicMaker::sm_replacePrototype - no old prototypes given, repointing all styles";
+    }
 
     const StyleSet & sset = _mosaic->getStyleSet();
     for (auto & style : std::as_const(sset))
     {
-        style->setPrototype(prototype);
+        if (!oldPrototypes.isEmpty() && !oldPrototypes.contains(style->getPrototype()))
+            continue;   // this style belongs to a different (unrelated) prototype - leave it alone
+
+        style->setPrototype(newPrototype);
         auto crop = _mosaic->getCrop();
         if (crop)
-            prototype->setCrop(crop);
+            newPrototype->setCrop(crop);
     }
 }
 
@@ -272,47 +298,43 @@ void MosaicMaker::sm_takeUp(MosaicEvent & mosEvent)
     auto event = mosEvent.event;
     auto proto = mosEvent.prototype;
 
-    qDebug().noquote() << "MosaicMaker::sm_takeUp" << sMOSM_Events[event];
+    qDebug().noquote() << "MosaicMaker::sm_takeUp" << sMOSM_Events[(int)event];
 
     switch (mosEvent.event)
     {
-    case MOSM_LOAD_PROTO_EMPTY:
+    case Event::LoadEmpty:
         sm_createMosaic(proto);
         break;
 
-    case MOSM_LOAD_PROTO_SINGLE:
+    case Event::LoadProtoSingle:
         sm_createMosaic(proto);
         break;
 
-    case  MOSM_LOAD_PROTO_MULTI:
+    case Event::LoadProtoMulti:
         sm_addPrototype(proto);
         break;
 
-    case MOSM_RELOAD_PROTO_SINGLE:
+    case Event::ReloadProtoSingle:
         // the prototype remains the same, but may have different content
         // so just reset the styles so that they may be drawn again
         sm_resetStyles();
         break;
 
-    case MOSM_RELOAD_PROTO_MULTI:
-        sm_replacePrototype(proto);
+    case Event::ReloadProtoMulti:
+        sm_replacePrototype(mosEvent.oldPrototypes, proto);
         sm_resetStyles();
         break;
 
-    case MOSM_PROTO_CHANGED:
+    case Event::ProtoChanged:
         sm_resetStyles();
         break;
 
-    case MOSM_PROTO_DELETED:
+    case Event::ProtoDeleted:
         sm_removePrototype(proto);
-        break;
-
-    default:
-        qCritical().noquote() << "MosaicMaker::sm_takeUp" << "unsuported event" << sMOSM_Events[event];
         break;
     }
 
-    if (Sys::viewController->isEnabled(VIEW_MOSAIC))
+    if (Sys::systemViewController->isEnabled(Layer::Type::Mosaic))
         emit sig_reconstructView();
     else
         emit sig_updateView();
@@ -324,19 +346,15 @@ MosaicPtr MosaicMaker::getMosaic()
     return _mosaic;
 }
 
-CanvasSettings & MosaicMaker::getCanvasSettings()
-{
-    return _mosaic->getCanvasSettings();
-}
-
-void MosaicMaker::setCanvasSettings(CanvasSettings &ms)
-{
-    _mosaic->setCanvasSettings(ms);
-}
-
 void MosaicMaker::resetMosaic()
 {
     _mosaic = make_shared<Mosaic>();
+}
+
+void MosaicMaker::setBkgdColor(QColor color)
+{
+    _mosaic->setBkgdColor(color);
+    Sys::config->setBkgdColor(Layer::Type::Mosaic,color);
 }
 
 StylePtr MosaicMaker::makeStyle(StylePtr style, eStyleType newType)
@@ -378,4 +396,55 @@ StylePtr MosaicMaker::makeStyle(StylePtr style, eStyleType newType)
     }
 
     return newStyle;
+}
+
+const QString sMOSM_Events[] =
+    {
+        E2STR(LoadEmpty),
+        E2STR(LoadProtoSingle),
+        E2STR(LoadProtoMulti),
+        E2STR(ReloadProtoSingle),
+        E2STR(ReloadProtoMulti),
+        E2STR(ProtoDeleted),
+        E2STR(ProtoChanged)
+};
+
+MosaicPtr MosaicMaker::loadMosaic(VersionedFile vfile, QString & failMsg, QString & warnMsg)
+{
+    qDebug().noquote() << "MosaicMaker::loadMosaic()" << vfile.getVersionedName().get();
+
+    MosaicPtr mosaic;
+
+    if (vfile.isEmpty())
+    {
+        failMsg = QString("File <%1>not found").arg(vfile.getVersionedName().get());
+        return mosaic;
+    }
+
+    QFile afile(vfile.getPathedName());
+    if (!afile.exists())
+    {
+        failMsg = QString("File <%1>not found").arg(vfile.getPathedName());
+        return mosaic;
+    }
+
+    qDebug().noquote() << "Loading:"  << vfile.getPathedName();
+
+    // load
+    MosaicReader reader(Sys::systemViewController);
+    mosaic = reader.readXML(vfile);
+
+    if (!mosaic)
+    {
+        failMsg = QString("Load ERROR - %1").arg(reader.getFailMessage());
+        return mosaic;
+    }
+
+    warnMsg = reader.getWarnings().join("\n");
+
+    mosaic->setName(vfile.getVersionedName());
+
+    //mosaic->dumpTransforms();
+
+    return mosaic;
 }

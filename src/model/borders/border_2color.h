@@ -1,6 +1,4 @@
 #pragma once
-#ifndef BORDER_2COLOR_H
-#define BORDER_2COLOR_H
 
 #include "sys/geometry/crop.h"
 #include "sys/geometry/faces.h"
@@ -23,6 +21,7 @@ public:
     void    legacy_convertToModelUnits() override;
 
 protected:
+    int     segmentCount(qreal pathLength, qreal hint) const;
     QColor  nextBorderColor();
     void    addSegment(qreal x, qreal y, qreal width, qreal height);
 
@@ -31,6 +30,4 @@ protected:
 private:
     FaceSet faces;
 };
-
-#endif
 

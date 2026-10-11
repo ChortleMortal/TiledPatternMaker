@@ -1,12 +1,14 @@
-﻿#include "legacy/legacy_border.h"
+﻿#include <QDebug>
+#include <QtMath>
+
+#include "legacy/legacy_border.h"
 #include "legacy/design_maker.h"
 #include "legacy/designs.h"
 #include "legacy/patterns.h"
 #include "model/motifs/tile_color_defs.h"
 #include "model/settings/configuration.h"
-#include "model/settings/canvas_settings.h"
-#include <QDebug>
-#include <QtMath>
+#include "model/settings/canvas.h"
+#include "sys/sys.h"
 
 using std::make_shared;
 
@@ -36,9 +38,9 @@ DesignKumiko2::DesignKumiko2(eDesign design, QString atitle) : Design(design,ati
 
 bool Design5::build()
 {
-    QSize size(1800,1100);
-    settings.setViewSize(size);
-    settings.setBackgroundColor(QColor(TileBlue));
+   QSize size(1800,1100);
+   canvas.setViewSize(size);
+   config->setBkgdColor(Layer::Type::LegacyDesign,QColor(TileBlue));
 
     LegacyBorderPtr bp = make_shared<LegacyBorderTwoColor>(size,QColor(TileGreen),QColor(TileWhite),20.0);
     bp->construct();
@@ -80,8 +82,9 @@ bool Design5::build()
 bool Design6::build()
 {
     QSize size(1800,1100);
-    settings.setViewSize(size);
-    settings.setBackgroundColor((QColor(TileWhite)));
+    canvas.setViewSize(size);
+
+    config->setBkgdColor(Layer::Type::LegacyDesign,QColor(TileWhite));
 
     LegacyBorderPtr bp = make_shared<LegacyBorderTwoColor>(size,QColor(TileGreen),QColor(TileWhite),20.0);
     bp->construct();
@@ -136,8 +139,9 @@ bool Design7::build()
 
     QSize size((diameter*cols),(diameter*rows)+(piece*2.0));
     qDebug() << "pat 7 size:" << size;
-    settings.setViewSize(size);
-    settings.setBackgroundColor((QColor(TileGreen)));
+    canvas.setViewSize(size);
+
+    config->setBkgdColor(Layer::Type::LegacyDesign,(QColor(TileGreen)));
 
     LegacyBorderPtr bp = make_shared<LegacyBorderBlocks>(size,QColor(TileWhite),diameter,0,cols);
     bp->construct();
@@ -174,8 +178,9 @@ bool Design8::build()
 {
     // canvas
     QColor canvasColor = QColor(TileBlack);
-    settings.setBackgroundColor((canvasColor));
-    settings.setViewSize(QSize(1800,1100));
+    config->setBkgdColor(Layer::Type::LegacyDesign,canvasColor);
+
+    canvas.setViewSize(QSize(1800,1100));
 
     // patern
     int gridWidth = 41;
@@ -213,8 +218,9 @@ bool Design8::build()
 bool Design9::build()
 {
     QColor canvasColor = QColor(TileBlack);
-    settings.setBackgroundColor((canvasColor));
-    settings.setViewSize(QSize(1776,1100));
+    config->setBkgdColor(Layer::Type::LegacyDesign,(canvasColor));
+
+    canvas.setViewSize(QSize(1776,1100));
 
     // patern
     int gridWidth = 21;
@@ -260,8 +266,9 @@ bool Design9::build()
 bool DesignHuPacked::build()
 {
     QColor canvasColor = QColor(TileBlack);
-    settings.setBackgroundColor((canvasColor));
-    settings.setViewSize(QSize(1794,1100));
+    config->setBkgdColor(Layer::Type::LegacyDesign,(canvasColor));
+
+    canvas.setViewSize(QSize(1794,1100));
 
     // patern
     int igridWidth = 21;
@@ -319,8 +326,9 @@ bool DesignHuPacked::build()
 bool DesignHuInsert::build()
 {
     QColor canvasColor = QColor(TileBlack);
-    settings.setBackgroundColor((canvasColor));
-    settings.setViewSize(QSize(1794,1100));
+    config->setBkgdColor(Layer::Type::LegacyDesign,canvasColor);
+
+    canvas.setViewSize(QSize(1794,1100));
 
     // patern
     int igridWidth = 21;
@@ -371,8 +379,9 @@ bool DesignHuInsert::build()
 bool Design11::build()
 {
     QColor canvasColor = QColor(TileBlack);
-    settings.setBackgroundColor((canvasColor));
-    settings.setViewSize(QSize(1800,1100));
+    config->setBkgdColor(Layer::Type::LegacyDesign,canvasColor);
+
+    canvas.setViewSize(QSize(1800,1100));
 
     // patern
     int gridWidth = 41;
@@ -381,7 +390,7 @@ bool Design11::build()
 
     // positioning
     //startTile = sceneRect().center();
-    //settings.setStartTile(QPointF(901.0,533));
+    //canvas.setStartTile(QPointF(901.0,533));
     qDebug() << "start tile:" << getStartTile();
     xSeparation = diameter;
     ySeparation = diameter;
@@ -421,15 +430,16 @@ bool Design11::build()
 bool Design12::build()
 {
     QSize size(1000,1100);
-    settings.setViewSize(size);
-    settings.setBackgroundColor((TileBlack));
+    canvas.setViewSize(size);
+
+    config->setBkgdColor(Layer::Type::LegacyDesign,TileBlack);
 
     LegacyBorderPtr bp = make_shared<LegacyBorderTwoColor>(size,QColor(Qt::green),QColor(Qt::red),20.0);
     bp->construct();
     border = bp;
 
     qreal diameter = 400.0;
-    setStartTile(settings.getViewCenter());
+    setStartTile(canvas.getViewCenter());
     PatternPtr pat = make_shared<Pattern10>(diameter, QBrush(Qt::NoBrush));
     patterns.push_back(pat);
     pat->setTilePosition(0,0);
@@ -452,10 +462,12 @@ bool Design13::build()
     qreal rotation   = 90.0;
     eDirection turn  = CW;
     
-    settings.setViewSize(QSize(1800,1100));
-    settings.setBackgroundColor((TileBlack));
+    canvas.setViewSize(QSize(1800,1100));
+
+    config->setBkgdColor(Layer::Type::LegacyDesign,TileBlack);
+
     qreal diameter = 400.0;
-    setStartTile(settings.getViewCenter());
+    setStartTile(canvas.getViewCenter());
 
     setStartTile(QPointF(0,75));
 
@@ -516,10 +528,12 @@ bool Design14::build()
     qreal rotation   = 90.0;
     eDirection turn  = CW;
     
-    settings.setViewSize(QSize(1800,1100));
-    settings.setBackgroundColor((Qt::yellow));
+    canvas.setViewSize(QSize(1800,1100));
+
+    config->setBkgdColor(Layer::Type::LegacyDesign,Qt::yellow);
+
     qreal diameter = 400.0 / 2.0;
-    setStartTile(settings.getViewCenter());
+    setStartTile(canvas.getViewCenter());
 
   //startTile = QPointF(0,75);  // for full-size (400)
     setStartTile(QPointF(0,50));  // for half-size (200)
@@ -574,11 +588,12 @@ bool Design14::build()
 
 bool Design16::build()
 {
-    settings.setViewSize(QSize(1800,1100));
-    settings.setBackgroundColor((QColor(TileBlack)));
+    canvas.setViewSize(QSize(1800,1100));
+
+    config->setBkgdColor(Layer::Type::LegacyDesign,TileBlack);
 
     qreal diameter = 200.0;
-    setStartTile(settings.getViewCenter());
+    setStartTile(canvas.getViewCenter());
 
     xSeparation = 206;
     ySeparation = 206;
@@ -616,11 +631,12 @@ bool Design16::build()
 
 bool Design17::build()
 {
-    settings.setViewSize(QSize(1800,1100));
-    settings.setBackgroundColor((QColor(TileBlack)));
+    canvas.setViewSize(QSize(1800,1100));
+
+    config->setBkgdColor(Layer::Type::LegacyDesign,TileBlack);
 
     qreal diameter = 200.0;
-    setStartTile(settings.getViewCenter());
+    setStartTile(canvas.getViewCenter());
 
     xSeparation = 145;
     ySeparation = 145;
@@ -665,11 +681,12 @@ bool Design17::build()
 
 bool Design18::build()
 {
-    settings.setViewSize(QSize(1800,1100));
-    settings.setBackgroundColor((QColor(TileBlack)));
+    canvas.setViewSize(QSize(1800,1100));
+
+    config->setBkgdColor(Layer::Type::LegacyDesign,TileBlack);
 
     qreal diameter = 200.0;
-    setStartTile(settings.getViewCenter());
+    setStartTile(canvas.getViewCenter());
 
     xSeparation = 136;
     ySeparation = 117;
@@ -706,11 +723,12 @@ bool Design18::build()
 
 bool Design19::build()
 {
-    settings.setViewSize(QSize(1800,1100));
-    settings.setBackgroundColor((QColor(TileBlack)));
+    canvas.setViewSize(QSize(1800,1100));
+
+    config->setBkgdColor(Layer::Type::LegacyDesign,TileBlack);
 
     qreal diameter = 400.0;
-    setStartTile(settings.getViewCenter());
+    setStartTile(canvas.getViewCenter());
 
     xSeparation = 400.0;
     ySeparation = 400.0;
@@ -748,15 +766,16 @@ bool Design19::build()
 bool DesignKumiko1::build()
 {
     QSize size(1395,1000);
-    settings.setViewSize(size);
-    settings.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
+    canvas.setViewSize(size);
+
+    config->setBkgdColor(Layer::Type::LegacyDesign,(QColor(0x58, 0x39, 0x3e)));
 
     LegacyBorderPtr bp = make_shared<LegacyBorderTwoColor>(size,QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20);
     bp->construct();
     border = bp;
 
     qreal diameter = 200.0;
-    setStartTile(settings.getViewCenter());
+    setStartTile(canvas.getViewCenter());
 
     xSeparation = 200.0;
     ySeparation = 346.41;   // ypos * 2
@@ -795,9 +814,9 @@ void DesignKumiko2::init()
     Design::init();
 
     QSize size(1395,1000);
-    settings.setViewSize(size);
+    canvas.setViewSize(size);
 
-    settings.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
+    config->setBkgdColor(Layer::Type::LegacyDesign,(QColor(0x58, 0x39, 0x3e)));
 
     //LegacyBorderPtr bp = make_shared<BorderTwoColor>(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
     //info->setBorder(bp);
@@ -833,11 +852,11 @@ bool DesignKumiko2::build()
     //pat->setTilePosition(row,col);
     patterns.push_back(pat);
 
-    LegacyBorderPtr bp = make_shared<LegacyBorderTwoColor>(settings.getViewSize(),QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
+    LegacyBorderPtr bp = make_shared<LegacyBorderTwoColor>(canvas.getViewSize(),QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
     bp->construct();
     border = bp;
 
-    settings.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
+    config->setBkgdColor(Layer::Type::LegacyDesign,QColor(0x58, 0x39, 0x3e));
 
     return true;
 }

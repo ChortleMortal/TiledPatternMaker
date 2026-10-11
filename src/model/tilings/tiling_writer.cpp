@@ -1,5 +1,5 @@
-#include <QMessageBox>
 
+#include <QFile>
 #include "gui/top/controlpanel.h"
 #include "model/makers/tiling_maker.h"
 #include "model/mosaics/mosaic_writer.h"
@@ -30,10 +30,15 @@ extern class TiledPatternMaker * theApp;
 //const int currentTilingXMLVersion = 10; // 15APR24 Tilings have translate origins
 //const int currentTilingXMLVersion = 11; // 19OCT25 Restore saving of tile colors for legacy usage
 //const int currentTilingXMLVersion = 12; // 19OCT25 No model centers and conversion of legacy XML
-  const int currentTilingXMLVersion = 13; // 30OCT25 alignment of backgrounds and coversion of legacy XMKL
+//const int currentTilingXMLVersion = 13; // 30OCT25 alignment of backgrounds and coversion of legacy XMKL
+//const int currentTilingXMLVersion = 14; // 01AUG26 tiling unit exluded are saved in tiling
+//const int currentTilingXMLVersion = 15; // 06SEP26 canvas distortion
+//const int currentTilingXMLVersion = 16; // 11SEP26 construction lines
+//const int currentTilingXMLVersion = 17; // 20SEP26 Distort node carries a type (canvas or tile)
+  const int currentTilingXMLVersion = 18; // 10OCT26 tile scale and rotation are around the centroid
 
 
-// called by TilingManager::saveTiling
+// called by TilingMaker::saveTiling
 bool TilingWriter::writeTilingXML(VersionedFile vfile, TilingPtr tiling)
 {
     this->tiling = tiling;
@@ -73,7 +78,7 @@ void TilingWriter::writeXML(QTextStream & out)
     // fill paratmeters not part of original taprats
     int minX,minY,maxX,maxY;
     bool singleton;
-    tiling->hdr().getCanvasSettings().getFillData().get(singleton,minX,maxX,minY,maxY);
+    tiling->hdr().getTilingCanvas()->getFillData().get(singleton,minX,maxX,minY,maxY);
     if (!singleton)
     {
         out << "<Fill singleton = \"f\">" << minX << "," << maxX << "," << minY << "," << maxY << "</Fill>" << endl;
@@ -82,6 +87,17 @@ void TilingWriter::writeXML(QTextStream & out)
     {
         out << "<Fill singleton = \"t\">0,0,0,0</Fill>";
     }
+
+    eDistortionMode distortMode; qreal distortX,distortY;
+    tiling->hdr().getTilingCanvas()->getDistortion().get(distortMode,distortX,distortY);
+    if (distortMode != DISTORT_NONE)
+    {
+        out << "<Distort type=\"" << (distortMode == DISTORT_TILE ? "tile" : "canvas") << "\">";
+        out << "<scalex>" << distortX << "</scalex>";
+        out << "<scaley>" << distortY << "</scaley>";
+        out << "</Distort>" << endl;
+    }
+
     QPointF t1 = tiling->hdr().getTrans1();
     QPointF t2 = tiling->hdr().getTrans2();
     QPointF origin = tiling->hdr().getTranslateOrigin();
@@ -92,23 +108,17 @@ void TilingWriter::writeXML(QTextStream & out)
     writeViewSettings(out);
 
     // Regroup tiles by their translation so that we write each tile only once.
-    TilingUnit tunit(tiling->unit());
-    tunit.removeExcludeds();
-    const QVector<UnitPlacedTiles> &  group = tunit.getUnitPlacedTiles();
-    //structure is tile then placements. so tile is not duplicated. I dont know if this adds any value
-#if 0
-    int index = 0;
-#endif
-    for (auto & apair : group)
+    const TilingUnit &  tilingUnit = tiling->unit().get();
+    for (const TileUnit & tileUnit : tilingUnit)
     {
-        TilePtr tile              = apair.first;
-        PlacedTiles placemnets = apair.second;
-        PlacedTilePtr placedTile  = placemnets.first();
+        TilePtr tile                     = tileUnit.first;
+        const PlacedTileSet & placements = tileUnit.second;
 
-        if (placedTile->isGirihShape())    // TODO verify this code works
+        PlacedTilePtr placedTile  = placements.first();
+        if (placedTile->isGirihShape())
         {
             // saved girih shapesd have a translation
-            out << "<Tile type=\"girih\" name=\"" << placedTile->getGirihShapeName().get() << "\">" << endl;
+            out << "<Tile type=\"girih\" name=\"" << placedTile->getGirihShapeName().get() << "\" rotation=\"" << tile->getRotation() << "\" scale=\"" << tile->getScale() << "\">" << endl;
         }
         else if (tile->isRegular())
         {
@@ -123,38 +133,15 @@ void TilingWriter::writeXML(QTextStream & out)
             setEdgeSet(out,eset);
         }
 
-#if 0   // this should have been removed starting with tiling version 8
-        // legacy storage of background colors
-        ColorGroup & cg = tiling->legacyTileColors();
-        if (cg.size() > index)
+        for (const PlacedTilePtr & ptp : placements)
         {
-            ColorSet * tileColors  = & cg[index++];
-            int sz = tileColors->size();
-            if (sz)
-            {
-                QString s = "<BkgdColors>";
-                for (int i = 0; i < (sz-1); i++)
-                {
-                    QColor color = tileColors->getQColor(i);
-                    s += color.name();
-                    s += ",";
-                }
-                QColor color = tileColors->getQColor(sz-1);
-                s += color.name();
-                s += "</BkgdColors>";
-                out << s << endl;
-            }
-        }
-#endif
-        for(auto it= placemnets .begin(); it != placemnets .end(); it++ )
-        {
-            PlacedTilePtr & pf = *it;
-            QTransform t = pf->getPlacement();
+            QTransform t = ptp->getPlacement();
             out << "<Placement>";
-            out << "<scale>" << Transform::scalex(t) << "</scale>";
-            out << "<rot>"   << qRadiansToDegrees(Transform::rotation(t)) << "</rot>";
-            out << "<tranX>" << Transform::transx(t) << "</tranX>";
-            out << "<tranY>" << Transform::transy(t) << "</tranY>";
+            out << "<scale>"    << Transform::scalex(t) << "</scale>";
+            out << "<rot>"      << qRadiansToDegrees(Transform::rotation(t)) << "</rot>";
+            out << "<tranX>"    << Transform::transx(t) << "</tranX>";
+            out << "<tranY>"    << Transform::transy(t) << "</tranY>";
+            out << "<excluded>" << (ptp->isExcluded() ? "t" : "f") << "</excluded>";
             out << "</Placement>" << endl;
         }
 
@@ -164,30 +151,46 @@ void TilingWriter::writeXML(QTextStream & out)
     out << "<Desc>" << tiling->getDescription() << "</Desc>" << endl;
     out << "<Auth>" << tiling->getAuthor() << "</Auth>" << endl;
 
-    auto bip = tiling->getBkgdImage();
-    if (bip)
+    const BkgdRecord & rec = tiling->getBkgdRecord();
+    if (!rec.isEmpty())
     {
-        writeBackgroundImage(out,bip);
+        writeBackgroundImage(out,rec);
     }
+
+    writeConstructionLines(out);
 
     out << "</Tiling>" << endl;
 }
 
-void TilingWriter::writeBackgroundImage(QTextStream & out, BkgdImagePtr bip)
+void TilingWriter::writeConstructionLines(QTextStream & out)
 {
-    QString astring = QString("<BackgroundImage name=\"%1\">").arg(bip->getTitle());
+    const QVector<QLineF> & lines = tiling->getConstructionLines();
+    if (lines.isEmpty())
+        return;
+
+    out << "<ConstructionLines>" << endl;
+    for (const QLineF & line : lines)
+    {
+        out << "<Line>" << line.x1() << "," << line.y1() << "," << line.x2() << "," << line.y2() << "</Line>" << endl;
+    }
+    out << "</ConstructionLines>" << endl;
+}
+
+void TilingWriter::writeBackgroundImage(QTextStream & out, const BkgdRecord & rec)
+{
+    QString astring = QString("<BackgroundImage name=\"%1\">").arg(rec.name);
     out << astring << endl;
 
-    const Xform & xform = bip->getModelXform();
+    const Xform & xform = rec.xf;
     out << "<Scale>" << xform.getScale()           << "</Scale>" << endl;
     out << "<Rot>"   << xform.getRotateRadians()   << "</Rot>"  << endl;
     out << "<X>"     << xform.getTranslateX()      << "</X>" << endl;
     out << "<Y>"     << xform.getTranslateY()      << "</Y>" << endl;
 
-    if (bip->useAdjusted())
+    if (!rec.perspective.isIdentity())
     {
         out << "<Perspective>";
-        out << Transform::writeInfo(bip->getAdjustedTransform());
+        out << Transform::writeInfo(rec.perspective);
         out << "</Perspective>" << endl;
     }
 
@@ -198,11 +201,11 @@ void TilingWriter::writeViewSettings(QTextStream & out)
 {
     out << "<ViewSettings>" <<  endl;
 
-    QSize size = tiling->hdr().getCanvasSettings().getViewSize();
+    QSize size = tiling->hdr().getTilingCanvas()->getViewSize();
     out << "<width>"  << size.width()  << "</width>" << endl;
     out << "<height>" << size.height() << "</height>" << endl;
     
-    QSize zsize = tiling->hdr().getCanvasSettings().getCanvasSize();
+    QSize zsize = tiling->hdr().getTilingCanvas()->getCanvasSize();
     out << "<zwidth>"  << zsize.width()  << "</zwidth>" << endl;
     out << "<zheight>" << zsize.height() << "</zheight>" << endl;
     

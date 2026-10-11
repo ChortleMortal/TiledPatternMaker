@@ -1,6 +1,4 @@
 #pragma once
-#ifndef STYLED_EDITOR_H
-#define STYLED_EDITOR_H
 
 #include <QWidget>
 
@@ -36,5 +34,3 @@ protected:
     eStyleType      user;
     AQTableWidget * setable;
 };
-
-#endif

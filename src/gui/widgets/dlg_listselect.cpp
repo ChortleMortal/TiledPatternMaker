@@ -255,14 +255,19 @@ void AQFrame::paintEvent(QPaintEvent *event)
     Q_UNUSED(event);
     qDebug() << "paint";
 
+    if (!_placedTile || !_placedTile->getTile())
+        return;     // nothing selected yet
+
     QPainter painter(this);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     painter.setPen(QPen(Qt::black,3));
-    TilePtr tp    = placedTile()->getTile();
+    TilePtr tp    = _placedTile->getTile();
     EdgePoly ep   = tp->getEdgePoly();
+    QPointF c     = tp->getCenter();
+    QTransform t1 = QTransform::fromTranslate(-c.x(),-c.y());
     QTransform tr = QTransform::fromTranslate(150,150);
     QTransform t2 = QTransform::fromScale(scale,scale);
-    QTransform t3 = t2 * tr;
+    QTransform t3 = t1 * t2 * tr;
     ep.paint(&painter,t3);
 }

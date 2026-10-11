@@ -1,5 +1,6 @@
 #include "gui/model_editors/style_edit/style_editor.h"
 #include "gui/model_editors/style_edit/fill_editor.h"
+#include "gui/top/view_controller.h"
 #include "model/styles/style.h"
 
 StyleEditor::StyleEditor(StylePtr style, eStyleType user) : QWidget()
@@ -10,10 +11,10 @@ StyleEditor::StyleEditor(StylePtr style, eStyleType user) : QWidget()
 
     setContentsMargins(0,0,0,0);
 
-    SystemViewController * vcontrol = Sys::viewController;
+    ViewController * vcontrol = Sys::systemViewController;
     
-    connect(this, &StyleEditor::sig_reconstructView, vcontrol, &SystemViewController::slot_reconstructView);
-    connect(this, &StyleEditor::sig_updateView,      vcontrol, &SystemViewController::slot_updateView);
+    connect(this, &StyleEditor::sig_reconstructView, vcontrol, &ViewController::slot_reconstructView);
+    connect(this, &StyleEditor::sig_updateView,      vcontrol, &ViewController::slot_updateView);
 }
 
 void StyleEditor::notify()

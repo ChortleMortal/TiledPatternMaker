@@ -1,6 +1,4 @@
 #pragma once
-#ifndef FILL_SET_H
-#define FILL_SET_H
 
 #include "model/styles/fill_color_maker.h"
 #include "model/styles/colorset.h"
@@ -36,6 +34,4 @@ public:
 
     ColorSet    colorSet;
 };
-
-#endif
 

@@ -1,7 +1,6 @@
 #pragma once
-#ifndef PAGE_LAYER_ALIGNMENT_H
-#define PAGE_LAYER_ALIGNMENT_H
 
+#include <QComboBox>
 #include "gui/panels/panel_page.h"
 
 typedef std::shared_ptr<class Layer>   LayerPtr;
@@ -55,5 +54,3 @@ private:
     QComboBox         * qcb;
     eTransformDisplay   transformDisplay;
 };
-
-#endif

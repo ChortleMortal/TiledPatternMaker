@@ -85,18 +85,24 @@ bool Tile::operator == (const Tile & other) const
     return true;
 }
 
-bool Tile::isSimilar(const TilePtr other)
+bool Tile::isBasicallyEqual(const TilePtr other)
 {
-    if (regular != other->regular)
+    // this ignores scale and rotation
+    if (n != other->n)
         return false;
-    if (numEdges() != other->numEdges())
+
+    if (regular  != other->regular)
         return false;
-    if (!Loose::equals(rotation, other->rotation))
+
+    QPolygonF mypoly    = getEdgePoly().getBasePoints();
+    QPolygonF otherpoly = other->getEdgePoly().getBasePoints();
+
+    if (mypoly != otherpoly)
         return false;
-    if (!Loose::equals(scale, other->scale))
-        return false;
+
     return true;
 }
+
 
 // creates new base and composes
 TilePtr Tile::recreate()
@@ -129,7 +135,7 @@ TilePtr Tile::copy()
     return tp;
 }
 
-void Tile::setN(uint n)
+void Tile::setN(int n)
 {
     if (n==0 || n==2)
         return;
@@ -150,6 +156,19 @@ void Tile::deltaScale(qreal delta)
 void Tile::deltaRotation(qreal delta)
 {
     setRotate(rotation + delta);
+}
+
+// older files scaled and rotated around the origin - shifts the base so the composed tile is unchanged
+void Tile::convertOriginPivot()
+{
+    QTransform t = QTransform::fromScale(scale,scale).rotate(rotation);
+    if (t.isIdentity())
+        return;
+
+    QPointF c = pivot(getBasePoints());
+    QPointF d = t.map(c) - c;
+    mapDB(QTransform::fromTranslate(d.x(),d.y()));
+    compose();
 }
 
 void Tile::setRegular(bool enb)
@@ -235,7 +254,7 @@ QPointF Tile::getCenter()
         return calcIrregularCenter();
 }
 
-QLineF Tile::getEdge(uint side)
+QLineF Tile::getEdge(int side)
 {
     if (numEdges() > side)
         return epoly.at(side)->getLine();
@@ -243,7 +262,7 @@ QLineF Tile::getEdge(uint side)
         return QLineF();
 }
 
-qreal Tile::edgeLen(uint side)
+qreal Tile::edgeLen(int side)
 {
     if (numEdges() > side)
         return epoly.at(side)->getLine().length();

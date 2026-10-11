@@ -1,8 +1,14 @@
 #pragma once
-#ifndef PAGE_IMAGETOOLS_H
-#define PAGE_IMAGETOOLS_H
 
 #include <QImage>
+#include <QComboBox>
+#include <QFutureWatcher>
+#include <QActionGroup>
+#include <QButtonGroup>
+#include <QCheckBox>
+#include <QLabel>
+#include <QPushButton>
+#include <QRadioButton>
 #include "gui/panels/panel_page.h"
 #include "sys/engine/image_engine.h"
 #include "sys/enums/ecyclemode.h"
@@ -58,7 +64,8 @@ private slots:
     void    slot_BMPCompare0_changed(int index);
     void    slot_BMPCompare1_changed(int index);
 
-    void    slot_genBMPs();
+    void    slot_genPNGs();
+    void    slot_convertBMPs();
     void    slot_viewImageLeft();
     void    slot_viewImageRight();
     void    slot_startStepping();
@@ -119,12 +126,15 @@ protected:
     void addHSeparator(int row);
     void bump(int row, int stretch);
 
-    bool viewImage(VersionedFile & file);
+    bool viewImage(VersionedFile file);
 
     void loadCombo(QComboBox * combo, QString dir);
     void setCombo( QComboBox * combo, QString name);
 
     void loadFileFilterCombo();
+
+    QString createImageGenerationDirectoryName();
+    QString getGenerateImagePath(eActionType generatorType);
 
     void worklistWrapup();
 
@@ -133,6 +143,7 @@ protected:
     void processActionList(QList<sAction> & actions);
     void saveTilingBitmaps();
     void saveMosaicBitmaps();
+    void convertBMPBitmaps();
     void regenerateMosaicXML();
     void createComparedWorklist();
 
@@ -154,7 +165,7 @@ private:
     MemoryCombo * secondDir;
     QLineEdit   * imageCompareResult;
 
-    DirMemoryCombo * directoryCombo;
+    MemoryCombo * generateDirectoryCombo;
 
     QCheckBox   * chkPngs;
 
@@ -185,23 +196,18 @@ private:
     QRadioButton* radXML;
     QButtonGroup* typeGroup;
 
-    QPushButton * generateBMPsBtn;
     QPushButton * viewImgesBtn;
     QPushButton * startBtn;
 
     QRadioButton * bmpCompare;
     QRadioButton * bmpView;
 
-    QFutureWatcher<bool>  watcher;
-    int                   totalEngineImages;
-
-    eActionType        generatorType;
+    ImageEngine             engine;
+    QFutureWatcher<bool>    watcher;
+    int                     totalEngineImages;
+    eActionType             generatorType;
 
     class AQElapsedTimer* etimer;
-
-    ImageEngine     engine;
     TimerResults   timerResults;
 
 };
-
-#endif

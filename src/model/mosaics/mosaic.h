@@ -1,11 +1,10 @@
 ﻿#pragma once
-#ifndef MOSAIC_H
-#define MOSAIC_H
 
 #include <QPainter>
 #include <QVector>
-#include "gui/top/system_view_controller.h"
-#include "model/settings/canvas_settings.h"
+#include "gui/top/view_controller.h"
+#include "model/settings/canvas.h"
+#include "model/tilings/backgroundimage.h"
 #include "sys/sys/versioning.h"
 
 typedef std::shared_ptr<class Style>        StylePtr;
@@ -30,12 +29,14 @@ public:
     bool        isBuilt();
 
     bool        hasContent() { return (styleSet.size() > 0); }
+    bool        hasDeprecatedFill();
     int         numStyles()  { return styleSet.size(); }
 
     void        enginePaint(QPainter * painter);      // called by MosaicBMPEngine
 
     // loaded styles
     void        addStyle(StylePtr style);   // adds at front
+    void        addStyleOnTop(StylePtr style);  // adds at back (painted last)
     void        replaceStyle(StylePtr oldStyle, StylePtr newStyle);
     int         moveUp(StylePtr style);
     int         moveDown(StylePtr style);
@@ -45,15 +46,14 @@ public:
     ProtoPtr            getFirstExistingPrototype();
     MapPtr              getFirstExistingPrototypeMap();
 
-    CanvasSettings &    getCanvasSettings()                   { return _canvasSettings; };
-    void                setCanvasSettings(CanvasSettings& ms) { _canvasSettings = ms; }
+    Canvas *            getMosaicCanvas()                 { return &_canvas; };
 
     const StyleSet &    getStyleSet() { return styleSet; }
     StylePtr            getFirstStyle();
     StylePtr            getFirstRegularStyle();
 
-    void        setBorder(BorderPtr bp);     // currently supports only one border per mosaic
-    BorderPtr   getBorder();
+    void        replaceBorder(BorderPtr oldBorder, BorderPtr newBorder);  // adds if old not found
+    BorderPtr   getBorder();                 // first border
 
     CropPtr     getCrop()       { return _crop; }
     void        setCrop(CropPtr crop);
@@ -63,9 +63,12 @@ public:
     void        setPainterCrop(CropPtr crop);
     void        resetPainterCrop();
 
-    BkgdImagePtr getBkgdImage()                 { return _bip; }
-    void         setBkgdImage(BkgdImagePtr bp)  { _bip = bp; }
-    void         removeBkgdImage()              { _bip.reset(); }
+    void               setBkgdColor(QColor color)          { _bkgdColor = color; }
+    QColor             getBkgdColor()                      { return _bkgdColor; }
+
+    const BkgdRecord & getBkgdRecord()                     { return _bkgdRecord; }
+    void               setBkgdRecord(const BkgdRecord & r) { _bkgdRecord = r; }
+    void               removeBkgdRecord()                  { _bkgdRecord.clear(); }
 
     void         correctBorderAlignment(BorderPtr border);
 
@@ -81,13 +84,10 @@ public:
     void        dumpStyles();
     void        dumpTransforms();
 
-    void        setViewController(SystemViewController * vc);
+    void        setViewController(ViewController * vc);
 
     void        setLoadedXMLVersion(int ver) { _loadedXML_version = ver;}
     int         getLoadedXMLVersion()        { return _loadedXML_version;}
-
-    void        setLegacyModelConverted(bool set) { _legacyCenterConverted = set; }
-    bool        legacyModelConverted()            { return _legacyCenterConverted; }
 
     static int  refs;
 
@@ -97,14 +97,13 @@ private:
     StyleSet         styleSet;
     VersionedName    name;
     QString          designNotes;
-    CanvasSettings   _canvasSettings;
+    Canvas           _canvas;
     CropPtr          _crop;
     CropPtr          _painterCrop;
-    BkgdImagePtr     _bip;
+    BkgdRecord       _bkgdRecord;
+    QColor           _bkgdColor;
     int              _loadedXML_version;
     bool             _legacyCenterConverted;
 };
 
 typedef std::shared_ptr<Mosaic> MosaicPtr;
-
-#endif

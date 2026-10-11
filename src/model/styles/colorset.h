@@ -1,6 +1,4 @@
 #pragma once
-#ifndef COLORSET_H
-#define COLORSET_H
 
 #include <QColor>
 
@@ -80,6 +78,3 @@ public:
 
     void          dump();
 };
-
-
-#endif // COLORSET_H

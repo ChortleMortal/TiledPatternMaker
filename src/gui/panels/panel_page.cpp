@@ -1,9 +1,10 @@
 #include "gui/panels/panel_page.h"
+#include "gui/widgets/floatable_tab.h"
 #include "sys/qt/utilities.h"
 #include "sys/sys.h"
 #include "gui/top/controlpanel.h"
 #include "sys/tiledpatternmaker.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 
 
 panel_page::panel_page(ControlPanel * parent, ePanelPage page,  QString name) : QWidget()
@@ -13,8 +14,8 @@ panel_page::panel_page(ControlPanel * parent, ePanelPage page,  QString name) : 
     panel           = parent;
 
     config          = Sys::config;
-    viewControl     = Sys::viewController;
-    prototypeMaker  = Sys::prototypeMaker;
+    viewControl     = Sys::systemViewController;
+    motifMaker      = Sys::motifMaker;
     tilingMaker     = Sys::tilingMaker;
     mosaicMaker     = Sys::mosaicMaker;
     designMaker     = Sys::designMaker;
@@ -26,11 +27,10 @@ panel_page::panel_page(ControlPanel * parent, ePanelPage page,  QString name) : 
     blockCount      = 0;
 
     vbox            = new QVBoxLayout();
-    //setFixedWidth(PANEL_RHS_WIDTH);
     setLayout (vbox);
 
-    connect(this,   &panel_page::sig_reconstructView, viewControl, &SystemViewController::slot_reconstructView,Qt::QueuedConnection);
-    connect(this,   &panel_page::sig_updateView,      viewControl, &SystemViewController::slot_updateView);
+    connect(this,   &panel_page::sig_reconstructView, viewControl, &ViewController::slot_reconstructView,Qt::QueuedConnection);
+    connect(this,   &panel_page::sig_updateView,      viewControl, &ViewController::slot_updateView);
     connect(this,   &panel_page::sig_attachMe,        parent,      &ControlPanel::slot_reattachPage,     Qt::QueuedConnection);
     connect(panel,  &ControlPanel::sig_raiseDetached, this,        &panel_page::slot_raiseDetached);
 }
@@ -61,7 +61,7 @@ void panel_page::closePage()
 {
     //qInfo() << "panel_page::closePage" << pageName;
 
-    QSettings s;
+    QSettings s = Sys::settings();
     QString name = QString("panel2/%1/pageState").arg(pageName);
     s.setValue(name,sPageState[pageState]);
 
@@ -73,12 +73,6 @@ void panel_page::closePage()
         QPoint pt = pos();
         qDebug() << pageName << pt;
         s.setValue(name,pt);
-
-        name = QString("panel2/%1/pageSize").arg(pageName);
-        QSize sz = size();
-        qDebug() << pageName << sz;
-        s.setValue(name,sz);
-
     }    break;
 
     case PAGE_SUB_ATTACHED:
@@ -91,7 +85,7 @@ void panel_page::closePage()
 
 bool panel_page::wasFloated()
 {
-    QSettings s;
+    QSettings s        = Sys::settings();
     QString name       = QString("panel2/%1/pageState").arg(pageName);
     QString wasFloated = s.value(name,false).toString();
     return (wasFloated == "PAGE_DETACHED");
@@ -99,7 +93,7 @@ bool panel_page::wasFloated()
 
 bool panel_page::wasSubAttached()
 {
-    QSettings s;
+    QSettings s        = Sys::settings();
     QString name       = QString("panel2/%1/pageState").arg(pageName);
     QString wasFloated = s.value(name,false).toString();
     return (wasFloated == "PAGE_SUB_ATTACHED");
@@ -114,7 +108,7 @@ void panel_page::detach(QString tname)
     closed   = false;
     floating = true;
 
-    QSettings s;
+    QSettings s = Sys::settings();
 
     QString name = QString("panel2/%1/pagePos").arg(pageName);
     QPoint pt    = s.value(name,QPointF()).toPoint();
@@ -135,17 +129,7 @@ void panel_page::detach(QString tname)
     }
     move(pt);
 
-    name = QString("panel2/%1/pageSize").arg(pageName);
-    QSize sz = s.value(name,QSize()).toSize();
-    if (sz.isValid())
-    {
-        qDebug() << "resizing to" << sz;
-        resize(sz);
-    }
-    else
-    {
-        adjustSize();
-    }
+    adjustSize();       // docked size
     show();
 }
 
@@ -205,4 +189,14 @@ void panel_page::setPageStatus()
 void panel_page::clearPageStatus()
 {
     panel->clearPageStatus(pageType);
+}
+
+bool panel_page::hasFloatingTab()
+{
+    for (FloatableTab * tab : std::as_const(floatableTabs))
+    {
+        if (tab->floating)
+            return true;
+    }
+    return false;
 }

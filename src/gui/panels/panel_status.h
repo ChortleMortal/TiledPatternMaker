@@ -1,6 +1,4 @@
 #pragma once
-#ifndef PANEL_STATUS_H
-#define PANEL_STATUS_H
 
 #include <QLabel>
 
@@ -25,5 +23,3 @@ private:
     QString pageStatus;
     int     page;
 };
-
-#endif

@@ -1,20 +1,10 @@
 ﻿#pragma once
-#ifndef MAP_SELECTION_H
-#define MAP_SELECTION_H
 
 #include <QLineF>
 #include <QString>
 #include <QVector>
-#include "sys/geometry/circle.h"
 
-enum eMapSelection
-{
-    MAP_VERTEX,
-    MAP_POINT,
-    MAP_EDGE,
-    MAP_LINE,
-    MAP_CIRCLE
-};
+#include "sys/geometry/circle.h"
 
 #define E2STR(x) #x
 static QString sMapSelection[]
@@ -33,9 +23,20 @@ typedef std::shared_ptr<class Circle>       CirclePtr;
 
 typedef QVector<MapSelectionPtr>            SelectionSet;
 
+
 class MapSelection
 {
 public:
+
+    enum class Type
+    {
+        MAP_VERTEX,
+        MAP_POINT,
+        MAP_EDGE,
+        MAP_LINE,
+        MAP_CIRCLE
+    };
+
     MapSelection(VertexPtr v);
     MapSelection(EdgePtr e);
     MapSelection(CirclePtr circle, bool constructionLine = false);
@@ -44,76 +45,80 @@ public:
     MapSelection(QPointF p);
     MapSelection(QLineF  l, bool constructionLine = false);
 
-    eMapSelection getType() { return _type; }
+    Type        getType() { return _type; }
 
-    VertexPtr     getVertex();
-    EdgePtr       getEdge();
-    CirclePtr     getCircle();
+    VertexPtr   getVertex();
+    EdgePtr     getEdge();
+    CirclePtr   getCircle();
 
-    QPointF       getPoint();
-    QLineF        getLine();
+    QPointF     getPoint();
+    QLineF      getLine();
 
-    bool          isConstructionLine() { return _constructionLine; }
-    bool          hasCircleIntersect() { return _hasCircleIntersect; }
+    bool        isConstructionLine() { return _constructionLine; }
+    bool        hasCircleIntersect() { return _hasCircleIntersect; }
 
-    QPointF       getPointNear(MapSelectionPtr sel, QPointF pt);
+    QPointF     getPointNear(MapSelectionPtr sel, QPointF pt);
 
 private:
-    eMapSelection    _type;
+    Type        _type;
 
-    VertexPtr        _vert;
-    EdgePtr          _edge;
-    CirclePtr        _circle;
+    VertexPtr   _vert;
+    EdgePtr     _edge;
+    CirclePtr   _circle;
 
-    QLineF           _line;
-    QPointF          _pt;
+    QLineF      _line;
+    QPointF     _pt;
 
-    bool             _constructionLine;
-    bool             _hasCircleIntersect;
+    bool        _constructionLine;
+    bool        _hasCircleIntersect;
 };
 
-enum ePointInfo
-{
-    PT_VERTEX,
-    PT_VERTEX_MID,
-    PT_LINE,
-    PT_LINE_MID,
-    PT_CIRCLE,
-    PT_CIRCLE_1,
-    PT_CIRCLE_2
-};
 
 class PointInfo
 {
 public:
+
+    enum class Type
+    {
+        Vertex,
+        VertexMid,
+        Line,
+        LineMid,
+        Circle,
+        Circle1,    // touch point p1
+        Circle2,    // touch point p2
+        Center,
+        Center2,
+
+    };
+
     PointInfo() {}
-    PointInfo(ePointInfo type, QPointF   pt,   QString desc = QString());
-    PointInfo(ePointInfo type, VertexPtr vert, QString desc = QString());
-    ePointInfo      type;
-    QPointF         pt;
-    VertexPtr       vert;
-    QString         desc;
+    PointInfo(Type type, QPointF   pt);
+    PointInfo(Type type, VertexPtr vert);
+
+    Type        type;
+    QPointF     pt;
+    VertexPtr   vert;
 };
 
-
-enum eLineInfo
-{
-    LINE_EDGE,
-    LINE_FIXED,
-    LINE_CONSTRUCTION
-};
 
 class LineInfo
 {
 public:
-    LineInfo() {}
-    LineInfo(eLineInfo type, QLineF  line, QString desc = QString());
-    LineInfo(eLineInfo type, EdgePtr edge, QString desc = QString());
 
-    eLineInfo       type;
-    QLineF          line;
-    EdgePtr         edge;
-    QString         desc;
+    enum class Type
+    {
+        LINE_EDGE,
+        LINE_FIXED,
+        LINE_CONSTRUCTION
+    };
+
+    LineInfo() {}
+    LineInfo(Type type, QLineF  line);
+    LineInfo(Type type, EdgePtr edge);
+
+    Type        type;
+    QLineF      line;
+    EdgePtr     edge;
 };
-#endif
 

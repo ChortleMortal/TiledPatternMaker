@@ -1,5 +1,4 @@
-#ifndef WORKLIST_H
-#define WORKLIST_H
+#pragma once
 
 #include <QString>
 #include <QSettings>
@@ -31,5 +30,3 @@ private:
     QString                 listname;
     VersionList             vlist;
 };
-
-#endif // WORKLIST_H

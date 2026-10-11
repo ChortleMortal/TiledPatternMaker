@@ -1,22 +1,20 @@
 #pragma once
-#ifndef CONFIGURATION_H
-#define CONFIGURATION_H
-
 #include <QMap>
 #include <QColor>
 #include <QRectF>
 #include <QSettings>
 
+#include "gui/map_editor/map_editor.h"
+#include "gui/viewers/layer.h"
+#include "gui/viewers/motif_maker_view.h"
+#include "gui/viewers/tiling_maker_view.h"
 #include "sys/enums/ecyclemode.h"
 #include "sys/enums/efillmode.h"
 #include "sys/enums/efilesystem.h"
 #include "sys/enums/elogmode.h"
-#include "sys/enums/emapeditor.h"
-#include "sys/enums/emotiftype.h"
-#include "sys/enums/etilingmaker.h"
-#include "sys/enums/eviewtype.h"
 #include "sys/sys/load_unit.h"
 #include "sys/sys/versioning.h"
+#include "model/motifs/motif.h"
 #include "model/settings/worklist.h"
 
 typedef std::shared_ptr<class Design> DesignPtr;
@@ -49,6 +47,14 @@ enum  eGridType
     GRID_TYPE_MAX = GRID_RHOMBIC
 };
 
+enum eGridPosition
+{
+    GRID_POS_CENTERED,
+    GRID_POS_OFFSET,
+    GRID_POS_FIXED,
+    GRID_POS_MAX = GRID_POS_FIXED
+};
+
 enum  eGridTilingAlgo
 {
     FLOOD,
@@ -73,22 +79,39 @@ enum eProtoViewMode
 
     SHOW_ALL_TU_TILES       =  0x40,
     SHOW_SELECTED_TU_TILES  =  0x80,
-    SHOW_SELECTED_TU_MOTIFS =  0x100
+    SHOW_SELECTED_TU_MOTIFS =  0x100,
+    SHOW_EXT_BOUNDARY       =  0x200
 };
 
-class Configuration
+class Configuration : public QObject
 {
+    Q_OBJECT
+
 public:
     Configuration();
     ~Configuration();
 
     void    save();
-    void    configurePaths();
 
-    QString getMediaRoot();
-    QString getMediaRootLocal();
-    QString getMediaRootAppdata();
-    QString getImageRoot();
+    void    configureMediaPaths(bool emit);
+    void    configureImagePaths(bool emit);
+    void    configureLogPaths(bool emit);
+
+    void    loadBackgroundColors();
+    void    saveBackgroundColors();
+
+    static QStringList defaultProtoViewColors();
+
+    QColor  getBkgdColor(Layer::Type vtype);
+    void    setBkgdColor(Layer::Type vtype, QColor color);
+
+    void    setAlternateRootMediaDir(QString dir)   { _alternateRootMediaDir = dir;}
+    void    setAlternateRootImageDir(QString dir)   { _alternateRootImageDir = dir;}
+    void    setAlternateRootLogDir(QString dir)     { _alternateRootLogDir = dir;}
+
+
+    // all settings here should persist
+    // volatile settings are in Sys::
 
     qreal   gridAngle;
     qreal   gridModelSpacing;
@@ -101,16 +124,12 @@ public:
     qreal   protoviewWidth;
     qreal   motifViewWidth;
 
-    QString xmlTool;
-    QString diffTool;
     QString BMPCompare0;
     QString BMPCompare1;
     QString pageName;
     QString mosaicFilter;
     QString tileFilter;
-    QString rootImageDir;
-    QString rootMediaDir;
-    QString baseLogName;
+
     QString lastCompareName;
 
     VersionedName lastLoadedTiling;      // used on startup
@@ -119,10 +138,11 @@ public:
     eLoadUnitType lastLoadedType;
 
     QStringList protoViewColors;
-    QStringList viewColors;
+
+    MapEditor::EditorMode    mapEditorMode;
+    MotifMakerView::ViewType motifMakerViewType;
 
     eRepeatType     repeatMode;
-    eMapEditorMode  mapEditorMode;
     eLogTimer       logTime;
     eGridUnits      gridUnits;
     eGridType       gridType;
@@ -131,17 +151,14 @@ public:
 
     eGridTilingAlgo gridTilingAlgo;
     eColorTheme     colorTheme;
-    eMotifView      motifMakerView;
-    eTileColorModes tm_tileColorMode;
 
     int     cycleInterval;
-    int     polySides;    // used by tiling maker
     int     protoViewMode;
     int     gridModelWidth;
     int     gridScreenWidth;
     int     gridTilingWidth;
     int     gridScreenSpacing;
-    eZLevel gridZLevel;
+    Layer::ZLevel  gridZLevel;
 
     uint    debugViewConfig;
     uint    mapedCleanseLevel;
@@ -149,29 +166,31 @@ public:
 
     bool    firstBirthday;
 
+    bool    defaultImageRoot;
+    bool    defaultMediaRoot;
+    bool    defaultLogRoot;
+
     bool    autoLoadLast;
     bool    scaleToView;
     bool    logToStderr;
     bool    logToDisk;
-    bool    logToAppDir;
     bool    logToPanel;
     bool    logNumberLines;
     bool    logDebug;
     bool    enableLog2;
     bool    mapedStatusBox;
     bool    mapedLoadCopies;
-    bool    mapedOldTemplates;
-    bool    insightMode;
+    bool    insightMode;         // fixed for the session - the UI is built for it
+    bool    pendingInsightMode;  // persisted, takes effect on restart
     bool    limitViewSize;
     bool    disableSplash;
     bool    disableResizeNotify;
-    bool    debugMotifView;
 
     bool    verifyPopup;         // false pops up errors
     bool    forceVerifyProtos;
     bool    verifyMaps;
-    bool    verifyDump;         // TODO - make sure this flag work
-    bool    verifyVerbose;      // TODO - make sure this flag work
+    bool    verifyDump;
+    bool    verifyVerbose;
     bool    buildEmptyNmaps;    // rebuild empty neighbour maps
     bool    slowCleanseMapMerges;   // de-duplicates edges after merge
 
@@ -202,48 +221,65 @@ public:
     bool    showMotifCenter;
     bool    showTileCenter;
 
-    bool    tm_showExcludes;
-    bool    tm_hideTranslations;
-    bool    tm_showDebug;
-    bool    tm_loadFill;
+    bool    tm_excludesInTable;
+    bool    tm_fillOnLoad;
     bool    tm_snapToGrid;
     bool    tm_snapOnly;
+    bool    tm_tileAnchorMode;      // when enabled, adjusting the selected tile re-snaps tiles linked to it by tile anchors
+    bool    tm_vectorAnchorMode;    // when enabled, translation-vector ends re-bind to whatever tile they land on
+    int     tm_tileOpacity;        // 0-100, opacity of tile fill colors in the tiling maker view
+    int     tm_poly_side_count;    // number of selected vertices when drawing polygons.
+    qreal   tm_poly_rotation;      // regular polygon tile rotation
 
     bool    compare_transparent;
     bool    compare_popup;
     bool    compare_filterColor;
+    bool    highContrastDiffs;
 
     bool    use_workListForCompare;
     bool    skipExisting;
     bool    cs_showBkgds;
-    bool    showCenterDebug;
     bool    showGridModelCenter;
     bool    showGridViewCenter;
     eImageType    imageType;
     bool    multithreadedGeneration;
     bool    includeBkgdGeneration;
 
-    bool    gridModelCenter;
-    bool    gridScreenCenter;
-    bool    defaultImageRoot;
-    bool    defaultMediaRoot;
+    eGridPosition gridModelPos;
+    eGridPosition gridScreenPos;
+    Xform         gridModelXform;
+    Xform         gridScreenXform;
+
     bool    saveMosaicTest;
     bool    saveTilingTest;
 
     bool    vCompLock;
     bool    vCompXML;
 
-    bool    sysinfo_all;
-
-    QColor  transparentColor;            // used by some menus
+    QColor   transparentColor;      // used by some menus
     QString  gridColorTiling;
     QString  gridColorModel;
     QString  gridColorScreen;
 
     Worklist worklist;
 
+signals:
+    void    sig_mediaPathsChanged();
+    void    sig_imagesPathChanged();
+    void    sig_logPathChanged();
+
+protected:
+    void    configurePaths();
+    QString getDefaultMediaDir();
+    QString getMediaDirDevelopment();
+    QString climbAndFindMediaRoot(const QString & appDirPath, int levels);
+
 private:
+    QString _alternateRootMediaDir;
+    QString _alternateRootImageDir;
+    QString _alternateRootLogDir;
 
+    QColor   bkgdColors[NUM_VIEW_TYPES];
+
+    bool    developmentBuild;
 };
-
-#endif // CONFIGURATION_H

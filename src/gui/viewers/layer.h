@@ -1,13 +1,9 @@
 #pragma once
-#ifndef TPM_LAYER_H
-#define TPM_LAYER_H
 
 #include <QObject>
 #include <QPen>
-#include "sys/enums/eviewtype.h"
 #include "sys/geometry/xform.h"
 #include "sys/geometry/circle.h"
-#include "gui/top/system_view_controller.h"
 
 typedef std::shared_ptr<class Layer> LayerPtr;
 
@@ -15,7 +11,7 @@ typedef std::shared_ptr<class Layer> LayerPtr;
 #define DEBUG_TFORM 0x02
 #define DEBUG_LAYER 0x04
 
-class SystemViewController;
+class ViewController;
 class Configuration;
 
 #define USER_LOCK 0x01
@@ -26,7 +22,47 @@ class Layer : public QObject
     Q_OBJECT
 
 public:
-    Layer(eViewType viewType,eModelType modelType, QString name);
+    enum class Type
+    {
+        LegacyDesign,
+        Mosaic,
+        Prototype,
+        MotifMaker,
+        Tiling,
+        TilingMaker,
+        MapEditor,
+        BkgdImage,
+        Grid,
+        ConstructionLines,
+        Crop,
+        DebugLayer,
+        BMPImage
+    };
+
+    enum class Model
+    {
+        Primary,        // VIEW_MOSAIC,VIEW_TILING,VIEW_BKGD_IMAGE & VIEW_BMP_IMAGE
+        Derived         // all other followers
+    };
+
+    enum class ZLevel
+    {
+        Bkgd_minus20    = -20,
+        Standard_Z0     = 0,
+        Image_Z1        = 1,
+        Z1              = 1,
+        Z2              = 2,
+        Z3              = 3,
+        Z4              = 4,
+        Z5              = 5,
+        Grid_Z5         = 5,
+        Measure_Z9      = 9,
+        Border_Z10      = 10,
+        Crop_Z11        = 11,
+        BkgdLifted_Z25  = 25,
+    };
+
+    Layer(Type type, Model model, ZLevel zlevel, QString name);
     Layer(const Layer & other);
     Layer(LayerPtr other);
     virtual ~Layer();
@@ -66,28 +102,34 @@ public:
     
     virtual QTransform  getCanvasTransform();
     virtual QTransform  getModelTransform();
+    QTransform          modelTransformOf(const Xform & xf);
     virtual QTransform  getLayerTransform();
+    QTransform          getUndistortedLayerTransform();
 
     virtual QString layerName()         { return _name; }
 
-    bool        correctLegacyLayer(QPointF mpt);
+    bool        correctLegacyCenter(QPointF mpt);
 
-    void        setZLevel(eZLevel z)    { _zlevel = z; }
-    eZLevel     getZLevel()             { return _zlevel; }
+    void        setZLevel(ZLevel z)     { _zlevel = z; }
+    ZLevel      getZLevel()             { return _zlevel; }
+
+    void        setOpacity(qreal o)     { _opacity = o; }
+    qreal       getOpacity()            { return _opacity; }
 
     void        setVisible(bool enb)    { visible = enb; }
     bool        isVisible()             { return visible; }
 
-    eViewType   viewType()              { return _viewType;  }
-    eModelType  modelType()             { return _modelType; }
+    Type        type()                  { return _type;  }
+    Model       model()                 { return _model; }
 
     void        breakaway(bool set);
     void        lock(bool set);
     void        solo(Layer * l, bool set);
 
-    bool        isPrimary()             { return _modelType == PRIMARY; }
+    bool        isPrimary()             { return _model == Model::Primary; }
     bool        isBreakaway()           { return !_useSMX; }
     bool        isLocked()              { return (_lockState > 0); }
+    bool        isUserLocked()          { return (_lockState & USER_LOCK); }
     bool        isSolo()                { return _solo; }
 
     bool        isClipable()            { return _clipable; }
@@ -106,11 +148,14 @@ public:
     void        setLoc(QPointF loc);
     QPointF     getLoc() { return pos; }
 
-    void        setViewController(SystemViewController * vc) { _viewControl = vc; }
-    SystemViewController * viewControl() { return _viewControl; }
+    void        setViewController(ViewController * vc) { _viewControl = vc; }
+    ViewController * viewControl() { return _viewControl; }
 
     static bool sortByZlevel(LayerPtr s1, LayerPtr s2);
     static bool sortByZlevelP(Layer *  s1, Layer  * s2);
+
+    void        setLegacyCenter(QPointF p) { _legacyCenter = p; centerConv = true;}
+    QPointF     getLegacyCenter()          { return _legacyCenter; }
 
     static int  refs;
 
@@ -125,12 +170,14 @@ protected:
     virtual void drawLayerModelCenter(QPainter * painter);
     void         drawCenterSymbol(QPainter * painter, QPointF spt, QColor circleColor, QColor xColor);
 
-    SystemViewController  * _viewControl;
+    ViewController  * _viewControl;
 
     int         debug;
 
-    eViewType   _viewType;
+    Type        _type;
     Xform       xf_model;           // used when PRIMARY
+    QPointF     _legacyCenter;
+    QColor      bkgdColor;
 
 private:
     void        _setUserLock(bool set);
@@ -144,10 +191,11 @@ private:
     QTransform  layerTransform;     // calculated
 
     bool        visible;
-    eZLevel     _zlevel;
+    ZLevel      _zlevel;
+    qreal       _opacity;           // session only, not persisted
 
-    eModelType  _modelType;     // PRIMARY or DERIVED
-    bool        _useSMX;        // System Model Xform true: use xf_model, false: use local xform;
+    Model       _model;             // Primary or Derived
+    bool        _useSMX;            // System Model Xform true: use xf_model, false: use local xform;
     bool        _solo;
     uint        _lockState;
 
@@ -157,8 +205,15 @@ private:
 
     QVector<LayerPtr>  subLayers;   // for legacy code
     QPointF     pos;                // for legacy code
+    bool        centerConv;         // center convert for legacty code
 
 };
 
+constexpr int NUM_VIEW_TYPES = static_cast<int>(Layer::Type::BMPImage) + 1;
 
-#endif
+extern const QString sLayerType[];
+extern const QString sLayerType2[];
+
+
+
+

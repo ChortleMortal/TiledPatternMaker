@@ -9,7 +9,7 @@
 
 int Style::refs = 0;
 
-Style::Style(const ProtoPtr & proto) : LayerController(VIEW_MOSAIC,PRIMARY,"Style")
+Style::Style(const ProtoPtr & proto) : LayerController(Type::Mosaic,Model::Primary,ZLevel::Standard_Z0,"Style")
 {
     prototype  = proto;
     paintSVG   = false;
@@ -21,7 +21,7 @@ Style::Style(const ProtoPtr & proto) : LayerController(VIEW_MOSAIC,PRIMARY,"Styl
     connect(Sys::mapEditor, &MapEditor::sig_styleMapUpdated, this, &Style::slot_styleMapUpdated);
 }
 
-Style::Style(eModelType modelType, QString name) : LayerController(VIEW_MOSAIC,modelType,name)
+Style::Style(Model model, QString name) : LayerController(Type::Mosaic,model,ZLevel::Standard_Z0,name)
 {
     styled    = false;
     setClipable(true);

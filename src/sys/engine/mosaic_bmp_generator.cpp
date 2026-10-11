@@ -1,12 +1,13 @@
 #include <QDebug>
 #include <QFile>
 #include <QPainter>
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_reader.h"
 #include "model/mosaics/mosaic_writer.h"
 #include "sys/engine/mosaic_bmp_generator.h"
+#include "model/settings/configuration.h"
 #include "sys/sys/fileservices.h"
 
 /*
@@ -18,7 +19,7 @@
 MosaicBMPGenerator::MosaicBMPGenerator()
 {
     // using this local ViewController makes the engine thread-safe
-    bmpViewController = new SystemViewController;
+    bmpViewController = new ViewController;
     bmpViewController->disableAllViews();
 }
 
@@ -34,10 +35,9 @@ bool MosaicBMPGenerator::saveBitmap(VersionedName vname, QString pixmapPath)
     MosaicPtr mosaic = loadMosaic(vname);
     if (mosaic)
     {
-        QSize sz = mosaic->getCanvasSettings().getViewSize();
+        QSize sz = mosaic->getMosaicCanvas()->getViewSize();
         QImage image(sz,QImage::Format_RGB32);
-        QColor color = mosaic->getCanvasSettings().getBackgroundColor();
-        image.fill(color);
+        image.fill(mosaic->getBkgdColor());
         buildImage(mosaic,image);
         savePixmap(image,vname.get(),pixmapPath);
         //qDebug() << "MosaicBMPEngine::saveBitmap" << name << "END";
@@ -64,27 +64,25 @@ MosaicPtr MosaicBMPGenerator::loadMosaic(VersionedName vname)
 {
     qDebug().noquote() << "MosaicBMPEngine::loadMosaic()" << vname.get();
 
-    MosaicPtr mosaic;
-
     VersionedFile file = FileServices::getFile(vname,FILE_MOSAIC);
     if (file.isEmpty())
     {
         qDebug() << "mosaic file not found:" << vname.get();
-        return mosaic;
+        return nullptr;
     }
 
     QFile afile(file.getPathedName());
     if (!afile.exists())
     {
         qDebug() << "mosaic file does not exist:" << file.getPathedName();
-        return mosaic;
+        return nullptr;
     }
 
     qDebug().noquote() << "Loading:"  << file.getPathedName();
 
     // load
     MosaicReader reader(bmpViewController);
-    mosaic = reader.readXML(file);
+    MosaicPtr mosaic = reader.readXML(file);
 
     if (!mosaic)
     {
@@ -95,14 +93,9 @@ MosaicPtr MosaicBMPGenerator::loadMosaic(VersionedName vname)
     mosaic->setName(vname);
 
     Q_ASSERT(!bmpViewController->isAttached());
+    Q_ASSERT(mosaic->getMosaicCanvas());
+    bmpViewController->setCanvas(mosaic->getMosaicCanvas());
     mosaic->setViewController(bmpViewController);
-
-    // size view to mosaic
-    // this uses a view conroller which is not attached to the view
-    CanvasSettings csettings = mosaic->getCanvasSettings();
-
-    Canvas  & canvas = bmpViewController->getCanvas();
-    canvas.setCanvasSize(csettings.getCanvasSize());
 
     auto border = mosaic->getBorder();
     if (border)
@@ -127,8 +120,6 @@ MosaicPtr MosaicBMPGenerator::loadMosaic(VersionedName vname)
         }
     }
 
-    bmpViewController->setBackgroundColor(VIEW_MOSAIC,csettings.getBackgroundColor());
-
     bmpViewController->setSelectedPrimaryLayer(mosaic->getFirstRegularStyle());
 
     return mosaic;
@@ -141,6 +132,7 @@ void MosaicBMPGenerator::buildImage(MosaicPtr & mosaic, QImage & image)
 
     // build using the local ViewController
     Q_ASSERT(!bmpViewController->isAttached());
+    bmpViewController->setCanvas(mosaic->getMosaicCanvas());
     mosaic->setViewController(bmpViewController);
     mosaic->build();
 
@@ -154,7 +146,7 @@ void MosaicBMPGenerator::savePixmap(QImage &image, QString name, QString pixmapP
 
     QPixmap pixmap;
     pixmap.convertFromImage(image);
-    QString file   = pixmapPath + "/" + name + ".bmp";
+    QString file   = pixmapPath + "/" + name + ".png";
     qInfo() << "saving" << file;
 
     bool rv = pixmap.save(file);

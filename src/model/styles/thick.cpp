@@ -65,7 +65,7 @@ void Thick::createStyleRepresentation()
 {
     if (!styled)
     {
-        prototype->getProtoMap(true);
+        prototype->getProtoMap();
         styled = true;
     }
 }

@@ -4,6 +4,7 @@
 #include "model/styles/casing_neighbours.h"
 #include "sys/geometry/debug_map.h"
 #include "sys/geometry/geo.h"
+#include "sys/geometry/loose.h"
 #include "sys/geometry/transform.h"
 
 Casing::Casing()
@@ -90,7 +91,14 @@ void Casing::alignCurvedEdgeSide1(CasingSet &casings)
         *otherPoint = p;
     }
     else
-        qWarning() << "s1 inner - no isect";
+    {
+        // No valid intersection (degenerate/acute joint angle). Force the
+        // neighbour to adopt this casing's own point rather than leaving it
+        // with an independently-computed value - otherwise the two casings
+        // disagree about where the shared corner is, leaving a visible gap.
+        qWarning() << "s1 inner - no isect - using fallback point";
+        *otherPoint = s1->inner;
+    }
 
     // side 1 outer
     other  = casings.find(before1);
@@ -112,7 +120,10 @@ void Casing::alignCurvedEdgeSide1(CasingSet &casings)
         *otherPoint = p;
     }
     else
-        qWarning() << "s1 outer - no isect";
+    {
+        qWarning() << "s1 outer - no isect - using fallback point";
+        *otherPoint = s1->outer;
+    }
 }
 
 void Casing::alignCurvedEdgeSide2(CasingSet &casings)
@@ -157,7 +168,10 @@ void Casing::alignCurvedEdgeSide2(CasingSet &casings)
         *otherPoint = p;
     }
     else
-        qWarning() << "s2 inner - no isect";
+    {
+        qWarning() << "s2 inner - no isect - using fallback point";
+        *otherPoint = s2->inner;
+    }
 
     // side 2 outer
     other  = casings.find(after2);
@@ -179,8 +193,12 @@ void Casing::alignCurvedEdgeSide2(CasingSet &casings)
         *otherPoint = p;
     }
     else
-        qWarning() << "s2 inner - no isect";
+    {
+        qWarning() << "s2 outer - no isect - using fallback point";
+        *otherPoint = s2->outer;
+    }
 }
+
 
 void Casing::fillCasing(GeoGraphics * gg, QPen & pen) const
 {

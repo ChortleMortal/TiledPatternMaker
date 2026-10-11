@@ -440,8 +440,6 @@ QString Edge::info()
     QString astring;
     QDebug  deb(&astring);
 
-    deb << this;
-
     switch (_type)
     {
     case EDGETYPE_LINE:
@@ -450,11 +448,13 @@ QString Edge::info()
             << "v2" << v2->pt;
         break;
     case EDGETYPE_CURVE:
+    {
+        ArcData ad = getArcData();
         deb << "Edge CURVE"
             << "v1" << v1->pt
             << "v2" << v2->pt
-            << "arcCenter:" << getArcCenter()  << sCurveType[getCurveType()];
-        break;
+            << "arcCenter:" << getArcCenter()  << sCurveType[getCurveType()] << ad.rect() << "start=" << ad.start() << "end=" << ad.end() << "span=" << ad.span();
+    }    break;
     case EDGETYPE_POINT:
         deb << "Edge POINT"
             << "v1" << v1->pt;
@@ -462,10 +462,6 @@ QString Edge::info()
     case EDGETYPE_NULL:
         deb << "Edge NULL";
         break;
-    }
-    if (isCurve())
-    {
-        deb << getArcData().info();
     }
     return astring;
 }
@@ -507,5 +503,5 @@ bool Edge::operator < (const Edge & other) const
 {
     QPointF point  = v1->pt;
     QPointF opoint = other.v1->pt;
-    return (Geo::lessThan(point, opoint) || (point == opoint  &&  angle() < other.angle() - Sys::TOL));
+    return (Geo::lessThan(point, opoint) || (point == opoint  &&  angle() < other.angle() - Loose::TOL));
 }

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TILE_SELECTION_H
-#define TILE_SELECTION_H
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -56,10 +54,10 @@ public:
     QPolygonF        getModelPolygon();
 
     PlacedTilePtr    getPlacedTile()    { return pfp; }
-    QLineF           getPlacedLine();
-    QPointF          getPlacedPoint();
-    QPolygonF        getPlacedPolygon();
-    EdgePtr          getPlacedEdge();
+    QLineF           getPlacedLine(bool distort = false);
+    QPointF          getPlacedPoint(bool distort = false);
+    QPolygonF        getPlacedPolygon(bool distort = false);
+    EdgePtr          getPlacedEdge(bool distort = false);
 
     bool             isPoint();
 
@@ -120,6 +118,4 @@ class ScreenTileSelector : public PlacedTileSelector
 public:
     ScreenTileSelector(QPointF pt);
 };
-
-#endif
 

@@ -1,13 +1,16 @@
-#include <QtWidgets>
+#include <QDebug>
+#include <QTransform>
 #include "model/tilings/tiling_header.h"
 
-using std::make_shared;
+TilingHeader::TilingHeader()
+{
+}
 
 TilingHeader::TilingHeader(const TilingHeader & other)
 {
     _t1             = other._t1;
     _t2             = other._t2;
-    _settings       = other._settings;
+    _tilingCanvas   = other._tilingCanvas;
 }
 
 TilingHeader::~TilingHeader()
@@ -18,7 +21,7 @@ TilingHeader & TilingHeader::operator=(const TilingHeader & other)
 {
     _t1             = other._t1;
     _t2             = other._t2;
-    _settings       = other._settings;
+    _tilingCanvas   = other._tilingCanvas;
     return *this;
 }
 
@@ -28,7 +31,7 @@ bool TilingHeader::operator==(const TilingHeader & other) const
         return false;
     if (_t2 != other._t2)
         return false;
-    if ( _settings != other._settings)
+    if ( _tilingCanvas != other._tilingCanvas)
         return false;
 
     return true;
@@ -37,7 +40,7 @@ bool TilingHeader::operator==(const TilingHeader & other) const
 TilingHeader TilingHeader::uniqueCopy()
 {
     TilingHeader td;
-    td._settings        = _settings;
+    td._tilingCanvas    = _tilingCanvas;
     td._t1              = _t1;
     td._t2              = _t2;
     td._translateOrigin = _translateOrigin;
@@ -51,11 +54,6 @@ void TilingHeader::setTranslationVectors(QPointF t1, QPointF t2, QPointF origin)
     _translateOrigin = origin;
 }
 
-void  TilingHeader::setCanvasSettings(const CanvasSettings & settings)
-{
-    _settings = settings;
-}
-
 bool TilingHeader::isEmpty()
 {
     if (_t1.isNull() && _t2.isNull())
@@ -67,7 +65,7 @@ bool TilingHeader::isEmpty()
 Placements TilingHeader::getFillPlacements()
 {
     Placements placements;
-    const FillData & fd = _settings.getFillData();
+    const FillData & fd = _tilingCanvas.getFillData();
     int minX,minY,maxX,maxY;
     bool singleton;
     fd.get(singleton,minX,maxX,minY,maxY);

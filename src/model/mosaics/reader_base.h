@@ -1,6 +1,4 @@
 #pragma once
-#ifndef READERBASE_H
-#define READERBASE_H
 
 #include <QMap>
 #if QT_VERSION < QT_VERSION_CHECK(6,5,0)
@@ -23,5 +21,3 @@ public:
 
     QMap<int,VertexPtr>     vertex_ids;
 };
-
-#endif

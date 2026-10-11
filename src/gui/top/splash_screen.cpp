@@ -1,17 +1,14 @@
-#include <qapplication.h>
-#include "gui/top/controlpanel.h"
+#include <QWindow>
 #include "gui/top/splash_screen.h"
-#include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "sys/sys.h"
 
-SplashScreen::SplashScreen() : QLabel(Sys::sysview)
+SplashScreen::SplashScreen() : QWidget()
 {
-    QPixmap pm(":/tpm.png");
-    QSize qs = pm.size();
-    resize(qs);
+    setWindowFlags(Qt::FramelessWindowHint);
 
-    setAlignment(Qt::AlignCenter);
-    setStyleSheet("color: black; background-image: url(:/tpm.png);");
+    QSize qs = m_pixmap.size();
+    resize(qs);
 
     QFont f = font();
     f.setPointSize(16);
@@ -22,33 +19,37 @@ SplashScreen::SplashScreen() : QLabel(Sys::sysview)
     hide();
 }
 
-void SplashScreen::display(QString &  txt, bool panelToo)
+void SplashScreen::paintEvent(QPaintEvent*)
+{
+    QPainter p(this);
+    p.drawPixmap(rect(), m_pixmap);
+    p.setPen(Qt::black);
+
+    // first line stays where a single centred line sits; more lines grow downward
+    int top = (height() - fontMetrics().height()) / 2;
+    QRect textRect(0, top, width(), height() - top);
+    p.drawText(textRect, Qt::AlignHCenter | Qt::AlignTop, m_text);
+}
+
+void SplashScreen::display(QString &  txt)
 {
     if (_disable) return;
 
     msgStack.push(txt);
 
     draw();
-
-    if (panelToo)
-    {
-        Sys::controlPanel->overridePagelStatus(txt);
-    }
 }
 
-void SplashScreen::replace(QString &  txt, bool panelToo)
+void SplashScreen::replace(QString &  txt)
 {
     if (!msgStack.isEmpty())
     {
         msgStack.pop();
     }
-    msgStack.push(txt);
-    draw();
 
-    if (panelToo)
-    {
-        Sys::controlPanel->overridePagelStatus(txt);
-    }
+    msgStack.push(txt);
+
+    draw();
 }
 
 void SplashScreen::display(QString &&  txt)
@@ -60,7 +61,7 @@ void SplashScreen::display(QString &&  txt)
     draw();
 }
 
-void SplashScreen::remove(bool panelToo)
+void SplashScreen::remove()
 {
     if (_disable) return;
 
@@ -70,11 +71,6 @@ void SplashScreen::remove(bool panelToo)
     }
 
     draw();
-
-    if (panelToo)
-    {
-        Sys::controlPanel->restorePageStatus();
-    }
 }
 
 void SplashScreen::draw()
@@ -85,33 +81,43 @@ void SplashScreen::draw()
     }
     else
     {
-        if (Sys::sysview)
+        if (Sys::systemViewController)
         {
-            this->setParent(Sys::sysview);
-            QPoint pos = Sys::viewController->viewRect().center() - rect().center();
+            QPoint pos = Sys::systemViewController->getViewRect().center() - rect().center();
+            pos = Sys::systemViewController->mapToGlobal(pos);
             move(pos);
         }
 
-        show();
-        raise();
-
-        QString txt;
+        m_text.clear();
         for (auto & t : msgStack)
         {
-            txt += t;
-            txt += "\n";
+            m_text += t;
+            m_text += "\n";
         }
-        setText(txt);
 
-        if (Sys::viewController)
-            Sys::viewController->appSuspendPaint(true);
+        if (Sys::systemViewController)
+            Sys::systemViewController->appSuspendPaint(true);
 
-        //repaint();
+#ifdef Q_OS_LINUX
+        show();
+        raise();
+        if (windowHandle())
+        {
+            while (!windowHandle()->isExposed())
+            {
+                qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+            }
+        }
+        repaint();
+        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+#else
+        show();
+        raise();
         update();
         qApp->processEvents();
-
-        if (Sys::viewController)
-            Sys::viewController->appSuspendPaint(false);
+#endif
+        if (Sys::systemViewController)
+            Sys::systemViewController->appSuspendPaint(false);
     }
 }
 
@@ -123,4 +129,14 @@ void SplashScreen::disable(bool disable)
     {
         msgStack.clear();
     }
+}
+
+void SplashScreen::keyPressEvent(QKeyEvent *)
+{
+    remove();
+}
+
+void SplashScreen::mousePressEvent(QMouseEvent *)
+{
+    remove();
 }

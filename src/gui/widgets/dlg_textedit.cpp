@@ -25,6 +25,7 @@ void LogWidget::set(TextEditPtr te)
     unload();
 
     QVBoxLayout * vbox = new QVBoxLayout();
+    vbox->setContentsMargins(0,0,0,0);
     vbox->addWidget(te.get());
     setLayout(vbox);
     adjustSize();
@@ -72,16 +73,10 @@ void DlgTextEdit::set(const QVector<sTrapMsg> &msgs)
     }
 }
 
-DlgMapVerify::DlgMapVerify(QString name, QWidget *parent) : DlgTextEdit(parent)
-{
-    setWindowTitle(name);
-    qWarning() << "Map verify problem with:" << name;
-}
-
 DlgAbout::DlgAbout(QWidget * parent) : DlgTextEdit(parent)
 {
     setMinimumSize(600,600);
-    QString info = QString("%1 Version %2  Copyright (c) David A. Casper 2016-2025").arg(QCoreApplication::applicationName()).arg(tpmVersion);
+    QString info = QString("%1 Version %2  Copyright (c) David A. Casper 2016-2025").arg(QCoreApplication::applicationName()).arg(TpmVersion::getVersion());
     QLabel * line1 = new QLabel(info);
     QHBoxLayout * lay1 = new QHBoxLayout();
     lay1->addWidget(line1);
@@ -123,7 +118,7 @@ DlgStartOptions::DlgStartOptions(QWidget * parent) : DlgTextEdit(parent)
     if (data.open(QFile::ReadOnly | QFile::Text))
     {
         QTextStream in(&data);
-        txt.setPlainText(in.readAll());
+        txt.setHtml(in.readAll());
         data.close();
     }
     else

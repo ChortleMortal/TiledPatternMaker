@@ -1,6 +1,4 @@
 #pragma once
-#ifndef NEIGHBOURS_H
-#define NEIGHBOURS_H
 
 #include <QMap>
 #include <QVector>
@@ -52,5 +50,3 @@ protected:
 
     WeakVertexPtr   vertex;
 };
-
-#endif // NEIGHBOURS_H

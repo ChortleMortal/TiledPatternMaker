@@ -1,10 +1,14 @@
 #pragma once
-#ifndef PAGE_CONFIG_H
-#define PAGE_CONFIG_H
 
+#include <QActionGroup>
+#include <QButtonGroup>
+#include <QCheckBox>
+#include <QGroupBox>
+#include <QPushButton>
 #include "gui/panels/panel_page.h"
 
 class qtAppLog;
+class MemoryCombo;
 
 class page_settings : public panel_page
 {
@@ -20,16 +24,23 @@ public:
 private slots:
     void    slot_selectRootMediaDir();
     void    slot_selectRootImageDir();
+    void    slot_selectRootLogDir();
+
+
+    void    slot_rootMediaIndexChanged(int index);
+    void    slot_rootMediaEditChanged();
+    void    slot_rootLogIndexChanged(int index);
+    void    slot_rootLogEditChanged();
+    void    slot_rootImagesIndexChanged(int index);
+    void    slot_rootImagesEditChanged();
+
     void    slot_selectXMLTool();
     void    slot_selectDiffTool();
 
-    void    slot_rootDesignChanged(QString txt);
-    void    slot_rootImageChanged(QString txt);
-    void    slot_designDefaultChanged(bool checked);
+    void    slot_mediaDefaultChanged(bool checked);
     void    slot_imageDefaultChanged(bool checked);
-    void    slot_logToAppDir(bool checked);
+    void    slot_logDefaultChanged(bool checked);
 
-    void    slot_reconfigurePaths();
     void    slot_mode(int id);
     void    slot_darkThemeChanged(int id);
     void    slot_bigScreen(bool enb);
@@ -42,7 +53,13 @@ private slots:
     void    slot_showSupport();
     void    slot_showShortcuts();
 
+    void    slot_XMLToolChanged1();
+    void    slot_DiffToolChanged2();
+
 protected:
+    void    rootMediaChanged(QString dir);
+    void    rootImagesChanged(QString dir);
+    void    logPathChanged(QString dir);
     void    updatePaths();
     void    restartApp();
 
@@ -56,18 +73,18 @@ private:
 
     QPushButton * rootMediaBtn;
     QPushButton * rootImagesBtn;
+    QPushButton * rootLogBtn;
 
-    QLineEdit   * le_rootMedia;
-    QLineEdit   * le_rootImages;
-    QLineEdit   * le_xmlTool;
-    QLineEdit   * le_diffTool;
-    QLineEdit   * le_logPath;
+    MemoryCombo * rootMediaCombo;
+    MemoryCombo * rootImagesCombo;
+    MemoryCombo * xmlToolCombo;
+    MemoryCombo * diffToolCombo;
+    MemoryCombo * logPathCombo;
     QLineEdit   * le_logName;
 
-    QCheckBox   * defaultDesigns;
+    QCheckBox   * defaultMedia;
     QCheckBox   * defaultImages;
+    QCheckBox   * defaultLogs;
 
     QButtonGroup * btnGroup2;
 };
-
-#endif

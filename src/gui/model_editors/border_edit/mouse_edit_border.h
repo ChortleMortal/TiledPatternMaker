@@ -1,6 +1,4 @@
 #pragma once
-#ifndef MOUSEEDITBORDER_H
-#define MOUSEEDITBORDER_H
 
 #include <QPointF>
 #include <QPainter>
@@ -51,8 +49,5 @@ protected:
     eCircleMode     ecCircleMode;
 
 private:
-    Border * bview;
+    Border * border;
 };
-
-
-#endif // MOUSEEDITBORDER_H

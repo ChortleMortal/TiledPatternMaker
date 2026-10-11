@@ -1,6 +1,4 @@
 #pragma once
-#ifndef EDGEPOLY_H
-#define EDGEPOLY_H
 
 #include <QPolygonF>
 #include <QPen>
@@ -14,7 +12,8 @@ typedef std::shared_ptr<QPolygonF>       PolyPtr;
 typedef std::shared_ptr<class Edge>      EdgePtr;
 typedef std::shared_ptr<class Vertex>    VertexPtr;
 
-typedef QVector<EdgePtr> EdgeSet;
+typedef QList<EdgePtr> EdgeSet;
+typedef QList<QLineF>  LineSet;
 
 class EdgePoly
 {
@@ -24,6 +23,7 @@ public:
     EdgePoly();
     EdgePoly(const EdgePoly & ep);
     EdgePoly(const EdgeSet & edgeSet);
+    EdgePoly(const LineSet & lineSet, bool ordered = true);
     EdgePoly(const QPolygonF & poly);
     EdgePoly(const QRectF & rect);
     EdgePoly(const Circle & circle);
@@ -35,12 +35,14 @@ public:
     bool operator != (const EdgePoly & other) const { return !(*this == other); }
 
     void create(const EdgeSet & edgeSet);
+    void create(const LineSet & lineSet, bool ordered = true);
     void create(const QPolygonF & poly);
     void create(QRectF & rect);
     void create(const Circle & circle);
     void create(PolyPtr pp);
 
     void set(const EdgeSet & edgeSet);
+    void set(const LineSet & lines, bool ordered = true);
     void set(const QPolygonF &poly);
     void set(QRectF & rect);
     void set(const Circle & circle);
@@ -86,13 +88,15 @@ public:
     QRectF              getRect() const;
     QPointF             calcCenter();
     QPointF             calcIrregularCenter();
+    static QPointF      centroid(const QPolygonF & pts);
+    static QPointF      pivot(const QPolygonF & pts);
     QLineF              getEdge(int edge);
     qreal               getAngle(int edge);
-    QTransform          getTransform();
+    QTransform          getEpolyTransform();
 
-    uint                size()              { return epoly.size(); }
-    uint                numPoints()         { return epoly.size(); }
-    uint                numEdges()          { return epoly.size(); }
+    int                 size()              { return static_cast<int>(epoly.size()); }
+    int                 numPoints()         { return static_cast<int>(epoly.size()); }
+    int                 numEdges()          { return static_cast<int>(epoly.size()); }
 
     void                dumpPts() const;
     void                dumpBaseEdges() const;
@@ -111,5 +115,3 @@ private:
 
     QPainterPath        pp;
 };
-
-#endif // EDGEPOLY_H

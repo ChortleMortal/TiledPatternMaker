@@ -1,10 +1,8 @@
 #pragma once
-#ifndef PAGE_CROP_MAKER_H
-#define PAGE_CROP_MAKER_H
 
+#include <QCheckBox>
 #include "gui/panels/panel_page.h"
 #include "model/makers/crop_maker.h"
-
 
 class CropWidget;
 
@@ -21,6 +19,11 @@ public:
     void onEnter()          override;
     void onExit()           override {}
 
+    // reused by page_mosaic_maker's crop-visibility checkboxes so both pages
+    // stay in sync through the same chkShowMosaic/chkShowPainter checkboxes
+    void setShowMosaicCrop(bool show)  { chkShowMosaic->setChecked(show); }
+    void setShowPainterCrop(bool show) { chkShowPainter->setChecked(show); }
+
 private slots:
     void display();
 
@@ -36,7 +39,6 @@ private slots:
     void slot_removePainterCrop();
     void slot_fetchBorderForPainter();
     void slot_fetchMosaicCrop();
-    void slot_clip(bool checked);
     void slot_showPainterCrop(bool checked);
 
 protected:
@@ -52,9 +54,6 @@ private:
 
     QCheckBox  * chkEmbed;
     QCheckBox  * chkCropOutside;
-    QCheckBox  * chkClip;
     QCheckBox  * chkShowMosaic;
     QCheckBox  * chkShowPainter;
 };
-
-#endif

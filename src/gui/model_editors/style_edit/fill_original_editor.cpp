@@ -2,10 +2,13 @@
 #include <QTableWidget>
 #include <QPushButton>
 
-#include "gui/widgets/panel_misc.h"
 #include "gui/model_editors/style_edit/fill_original_editor.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/colorset_widget.h"
 #include "gui/widgets/dlg_colorSet.h"
+#include "gui/widgets/panel_misc.h"
+
+#define ROW_HEIGHT 39
 
 ///////////////////////////////////////////////////////////////////////
 //
@@ -18,7 +21,7 @@ FillOriginalEditor::FillOriginalEditor(FilledEditor * parent, FilledPtr filled, 
 {
     ocm = cm;
 
-    table = new QTableWidget();
+    table = new AQTableWidget();
     table->verticalHeader()->setVisible(false);
     table->setColumnCount(4);
     table->setRowCount(2);
@@ -27,7 +30,6 @@ FillOriginalEditor::FillOriginalEditor(FilledEditor * parent, FilledPtr filled, 
     table->setColumnWidth(COL_EDIT,100);
     table->setColumnWidth(COL_NUMBER,120);
     table->setSelectionMode(QAbstractItemView::NoSelection);
-    table->setMinimumHeight(501);
 
     QStringList qslH;
     qslH << "Show" <<  "Colors" << "Edit" << "Number";
@@ -48,6 +50,7 @@ FillOriginalEditor::FillOriginalEditor(FilledEditor * parent, FilledPtr filled, 
     infoW = new QTableWidgetItem(QString("%1 faces").arg(ocm->whiteFaces.size()));
     table->setItem(row,COL_NUMBER,infoW);
 
+    table->setRowHeight(row,ROW_HEIGHT);
     row++;
 
     // blacks
@@ -63,13 +66,15 @@ FillOriginalEditor::FillOriginalEditor(FilledEditor * parent, FilledPtr filled, 
 
     infoB = new QTableWidgetItem(QString("%1 faces").arg(ocm->blackFaces.size()));
     table->setItem(row,COL_NUMBER,infoB);
+    table->setRowHeight(row,ROW_HEIGHT);
 
     connect(inside_checkbox,  &QCheckBox::clicked,      this,   &FillOriginalEditor::slot_insideChanged);
     connect(outside_checkbox, &QCheckBox::clicked,      this,   &FillOriginalEditor::slot_outsideChanged);
     connect(btnB,             &QPushButton::clicked,    this,   &FillOriginalEditor::slot_editB);
     connect(btnW,             &QPushButton::clicked,    this,   &FillOriginalEditor::slot_editW);
-    connect(cswW,             &ColorSetWidget::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
+    connect(cswW,             &ColorSetWidget::sig_updateView, Sys::systemViewController, &ViewController::slot_updateView);
 
+    table->adjustTableSize();
     vbox->addWidget(table);
 }
 

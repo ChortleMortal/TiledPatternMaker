@@ -1,7 +1,6 @@
 #pragma once
-#ifndef TILING_WRITER
-#define TILING_WRITER
 
+#include "model/tilings/backgroundimage.h"
 #include <QTextStream>
 #include <QMap>
 #include "sys/geometry/vertex.h"
@@ -18,18 +17,19 @@ class EdgePoly;
 
 class TilingWriter
 {
-    friend class TilingManager;
+    friend class TilingMaker;
     friend class TilingBMPGenerator;
     friend class MosaicReader;
 
 public:
     bool    writeTilingXML(VersionedFile vfile, TilingPtr tiling);
 
-    static void writeBackgroundImage(QTextStream & out, BkgdImagePtr bip);
+    static void writeBackgroundImage(QTextStream & out, const BkgdRecord & rec);
 
 protected:
     void    writeXML(QTextStream & out);     // also called when writing styles
     void    writeViewSettings(QTextStream & out);
+    void    writeConstructionLines(QTextStream & out);
 
     void    setEdgeSet(QTextStream & ts, const EdgeSet & eset);
     void    setVertex(QTextStream & ts,VertexPtr v, QString name);
@@ -53,6 +53,4 @@ private:
     QMap<VertexPtr,int>   vertex_ids;
     int         refId;
 };
-
-#endif
 

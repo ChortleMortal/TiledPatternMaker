@@ -4,11 +4,13 @@
 #include <QApplication>
 
 #include "gui/model_editors/tiling_edit/tiling_mouseactions.h"
+#include "gui/top/view_controller.h"
 #include "model/tilings/backgroundimage_perspective.h"
 #include "model/tilings/backgroundimage.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/geo.h"
 #include "sys/geometry/vertex.h"
+#include "sys/sys.h"
 
 /////////
 ///
@@ -31,6 +33,18 @@ bool BackgroundImagePerspective::startDragging(QPointF spos)
         return addPoint(spos);
     }
 
+    if (sAccum.size() == 4)
+    {
+        for (EdgePtr & edge : sAccum)
+        {
+            if (Geo::isNear(spos, parent->keystoneModelToScreen(edge->v1->pt)))
+            {
+                dragVertex = edge->v1;
+                return true;
+            }
+        }
+    }
+
     return false;
 }
 
@@ -41,7 +55,8 @@ bool BackgroundImagePerspective::addPoint(QPointF spos)
 
     qDebug("Perspective::addPoint");
 
-    VertexPtr vnew = std::make_shared<Vertex>(spos);
+    QPointF mpt = parent->keystoneScreenToModel(spos);
+    VertexPtr vnew = std::make_shared<Vertex>(mpt);
 
     int size = sAccum.size();
     if (size == 0)
@@ -81,7 +96,16 @@ bool BackgroundImagePerspective::updateDragging(QPointF spt)
     if (!active)
         return false;
 
-    sLastDrag = spt;
+    if (dragVertex)
+    {
+        dragVertex->setPt(parent->keystoneScreenToModel(spt));
+        return true;
+    }
+
+    if (sAccum.size() == 4)
+        return false;
+
+    sLastDrag = parent->keystoneScreenToModel(spt);
     return true;
 }
 
@@ -90,10 +114,19 @@ bool BackgroundImagePerspective::endDragging(QPointF spt)
     if (!active)
         return false;
 
+    if (dragVertex)
+    {
+        dragVertex->setPt(parent->keystoneScreenToModel(spt));
+        dragVertex.reset();
+        return true;
+    }
+
     if (sAccum.size() == 0)
         return false;
-    
-    if (!Geo::isNear(spt,sAccum.first()->v1->pt))
+
+    // isNear tolerance is in screen pixels
+    QPointF sFirst = parent->keystoneModelToScreen(sAccum.first()->v1->pt);
+    if (!Geo::isNear(spt,sFirst))
     {
         addPoint(spt);
     }
@@ -115,15 +148,15 @@ void BackgroundImagePerspective::draw(QPainter * painter)
         {
             if (edge->getType() == EDGETYPE_LINE)
             {
-                QPointF p1 = edge->v1->pt;
-                QPointF p2 = edge->v2->pt;
+                QPointF p1 = parent->keystoneModelToScreen(edge->v1->pt);
+                QPointF p2 = parent->keystoneModelToScreen(edge->v2->pt);
                 painter->drawEllipse(p1,6,6);
                 painter->drawEllipse(p2,6,6);
                 painter->drawLine(p1, p2);
             }
             else if (edge->getType() == EDGETYPE_POINT)
             {
-                QPointF p = edge->v1->pt;
+                QPointF p = parent->keystoneModelToScreen(edge->v1->pt);
                 painter->drawEllipse(p,6,6);
             }
         }
@@ -139,8 +172,10 @@ void BackgroundImagePerspective::drawPerspective(QPainter * painter)
         QColor drag_color = QColor(206,179,102,230);
         painter->setPen(QPen(drag_color,3));
         painter->setBrush(QBrush(drag_color));
-        painter->drawLine(sAccum.last()->v2->pt,sLastDrag);
-        painter->drawEllipse(sLastDrag,10,10);
+        QPointF p1 = parent->keystoneModelToScreen(sAccum.last()->v2->pt);
+        QPointF p2 = parent->keystoneModelToScreen(sLastDrag);
+        painter->drawLine(p1,p2);
+        painter->drawEllipse(p2,10,10);
     }
 }
 
@@ -151,14 +186,30 @@ void Perspective::forceRedraw()
 }
 #endif
 
-void BackgroundImagePerspective::activate(bool enb)
+void BackgroundImagePerspective::activate(bool enb, BackgroundImage * parent)
 {
-    active = enb;
     if (enb)
     {
-        sAccum.clear();
-        sLastDrag = QPointF();
+        this->parent = parent;
+        savedXform   = parent->getModelXform();
+        clear();
+        emit Sys::systemViewController->sig_solo(parent,true);     // navigation moves only the image
     }
+    else if (active && this->parent)
+    {
+        // pop the view back to where it was before this session's navigation
+        this->parent->setModelXform(savedXform, true, Sys::nextSigid());
+        emit Sys::systemViewController->sig_solo(this->parent,false);
+    }
+
+    active = enb;
+}
+
+void BackgroundImagePerspective::clear()
+{
+    sAccum.clear();
+    sLastDrag = QPointF();
+    dragVertex.reset();
 }
 
 /////////
@@ -228,7 +279,8 @@ void BackgroundImageCropper::draw(QPainter *painter )
 
 void BackgroundImageCropper::activate(bool enb, BackgroundImage * parent, Crop *crop)
 {
-    active       = enb;
+    bool wasActive = active;
+    active         = enb;
 
     if (enb)
     {
@@ -240,7 +292,7 @@ void BackgroundImageCropper::activate(bool enb, BackgroundImage * parent, Crop *
         if (crop->getRect().isNull())
         {
             // this sets up a default crop
-            QRectF srect    = Sys::viewController->viewRect();
+            QRectF srect    = Sys::systemViewController->getViewRect();
             QPointF scenter = srect.center();
             QSizeF ssz      = srect.size();
             ssz            *= 0.7;
@@ -250,9 +302,12 @@ void BackgroundImageCropper::activate(bool enb, BackgroundImage * parent, Crop *
             QRectF mrect    = parent->screenToModel(srect);
             crop->setRect(mrect);
         }
+        emit Sys::systemViewController->sig_solo(parent,true);     // navigation moves only the image
     }
     else
     {
+        if (wasActive && this->parent)
+            emit Sys::systemViewController->sig_solo(this->parent,false);
         this->parent = nullptr;
         this->crop   = nullptr;
     }

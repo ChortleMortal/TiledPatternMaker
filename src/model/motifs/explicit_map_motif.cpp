@@ -1,31 +1,25 @@
 #include "model/motifs/explicit_map_motif.h"
 #include "sys/geometry/map.h"
 
-ExplicitMapMotif::ExplicitMapMotif() : IrregularMotif()
+ExplicitMapMotif::ExplicitMapMotif() : AdaptiveMotif()
 {
-    setMotifType(MOTIF_TYPE_EXPLICIT_MAP);
+    setMotifType(Type::MapMotif);
     explicitMap = std::make_shared<Map>("Dummy explicit map");
 };
 
-ExplicitMapMotif::ExplicitMapMotif(MapPtr map) : IrregularMotif()
+ExplicitMapMotif::ExplicitMapMotif(MapPtr map) : AdaptiveMotif()
 {
-    setMotifType(MOTIF_TYPE_EXPLICIT_MAP);
+    setMotifType(Type::MapMotif);
     explicitMap = map;
 }
 
-ExplicitMapMotif::ExplicitMapMotif(const Motif &other) : IrregularMotif(other)
+ExplicitMapMotif::ExplicitMapMotif(const Motif &other) : AdaptiveMotif(other)
 {
-    setMotifType(MOTIF_TYPE_EXPLICIT_MAP);
+    setMotifType(Type::MapMotif);
     explicitMap = other.motifMap;
 }
 
 void ExplicitMapMotif::infer()
 {
     motifMap = explicitMap->recreate();
-}
-
-void ExplicitMapMotif::resetMotifMap()
-{
-    //explicitMap.reset();  // the explicit map should not be messed with
-    motifMap.reset();
 }

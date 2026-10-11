@@ -1,5 +1,4 @@
-#ifndef CASING_SIDE_H
-#define CASING_SIDE_H
+#pragma once
 
 #include <QColor>
 #include <QDebug>
@@ -57,8 +56,4 @@ protected:
 
 private:
     QPointF _getJoinPoint(QPointF from, QPointF joint, QPointF to, qreal qwidth, eLSide lside);
-
-
 };
-
-#endif // CASING_SIDE_H

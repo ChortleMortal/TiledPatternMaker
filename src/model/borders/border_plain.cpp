@@ -1,6 +1,7 @@
 #include <QPainter>
 
 #include "gui/model_editors/border_edit/mouse_edit_border.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/geo_graphics.h"
 #include "model/borders/border_plain.h"
 #include "model/motifs/tile_color_defs.h"
@@ -75,7 +76,7 @@ void BorderPlain::createStyleRepresentation()
 
     if (getUseViewSize())
     {
-        setBorderSize(viewControl()->getCanvas().getViewSize());
+        setBorderSize(viewControl()->viewSize());
     }
 
     bmap = std::make_shared<Map>("Border");

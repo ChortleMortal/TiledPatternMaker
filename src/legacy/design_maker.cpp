@@ -2,12 +2,12 @@
 #include <QApplication>
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/image_view.h"
 #include "legacy/design.h"
 #include "legacy/design_maker.h"
 #include "legacy/designs.h"
-#include "model/settings/canvas_settings.h"
+#include "model/settings/canvas.h"
 #include "model/settings/configuration.h"
 #include "sys/sys.h"
 #include "sys/sys/load_unit.h"
@@ -43,7 +43,7 @@ DesignMaker::DesignMaker()
 
 void DesignMaker::init()
 {
-    viewControl = Sys::viewController;
+    viewControl = Sys::systemViewController;
     config      = Sys::config;
 
     _legacyKeyboardMode  = LEGACY_MODE_DES_POS;
@@ -66,12 +66,12 @@ void DesignMaker::init()
     availableDesigns.insert(DESIGN_KUMIKO1,make_shared<DesignKumiko1>(DESIGN_KUMIKO1,"Kumiko 1"));
     availableDesigns.insert(DESIGN_KUMIKO2,make_shared<DesignKumiko2>(DESIGN_KUMIKO2,"Kumiko 2"));
 
-    connect(Sys::sysview, &SystemView::sig_deltaScale,    this, &DesignMaker::designScale);
-    connect(Sys::sysview, &SystemView::sig_deltaRotate,   this, &DesignMaker::designRotate);
-    connect(Sys::sysview, &SystemView::sig_deltaMoveY,    this, &DesignMaker::designMoveY);
-    connect(Sys::sysview, &SystemView::sig_deltaMoveX,    this, &DesignMaker::designMoveX);
-    connect(this,         &DesignMaker::sig_updateView,      viewControl, &SystemViewController::slot_updateView);
-    connect(this,         &DesignMaker::sig_reconstructView, viewControl, &SystemViewController::slot_reconstructView);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_deltaScale,    this, &DesignMaker::designScale);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_deltaRotate,   this, &DesignMaker::designRotate);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_deltaMoveY,    this, &DesignMaker::designMoveY);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_deltaMoveX,    this, &DesignMaker::designMoveX);
+    connect(this,         &DesignMaker::sig_updateView,      viewControl, &ViewController::slot_updateView);
+    connect(this,         &DesignMaker::sig_reconstructView, viewControl, &ViewController::slot_reconstructView);
 }
 
 void DesignMaker::addDesign(DesignPtr d)
@@ -103,7 +103,7 @@ void DesignMaker::slot_loadDesign(eDesign design)
 
     if (!config->lockView)
     {
-        Sys::controlPanel->delegateView(VIEW_LEGACY,true);
+        Sys::controlPanel->delegateView(Layer::Type::LegacyDesign,true);
     }
     
     emit sig_reconstructView();
@@ -117,6 +117,7 @@ void DesignMaker::slot_buildDesign(eDesign design)
     VersionedName vn(desName);
     VersionedFile vf;
     vf.updateFromVersionedName(vn);
+    emit sig_loadingDesign(design);
     loadUnit->start(vf);
 
     DesignMaker * designMaker = Sys::designMaker;
@@ -131,12 +132,16 @@ void DesignMaker::slot_buildDesign(eDesign design)
     d->build();
     d->repeat();
 
-    // size view to design
-    QSize size = d->getDesignInfo().getViewSize();
-    auto & canvas = viewControl->getCanvas();
-    canvas.setCanvasSize(size);
+    // legacy designs aren't part of the Tiling/Mosaic active-canvas duality (see
+    // Sys::getActiveCanvasOwner()) - they still use the plain stored-pointer mechanism directly
+    Canvas * canvas = d->getDesignCanvas();
+    viewControl->setCanvas(canvas);
 
-    viewControl->setSize(size);
+    // size view to design
+    QSize size = canvas->getViewSize();
+    canvas->setCanvasSize(size);
+
+    viewControl->setTakerViewSize(size);
 
     Sys::imageViewer->unloadLayerContent();
 
@@ -412,15 +417,14 @@ void DesignMaker::designScale(int delta)
 {
     for (auto & design : std::as_const(activeDesigns))
     {
-        CanvasSettings info = design->getDesignInfo();
-        QSize sz =  info.getViewSize();
+        Canvas * canvas = design->getDesignCanvas();
+        QSize sz =  canvas->getViewSize();
         qDebug() << "design: size=" << sz;
         if (delta > 0)
             sz +=  QSize(delta,delta);
         else
             sz -=  QSize(delta,delta);
-        info.setViewSize(sz);
-        design->setDesignInfo(info);
+        canvas->setViewSize(sz);
     }
     emit sig_updateView();
 }

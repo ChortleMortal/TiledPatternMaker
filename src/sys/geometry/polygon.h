@@ -1,6 +1,4 @@
 #pragma once
-#ifndef APOLYGON_H
-#define APOLYGON_H
 
 #include <QPolygonF>
 #include <QPointF>
@@ -38,5 +36,3 @@ private:
     QPolygonF   source;
     bool        hasSource;
 };
-
-#endif // APOLYGON_H

@@ -21,8 +21,22 @@ OriginalColoring::OriginalColoring(Filled * filled) : ColorMaker(filled)
 
 OriginalColoring::OriginalColoring(const OriginalColoring & other) : ColorMaker(other.filled)
 {
-    whiteColorSet = other.whiteColorSet;
-    blackColorSet = other.blackColorSet;
+    whiteColorSet       = other.whiteColorSet;
+    blackColorSet       = other.blackColorSet;
+    draw_inside_blacks  = other.draw_inside_blacks;
+    draw_outside_whites = other.draw_outside_whites;
+}
+
+OriginalColoring& OriginalColoring::operator=(const OriginalColoring & other)
+{
+    if (this != &other)
+    {
+        whiteColorSet       = other.whiteColorSet;
+        blackColorSet       = other.blackColorSet;
+        draw_inside_blacks  = other.draw_inside_blacks;
+        draw_outside_whites = other.draw_outside_whites;
+    }
+    return *this;
 }
 
 void OriginalColoring::initFrom(eFillType old)
@@ -74,7 +88,7 @@ void OriginalColoring::createStyleRepresentation(DCELPtr dcel)
 
 void OriginalColoring::draw(GeoGraphics * gg)
 {
-    qDebug() << "OriginalColoring::draw  black" << ((draw_inside_blacks) ? "show" : "hide") << blackColorSet.info() << "white" << ((draw_outside_whites) ? "show" : "hide") << whiteColorSet.info();
+    //qDebug() << "OriginalColoring::draw  black" << ((draw_inside_blacks) ? "show" : "hide") << blackColorSet.info() << "white" << ((draw_outside_whites) ? "show" : "hide") << whiteColorSet.info();
 
     if (draw_outside_whites)
     {

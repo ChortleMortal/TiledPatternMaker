@@ -1,6 +1,4 @@
 #pragma once
-#ifndef FILLED_EDITORS_H
-#define FILLED_EDITORS_H
 
 #include "sys/enums/efilltype.h"
 #include "sys/enums/estyletype.h"
@@ -38,6 +36,9 @@ public:
     void onRefresh() override;
 
     void notify();
+
+    // shared with the algorithm combo row - sub-editors append their own buttons here
+    QHBoxLayout * getButtonRow() { return hbox; }
 
 public slots:
     void slot_algo(eFillType algo);
@@ -80,5 +81,3 @@ public:
     weak_ptr<Filled>  wfilled;
     ColorMaker      * cm;
 };
-
-#endif

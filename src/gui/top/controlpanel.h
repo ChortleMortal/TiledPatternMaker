@@ -1,24 +1,31 @@
 #pragma once
-#ifndef PANEL_H
-#define PANEL_H
 
-#include "gui/panels/panel_page_controller.h"
+#include <QMessageBox>
+#include <QButtonGroup>
+#include <QGroupBox>
 #include "gui/panels/panel_page.h"
 #include "gui/panels/panel_status.h"
-#include "sys/enums/eviewtype.h"
+#include "gui/viewers/layer.h"
 #include "sys/enums/epanelpage.h"
+
+constexpr int PANEL_WIDTH     = 841;
+constexpr int PANEL_LHS_WIDTH = 117;
+constexpr int PANEL_RHS_WIDTH = PANEL_WIDTH - PANEL_LHS_WIDTH;
+constexpr int PANEL_RHS_HEIGHT = 682;
 
 class AQPushButton;
 class AQHBoxLayout;
 class MosaicMaker;
 class MouseModeWidget;
+class PanelPageController;
 class PanelViewSelect;
 class QButtonGroup;
 class QRadioButton;
-class SystemViewController;
+class ViewController;
 class TiledPatternMaker;
 class TilingMaker;
 class panel_page;
+class Layer;
 
 class ControlPanel : public QWidget
 {
@@ -31,21 +38,24 @@ public:
     ControlPanel();
     ~ControlPanel() override;
     void    init();
+    void    bringToPrimaryScreen();
 
-    void    closePages()                        { pageController->closePages(); }
-    bool    isVisiblePage(panel_page * page)    { return pageController->isVisiblePage(page); }
-    bool    isVisiblePage(ePanelPage page)      { return pageController->isVisiblePage(page); }
+    void    closePages();
+    bool    isVisiblePage(panel_page * page);
+    bool    isVisiblePage(ePanelPage page);
 
-    void        setCurrentPage(QString name)    { pageController->setCurrentPage(name); }
-    panel_page* getCurrentPage()                { return pageController->getCurrentPage(); }
-    panel_page* getPage(QString name)           { return pageController->getPage(name); }
+    void        setCurrentPage(QString name);
+    panel_page* getCurrentPage();
+    panel_page* getPage(QString name);
     void        completePageSelection();
 
     void    overridePagelStatus(QString str);
     void    restorePageStatus();
 
-    void    delegateView(eViewType vtype, bool delegate);
+    void    delegateView(Layer::Type vtype, bool delegate);
+    void    userDelegateView(Layer::Type vtype, bool delegate);
     void    deselectGangedViewers();
+    void    reEnableViewers();
 
     MouseModeWidget     *  getMouseModeWidget() { return mouseModeWidget;}
     PanelPageController *  getPageController()  { return pageController; }
@@ -64,10 +74,11 @@ signals:
 public slots:
     void    slot_reload();
     void    slot_poll();
-    void    slot_reattachPage(panel_page * page)    { pageController->reAttachPage(page); }
-    void    slot_messageBox(QString txt, QString txt2);
+    void    slot_reattachPage(panel_page * page);
+    void    slot_messageBox(QString txt, QString txt2, QMessageBox::Icon icon, bool modal);
+    void    slot_interlaceUnwoven();
     void    slot_raisePanel();
-    void    slot_delegateView(eViewType vtype, bool delegate);
+    void    slot_delegateView(Layer::Type vtype, bool delegate);
 
 private slots:
     void    repeatChanged(int mode);
@@ -109,6 +120,7 @@ private:
     PanelPageController * pageController;
 
     PanelStatus         * panelStatus;
+    QMessageBox         * unwovenBox;
     QTimer              * mpTimer;
 
     QString               panelInfo;
@@ -136,5 +148,3 @@ private:
     QPushButton * pbExit;
     QCheckBox   * chkScaleToView;
 };
-
-#endif

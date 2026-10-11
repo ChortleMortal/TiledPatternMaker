@@ -1,0 +1,16 @@
+#include <QString>
+#include "sys/version.h"
+
+static constexpr char raw[] = "4.3";
+static const char* BUILD_TIMESTAMP = "@BUILD_TIMESTAMP@";
+
+QString TpmVersion::getVersion()
+{
+    return QString::fromLatin1(raw);
+}
+
+QString TpmVersion::getTimestamp()
+{
+    return BUILD_TIMESTAMP;
+}
+

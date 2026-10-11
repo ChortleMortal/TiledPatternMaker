@@ -1,24 +1,23 @@
 #include "model/mosaics/legacy_loader.h"
 #include <QColor>
-#include <QMessageBox>
 
+#include "gui/top/view_controller.h"
+#include "model/borders/border.h"
+#include "model/mosaics/legacy_loader.h"
+#include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_reader.h"
 #include "model/mosaics/reader_base.h"
-#include "model/prototypes/design_element.h"
-#include "model/mosaics/mosaic.h"
 #include "model/mosaics/reader_base.h"
-#include "model/mosaics/legacy_loader.h"
-#include "model/prototypes/prototype.h"
+#include "model/motifs/adaptive_inference.h"
+#include "model/motifs/adaptive_motif.h"
 #include "model/motifs/explicit_map_motif.h"
-#include "model/motifs/irregular_motif.h"
 #include "model/motifs/extender.h"
-#include "model/motifs/inferred_motif.h"
 #include "model/motifs/motif.h"
 #include "model/motifs/rosette.h"
 #include "model/motifs/star.h"
-#include "sys/geometry/map.h"
-#include "model/borders/border.h"
-#include "sys/sys/fileservices.h"
+#include "model/prototypes/prototype.h"
+#include "model/prototypes/tile_motif.h"
+#include "model/settings/configuration.h"
 #include "model/styles/emboss.h"
 #include "model/styles/filled.h"
 #include "model/styles/interlace.h"
@@ -30,8 +29,8 @@
 #include "model/tilings/tile_reader.h"
 #include "model/tilings/tiling.h"
 #include "model/tilings/tiling_reader.h"
-#include "model/tilings/tiling_manager.h"
-#include "gui/top/system_view_controller.h"
+#include "sys/geometry/map.h"
+#include "sys/sys/fileservices.h"
 
 #undef  DEBUG_REFERENCES
 #define SUPPORT_BUGS
@@ -90,32 +89,32 @@ void LegacyLoader::processTapratsVector(xml_node & node, MosaicPtr mosaic)
     }
     if (_debug) qDebug() << "end vector";
     
-    CanvasSettings ms = _mosaic->getCanvasSettings();
-    ms.setBackgroundColor(QColor(Qt::white));
-    ms.setViewSize(QSize(1500,1100));  // this is an arbitrary resizing to match with version 1.8.1
-    ms.setCanvasSize(QSize(1500,1100));
+    Canvas * ms = _mosaic->getMosaicCanvas();
+    ms->setViewSize(QSize(1500,1100));  // this is an arbitrary resizing to match with version 1.8.1
+    ms->setCanvasSize(QSize(1500,1100));
+
+    _mosaic->setBkgdColor(QColor(Qt::white));
 
     // Canvas Settings fill data defaults to FillData defaults, loader can  override these
     if (_tilings.size() > 0)
     {
         if (_debug) qDebug() << "Using Tiling FiilData";
-        FillData fd =  _tilings.first()->hdr().getCanvasSettings().getFillData();
-        ms.setFillData(fd);
+        FillData fd =  _tilings.first()->hdr().getTilingCanvas()->getFillData();
+        ms->setFillData(fd);
     }
     else
     {
         if (_debug) qDebug() << "Using Default FiilData";
         FillData fd;    // default
-        ms.setFillData(fd);
+        ms->setFillData(fd);
     }
-    _mosaic->setCanvasSettings(ms);
 }
 
 void LegacyLoader::processThick(xml_node & node)
 {
     QColor  color;
     eDrawOutline  draw_outline = OUTLINE_NONE;
-    eZLevel zlevel             = STANDARD_ZLEVEL;
+    Layer::ZLevel zlevel       = Layer::ZLevel::Standard_Z0;
     qreal width                = 0.0;
     ProtoPtr proto;
     Xform   xf;
@@ -154,7 +153,7 @@ void LegacyLoader::processInterlace(xml_node & node)
 {
     QColor  color;
     eDrawOutline  draw_outline = OUTLINE_NONE;
-    eZLevel zlevel             = STANDARD_ZLEVEL;
+    Layer::ZLevel zlevel = Layer::ZLevel::Standard_Z0;
     qreal   width        = 0.0;
     qreal   gap          = 0.0;
     qreal   shadow       = 0.0;
@@ -198,7 +197,7 @@ void LegacyLoader::processOutline(xml_node & node)
 {
     QColor  color;
     eDrawOutline  draw_outline = OUTLINE_NONE;
-    eZLevel zlevel             = STANDARD_ZLEVEL;
+    Layer::ZLevel zlevel       = Layer::ZLevel::Standard_Z0;
     qreal   width              = 0.0;
     ProtoPtr proto;
     Xform   xf;
@@ -239,7 +238,7 @@ void LegacyLoader::processFilled(xml_node & node)
     QColor  color;
     bool    draw_inside  = false;
     bool    draw_outside = false;
-    eZLevel zlevel       = STANDARD_ZLEVEL;
+    Layer::ZLevel zlevel = Layer::ZLevel::Standard_Z0;
     ProtoPtr proto;
     Xform   xf;
 
@@ -287,7 +286,7 @@ void LegacyLoader::processPlain(xml_node & node)
     QColor  color;
     ProtoPtr proto;
     Xform   xf;
-    eZLevel zlevel = STANDARD_ZLEVEL;
+    Layer::ZLevel zlevel = Layer::ZLevel::Standard_Z0;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -318,7 +317,7 @@ void LegacyLoader::processSketch(xml_node & node)
     QColor  color;
     ProtoPtr proto;
     Xform   xf;
-    eZLevel zlevel = STANDARD_ZLEVEL;
+    Layer::ZLevel zlevel = Layer::ZLevel::Standard_Z0;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -348,7 +347,7 @@ void LegacyLoader::processEmboss(xml_node & node)
 {
     QColor          color;
     eDrawOutline    draw_outline = OUTLINE_NONE;
-    eZLevel         zlevel       = STANDARD_ZLEVEL;
+    Layer::ZLevel   zlevel       = Layer::ZLevel::Standard_Z0;
     qreal           width        = 0.0;
     qreal           angle        = 0.0;
     ProtoPtr        proto;
@@ -389,7 +388,7 @@ void LegacyLoader::processEmboss(xml_node & node)
     if (_debug) qDebug() << "end emboss";
 }
 
-void LegacyLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf, eZLevel & zlevel)
+void LegacyLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf, Layer::ZLevel &zlevel)
 {
     xml_node def = node.child("default");
     if (!def)
@@ -441,7 +440,7 @@ void LegacyLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf, eZLevel & 
     if (n)
     {
         val          = n.child_value();
-        zlevel       = (eZLevel)val.toInt();
+        zlevel       = (Layer::ZLevel)val.toInt();
     }
 }
 
@@ -580,12 +579,12 @@ ProtoPtr LegacyLoader::getPrototype(xml_node & node)
             // load tiling
             qDebug().noquote() << "loading named tiling" << tilingName;
 #if 0
-            TilingManager tm;
-            tp = tm.loadTiling(tilingName,TILM_LOAD_FROM_MOSAIC);
+            QString failMsg;
+            tp = Sys::tilingMaker->readTiling(tilingName,failMsg);
 #else
             VersionedName vn(tilingName);
             VersionedFile filename = FileServices::getFile(vn,FILE_TILING);
-            TilingReader tm(Sys::viewController);
+            TilingReader tm(Sys::systemViewController);
             ReaderBase mrbase;
             tp  = tm.readTilingXML(filename,&mrbase);
 #endif
@@ -667,8 +666,8 @@ ProtoPtr LegacyLoader::getPrototype(xml_node & node)
             // if the found feature is identical to the one in the known tiling
             // then use that
             // DAC 27MAY17 - imprtant that this code not removed or Design View will fail
-            const PlacedTiles tilingUnit = tp->unit().getIncluded();
-            for (const auto & pf : std::as_const(tilingUnit))
+            const PlacedTileSet tileSet = tp->unit().getIncluded();
+            for (const auto & pf : std::as_const(tileSet))
             {
                 if (*pf->getTile().get() == *feature.get())
                 {
@@ -676,8 +675,8 @@ ProtoPtr LegacyLoader::getPrototype(xml_node & node)
                 }
             }
             if (_debug) qDebug() << "adding to Proto" << figure->getMotifDesc();
-            DELPtr  dep = make_shared<DesignElement>(tp,feature, figure);
-            p->addDesignElement(dep);
+            TileMotifPtr  dep = make_shared<TileMotif>(tp,feature, figure);
+            p->addTileMotif(dep);
         }
         //p->walk();
     }
@@ -825,7 +824,12 @@ RosettePtr LegacyLoader::getConnectFigure(xml_node & node)
         {
             qFatal("Connect figure not based on Rosette");
         }
-        rose->addRadialConnector();
+        rose->setOnPoint(true);
+
+        ExtenderPtr ep = rose->createExtender();
+        ep->setStellate(1);
+        ep->setFitToTile(true);
+        rose->addExtender(ep);
         if (_debug) qDebug() << rose->getMotifDesc();
     }
     else

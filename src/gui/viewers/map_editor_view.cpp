@@ -1,24 +1,24 @@
 #include <QApplication>
+#include <QMenu>
 #include <QMessageBox>
 
 #include "gui/map_editor/map_editor.h"
-#include "gui/map_editor/map_editor_db.h"
 #include "gui/map_editor/map_selection.h"
-#include "gui/model_editors/motif_edit/design_element_button.h"
-#include "gui/top/system_view_controller.h"
-#include "gui/viewers/crop_maker_view.h"
+#include "gui/model_editors/motif_edit/tile_motif_button.h"
+#include "gui/top/view_controller.h"
+#include "gui/viewers/construction_lines_view.h"
+#include "gui/viewers/crop_maker_view.h"    // REQUIRED
 #include "gui/viewers/geo_graphics.h"
 #include "gui/viewers/map_editor_view.h"
 #include "model/makers/crop_maker.h"
 #include "model/motifs/motif.h"
-#include "model/prototypes/design_element.h"
+#include "model/prototypes/tile_motif.h"
 #include "model/prototypes/prototype.h"
 #include "model/settings/configuration.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
-#include "sys/geometry/arcdata.h"
 #include "sys/geometry/circle.h"
-#include "sys/geometry/dcel.h"
+#include "sys/geometry/dcel.h"              // REQUIRED
 #include "sys/geometry/edge.h"
 #include "sys/geometry/geo.h"
 #include "sys/geometry/map.h"
@@ -27,7 +27,7 @@
 #include "sys/geometry/transform.h"
 #include "sys/geometry/vertex.h"
 
-MapEditorView::MapEditorView() : LayerController(VIEW_MAP_EDITOR,DERIVED,"Map Editor")
+MapEditorView::MapEditorView() : LayerController(Type::MapEditor,Model::Derived,ZLevel::Standard_Z0,"Map Editor")
 {
     config      = Sys::config;
     debugMouse  = false;
@@ -40,9 +40,10 @@ MapEditorView::MapEditorView() : LayerController(VIEW_MAP_EDITOR,DERIVED,"Map Ed
 MapEditorView::~MapEditorView()
 {}
 
-void MapEditorView::init(MapEditorDb * maped_db, MapEditorSelection * selector)
+void MapEditorView::init(MapEditor *maped, MapEditorSelection * selector)
 {
-    db = maped_db;
+    editor = maped;
+    db     = maped->getDb();
     this->selector = selector;
 }
 
@@ -62,26 +63,33 @@ void MapEditorView::paint(QPainter *painter)
 
 void MapEditorView::draw(QPainter *painter )
 {
-    selector->buildEditorDB();
+    // TODO: MapEditor::createComposite() merges tile-motifs from multiple source
+    // layers (L1/L2/L3) but keeps only a single shared ProtoPtr, overwritten on
+    // each source in the loop - if the sources come from different prototypes/
+    // tilings, the composite silently keeps only the last one's prototype.
+    // A better scheme would track a prototype per source tile-motif rather than
+    // one shared prototype for the whole composite.
+
+    db->buildEditorDB();
 
     drawConstructionLines(painter);
     drawConstructionCircles(painter);
 
-    // TODO this assumes that composite and sources have the sanme source characteristics
-    // A better scheme would be to put source design element references into composite data as an array
-    auto vec = db->getComposableLayers();
-    for (const MapEditorLayer * layer : std::as_const(vec))
+    if (db->showBoundaries)
     {
-        DELPtr del = layer->getDel();
-        if (del)
+        QVector<TimoMap *> vec = editor->getDrawTimoMaps();
+        for (TimoMap * tmap : std::as_const(vec))
         {
-            Q_ASSERT(db->isMotif(layer->getLayerMapType()));
-            drawTile(painter,del);
-            drawBoundaries(painter,del);
+            TileMotifSet timos = tmap->getTileMotifs();
+            for (auto & timo : timos)
+            {
+                drawTile(painter,timo);
+                drawBoundaries(painter,timo);
+            }
         }
     }
 
-    if (config->mapEditorMode == MAPED_MODE_DCEL)
+    if (config->mapEditorMode == MapEditor::EditorMode::DCEL)
     {
         // draw the dcel
         drawDCEL(painter);
@@ -89,34 +97,63 @@ void MapEditorView::draw(QPainter *painter )
     else
     {
         // draw the map
-        Q_ASSERT(config->mapEditorMode == MAPED_MODE_MAP);
-        if (db->isViewSelected(COMPOSITE))
+        Q_ASSERT(config->mapEditorMode == MapEditor::EditorMode::Map);
+        QVector<const MapEditorLayer *> layers = editor->getDrawLayers();
+        for (const MapEditorLayer * layer : std::as_const(layers))
         {
-            drawMap(painter,COMPOSITE,Qt::green);
-        }
-        else
-        {
-            if (db->isViewSelected(LAYER_1))
+            QColor color = layer->getColor();
+            MapPtr map   = layer->getMapedLayerMap();
+
+            switch (layer->getLayerMapType())
             {
-                drawMap(painter,LAYER_1,QColorConstants::Svg::forestgreen);
-            }
-            if (db->isViewSelected(LAYER_2))
-            {
-                drawMap(painter,LAYER_2,QColorConstants::Svg::orange);
-            }
-            if (db->isViewSelected(LAYER_3))
-            {
-                drawMap(painter,LAYER_3,QColorConstants::Svg::dodgerblue);
+            case MapType::None:
+                break;
+            case MapType::Style:
+                drawMap(painter,viewT,map,color);
+                break;
+            case MapType::Prototype:
+                drawMap(painter,viewT,map,color);
+                break;
+            case MapType::Motif:
+                drawMap(painter,viewT,map,color);
+                break;
+            case MapType::MotifUnit:
+                drawMap(painter,viewT,map,color);
+                break;
+            case MapType::TilingUnit:
+                drawMap(painter,viewT,map,color);
+                break;
+            case MapType::TilingFull:
+                drawMap(painter,viewT,map,color);
+                break;
+            case MapType::File:
+                drawMap(painter,viewT,map,color);
+                break;
+            case MapType::FileMotif:
+                drawMap(painter,viewT,map,color);
+                break;
+            case MapType::Created:
+                drawMap(painter,viewT,map,color);
+                break;
+            case MapType::Composite:
+                drawMap(painter,viewT,map,color);
+                break;
+            case MapType::CompositeMotif:
+                drawMap(painter,viewT,map,color);
+                break;
+            case MapType::Crop:
+                drawMap(painter,Sys::cropMakerView->getLayerTransform(),map,color);
+                break;
             }
         }
     }
 
-    drawPoints(painter,selector->points);
+    drawPoints(painter,db->getPoints());
 
     for (auto & sel : selector->getCurrentSelections())
     {
-        eMapSelection type = sel->getType();
-        if (type == MAP_EDGE && db->showMap)
+        MapSelection::Type type = sel->getType();
+        if (type == MapSelection::Type::MAP_EDGE && db->showMap)
         {
             QLineF l1 = sel->getLine();
             painter->setPen(QPen(Qt::red,selectionWidth));
@@ -133,20 +170,20 @@ void MapEditorView::draw(QPainter *painter )
                 painter->restore();
             }
         }
-        else if (type == MAP_LINE  && db->showConstructionLines)
+        else if (type == MapSelection::Type::MAP_LINE  && db->showConstructionLines)
         {
             QLineF l1 = sel->getLine();
             painter->setPen(QPen(Qt::red,selectionWidth));
             painter->drawLine(viewT.map(l1));
         }
-        else if ((type == MAP_VERTEX || type == MAP_POINT) && db->showPoints)
+        else if ((type == MapSelection::Type::MAP_VERTEX || type == MapSelection::Type::MAP_POINT) && db->showPoints)
         {
             qreal radius = 8.0;
             painter->setPen(QPen(Qt::blue,selectionWidth));
             painter->setBrush(Qt::red);
             painter->drawEllipse(viewT.map(sel->getPoint()), radius, radius);
         }
-        else if (type == MAP_CIRCLE)
+        else if (type == MapSelection::Type::MAP_CIRCLE)
         {
             auto c = sel->getCircle();
             Q_ASSERT(c);
@@ -171,6 +208,8 @@ void MapEditorView::draw(QPainter *painter )
         }
     }
 
+    drawSelectedConstructionLine(painter);
+
     MapMouseActionPtr mma = db->getMouseInteraction();
     if (mma)
     {
@@ -178,27 +217,8 @@ void MapEditorView::draw(QPainter *painter )
     }
 }
 
-void MapEditorView::drawMap(QPainter * painter, eMapedLayer layer, QColor color)
+void MapEditorView::drawMap(QPainter * painter, QTransform t, MapPtr map , QColor color)
 {
-    if (!db->showMap) return;
-
-    auto map = db->getMap(layer);
-    if (!map) return;
-
-    auto type = db->getMapType(map);
-
-    auto crop = db->getCrop();
-
-    QTransform t;
-    if (crop && type == MAPED_TYPE_CROP)
-    {
-        t = Sys::cropMakerView->getLayerTransform();
-    }
-    else
-    {
-        t = viewT;
-    }
-
     QPen pen(color,mapLineWidth);
     painter->setPen(pen);
 
@@ -220,42 +240,36 @@ void MapEditorView::drawDCEL(QPainter * painter)
     dcel->paint(painter,viewT,db->showDirnPoints,db->showArcCentre,false,true);
 }
 
-void MapEditorView::drawTile(QPainter * painter, DELPtr del)
+void MapEditorView::drawTile(QPainter * painter, TileMotifPtr timo)
 {
-    if (!del)
+    if (!timo)
         return;
 
-    if (!db->showBoundaries)
+    TilePtr tile = timo->getTile();
+    if (!tile)
         return;
 
-    TilePtr tile = del->getTile();
-    if (tile)
-    {
-        TilingPtr tiling = del->getTiling();
-        Q_ASSERT(tiling);
-        QTransform placement = tiling->getFirstPlacement(tile);
+    TilingPtr tiling = timo->getTiling();
+    Q_ASSERT(tiling);
+    QTransform placement = tiling->getFirstPlacement(tile);
 
-        QPolygonF poly = tile->getPoints();
-        poly = placement.map(poly);
-        poly = viewT.map(poly);
+    QPolygonF poly = tile->getPoints();
+    poly = placement.map(poly);
+    poly = viewT.map(poly);
 
-        painter->setPen(QPen(Qt::magenta,1));
-        painter->setBrush(Qt::NoBrush);
-        painter->drawPolygon(poly); // not filled
-    }
+    painter->setPen(QPen(Qt::magenta,1));
+    painter->setBrush(Qt::NoBrush);
+    painter->drawPolygon(poly); // not filled
 }
 
-void MapEditorView::drawBoundaries(QPainter *painter,  DELPtr del)
+void MapEditorView::drawBoundaries(QPainter *painter,  TileMotifPtr timo)
 {
-    if (!del)
+    if (!timo)
         return;
 
-    if (!db->showBoundaries)
-        return;
-
-    TilingPtr tiling = del->getTiling();
-    TilePtr tile     = del->getTile();
-    MotifPtr  motif  = del->getMotif();
+    TilingPtr tiling = timo->getTiling();
+    TilePtr tile     = timo->getTile();
+    MotifPtr  motif  = timo->getMotif();
     if (!tiling || !motif || !tile)
         return;
 
@@ -275,7 +289,7 @@ void MapEditorView::drawBoundaries(QPainter *painter,  DELPtr del)
         QPolygonF extBoundary = eb.getPoly();
         extBoundary           = placement.map(extBoundary);
 
-        qreal  boundaryScale  = eb.getScale();
+        qreal  boundaryScale  = eb.getRadius();
         boundaryScale        *= Transform::scalex(placement);
 
         // paint external boundary
@@ -300,43 +314,55 @@ void MapEditorView::drawPoints(QPainter * painter,  QVector<PointInfo> & points)
     {
         switch (pi.type)
         {
-        case PT_VERTEX:
+        case PointInfo::Type::Vertex:
             if (!db->showPoints) continue;
             radius = 4.0;
             painter->setPen(QPen(Qt::blue,1));
             painter->setBrush(Qt::blue);
             break;
-        case PT_VERTEX_MID:
+        case PointInfo::Type::VertexMid:
             if (!db->showMidPoints) continue;
             radius = 4.0;
             painter->setPen(QPen(Qt::darkRed,1));
             painter->setBrush(Qt::darkRed);
             break;
-        case PT_LINE:
-        case PT_CIRCLE:
+        case PointInfo::Type::Line:
+        case PointInfo::Type::Circle:
             if (!db->showConstructionLines) continue;
             radius = 5.0;
             painter->setPen(QPen(Qt::yellow,1));
             painter->setBrush(Qt::yellow);
             break;
-        case PT_CIRCLE_1:
+        case PointInfo::Type::Circle1:
             if (!db->showConstructionLines) continue;
             radius = 7.0;
             painter->setPen(QPen(Qt::magenta,1));
             painter->setBrush(Qt::magenta);
             break;
-        case PT_CIRCLE_2:
+        case PointInfo::Type::Circle2:
             if (!db->showConstructionLines) continue;
             radius = 7.0;
             painter->setPen(QPen(Qt::cyan,1));
             painter->setBrush(Qt::cyan);
             break;
-        case PT_LINE_MID:
+        case PointInfo::Type::LineMid:
             if (!db->showConstructionLines) continue;
             if (!db->showMidPoints) continue;
             radius = 5.0;
             painter->setPen(QPen(Qt::darkYellow,1));
             painter->setBrush(Qt::darkYellow);
+            break;
+        case PointInfo::Type::Center:
+            radius = 4.0;
+            if (!db->showTileCentre) continue;
+            painter->setPen(QPen(Qt::cyan,1));
+            painter->setBrush(Qt::cyan);
+            break;
+        case PointInfo::Type::Center2:
+            radius = 4.0;
+            if (!db->showTileCentre) continue;
+            painter->setPen(QPen(Qt::magenta,1));
+            painter->setBrush(Qt::magenta);
             break;
         }
         QPointF pos = viewT.map(pi.pt);
@@ -349,12 +375,40 @@ void MapEditorView::drawConstructionLines(QPainter * painter)
     if (!db->showConstructionLines)
         return;
 
-    QColor color = (Sys::viewController->getViewBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
+    QColor color = (Sys::systemViewController->getViewBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
 
     painter->setPen(QPen(color,constructionLineWidth));
-    for (const auto & line : std::as_const(db->constructionLines))
+    for (int i = 0; i < db->constructionLines.size(); i++)
     {
-        painter->drawLine(viewT.map(line));
+        if (i == db->liftedCLine)
+            continue;
+        painter->drawLine(viewT.map(db->constructionLines[i]));
+    }
+}
+
+// drawn last, on top of the map
+void MapEditorView::drawSelectedConstructionLine(QPainter * painter)
+{
+    if (!db->showConstructionLines || db->getMouseMode() != MapEditor::MouseMode::ConstructionLines)
+        return;
+    if (!db->isCLine(db->selectedCLine) || db->selectedCLine == db->liftedCLine)
+        return;
+
+    const QLineF & line = db->constructionLines[db->selectedCLine];
+    painter->setPen(QPen(Qt::yellow,constructionLineWidth + 2));
+    painter->drawLine(viewT.map(line));
+
+    // hovering in the grab-zone of an endpoint
+    if (!db->getMouseInteraction())
+    {
+        int endpoint = ConstructionLinesView::findEndpointNear(line,viewT,mousePos);
+        if (endpoint >= 0)
+        {
+            QPointF pt = (endpoint == 0) ? line.p1() : line.p2();
+            painter->setPen(QPen(Qt::yellow,2));
+            painter->setBrush(Qt::NoBrush);
+            painter->drawEllipse(viewT.map(pt), 6.0, 6.0);
+        }
     }
 }
 
@@ -363,7 +417,7 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
     if (!db->showConstructionLines)
         return;
 
-    QColor color = (Sys::viewController->getViewBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
+    QColor color = (Sys::systemViewController->getViewBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
 
     for (const auto & circle :  std::as_const(db->constructionCircles))
     {
@@ -397,15 +451,15 @@ void MapEditorView::startMouseInteraction(QPointF spt, Qt::MouseButton mouseButt
         case Qt::LeftButton:
             switch (sel->getType())
             {
-            case MAP_VERTEX:
+            case MapSelection::Type::MAP_VERTEX:
             {
-                auto map = db->getEditMap();
+                auto map = editor->getEditMap();
                 NeighbourMap  * nmap = new NeighbourMap(map);
                 db->setMouseInteraction(std::make_shared<MoveVertex>(nmap,sel->getVertex(), spt));
             }   return;
-            case MAP_EDGE:
+            case MapSelection::Type::MAP_EDGE:
             {
-                auto map = db->getEditMap();
+                auto map = editor->getEditMap();
                 NeighbourMap  * nmap = new NeighbourMap(map);
                 db->setMouseInteraction(std::make_shared<MoveEdge>(nmap,sel->getEdge(), spt));
             }   return;
@@ -424,6 +478,58 @@ void MapEditorView::startMouseInteraction(QPointF spt, Qt::MouseButton mouseButt
     db->resetMouseInteraction();
 }
 
+void MapEditorView::startConstructionLineInteraction(QPointF spt, Qt::MouseButton mouseButton)
+{
+    int selected = db->isCLine(db->selectedCLine) ? db->selectedCLine : -1;
+    int endpoint = (selected >= 0) ? ConstructionLinesView::findEndpointNear(db->constructionLines[selected],viewT,spt) : -1;
+
+    if (mouseButton == Qt::RightButton)
+    {
+        bool onBody = (selected >= 0) && (ConstructionLinesView::findLineNear(db->constructionLines,viewT,spt) == selected);
+
+        // a line this short on screen is all endpoint grab-zone - offer delete instead of extend
+        constexpr qreal shortLineLength = 50.0;
+        bool tooShortToExtend = (selected >= 0) && (viewT.map(db->constructionLines[selected]).length() < shortLineLength);
+
+        if (endpoint >= 0 && !tooShortToExtend)
+        {
+            db->setMouseInteraction(std::make_shared<ExtendConstructionLine>(selected,endpoint,spt));
+        }
+        else if (endpoint >= 0 || onBody)
+        {
+            QMenu menu;
+            menu.addAction("Delete", [this,selected]
+            {
+                db->constructionLines.remove(selected);
+                db->selectedCLine = -1;
+                editor->stash();
+                forceRedraw();
+            });
+            menu.exec(Sys::systemViewController->mapToGlobal(spt.toPoint()));
+        }
+        else
+        {
+            db->selectedCLine = ConstructionLinesView::findLineNear(db->constructionLines,viewT,spt);
+            forceRedraw();
+        }
+    }
+    else if (mouseButton == Qt::LeftButton)
+    {
+        if (endpoint >= 0)
+        {
+            db->setMouseInteraction(std::make_shared<MoveConstructionEndpoint>(selected,endpoint,spt));
+            return;
+        }
+
+        if (selected >= 0)
+        {
+            db->selectedCLine = -1;
+            forceRedraw();
+        }
+        SelectionSet set = selector->findSelectionsUsingDB(spt);
+        db->setMouseInteraction(std::make_shared<ConstructionLine>(set,spt));
+    }
+}
 
 //////////////////////////////////////////////////////////////////
 ///
@@ -433,7 +539,7 @@ void MapEditorView::startMouseInteraction(QPointF spt, Qt::MouseButton mouseButt
 
 void MapEditorView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 {
-    if (!viewControl()->isEnabled(VIEW_MAP_EDITOR)) return;
+    if (!viewControl()->isEnabled(Type::MapEditor)) return;
 
     setMousePos(spt);
 
@@ -450,26 +556,26 @@ void MapEditorView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 
     switch (db->getMouseMode())
     {
-    case MAPED_MOUSE_NONE:
+    case MapEditor::MouseMode::None:
         startMouseInteraction(mousePos,btn);
         break;
 
-    case MAPED_MOUSE_DRAW_LINE:
+    case MapEditor::MouseMode::DrawLine:
         set = selector->findSelectionsUsingDB(mousePos);
         db->setMouseInteraction(std::make_shared<DrawLine>(set,mousePos));
         break;
 
-    case MAPED_MOUSE_CREATE_LINE:
+    case MapEditor::MouseMode::CreateLine:
     {
         EdgeSet qvep;
         SelectionSet set;
-        for (auto & map : db->getMapLayerMaps())
+        for (auto & map : editor->getMapLayerMaps())
         {
             selector->findEdges(map,mousePos, qvep, set);
         }
         if (set.size())
         {
-            MapPtr map = db->getEditMap();
+            MapPtr map =editor->getEditMap();
             if (map)
             {
                 qreal len    = config->mapedLen;
@@ -490,7 +596,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
             }
             else
             {
-                QMessageBox box((QWidget*)Sys::sysview);
+                QMessageBox box(Sys::systemViewController->getWidget());
                 box.setIcon(QMessageBox::Warning);
                 box.setText("Cannot create lines here.\nClick on an existing map line to insert.");
                 box.exec();
@@ -498,7 +604,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
         }
         else
         {
-            QMessageBox box((QWidget*)Sys::sysview);
+            QMessageBox box(Sys::systemViewController->getWidget());
             box.setIcon(QMessageBox::Warning);
             box.setText("Cannot create lines here.\nClick on an existing map line to insert.");
             box.exec();
@@ -506,43 +612,44 @@ void MapEditorView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
         break;
     }
 
-    case MAPED_MOUSE_CONSTRUCTION_LINES:
-        set = selector->findSelectionsUsingDB(mousePos);
-        db->setMouseInteraction(std::make_shared<ConstructionLine>(set,mousePos));
+    case MapEditor::MouseMode::ConstructionLines:
+        startConstructionLineInteraction(mousePos,btn);
         break;
 
-    case MAPED_MOUSE_DELETE:
+    case MapEditor::MouseMode::Delete:
         set = selector->findSelectionsUsingDB(mousePos);
         // only delete one line
         for (const auto & sel : std::as_const(set))
         {
-            if (sel->getType() == MAP_EDGE)
+            if (sel->getType() == MapSelection::Type::MAP_EDGE)
             {
-                MapPtr map = db->getEditMap();
+                MapPtr map = editor->getEditMap();
                 if (map)
                 {
                     map->removeEdge(sel->getEdge());
 
                     MapCleanser mc(map);
-                    mc.cleanse(joinupColinearEdges,Sys::config->mapedMergeSensitivity);
+                    mc.cleanse(joinupColinearEdges | badVertices_0,Sys::config->mapedMergeSensitivity);
 
                     MapVerifier mv(map);
                     mv.verify();
                 }
                 break;
             }
-            else if (sel->getType() == MAP_LINE && sel->isConstructionLine())
+            else if (sel->getType() == MapSelection::Type::MAP_LINE && sel->isConstructionLine())
             {
                 QLineF line = sel->getLine();
                 db->constructionLines.removeAll(line);
-                Sys::mapEditor->initStash();
+                db->selectedCLine = -1;
+                Sys::mapEditor->stash();
                 break;
             }
-            else if (sel->getType() == MAP_CIRCLE)
+            else if (sel->getType() == MapSelection::Type::MAP_CIRCLE)
             {
                 CirclePtr c = sel->getCircle();
                 Q_ASSERT(c);
                 db->constructionCircles.removeOne(c);
+                Sys::mapEditor->stash();
                 break;
             }
         }
@@ -550,17 +657,17 @@ void MapEditorView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
         //setMapedMouseMode(MAPED_MOUSE_NONE);
         break;
 
-    case MAPED_MOUSE_SPLIT_LINE:
+    case MapEditor::MouseMode::SplitLine:
     {
         EdgeSet qvep;
         SelectionSet set;
-        for (auto & map : db->getMapLayerMaps())
+        for (auto & map : editor->getMapLayerMaps())
         {
             selector->findEdges(map, mousePos, qvep, set);
         }
         if (set.size())
         {
-            MapPtr map = db->getEditMap();
+            MapPtr map = editor->getEditMap();
             for (const auto & sel : std::as_const(set))
             {
                 map->splitEdge(sel->getEdge());
@@ -574,17 +681,17 @@ void MapEditorView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
     }
     break;
 
-    case MAPED_MOUSE_EXTEND_LINE_P1:
+    case MapEditor::MouseMode::ExtendP1:
         set = selector->findSelectionsUsingDB(mousePos);
         db->setMouseInteraction(std::make_shared<ExtendLineP1>(set,mousePos));
         break;
 
-    case MAPED_MOUSE_EXTEND_LINE_P2:
+    case MapEditor::MouseMode::ExtendP2:
         set = selector->findSelectionsUsingDB(mousePos);
         db->setMouseInteraction(std::make_shared<ExtendLineP2>(set,mousePos));
         break;
 
-    case MAPED_MOUSE_CONSTRUCTION_CIRCLES:
+    case MapEditor::MouseMode::ConstructionCircles:
         if (btn == Qt::RightButton)
         {
             // add circle
@@ -627,11 +734,11 @@ void MapEditorView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 
 void MapEditorView::slot_mouseDragged(QPointF spt)
 {
-    if (!viewControl()->isEnabled(VIEW_MAP_EDITOR)) return;
+    if (!viewControl()->isEnabled(Type::MapEditor)) return;
 
     setMousePos(spt);
 
-    if (debugMouse) qDebug().noquote() << "drag" << mousePos << screenToModel(mousePos)  << sMapEditorMouseMode[db->getMouseMode()];
+    if (debugMouse) qDebug().noquote() << "drag" << mousePos << screenToModel(mousePos)  << sMapEditorMouseMode[(int)db->getMouseMode()];
 
     selector->setCurrentSelections(selector->findSelectionsUsingDB(mousePos));
 
@@ -647,7 +754,7 @@ void MapEditorView::slot_mouseDragged(QPointF spt)
 
 void MapEditorView::slot_mouseMoved(QPointF spt)
 {
-    if (!viewControl()->isEnabled(VIEW_MAP_EDITOR)) return;
+    if (!viewControl()->isEnabled(Type::MapEditor)) return;
 
     setMousePos(spt);
 
@@ -660,7 +767,7 @@ void MapEditorView::slot_mouseMoved(QPointF spt)
 
 void MapEditorView::slot_mouseReleased(QPointF spt)
 {
-    if (!viewControl()->isEnabled(VIEW_MAP_EDITOR)) return;
+    if (!viewControl()->isEnabled(Type::MapEditor)) return;
 
     setMousePos(spt);
 

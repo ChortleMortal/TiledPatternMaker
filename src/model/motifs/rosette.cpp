@@ -13,34 +13,31 @@
 #include <QDebug>
 #include <QtMath>
 #include "model/motifs/rosette.h"
+#include "sys/geometry/debug_map.h"
 #include "sys/geometry/geo.h"
 #include "sys/geometry/intersect.h"
-#include "sys/geometry/map.h"
-#include "gui/viewers/debug_view.h"
 
 typedef std::shared_ptr<Rosette>  RosettePtr;
 
 using std::make_shared;
 
-Rosette::Rosette(const Motif & fig,  int nsides, qreal qq, int ss) : RadialMotif(fig, nsides)
-{
-    q = q_clamp(qq);
-    s = s_clamp(ss);
-    setMotifType(MOTIF_TYPE_ROSETTE);
-}
-
 Rosette::Rosette(int nsides, qreal qq, int ss) : RadialMotif(nsides)
 {
     q = q_clamp(qq);
     s = s_clamp(ss);
-    setMotifType(MOTIF_TYPE_ROSETTE);
+    setMotifType(Type::Rosette);
 }
 
 Rosette::Rosette(const Rosette & other) : RadialMotif(other)
 {
     q     = other.q;
     s     = other.s;
-    setMotifType(MOTIF_TYPE_ROSETTE);
+    setMotifType(Type::Rosette);
+}
+
+Rosette::Rosette(const Motif & other) : RadialMotif(other)
+{
+    setMotifType(Type::Rosette);
 }
 
 bool Rosette::equals(const MotifPtr other)
@@ -89,35 +86,23 @@ qreal Rosette::q_clamp(qreal q)
     return qMin(qMax(q, -0.99), 0.99);
 }
 
-void Rosette::buildUnitMap()
+// key point (p1) to stable intersection (p2), in unit space
+QLineF Rosette::getKeyLine() const
 {
-    qDebug().noquote() << "Rosette::buildUnit"  << getN() << q << s << "scale" << getMotifScale() << "rot" << getMotifRotate();
-
-    motifDebug = 0;     //0x100;
-    if (motifDebug > 0)
-    {
-        Sys::debugMapCreate->wipeout();
-    }
-
-    raySet1.clear();
-
-    //QPointF center(0.0,0.0);
     QPointF tip(1.0, 0.0 );         // The point to build from
-    QPointF rtip = getArc(don);     // The next point over.
+    QPointF rtip = getArc(don());     // The next point over.
 
     // Consider an equilateral triangle formed by the origin,
     // up_outer and a vertical edge extending down from up_outer.
     // The center of the bottom edge of that triangle defines the
     // bisector of the angle leaving up_outer that we care about.
-    qreal   qr_outer    = 1.0 / qCos( M_PI * don );
-    QPointF r_outer     = QPointF(0.0, qr_outer);
-    QPointF up_outer    = getArc( 0.5 * don ) * qr_outer;
-    QPointF down_outer  = up_outer - r_outer;
-    QPointF bisector    = down_outer * 0.5;
-
+    qreal   qr_outer     = 1.0 / qCos( M_PI * don() );
+    QPointF r_outer      = QPointF(0.0, qr_outer);
+    QPointF up_outer     = getArc( 0.5 * don() ) * qr_outer;
+    QPointF down_outer   = up_outer - r_outer;
+    QPointF bisector     = down_outer * 0.5;
     QPointF apoint       = rtip - tip;
-    //QPointF norm_up_outer= Geo::normalize(up_outer);
-    QPointF stable_isect = (up_outer + (Geo::normalize(up_outer)) * (-up_outer.y()) );
+    QPointF stable_isect =  up_outer + (Geo::normalize(up_outer) * (-up_outer.y())) ;
     QPointF apoint2      = stable_isect - tip;
     qreal stable_angle   = Geo::getAngle(apoint2);
     //qDebug() << "stable_angle:"  << stable_angle  << qRadiansToDegrees(stable_angle);
@@ -140,42 +125,64 @@ void Rosette::buildUnitMap()
 
     QPointF key_point;
     Intersect::getIntersection(tip, qtip, up_outer, bisector, key_point);
-    
-    QPointF key_end = Geo::convexSum(key_point, stable_isect, 10.0);
+
+    return QLineF(key_point, stable_isect);
+}
+
+void Rosette::buildUnitRays()
+{
+    //qDebug().noquote() << "Rosette::buildUnit n="  << getN() << "q=" << q << "s=" << s << "scale" << getMotifScale() << "rot" << getMotifRotate();
+
+    setMotifDebug(0);
+    if (getMotifDebug() > 0)
+    {
+        Sys::debugMapCreate->wipeout();
+    }
+
+    QPointF tip(1.0, 0.0 );         // The point to build from
+
+    QLineF  keyLine   = getKeyLine();
+    QPointF key_point = keyLine.p1();
+    QPointF key_end   = Geo::convexSum(key_point, keyLine.p2(), 10.0);
 
     // r means something like reverse or the other side of the center line
     QPointF key_r_point(key_point.x(), -key_point.y());
     QPointF key_r_end(  key_end.x(),   -key_end.y());
 
     // fill the ray
-    raySet1.ray1.addTip(tip);
-    raySet1.ray2.addTip(tip);
-    raySet1.ray1.addTail(key_point);
-    raySet1.ray2.addTail(QPointF(key_point.x(),-key_point.y()));
+    RadialRay ray1;
+    RadialRay ray2;
+    ray1.addTip(tip);
+    ray2.addTip(tip);
+    ray1.addTail(QPointF(key_point.x(),-key_point.y()));
+    ray2.addTail(key_point);
 
     int sclamp = s_clamp(s);
 
     for( int idx = 1; idx <= sclamp; ++idx )
     {
-        key_r_point    = radialRotationTr.map(key_r_point);
-        key_r_end      = radialRotationTr.map(key_r_end);
+        QPointF point    = getRadialTransform(idx).map(key_r_point);
+        QPointF end      = getRadialTransform(idx).map(key_r_end);
 
         QLineF key_line(key_point,key_end);
-        QLineF key_r_line(key_r_point,key_r_end);
+        QLineF key_r_line(point,end);
 
         QPointF isect;
         if (key_line.intersects(key_r_line,&isect) == QLineF::BoundedIntersection)
         {
-            raySet1.ray1.addTail(isect);
-            raySet1.ray2.addTail(QPointF(isect.x(),-isect.y()));
+            ray1.addTail(QPointF(isect.x(),-isect.y()));
+            ray2.addTail(isect);
         }
     }
+
+    unitRays.add(ray1);
+    unitRays.add(ray2);
 
     if (inscribe)
     {
         qreal circumradius = 1.0 / (cos(M_PI / (qreal)getN()));
         QTransform t = QTransform::fromScale(circumradius,circumradius);
-        raySet1.transform(t);
+        unitRays.transform(t);
     }
 
     if (onPoint)
@@ -183,18 +190,16 @@ void Rosette::buildUnitMap()
         qreal angle = 180.0/qreal(getN());
         QTransform t;
         t.rotate(angle);
-        raySet1.transform(t);
+        unitRays.transform(t);
     }
 
-    if (motifDebug & 0x01) raySet1.debug();
-    QTransform t = getDELTransform();
-    raySet1.transform(t);
-    if (motifDebug & 0x01) raySet1.debug();
+    // apply motif scale and rotation
+    if (getMotifDebug() & 0x01) unitRays.debug(0);
+    QTransform t = getMotifTransform();
+    unitRays.transform(t);
+    if (getMotifDebug() & 0x01) unitRays.debug(0);
 
-    auto tr = getUnitRotationTransform();
-    raySet2 = raySet1;
-    raySet2.transform(tr);
-    if (motifDebug & 0x01) raySet2.debug();
+    //qDebug().noquote() << "Rosette::buildUnit n="  << getN() << "q=" << q << "s=" << s << "scale" << getMotifScale() << "rot" << getMotifRotate() << "AGAIN";
 }
 
 

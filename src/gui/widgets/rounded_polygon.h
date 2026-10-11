@@ -1,6 +1,4 @@
 #pragma once
-#ifndef ROUNDED_POLYGON_H
-#define ROUNDED_POLYGON_H
 
 #include <QPolygonF>
 #include <QPainterPath>
@@ -21,5 +19,3 @@ private:
     QPainterPath m_path;
     unsigned int m_iRadius;
 };
-
-#endif // ROUNDED_POLYGON_H

@@ -6,6 +6,7 @@
 #include <QFontDatabase>
 #include <QApplication>
 #include <QScrollBar>
+#include <QPushButton>
 
 #include "gui/panels/page_log.h"
 #include "gui/top/controlpanel.h"
@@ -15,7 +16,6 @@
 #include "model/settings/configuration.h"
 #include "sys/qt/qtapplog.h"
 #include "sys/sys.h"
-#include "sys/version.h"
 
 typedef std::shared_ptr<class QTextEdit> TextEditPtr;
 
@@ -51,6 +51,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
     hbox->addWidget(btnOptions);
     hbox->addWidget(sizeMinus);
     hbox->addWidget(sizePlus);
+
     vbox->addLayout(hbox);
 
     connect(btnSaveLog,       &QPushButton::clicked,  this,   &page_log::slot_copyLog);
@@ -60,6 +61,8 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
     connect(sizeMinus,        &QPushButton::clicked,  this,   &page_log::slot_sizeMinus);
     connect(btnClear,         &QPushButton::clicked,  this,  [] { qtAppLog::getInstance()->clear(); });
     connect(search,           &QLineEdit::returnPressed, this,&page_log::slot_search);
+
+    connect(Sys::config,      &Configuration::sig_logPathChanged,  this,   &page_log::reinitLog, Qt::QueuedConnection);
 
     logText = qtAppLog::getTextEditor();     // linkage to qtAppLog
 
@@ -77,9 +80,11 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
     cursor.movePosition(QTextCursor::End);
     logText->setTextCursor(cursor);
 
+    QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    fixedFont.setPointSize(QApplication::font().pointSize());
+
     // creates a text edit for loads of saved logs from disk
     savedText = std::make_shared<QTextEdit>();
-    const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     savedText->setFont(fixedFont);
     savedText->setMinimumHeight(690);
     savedText->setLineWrapMode(QTextEdit::NoWrap);
@@ -87,9 +92,10 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
     savedText->setStyleSheet("selection-color: rgb(170, 255, 0);  selection-background-color: rgb(255, 0, 0);");
     viewingLog = true;
 
-    tew = new LogWidget();
-    tew->set(logText);
-    vbox->addWidget(tew);
+    logWidget = new LogWidget();
+    logWidget->set(logText);
+
+    vbox->addWidget(logWidget);
 }
 
 page_log::~page_log()
@@ -114,9 +120,15 @@ void page_log::onRefresh()
     logText->setTextCursor(cursor);
 }
 
+void page_log::reinitLog()
+{
+    auto log = qtAppLog::getInstance();
+    log->reinit();
+}
+
 void page_log::slot_copyLog()
 {
-    QString file = qtAppLog::getInstance()->logDir();
+    QString file = Sys::getLogDir();
 
     DlgSaveName dlg(Sys::controlPanel);
     auto rv = dlg.exec();
@@ -146,7 +158,7 @@ void page_log::viewSaved()
 {
     qDebug() << "view saved - start";
 
-    QString path      = qtAppLog::getInstance()->logDir();
+    QString path      = Sys::getLogDir();
     QString nameList  = "Log Files (*.txt)";
 
     QString filename = QFileDialog::getOpenFileName(this, "Load log", path, nameList);
@@ -207,7 +219,7 @@ void page_log::viewSaved()
     savedText->setTextCursor(c);
 
     // use it
-    tew->set(savedText);
+    logWidget->set(savedText);
     repaint();
 
     QApplication::restoreOverrideCursor();
@@ -224,7 +236,7 @@ void page_log::viewLog()
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
-    tew->set(logText);
+    logWidget->set(logText);
 
     QTextCursor  c = logText->textCursor();
     c.setPosition(0);
@@ -241,7 +253,7 @@ void page_log::viewLog()
 
 void page_log::slot_sizePlus()
 {
-    auto ed   = tew->get();
+    auto ed   = logWidget->get();
     auto font = ed->font();
     int size  = font.pointSize();
     font.setPointSize(++size);
@@ -250,7 +262,7 @@ void page_log::slot_sizePlus()
 
 void page_log::slot_sizeMinus()
 {
-    auto ed   = tew->get();
+    auto ed   = logWidget->get();
     auto font = ed->font();
     int size  = font.pointSize();
     font.setPointSize(--size);
@@ -271,7 +283,7 @@ void page_log::slot_search()
         return;
     }
 
-    auto ted = tew->get();
+    auto ted = logWidget->get();
     if (!reverseSearch->isChecked())
     {
         ted->find(sstr);

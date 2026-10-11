@@ -1,5 +1,4 @@
-#ifndef SMX_WIDGET_H
-#define SMX_WIDGET_H
+#pragma once
 
 #include <QWidget>
 #include <QCheckBox>
@@ -58,5 +57,3 @@ private:
     BQCheckBox   * chkBreakaway;
 
 };
-
-#endif // SMX_WIDGET_H

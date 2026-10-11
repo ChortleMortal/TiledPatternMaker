@@ -1,7 +1,8 @@
 ﻿#include "gui/map_editor/map_editor.h"
+#include <QFile>
 #include "gui/map_editor/map_editor_db.h"
 #include "gui/map_editor/map_editor_map_writer.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/map_editor_view.h"
 #include "model/tilings/backgroundimage.h"
 #include "model/tilings/tiling_writer.h"
@@ -16,12 +17,12 @@ MapEditorMapWriter::~MapEditorMapWriter()
 {}
 
 // this is used by MapEditor to save a map
-bool MapEditorMapWriter::writeXML(VersionedFile xfile, MapEditorDb * db)
+bool MapEditorMapWriter::writeXML(VersionedFile xfile, MapEditor * editor)
 {
     qDebug() << "Writing XML:" << xfile.getPathedName();
 
-    MapPtr map = db->getEditMap();
-    eMapEditorMapType mapType = db->getMapType(map);
+    MapPtr map = editor->getEditMap();
+    MapEditorMap::MapType mapType = editor->getMapType(map);
 
     QFile xml(xfile.getPathedName());
     if (!xml.open(QFile::WriteOnly | QFile::Truncate))
@@ -49,24 +50,17 @@ bool MapEditorMapWriter::writeXML(VersionedFile xfile, MapEditorDb * db)
         }
 
         // frame settings
-        auto & canvas   = Sys::viewController->getCanvas();
-        QSize size      = canvas.getViewSize();
-        QSize zsize     = canvas.getCanvasSize();
+        Canvas * canvas   = Sys::getActiveCanvas();
+        QSize size         = canvas->getViewSize();
+        QSize zsize        = canvas->getCanvasSize();
         procSize(ts,size,zsize);
 
         // canvas settings
         const Xform & xf = Sys::mapEditorView->getModelXform();
         QString str = "ModelSettings";
         ts << "<" << str << ">" << endl;
-        procesToolkitGeoLayer(ts,xf,STANDARD_ZLEVEL);
+        procesToolkitGeoLayer(ts,xf,Layer::ZLevel::Standard_Z0);
         ts << "</" << str << ">" << endl;
-
-        // background
-        auto bip  = db->getBackgroundImage();
-        if (bip && bip->isLoaded())
-        {
-            TilingWriter::writeBackgroundImage(ts,bip);
-        }
 
         // map
         rv = setMap(ts,map);

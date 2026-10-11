@@ -5,23 +5,24 @@
 #include <QDateTime>
 
 #include "gui/widgets/dlg_savename.h"
+#include "gui/widgets/panel_misc.h"
 #include "model/settings/configuration.h"
 #include "sys/sys.h"
 #include "sys/version.h"
 
 DlgSaveName::DlgSaveName(QWidget *parent) : QDialog(parent)
 {
-    QSettings s;
+    QSettings s = Sys::settings();
     selections = s.value("logSaveOptions", 0xff).toUInt();
 
     setWindowTitle("Select log filename");
 
-    QPushButton * pbNew     = new QPushButton("new");
-    QPushButton * pbOld     = new QPushButton("old");
-    QPushButton * pbGood    = new QPushButton("good");
-    QPushButton * pbBad     = new QPushButton("bad");
-    QPushButton * pbBefore  = new QPushButton("before");
-    QPushButton * pbAfter   = new QPushButton("after");
+    CQPushButton * pbNew     = new CQPushButton("new");
+    CQPushButton * pbOld     = new CQPushButton("old");
+    CQPushButton * pbGood    = new CQPushButton("good");
+    CQPushButton * pbBad     = new CQPushButton("bad");
+    CQPushButton * pbBefore  = new CQPushButton("before");
+    CQPushButton * pbAfter   = new CQPushButton("after");
 
     pbNew->setCheckable(false);
     pbOld->setCheckable(false);
@@ -134,7 +135,7 @@ void DlgSaveName::select(uint option, bool sel)
 
     genName();
 
-    QSettings s;
+    QSettings s = Sys::settings();
     s.setValue("logSaveOptions", selections);
 }
 
@@ -153,7 +154,7 @@ void DlgSaveName::genName()
     if (selections & SN_HOST)
         name += host + + "-";
     if (selections & SN_SWVER)
-        name  += tpmVersion.trimmed();
+        name  += TpmVersion::getVersion().trimmed();
     if (selections & SN_GITROOT && !root.isEmpty())
         name += "-" + root;
     if (selections & SN_GITBRANCH && !branch.isEmpty())

@@ -1,6 +1,7 @@
+#include <QButtonGroup>
 #include "gui/widgets/colorset_widget.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/model_editors/style_edit/style_editor.h"
 #include "gui/widgets/panel_misc.h"
 #include "model/styles/colorset.h"
@@ -21,7 +22,7 @@ ColorSetWidget::ColorSetWidget(StyleEditor * parent, ColorSet * cset)
     hbox         = new AQHBoxLayout;
     setLayout(hbox);
 
-    connect(this, &ColorSetWidget::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
+    connect(this, &ColorSetWidget::sig_updateView, Sys::systemViewController, &ViewController::slot_updateView);
     updateFromColorSet();
 }
 

@@ -1,15 +1,21 @@
 #include <QGroupBox>
 #include <QCheckBox>
 #include <QFileDialog>
+#include <QFileInfo>
+#include <QImageReader>
 #include <QMessageBox>
+#include <QHeaderView>
 
 #include "gui/map_editor/map_editor.h"
 #include "gui/map_editor/map_editor_db.h"
 #include "gui/panels/page_backgrounds.h"
+#include "gui/top/system_view.h"
+#include "gui/widgets/memory_combo.h"
 #include "gui/widgets/panel_misc.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/dlg_name.h"
+#include "gui/widgets/floatable_tab.h"
 #include "gui/widgets/smx_widget.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/tiling_maker.h"
@@ -22,12 +28,79 @@
 
 page_backgrounds::page_backgrounds(ControlPanel * apanel) : panel_page(apanel,PAGE_BKGD_MAKER,"Backgrounds"),  tformLayout("Bkgd Xform")
 {
-    QGroupBox * bkgdImageGroup = createBackgroundImageGroup();
-    QGroupBox * bkgdColorGroup = createBackgroundColorGroup();
+    imageTab = createImageTab();
+    colorTab = createColorTab();
 
-    vbox->addWidget(bkgdImageGroup);
-    vbox->addWidget(bkgdColorGroup);
+    tabWidget = new QTabWidget;
+    tabWidget->addTab(imageTab, "Background Image");
+    tabWidget->addTab(colorTab, "Background Colors");
+
+    vbox->addWidget(tabWidget);
     vbox->addStretch();
+
+    connect(tabWidget, &QTabWidget::tabBarDoubleClicked, this, &page_backgrounds::slot_detach);
+
+    QSettings s = Sys::settings();
+
+    // detach in descending tab-index order so removing one tab doesn't shift the index of another not-yet-processed tab
+    QString name = QString("panel2/%1/float_color_tab").arg(pageName);
+    if (s.value(name,false).toBool())
+        slot_detach(1);
+
+    name = QString("panel2/%1/float_image_tab").arg(pageName);
+    if (s.value(name,false).toBool())
+        slot_detach(0);
+}
+
+page_backgrounds::~page_backgrounds()
+{
+    QSettings s = Sys::settings();
+
+    QString name = QString("panel2/%1/float_image_tab").arg(pageName);
+    s.setValue(name,imageTab->floating);
+    if (imageTab->floating)
+        imageTab->savePosition();
+    imageTab->floating = false;   // so it closes correctly
+
+    name = QString("panel2/%1/float_color_tab").arg(pageName);
+    s.setValue(name,colorTab->floating);
+    if (colorTab->floating)
+        colorTab->savePosition();
+    colorTab->floating = false;   // so it closes correctly
+}
+
+void page_backgrounds::slot_detach(int index)
+{
+    QWidget * widget = tabWidget->widget(index);
+    QString title    = tabWidget->tabText(index);
+
+    tabWidget->removeTab(index);
+
+    FloatableTab * floater = dynamic_cast<FloatableTab*>(widget);
+    Q_ASSERT(floater);
+    floater->detach(tabWidget,title);
+}
+
+FloatableTab * page_backgrounds::createImageTab()
+{
+    QVBoxLayout * layout = new QVBoxLayout();
+    layout->addLayout(createBackgroundImageLayout());
+    layout->addStretch();
+
+    FloatableTab * tab = new FloatableTab(this);
+    tab->setLayout(layout);
+    return tab;
+}
+
+FloatableTab * page_backgrounds::createColorTab()
+{
+    QVBoxLayout * layout = new QVBoxLayout();
+    layout->addWidget(createBackgroundColorGroup());
+    layout->addStretch();
+
+    FloatableTab * tab = new FloatableTab(this);
+    tab->setLayout(layout);
+    return tab;
 }
 
 void page_backgrounds::onEnter()
@@ -42,18 +115,19 @@ void page_backgrounds::onExit()
 
 void page_backgrounds::onRefresh()
 {
-    chkView->setChecked(viewControl->isEnabled(VIEW_BKGD_IMG));
+    chkView->setChecked(viewControl->isEnabled(Layer::Type::BkgdImage));
 
     displayBackgroundImageStatus(false);
 
-    auto bip = Sys::getBackgroundImageFromSource();
+    auto bip = Sys::backgroundImage;
     smxWidget->setLayer(bip.get());
     smxWidget->refresh();
 
     for (int i = 0; i < viewTable->rowCount(); i++)
     {
+        Layer::Type vtype = static_cast<Layer::Type>(viewTable->item(i,0)->data(Qt::UserRole).toInt());
         QTableWidgetItem * item = viewTable->item(i,1);
-        QColor color = viewControl->getBackgroundColor(static_cast<eViewType>(i));
+        QColor color = config->getBkgdColor(vtype);
         item->setText(color.name());
 
         QLabel * label = new QLabel;
@@ -64,23 +138,20 @@ void page_backgrounds::onRefresh()
     }
 }
 
-QGroupBox * page_backgrounds::createBackgroundImageGroup()
+QVBoxLayout * page_backgrounds::createBackgroundImageLayout()
 {
-    chkView         = new QCheckBox("View");
-    imageName       = new QLineEdit("Image name");
+    chkView         = new QCheckBox("View Background Image");
+    chkConvertToPng = new QCheckBox("Convert to PNG");
+    imageName       = new MemoryCombo("bkgdImageName");
     chkShowAdjusted = new QCheckBox("Show Adjusted");
     chkShowCropped  = new QCheckBox("Show Cropped");
-    btnNone         = new QRadioButton("None");
-    btnMosaic       = new QRadioButton("Mosaic");
-    btnTiling       = new QRadioButton("Tiling");
-    btnMaped        = new QRadioButton("Map Editor");
-    btnDefine       = new QRadioButton("Engine");
     smxWidget       = new SMXWidget(nullptr,false,true);
 
     QPushButton * resetBtn      = new QPushButton("Reset Xform");
+    QPushButton * selectBkgdBtn = new QPushButton("Select");
     QPushButton * loadBkgdBtn   = new QPushButton("Load");
-    QPushButton * removeBkgdBtn = new QPushButton("Remove");
-    QPushButton * clearBtn      = new QPushButton("Clear Content");
+    QPushButton * loadReplBtn   = new QPushButton("Load Replace");
+    QPushButton * unloadBkgdBtn = new QPushButton("Unload");
 
     startAdjustBtn                      = new AQPushButton("Start Keystone Adjustment");
     QPushButton  * completeAdjustBtn    = new QPushButton("Complete Keystone Adustment");
@@ -94,64 +165,64 @@ QGroupBox * page_backgrounds::createBackgroundImageGroup()
     startCropBtn->setStyleSheet("QPushButton::checked { background-color: yellow; color: red;}");
 
     QHBoxLayout * hb1 = new QHBoxLayout();
-    hb1->addWidget(loadBkgdBtn);
+    hb1->addWidget(selectBkgdBtn);
     hb1->addWidget(imageName);
-    hb1->addWidget(removeBkgdBtn);
-    hb1->addWidget(clearBtn);
+    hb1->addWidget(loadBkgdBtn);
+    hb1->addWidget(loadReplBtn);
+    hb1->addWidget(chkConvertToPng);
+    hb1->addWidget(unloadBkgdBtn);
 
-    QHBoxLayout * hb2 = new  QHBoxLayout();
-    hb2->addWidget(chkView);
-    hb2->addStretch();
-    hb2->addWidget(btnNone);
-    hb2->addWidget(btnMosaic);
-    hb2->addWidget(btnTiling);
-    hb2->addWidget(btnMaped);
-    hb2->addWidget(btnDefine);
-    hb2->addStretch();
-    hb2->addWidget(smxWidget);
+    QHBoxLayout * hb0 = new QHBoxLayout();
+    hb0->addWidget(chkView);
+    hb0->addStretch();
+    hb0->addWidget(smxWidget);
 
     QHBoxLayout * hb3 = new QHBoxLayout();
     hb3->addLayout(&tformLayout);
     hb3->addWidget(resetBtn);
 
-    int row = 0;
-    QGridLayout * grid = new QGridLayout();
-    grid->addWidget(startAdjustBtn,row,0);
-    grid->addWidget(completeAdjustBtn,row,1);
-    grid->addWidget(saveAdjustedBtn,row,2);
-    grid->addWidget(chkShowAdjusted,row,3);
+    QHBoxLayout * hbAdjust = new QHBoxLayout();
+    hbAdjust->addWidget(startAdjustBtn);
+    hbAdjust->addWidget(completeAdjustBtn);
+    hbAdjust->addWidget(saveAdjustedBtn);
+    hbAdjust->addWidget(chkShowAdjusted);
+    hbAdjust->addStretch();
 
-    row++;
-    grid->addWidget(startCropBtn,row,0);
-    grid->addWidget(endCropBtn,row,1);
-    grid->addWidget(saveCroppedBtn,row,2);
-    grid->addWidget(chkShowCropped,row,3);
+    QGroupBox * adjustGroup = new QGroupBox("Keystone Adjustment");
+    adjustGroup->setLayout(hbAdjust);
+
+    QHBoxLayout * hbCrop = new QHBoxLayout();
+    hbCrop->addWidget(startCropBtn);
+    hbCrop->addWidget(endCropBtn);
+    hbCrop->addWidget(saveCroppedBtn);
+    hbCrop->addWidget(chkShowCropped);
+    hbCrop->addStretch();
+
+    QGroupBox * cropGroup = new QGroupBox("Image Cropping");
+    cropGroup->setLayout(hbCrop);
 
     QVBoxLayout * vb = new QVBoxLayout();
+    vb->addLayout(hb0);
+    vb->addSpacing(10);
     vb->addLayout(hb1);
-    vb->addLayout(hb2);
     vb->addLayout(hb3);
-    vb->addSpacing(5);
-    vb->addLayout(grid);
-
-    QGroupBox * bkgdGroup  = new QGroupBox("Background Image");
-    bkgdGroup->setLayout(vb);
+    vb->addSpacing(16);
+    vb->addWidget(adjustGroup);
+    vb->addSpacing(10);
+    vb->addWidget(cropGroup);
 
     connect(chkView,       &QCheckBox::clicked,           this, &page_backgrounds::slot_showImageChanged);
     connect(resetBtn,      &QPushButton::clicked,         this, &page_backgrounds::slot_resetXform);
     connect(&tformLayout,  &LayoutTransform::xformChanged,this, &page_backgrounds::slot_setBkgdXform);
 
-    connect(btnNone,       &QRadioButton::toggled, this, [this] (bool checked) { if (checked) Sys::currentBkgImage = BKGD_IMAGE_NONE;   displayBackgroundImageStatus(true);  emit sig_updateView();   } );
-    connect(btnMosaic,     &QRadioButton::toggled, this, [this] (bool checked) { if (checked) Sys::currentBkgImage = BKGD_IMAGE_MOSAIC; displayBackgroundImageStatus(true);  emit sig_updateView();  } );
-    connect(btnTiling,     &QRadioButton::toggled, this, [this] (bool checked) { if (checked) Sys::currentBkgImage = BKGD_IMAGE_TILING; displayBackgroundImageStatus(true);  emit sig_updateView();  } );
-    connect(btnMaped,      &QRadioButton::toggled, this, [this] (bool checked) { if (checked) Sys::currentBkgImage = BKGD_IMAGE_MAPED;  displayBackgroundImageStatus(true);  emit sig_updateView();  } );
-    connect(btnDefine,     &QRadioButton::toggled, this, [this] (bool checked) { if (checked) Sys::currentBkgImage = BKGD_IMAGE_DEFINED;displayBackgroundImageStatus(true);  emit sig_updateView();  } );
     connect(chkShowCropped,   &QCheckBox::clicked, this, [this] (bool checked) { useCropped(checked); emit sig_updateView(); });
     connect(chkShowAdjusted,  &QCheckBox::clicked, this, [this] (bool checked) { useAdjusted(checked);emit sig_updateView(); });
 
+    connect(selectBkgdBtn,     &QPushButton::clicked,         this,    &page_backgrounds::slot_selectBackground);
     connect(loadBkgdBtn,       &QPushButton::clicked,         this,    &page_backgrounds::slot_loadBackground);
-    connect(removeBkgdBtn,     &QPushButton::clicked,         this,    &page_backgrounds::slot_removeBackground);
-    connect(clearBtn,          &QPushButton::clicked,         this,    &page_backgrounds::slot_clearBackground);
+    connect(loadReplBtn,       &QPushButton::clicked,         this,    &page_backgrounds::slot_loadBackgroundReplace);
+    connect(imageName,         &QComboBox::currentTextChanged,this,    &page_backgrounds::updateImageNameTally);
+    connect(unloadBkgdBtn,     &QPushButton::clicked,         this,    &page_backgrounds::slot_unloadBackground);
 
     connect(startAdjustBtn,    &QPushButton::clicked,         this,    &page_backgrounds::slot_startKeystoneAdjustment);
     connect(completeAdjustBtn, &QPushButton::clicked,         this,    &page_backgrounds::slot_endKeystoneAdjust);
@@ -161,7 +232,7 @@ QGroupBox * page_backgrounds::createBackgroundImageGroup()
     connect(endCropBtn,        &QPushButton::clicked,         this,    &page_backgrounds::slot_endCrop);
     connect(saveCroppedBtn,    &QPushButton::clicked,         this,    [this] { saveModified(false); });
 
-    return bkgdGroup;
+    return vb;
 }
 
 QGroupBox * page_backgrounds::createBackgroundColorGroup()
@@ -192,14 +263,17 @@ QGroupBox * page_backgrounds::createBackgroundColorGroup()
     int row = 0;
     for (int i= 0; i < NUM_VIEW_TYPES; i++)
     {
-        eViewType vtype = static_cast<eViewType>(i);
+        Layer::Type vtype = static_cast<Layer::Type>(i);
+        if (!hasBkgdColor(vtype))
+            continue;
 
         viewTable->setRowCount(row +1);
 
-        QTableWidgetItem * item =  new QTableWidgetItem(s2ViewerType[vtype]);
+        QTableWidgetItem * item =  new QTableWidgetItem(sLayerType2[(int)vtype]);
+        item->setData(Qt::UserRole,i);
         viewTable->setItem(row,0,item);
 
-        QColor color = viewControl->getBackgroundColor(vtype);
+        QColor color = config->getBkgdColor(vtype);
         item = new QTableWidgetItem(color.name());
         viewTable->setItem(row,1,item);
 
@@ -211,7 +285,7 @@ QGroupBox * page_backgrounds::createBackgroundColorGroup()
 
         QPushButton * btn = new QPushButton("Select color");
         viewTable->setCellWidget(row,3,btn);
-        connect(btn, &QPushButton::clicked, this, [this,row] { selectColor(row); });
+        connect(btn, &QPushButton::clicked, this, [this,vtype] { selectColor(vtype); });
 
         row++;
     }
@@ -232,59 +306,54 @@ void page_backgrounds::displayBackgroundImageStatus(bool force)
         return;
     }
 
-    switch (Sys::currentBkgImage)
-    {
-    case BKGD_IMAGE_NONE:
-        if (!btnNone->isChecked())
-            btnNone->setChecked(true);
-        break;
-    case BKGD_IMAGE_MOSAIC:
-        if (!btnMosaic->isChecked())
-            btnMosaic->setChecked(true);
-        break;
-    case BKGD_IMAGE_TILING:
-        if (!btnTiling->isChecked())
-            btnTiling->setChecked(true);
-        break;
-    case BKGD_IMAGE_MAPED:
-        if (!btnMaped->isChecked())
-            btnMaped->setChecked(true);
-        break;
-    case BKGD_IMAGE_DEFINED:
-        if (!btnDefine->isChecked())
-            btnDefine->setChecked(true);
-    }
-
-    auto bip   = Sys::getBackgroundImageFromSource();
-    if (bip && bip->isLoaded())
+    auto bip   = Sys::backgroundImage;
+    bool loaded = bip && bip->isLoaded();
+    if (loaded)
     {
         const Xform & xform = bip->getModelXform();
         tformLayout.blockSignals(true);
         tformLayout.setTransform(xform);
         tformLayout.blockSignals(false);
 
-        imageName->setText(bip->getTitle());
-#if 0
-        chkShowAdjusted->blockSignals(true);
+        // combo text is only synced on an explicit (force) refresh, never on a poll tick,
+        // so a pending Select'd-but-not-yet-loaded name isn't clobbered out from under the user
+        if (force && imageName->currentText() != bip->getTitle())
+            imageName->setCurrentText(bip->getTitle());
         chkShowAdjusted->setChecked(bip->useAdjusted());
-        chkShowAdjusted->blockSignals(false);
-#endif
+        chkShowCropped->setChecked(bip->useCropped());
     }
     else
     {
-        imageName->setText("None");
+        // leave the combo showing whatever it already has (last-selected on startup, or a
+        // pending Select) rather than stomping it with "None"
         tformLayout.init();
-#if 0
-        chkShowAdjusted->blockSignals(true);
         chkShowAdjusted->setChecked(false);
-        chkShowAdjusted->blockSignals(false);
-#endif
+        chkShowCropped->setChecked(false);
     }
+
+    updateImageNameTally();
 }
 
-void page_backgrounds::slot_loadBackground()
+// green (with explicit readable text) when the shown name is actually loaded, otherwise the
+// combo's normal theme style (readable in light and dark mode). Wired directly to the combo's
+// own text-change signal (not just called from displayBackgroundImageStatus) so it updates the
+// instant the user picks a different entry, rather than waiting on the hover-gated poll refresh.
+void page_backgrounds::updateImageNameTally()
 {
-    QString bkgdDir = config->rootMediaDir + "bkgd_photos/";
+    auto bip    = Sys::backgroundImage;
+    bool loaded = bip && bip->isLoaded();
+    bool isCurrent = loaded && (imageName->currentText() == bip->getTitle());
+    if (isCurrent)
+        imageName->setStyleSheet("QComboBox, QComboBox QLineEdit { background-color: #66bb6a; color: black; }");
+    else
+        imageName->setStyleSheet(QString());
+}
+
+// picks a file, imports/converts it into the background photos dir, and records the name
+// in the combo - does NOT load it as the active background image (see slot_loadBackground)
+void page_backgrounds::slot_selectBackground()
+{
+    QString bkgdDir  = Sys::bkgdPhotosDir;
     QString filename = QFileDialog::getOpenFileName(nullptr,"Select image file",bkgdDir, "Image Files (*.png *.jpg *.bmp *.jpeg)");
     if (filename.isEmpty()) return;
 
@@ -296,7 +365,29 @@ void page_backgrounds::slot_loadBackground()
         box.exec();
         return;
     }
-    
+
+    if (chkConvertToPng->isChecked() &&
+        (filename.endsWith(".jpg",Qt::CaseInsensitive) || filename.endsWith(".jpeg",Qt::CaseInsensitive)))
+    {
+        QString pngFilename = convertJpgToPng(filename);
+        if (pngFilename.isEmpty())
+        {
+            QMessageBox box(this);
+            box.setIcon(QMessageBox::Warning);
+            box.setText(QString("Failed to convert image to PNG: %1").arg(filename));
+            box.exec();
+            return;
+        }
+
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Information);
+        box.setText(QString("Loaded and re-saved as: %1").arg(pngFilename));
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+
+        filename = pngFilename;
+    }
+
     auto bip = std::make_shared<BackgroundImage>();
     bool rv  = bip->importIfNeeded(filename);
     if (!rv)
@@ -310,101 +401,74 @@ void page_backgrounds::slot_loadBackground()
 
     QFileInfo info(filename);
     QString name = info.fileName();
-    rv = bip->load(name);
-    if (!rv)
+    imageName->setCurrentText(name);   // pending selection - press Load to actually activate it
+}
+
+void page_backgrounds::slot_loadBackground()
+{
+    loadBackground(false);
+}
+
+void page_backgrounds::slot_loadBackgroundReplace()
+{
+    loadBackground(true);
+}
+
+// loads the name currently shown in the combo (set by Select, or picked from its history)
+// as the background image - replace keeps the current placement, otherwise it starts at unity
+void page_backgrounds::loadBackground(bool replace)
+{
+    QString name = imageName->currentText();
+    if (name.isEmpty() || name == "None")
+        return;
+
+    if (!QImageReader(Sys::bkgdPhotosDir + name).canRead())
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
-        box.setText(QString("Failed to load image: %1").arg(filename));
+        box.setText(QString("Failed to load image: %1").arg(name));
         box.exec();
         return;
     }
 
-    // if already loaded, replace, else load
-    switch (Sys::currentBkgImage)
-    {
-    case BKGD_IMAGE_NONE:
-    {
-        auto mosaic = mosaicMaker->getMosaic();
-        if (Sys::viewController->isEnabled(VIEW_TILING_MAKER) || Sys::viewController->isEnabled(VIEW_TILING) || mosaic->getName() == Sys::defaultMosaicName)
-        {
-            // The owner of the image is the mosaic
-            auto tiling = tilingMaker->getSelected();
-            Q_ASSERT(tiling);
-            tiling->setBkgdImage(bip);
-            Sys::currentBkgImage = BKGD_IMAGE_TILING;
-        }
-        else
-        {
-            // The owner of the image is the mosaic
-            auto mosaic = mosaicMaker->getMosaic();
-            Q_ASSERT(mosaic);
-            mosaic->setBkgdImage(bip);
-            Sys::currentBkgImage = BKGD_IMAGE_MOSAIC;
-        }
-    }   break;
+    Sys::backgroundImage->load(name);
 
-    case BKGD_IMAGE_MOSAIC:
-    {
-        auto mosaic = mosaicMaker->getMosaic();
-        mosaic->setBkgdImage(bip);
-    }   break;
-
-    case BKGD_IMAGE_TILING:
-    {
-        auto tiling = tilingMaker->getSelected();
-        tiling->setBkgdImage(bip);
-    }   break;
-
-    case BKGD_IMAGE_MAPED:
-        Sys::mapEditor->getDb()->setBackgroundImage(bip);
-        break;
-
-    case BKGD_IMAGE_DEFINED:
-        break;
-    }
+    if (!replace)
+        tformLayout.init();
 
     setupBackgroundPixmap();
-    panel->delegateView(VIEW_BKGD_IMG,true);     // since we loaded it, might as well see it
+    panel->delegateView(Layer::Type::BkgdImage,true);     // since we loaded it, might as well see it
     displayBackgroundImageStatus(true);
 }
 
-void page_backgrounds::slot_removeBackground()
+QString page_backgrounds::convertJpgToPng(const QString & jpgPath)
 {
-    switch (Sys::currentBkgImage)
-    {
-    case BKGD_IMAGE_MOSAIC:
-    {
-        auto mosaic = mosaicMaker->getMosaic();
-        mosaic->removeBkgdImage();
-    }   break;
+    QImageReader reader(jpgPath);
+    reader.setAutoTransform(true);     // applies EXIF orientation (e.g. camera-rotated JPEGs)
 
-    case BKGD_IMAGE_TILING:
+    QImage image = reader.read();
+    if (image.isNull())
     {
-        auto tiling = tilingMaker->getSelected();
-        tiling->removeBkgdImage();
-    }   break;
-
-    case BKGD_IMAGE_MAPED:
-        Sys::mapEditor->getDb()->removeBackgroundImage();
-        break;
-
-    case BKGD_IMAGE_NONE:
-    case BKGD_IMAGE_DEFINED:
-        break;
+        qWarning() << "convertJpgToPng: failed to read" << jpgPath << reader.errorString();
+        return QString();
     }
 
-    emit sig_reconstructView();
+    QFileInfo info(jpgPath);
+    QString pngPath = info.absolutePath() + "/" + info.completeBaseName() + ".png";
 
-    displayBackgroundImageStatus(true);
+    if (!image.save(pngPath,"PNG"))
+    {
+        qWarning() << "convertJpgToPng: failed to save" << pngPath;
+        return QString();
+    }
+
+    qDebug() << "convertJpgToPng: converted" << jpgPath << "->" << pngPath;
+    return pngPath;
 }
 
-void page_backgrounds::slot_clearBackground ()
+void page_backgrounds::slot_unloadBackground()
 {
-    auto bip = Sys::getBackgroundImageFromSource();
-    if (!bip) return;
-
-    bip->unload();
+    Sys::backgroundImage->unload();
 
     emit sig_reconstructView();
 
@@ -413,7 +477,7 @@ void page_backgrounds::slot_clearBackground ()
 
 void page_backgrounds::setupBackgroundPixmap()
 {
-    auto bip = Sys::getBackgroundImageFromSource();
+    auto bip = Sys::backgroundImage;
     if (!bip) return;
     
     const Xform & xf = tformLayout.getXform();
@@ -436,7 +500,7 @@ void page_backgrounds::slot_resetXform()
 
 void page_backgrounds::slot_startKeystoneAdjustment(bool checked)
 {
-    auto bip = Sys::getBackgroundImageFromSource();
+    auto bip = Sys::backgroundImage;
     if (!bip || !bip->isLoaded())
     {
         startAdjustBtn->setChecked(false);
@@ -457,12 +521,20 @@ void page_backgrounds::slot_startKeystoneAdjustment(bool checked)
         pageStatusString = "Click to select four points on background image. Then press 'Complete Perspective Adjustement' to fix camera skew.";
         setPageStatus();
 
-        bip->adjuster.activate(true);
+        bip->adjuster.activate(true, bip.get());
+        Sys::systemViewController->getView()->setCursor(Qt::CrossCursor);
+
+        // the view is a separate top-level window from this panel, so a plain setFocus()
+        // isn't enough - the window itself has to become the OS-active one first
+        Sys::systemViewController->raiseView();        // for MacOS
+        Sys::systemViewController->activateWindow();   // for Windows
+        Sys::systemViewController->getView()->setFocus();
     }
     else
     {
         clearPageStatus();
         bip->adjuster.activate(false);    // also stops mouse interaction
+        Sys::systemViewController->getView()->unsetCursor();
     }
 
     emit sig_updateView();
@@ -470,7 +542,7 @@ void page_backgrounds::slot_startKeystoneAdjustment(bool checked)
 
 void page_backgrounds::slot_endKeystoneAdjust()
 {
-    auto bip = Sys::getBackgroundImageFromSource();
+    auto bip = Sys::backgroundImage;
     if (!bip) return;
 
     if (!bip->adjuster.isActive())
@@ -492,9 +564,17 @@ void page_backgrounds::slot_endKeystoneAdjust()
         return;
     }
 
-    bip->createBackgroundAdjustment(saccum[0]->v1->pt, saccum[1]->v1->pt, saccum[2]->v1->pt, saccum[3]->v1->pt);
+    bip->correctPerspective(saccum[0]->v1->pt, saccum[1]->v1->pt, saccum[2]->v1->pt, saccum[3]->v1->pt);
 
-    bip->adjuster.activate(false);
+    bip->adjuster.activate(false);     // pops the model xform back to where it was on Start
+    Sys::systemViewController->getView()->unsetCursor();
+
+    // useAdjusted() -> setupBackgroundPixmap() re-applies tformLayout's xform to the layer,
+    // so resync tformLayout to the just-restored xform first or it would clobber the restore
+    // with whatever stale value tformLayout last cached
+    tformLayout.blockSignals(true);
+    tformLayout.setTransform(bip->getModelXform());
+    tformLayout.blockSignals(false);
 
     bip->createAdjustedImage();
     useAdjusted(true);
@@ -509,7 +589,7 @@ void page_backgrounds::slot_endKeystoneAdjust()
 
 void page_backgrounds::saveModified(bool adjusted)
 {
-    auto bip = Sys::getBackgroundImageFromSource();
+    auto bip = Sys::backgroundImage;
     if (!bip) return;
     
     Xform xf = bip->getModelXform();
@@ -533,45 +613,55 @@ void page_backgrounds::saveModified(bool adjusted)
     if (adjusted)
         rv = bip->saveAdjusted(newName);
     else
+    {
         rv = bip->saveCropped(newName);
+        xf.applyTranslate(bip->getCroppedOffset());     // reloaded image is centered on the origin
+    }
 
     QMessageBox box(this);
     if (rv)
     {
         box.setIcon(QMessageBox::Information);
-        box.setText("Image Save - OK");
+        box.setText(QString("Image %1 saved").arg(newName));
+        box.setInformativeText("Save the tiling or mosaic to keep it as the background.");
     }
     else
     {
         box.setIcon(QMessageBox::Warning);
-        box.setText("Image - Save - FAILED");
+        box.setText(QString("Image %1 save FAILED").arg(newName));
         box.setInformativeText("Try again with a new name");
     }
     box.exec();
 
     if (rv)
     {
+        if (adjusted)
+        {
+            bip->adjuster.clear();     // the keystone rectangle stayed visible until now; the saved image supersedes it
+        }
+
         // re-load
         bip->load(newName);
         if (bip->isLoaded())
         {
             bip->setModelXform(xf,false,Sys::nextSigid());
-            bip->setUseAdjusted(false);
+            bip->createPixmap();
             displayBackgroundImageStatus(true);
-            panel->delegateView(VIEW_BKGD_IMG,true);
+            panel->delegateView(Layer::Type::BkgdImage,true);
         }
     }
 }
 
 void page_backgrounds::useAdjusted(bool checked)
 {
-    auto bip = Sys::getBackgroundImageFromSource();
+    auto bip = Sys::backgroundImage;
     if (!bip) return;
 
     if (checked)
     {
         startCropBtn->setChecked(false);
         chkShowCropped->setChecked(false);
+        bip->setUseCropped(false);
     }
 
     chkShowAdjusted->setChecked(checked);
@@ -582,7 +672,7 @@ void page_backgrounds::useAdjusted(bool checked)
 
 void page_backgrounds::slot_startCrop(bool checked)
 {
-    auto bip = Sys::getBackgroundImageFromSource();
+    auto bip = Sys::backgroundImage;
     if (!bip || !bip->isLoaded())
     {
         startCropBtn->setChecked(false);
@@ -598,6 +688,7 @@ void page_backgrounds::slot_startCrop(bool checked)
             // turn off adjuseter
             bip->adjuster.activate(false);
             startAdjustBtn->setChecked(false);
+            Sys::systemViewController->getView()->unsetCursor();
         }
 
         pageStatusString = "Left-click on corner to Resize - Righ-click inside or on edge to Move";
@@ -616,7 +707,7 @@ void page_backgrounds::slot_startCrop(bool checked)
 
 void page_backgrounds::slot_endCrop()
 {
-    auto bip = Sys::getBackgroundImageFromSource();
+    auto bip = Sys::backgroundImage;
     if (!bip) return;
 
     if (!bip->cropper.isActive())
@@ -643,13 +734,14 @@ void page_backgrounds::slot_endCrop()
 
 void page_backgrounds::useCropped(bool checked)
 {
-    auto bip = Sys::getBackgroundImageFromSource();
+    auto bip = Sys::backgroundImage;
     if (!bip) return;
 
     if (checked)
     {
         startAdjustBtn->setChecked(false);
         chkShowAdjusted->setChecked(false);
+        bip->setUseAdjusted(false);
     }
 
     chkShowCropped->setChecked(checked);
@@ -659,14 +751,20 @@ void page_backgrounds::useCropped(bool checked)
 
 void page_backgrounds::slot_showImageChanged(bool checked)
 {
-    panel->delegateView(VIEW_BKGD_IMG,checked);
+    panel->userDelegateView(Layer::Type::BkgdImage,checked);
 }
 
-void page_backgrounds::selectColor(int row)
+bool page_backgrounds::hasBkgdColor(Layer::Type vtype)
 {
-    eViewType vtype = static_cast<eViewType>(row);
-    
-    QColor color = viewControl->getBackgroundColor(vtype);
+    // overlay layers do not set the view background
+    return !(   vtype == Layer::Type::Grid
+             || vtype == Layer::Type::Crop
+             || vtype == Layer::Type::ConstructionLines);
+}
+
+void page_backgrounds::selectColor(Layer::Type vtype)
+{
+    QColor color = config->getBkgdColor(vtype);
 
     AQColorDialog dlg(color,this);
     int rv = dlg.exec();
@@ -676,24 +774,25 @@ void page_backgrounds::selectColor(int row)
     color = dlg.selectedColor();
     if (color.isValid())
     {
-        viewControl->setBackgroundColor(vtype,color);
+        if (vtype == Layer::Type::Mosaic)
+            mosaicMaker->setBkgdColor(color);
+        else
+            config->setBkgdColor(vtype,color);
         emit sig_reconstructView();
     }
 }
 
 void page_backgrounds::reInitBkgdColors(QColor bcolor)
 {
-    viewControl->setBackgroundColor(VIEW_LEGACY,bcolor);
-    viewControl->setBackgroundColor(VIEW_MOSAIC,bcolor);
-    viewControl->setBackgroundColor(VIEW_PROTOTYPE,bcolor);
-    viewControl->setBackgroundColor(VIEW_MOTIF_MAKER,bcolor);
-    viewControl->setBackgroundColor(VIEW_TILING,bcolor);
-    viewControl->setBackgroundColor(VIEW_TILING_MAKER,bcolor);
-    viewControl->setBackgroundColor(VIEW_MAP_EDITOR,bcolor);
-    viewControl->setBackgroundColor(VIEW_BKGD_IMG,bcolor);
-    viewControl->setBackgroundColor(VIEW_GRID,bcolor);
-    viewControl->setBackgroundColor(VIEW_CROP,bcolor);
-    viewControl->setBackgroundColor(VIEW_DEBUG,bcolor);
-    viewControl->setBackgroundColor(VIEW_BMP_IMAGE,bcolor);
+    for (int i = 0; i < NUM_VIEW_TYPES; i++)
+    {
+        Layer::Type vtype = static_cast<Layer::Type>(i);
+        if (!hasBkgdColor(vtype))
+            continue;
+        if (vtype == Layer::Type::Mosaic)
+            mosaicMaker->setBkgdColor(bcolor);
+        else
+            config->setBkgdColor(vtype,bcolor);
+    }
     emit sig_reconstructView();
 }

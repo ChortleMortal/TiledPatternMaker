@@ -1,6 +1,4 @@
 #pragma once
-#ifndef THICK_H
-#define THICK_H
 
 #include "model/styles/colored.h"
 
@@ -54,5 +52,4 @@ protected:
     Qt::PenJoinStyle join_style;
     Qt::PenCapStyle  cap_style;
 };
-#endif
 

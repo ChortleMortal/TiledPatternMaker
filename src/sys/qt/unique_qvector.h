@@ -1,6 +1,4 @@
 #pragma once
-#ifndef UNIQUE_QVECTOR_H
-#define UNIQUE_QVECTOR_H
 
 #include <QVector>
 
@@ -41,4 +39,3 @@ template <class T> void UniqueQVector<T>::push_front(const T & value)
         QVector<T>::push_front(value);
     }
 }
-#endif

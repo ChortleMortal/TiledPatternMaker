@@ -4,9 +4,11 @@
 #include "model/makers/mosaic_maker.h"
 #include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
+#include "model/mosaics/mosaic_reader.h"
 #include "model/mosaics/mosaic_writer.h"
 #include "model/prototypes/prototype.h"
 #include "model/settings/configuration.h"
+#include "model/styles/filled.h"
 #include "model/styles/style.h"
 #include "model/tilings/backgroundimage.h"
 #include "sys/geometry/crop.h"
@@ -19,6 +21,8 @@ int Mosaic::refs = 0;
 Mosaic::Mosaic()
 {
     name.set(Sys::defaultMosaicName);
+
+    _bkgdColor             = QColor(Qt::white);
     _loadedXML_version     = MosaicWriter::currentXMLVersion; // default
     _legacyCenterConverted = false;
     refs++;
@@ -52,15 +56,30 @@ void Mosaic::build()
     }
 }
 
-void Mosaic::setViewController(SystemViewController * vc)
+bool Mosaic::hasDeprecatedFill()
 {
+    for (auto & style : std::as_const(styleSet))
+    {
+        if (style->getStyleType() == STYLE_FILLED)
+        {
+            FillPtr filled = std::dynamic_pointer_cast<Filled>(style);
+            if (filled->getAlgorithm() == DEPRECATED_FILL_FACE_DIRECT)
+                return true;
+        }
+    }
+    return false;
+}
+
+void Mosaic::setViewController(ViewController * vc)
+{
+    // wires up each style's viewController reference only - whether this
+    // mosaic's canvas becomes the active one is a separate, explicit decision
+    // made by the caller (the state machine, or a headless generator)
+
     for (const auto & style : std::as_const(styleSet))
     {
         style->setViewController(vc);
         style->forceLayerRecalc(false);
-        ProtoPtr pp = style->getPrototype();
-        if (pp)
-            pp->setViewController(vc);
     }
 }
 
@@ -73,13 +92,14 @@ void Mosaic::enginePaint(QPainter * painter)
         layers.push_back(style.get());
     }
 
-    BkgdImagePtr bip = getBkgdImage();
-    if (bip && Sys::config->includeBkgdGeneration)
+    // a local image per paint - generation can run concurrently, so never Sys::backgroundImage
+    BkgdImagePtr bip;
+    if (!_bkgdRecord.isEmpty() && Sys::config->includeBkgdGeneration)
     {
+        bip = std::make_shared<BackgroundImage>();
         bip->setViewController(getFirstRegularStyle()->viewControl());
-        Sys::definedBkImage  = bip;
-        Sys::currentBkgImage = BKGD_IMAGE_DEFINED;
-        layers.push_front(bip.get());
+        if (bip->load(_bkgdRecord))
+            layers.push_front(bip.get());
     }
 
     std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevelP);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
@@ -94,7 +114,7 @@ void Mosaic::enginePaint(QPainter * painter)
         layer->forceLayerRecalc(false);
         if (layer->isClipable() && painterCrop)
         {
-            painterCrop->clipPainter(painter,layer->getLayerTransform());
+            painterCrop->clipPainter(painter,layer->getUndistortedLayerTransform());
         }
         layer->paint(painter);
         painter->restore();
@@ -113,6 +133,11 @@ void  Mosaic::addStyle(StylePtr style)
         if (crop)
             setCrop(crop);
     }
+}
+
+void  Mosaic::addStyleOnTop(StylePtr style)
+{
+    styleSet.push_back(style);
 }
 
 void Mosaic::replaceStyle(StylePtr oldStyle, StylePtr newStyle)
@@ -191,16 +216,13 @@ QVector<TilingPtr> Mosaic::getTilings()
     return static_cast<QVector<TilingPtr>>(tilings);
 }
 
-void Mosaic::setBorder(BorderPtr bp)
+void Mosaic::replaceBorder(BorderPtr oldBorder, BorderPtr newBorder)
 {
-    BorderPtr border = getBorder();
-    if (border)
-    {
-        // there is only one border
-        styleSet.removeOne(border);
-    }
-    // sets the new border
-    addStyle(bp);
+    int i = (oldBorder) ? styleSet.indexOf(oldBorder) : -1;
+    if (i >= 0)
+        styleSet[i] = newBorder;
+    else
+        addStyleOnTop(newBorder);
 }
 
 BorderPtr Mosaic::getBorder()
@@ -227,6 +249,7 @@ void Mosaic::setCrop(CropPtr crop)
     {
         proto->setCrop(crop);       // resets proto map
     }
+    resetProtoMaps();
     resetStyleMaps();
 }
 
@@ -377,7 +400,7 @@ void Mosaic::correctBorderAlignment(BorderPtr border)
         qInfo() << "Mosaic::correctBorderAlignment";
         Xform xf_bkgd       = border->getModelXform();
         QPointF bkgd_trans  = xf_bkgd.getTranslate();
-        bkgd_trans         -= mos_trans;            // FIXME - should this be scaled
+        bkgd_trans         -= mos_trans;
         xf_bkgd.setTranslate(bkgd_trans);
 
         border->setModelXform(xf_bkgd,false,Sys::nextSigid());
@@ -428,7 +451,7 @@ void Mosaic::dumpStyles()
 
 void Mosaic::dumpTransforms()
 {
-    qDebug() << "==== Mosaic Styles" << name.get();
+    qDebug() << "==== Mosaic Transforms" << name.get();
     for (const auto & style : std::as_const(styleSet))
     {
         auto t1 = style->getCanvasTransform();

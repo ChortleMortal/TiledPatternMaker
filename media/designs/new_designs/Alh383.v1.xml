@@ -1,0 +1,298 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Oct 9 2026 13:29:00 -->
+<vector id="1" version="38">
+	<design>
+		<size>
+			<width>1203</width>
+			<height>1886</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<PainterCrop embed="f" apply="f">
+			<rect>
+				<X>-12.86551124770407</X>
+				<Y>-20.29417691407919</Y>
+				<width>25.71348005848899</width>
+				<height>40.31223889468843</height>
+			</rect>
+		</PainterCrop>
+		<Fill singleton="f">-1,1,-1,2</Fill>
+		<Distort type="tile">
+			<scalex>1.24</scalex>
+			<scaley>1.03</scaley>
+		</Distort>
+		<BackgroundImage name="IMG_0383.png">
+			<Scale>0.4567632</Scale>
+			<Rot>0</Rot>
+			<X>-329.47046142</X>
+			<Y>1087.87512779</Y>
+		</BackgroundImage>
+	</design>
+	<style.Border id="2">
+		<border type="Plain" shape="Rectangle" useViewSize="f">
+			<toolkit.GeoLayer>
+				<left__delta>-341.9704614210112</left__delta>
+				<top__delta>1051.375127794295</top__delta>
+				<width__delta>0.4567632</width__delta>
+				<theta__delta>0</theta__delta>
+				<Z>0</Z>
+			</toolkit.GeoLayer>
+			<color>#ff10100e</color>
+			<width>20</width>
+			<rect>
+				<X>-12.86551124770407</X>
+				<Y>-20.29417691407919</Y>
+				<width>25.71348005848899</width>
+				<height>40.31223889468843</height>
+			</rect>
+		</border>
+	</style.Border>
+	<style.Interlace id="3">
+		<toolkit.GeoLayer>
+			<left__delta>-341.9704614210112</left__delta>
+			<top__delta>1051.375127794295</top__delta>
+			<width__delta>0.4567632</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="4">
+				<app.Prototype>
+					<Tiling>Alh383</Tiling>
+					<Cleanse>8</Cleanse>
+					<Sensitivity>0.1</Sensitivity>
+					<entry>
+						<Tile id="5">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>5.949999999999916</scale>
+							<edges id="6">
+								<Line>
+									<Point id="7">1,0.198912367379658</Point>
+									<Point id="8">0.8477590650225735,0.5664544973505214</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">0.5664544973505217,0.8477590650225735</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">0.1989123673796581,1</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.1989123673796579,1</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">-0.5664544973505212,0.8477590650225738</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">-0.8477590650225736,0.5664544973505214</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-1,0.1989123673796584</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-1,-0.1989123673796581</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">-0.8477590650225738,-0.5664544973505212</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">-0.5664544973505214,-0.8477590650225735</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">-0.1989123673796584,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">0.198912367379658,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">0.5664544973505211,-0.8477590650225738</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">0.8477590650225735,-0.5664544973505214</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">0.9999999999999999,-0.1989123673796585</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point reference="7" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette2 id="23" constrain="f">
+							<figureScale>1.02</figureScale>
+							<r>0</r>
+							<n>16</n>
+							<Extender extRays="t" extTips2B="f" extTips2T="f" conRays="0" stellation="0" embedBound="f" embedTile="f" fitToTile="f">
+								<boundarySides>16</boundarySides>
+								<boundaryScale>1.09</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
+							<x>0.07000000000000001</x>
+							<y>0.7</y>
+							<k>-2.4</k>
+							<s>3</s>
+							<TipTypes>outer|outer|outerpointtoboundary|outer</TipTypes>
+						</Rosette2>
+					</entry>
+					<entry>
+						<Tile id="24">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>3.033284</scale>
+							<edges id="25">
+								<Line>
+									<Point id="26">1,0.4142135623730951</Point>
+									<Point id="27">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point id="30">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="30" />
+									<Point id="31">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="31" />
+									<Point id="32">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="32" />
+									<Point id="33">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="33" />
+									<Point reference="26" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette2 id="34" constrain="f">
+							<figureScale>0.98</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<Extender extRays="t" extTips2B="f" extTips2T="f" conRays="0" stellation="0" embedBound="f" embedTile="f" fitToTile="f">
+								<boundarySides>16</boundarySides>
+								<boundaryScale>1.09</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
+							<x>0.1059147784509347</x>
+							<y>0.6173165676349106</y>
+							<k>-5.68e-14</k>
+							<s>2</s>
+							<TipTypes>outer</TipTypes>
+						</Rosette2>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffc2bcb0</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<outline_width>0.03</outline_width>
+			<outline_color>#ff000000</outline_color>
+			<width>0.24</width>
+			<join>bevel</join>
+			<cap>square</cap>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0</gap>
+			<shadow>0</shadow>
+			<includeTipVerts>false</includeTipVerts>
+			<startUnder>false</startUnder>
+		</style.Interlace>
+	</style.Interlace>
+	<style.Border id="35">
+		<border type="Plain" shape="Rectangle" useViewSize="f">
+			<toolkit.GeoLayer>
+				<left__delta>-341.9704614210112</left__delta>
+				<top__delta>1051.375127794295</top__delta>
+				<width__delta>0.4567632</width__delta>
+				<theta__delta>0</theta__delta>
+				<Z>0</Z>
+			</toolkit.GeoLayer>
+			<color>#ffc2bcb0</color>
+			<width>20</width>
+			<rect>
+				<X>-12.32290721128822</X>
+				<Y>-19.70350047182089</Y>
+				<width>24.69532654113226</width>
+				<height>39.70603146847501</height>
+			</rect>
+		</border>
+	</style.Border>
+	<style.Filled id="36">
+		<algorithm>2</algorithm>
+		<toolkit.GeoLayer>
+			<left__delta>-341.9704614210112</left__delta>
+			<top__delta>1051.375127794295</top__delta>
+			<width__delta>0.4567632</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="4" />
+		</style.Style>
+		<ColorWhites>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ffa35807</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff3d5078</color>
+			<color hide="f">#ff3d5078</color>
+			<color hide="f">#ff3d5078</color>
+			<color hide="f">#ff3d5078</color>
+			<color hide="f">#ff3d5078</color>
+			<color hide="f">#ff3d5078</color>
+			<color hide="f">#ff3d5078</color>
+			<color hide="f">#ff3d5078</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff10100e</color>
+			<color hide="f">#ff234b30</color>
+			<color hide="f">#ff234b30</color>
+			<color hide="f">#ff234b30</color>
+			<color hide="f">#ff34554a</color>
+			<color hide="f">#ff234b30</color>
+			<color hide="f">#ffa35807</color>
+			<color hide="f">#ffa35807</color>
+			<color hide="f">#ffa35807</color>
+			<color hide="f">#ffa35807</color>
+			<color hide="f">#ff10100e</color>
+		</ColorWhites>
+	</style.Filled>
+</vector>

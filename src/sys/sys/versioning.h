@@ -1,6 +1,4 @@
 #pragma once
-#ifndef VERSIONING_H
-#define VERSIONING_H
 
 #include <QString>
 #include <QVector>
@@ -130,5 +128,3 @@ private:
 
     QVector<VersionedFile>  list;
 };
-
-#endif // VERSIONING_H

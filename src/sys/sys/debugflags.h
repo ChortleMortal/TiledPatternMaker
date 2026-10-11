@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DEBUGFLAGS_H
-#define DEBUGFLAGS_H
 
 #include <QObject>
 #include <QMap>
@@ -71,6 +69,12 @@ enum eDbgFlag
     USE_MID_FIX,
 
     USE_NEWER_PAINT,
+
+    SHOW_UNIT_RAYS,
+    SHOW_FULL_RAYS,
+    MOTIF_FLAG_1,
+    MOTIF_FLAG_2,
+    MOTIF_FLAG_3,
     NUM_DEBUG_FLAGS
 };
 
@@ -160,5 +164,3 @@ private:
     bool _enabled;
     uint _version;
 };
-
-#endif

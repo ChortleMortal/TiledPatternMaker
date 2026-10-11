@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLG_LIST_NAME_SELECT_H
-#define DLG_LIST_NAME_SELECT_H
 
 #include <QDialog>
 
@@ -21,5 +19,3 @@ public:
 protected slots:
     void slot_currentRow(int row);
 };
-
-#endif

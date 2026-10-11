@@ -1,30 +1,31 @@
 #pragma once
-#ifndef MOTIFMAKERWIDGET_H
-#define MOTIFMAKERWIDGET_H
 
 #include <QWidget>
-#include "gui/model_editors/motif_edit/design_element_selector.h"
+#include <QGridLayout>
+#include <QScrollArea>
 
-typedef std::shared_ptr<class DesignElement>       DELPtr;
-typedef std::shared_ptr<class DesignElementButton> DELBtnPtr;
-typedef std::shared_ptr<class Motif>               MotifPtr;
-typedef std::shared_ptr<class Prototype>           ProtoPtr;
-typedef std::weak_ptr<class Prototype>          WeakProtoPtr;
+#include "model/motifs/motif.h"
+#include "gui/viewers/motif_maker_view.h"
+
+typedef std::shared_ptr<class TileMotif>       TileMotifPtr;
+typedef std::shared_ptr<class TileMotifButton> TileMotifBtnPtr;
+typedef std::shared_ptr<class Motif>           MotifPtr;
+typedef std::weak_ptr<class Motif>             WeakMotifPtr;
+typedef std::shared_ptr<class Prototype>       ProtoPtr;
+typedef std::weak_ptr<class Prototype>         WeakProtoPtr;
+
+class MotifMaker;
+class MotifEditorWidget;
 
 // This widget is housed by page_motif_maker.
-// It provides selection and display of DesignElements (DELs)
-// and its maker (controller) functions both select motifs and modify them
+// It provides selection and display of TileMotifs
+// and is driven by data in Motif Maker motifData
 
 // This widget coordinates delegation/selection of
 //  1. Motif View Button
-//  2. motifViewData (ProtoData)
-//  3. DEL selector
-//  4. Motif Editor
-
-// However DELs (particularly their tiles) can
-// be changed externally, so the particular DEL must be
-// refreshed here and the only way to do this is to select
-// the DEL and rebuild the motif
+//  2. Motif Selection Button
+//  3. Lower Third Motif Editor
+//  4. Motif Motif Maker View
 
 class MotifMakerWidget : public QWidget
 {
@@ -33,26 +34,47 @@ class MotifMakerWidget : public QWidget
 public:
     MotifMakerWidget();
 
-    void refreshMotifMakerWidget();
+    void            refresh();
+    void            setupViewMode(MotifMakerView::ViewType viewMode);
+    void            delegate(TileMotifBtnPtr btn, bool modeswitch);
 
-    void delegate(DELBtnPtr btn, bool add, bool set);
+    TileMotifBtnPtr getButton(TileMotifPtr timo);
+    TileMotifBtnPtr getDelegatedButton();           // fetches from tileMotifSelector
 
-    DELBtnPtr getButton(DELPtr del) { return delSelector->getButton(del); }
-    DELBtnPtr getDelegatedButton()            { return delSelector->getDelegated(); }
+    void            setup(ProtoPtr proto);
 
-    void   update();
+    bool            eventFilter(QObject *watched, QEvent *event) override;
+    void            tallyButtons();
 
-    class MotifEditorWidget * getMotifEditor() { return motifEditor; }
+    const QVector<TileMotifBtnPtr> & getButtons() { return buttons; }
+
+    void            scrollToDelegated() { emit sig_scrollToDelegated(); }   // for callers outside delegate(), e.g. page re-entry
 
 signals:
-    void sig_updateView();
+    void            sig_updateView();
+    void            sig_scrollToDelegated();        // queued: fires after this call chain's pending show()/layout work is done
+
+public slots:
+    void            slot_delegateTileMotif(TileMotifPtr timo);
+
+private slots:
+    void            slot_scrollToDelegated();
+
+protected:
+    void            getNextPosition(int index, int & row, int & col);
+    TileMotifBtnPtr findBtn(TileMotifButton * fb);
 
 private:
-    class PrototypeMaker      * protoMaker;
+    bool                      _contentHasChanged();
 
-    DELSelectorWidget         * delSelector;        // LHS top
-    class DesignElementButton * viewerBtn;          // rhs top
-    class MotifEditorWidget   * motifEditor;        // bottom
+    // tracks the delegated Motif that _contentHasChanged() last saw, so it can tell a
+    // genuine backdoor motif swap (Map Editor push, type change) from a motif switch that
+    // delegate() already just handled directly - see delegate() and _contentHasChanged()
+    WeakMotifPtr              lastDelegatedMotif;
+
+    QVector<TileMotifBtnPtr>  buttons;
+    QScrollArea             * buttonBox;          // lhs top
+    QGridLayout             * buttonSelectGrid;   // content of lhs top
+    TileMotifButton         * viewerBtn;          // rhs top
+    MotifEditorWidget       * motifEditorWidget;  // bottom
 };
-
-#endif // MOTIFMAKERWIDGET_H

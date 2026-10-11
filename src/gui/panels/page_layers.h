@@ -1,7 +1,7 @@
 #pragma once
-#ifndef PAGE_LAYERS_H
-#define PAGE_LAYERS_H
 
+#include <QCheckBox>
+#include <QTableWidgetItem>
 #include "gui/panels/panel_page.h"
 
 typedef std::shared_ptr<class Layer>   LayerPtr;
@@ -21,6 +21,7 @@ class page_layers : public panel_page
         LAYER_NAME,
         LAYER_VISIBILITY,
         LAYER_Z,
+        LAYER_OPACITY,
         LAYER_ALIGN,
         CANVAS_SCALE,
         CANVAS_ROT,
@@ -36,7 +37,6 @@ class page_layers : public panel_page
         LAYER_ROT,
         LAYER_X,
         LAYER_Y,
-        SUB_LAYERS,
         NUM_LAYER_ROWS
     };
 
@@ -61,6 +61,7 @@ protected:
 
     void visibilityChanged(int col);
     void zChanged(AQSpinBox *dsp, int col);
+    void opacityChanged(AQSpinBox *dsp, int col);
     void alignPressed(int col);
     void slot_set_deltas(int col);
     void clear_deltas(int col);
@@ -72,5 +73,3 @@ private:
     QTableWidgetItem * selectedItem;
     bool               refreshDisabled;
 };
-
-#endif

@@ -1,3 +1,4 @@
+#include <cmath>
 #include <QDebug>
 #include <QStack>
 
@@ -189,14 +190,13 @@ void MapCleanser::joinColinearEdges()
 {
     qDebug() << "joinColinearEdges.........";
 
-
-    bool changed = false;
-    do
-    {
-        NeighbourMap nmap(map);     // kep rebuilding nmap
-        changed = joinOneColinearEdge(nmap);
-        //verifyMap("joinColinearEdges",false,true);
-    } while (changed);
+    // Built once and maintained incrementally by combineLinearEdges below,
+    // rather than rebuilt from scratch (an O(E) scan) after every single
+    // join - a map with many colinear chains to collapse could otherwise
+    // cost O(k*E) for k joins.
+    NeighbourMap nmap(map);
+    while (joinOneColinearEdge(nmap))
+        ;
 }
 
 bool MapCleanser::joinOneColinearEdge(NeighbourMap & nmap)
@@ -210,12 +210,11 @@ bool MapCleanser::joinOneColinearEdge(NeighbourMap & nmap)
             QLineF a = n->getNeighbour(0)->getLine();
             QLineF b = n->getNeighbour(1)->getLine();
             qreal angle = Geo::angle(a,b);
-            qDebug() << angle;
-            if (Loose::zero(angle,Sys::NEAR_TOL) || Loose::equals(angle,180.0, Sys::NEAR_TOL))
+            if (Loose::zero(angle,Loose::NEAR_TOL) || Loose::equals(angle,180.0, Loose::NEAR_TOL))
             {
                 // need to remove one edge, extend the other, and remove vertex
                 qDebug() << "HIT";
-                combineLinearEdges(n->getNeighbour(0),n->getNeighbour(1),vp);
+                combineLinearEdges(n->getNeighbour(0),n->getNeighbour(1),vp,nmap);
                 return true;
             }
         }
@@ -224,14 +223,33 @@ bool MapCleanser::joinOneColinearEdge(NeighbourMap & nmap)
 }
 
 // combine two edges which are in a straight line with common vertex
-void MapCleanser::combineLinearEdges(const EdgePtr & a, const EdgePtr & b, const VertexPtr & common)
+void MapCleanser::combineLinearEdges(const EdgePtr & a, const EdgePtr & b, const VertexPtr & common, NeighbourMap & nmap)
 {
     VertexPtr newV1 = a->getOtherV(common);
     VertexPtr newV2 = b->getOtherV(common);
-    map->insertEdge(newV1,newV2);
+
+    EdgePtr newEdge = map->insertEdge(newV1,newV2);
+
     map->removeEdge(a);
     map->removeEdge(b);
     map->removeVertexSimple(common);
+
+    // Patch nmap's entries for the two surviving endpoints in place instead
+    // of leaving them (and everything else in nmap) stale for the next
+    // caller to rebuild. common's own entry doesn't need patching - it's
+    // gone from map->vertices and joinOneColinearEdge only ever looks up
+    // vertices still in that list.
+    if (newEdge)
+    {
+        auto patch = [&](const VertexPtr & v, const EdgePtr & oldEdge)
+        {
+            NeighboursPtr n = nmap.getNeighbours(v);
+            n->removeIf([&](const WeakEdgePtr & w) { return w.lock() == oldEdge; });
+            n->insertNeighbour(newEdge);
+        };
+        patch(newV1, a);
+        patch(newV2, b);
+    }
 }
 
 // coalesce identical vertices to eliminate duplicates.
@@ -242,14 +260,64 @@ bool MapCleanser::coalesceVertices(qreal tolerance)
 
     QMap<VertexPtr,VertexPtr> replacements;
     qsizetype size = map->vertices.size();
+
+    // Was an O(V^2) all-pairs scan - the same pattern Map::_getOrCreateVertex
+    // had before its grid fix. Replaced with a call-scoped spatial hash,
+    // sized directly from this call's own `tolerance` (compared as squared
+    // distance, so linear cell size is sqrt(tolerance) - not sampled from
+    // data, so the stale-cell-size failure mode that hit the incremental
+    // Map grids doesn't apply here). This can't reuse Map's own vertexGrid:
+    // `tolerance` varies ~14 orders of magnitude across call sites
+    // (1e-16 to 0.5, see DlgCleanse/mapedMergeSensitivity/motif defaults),
+    // incompatible with vertexGrid's fixed GRID_CELL.
+    qreal cellSize = qMax(std::sqrt(tolerance) * 1.01, 1e-9);
+    auto gridKey = [](qint64 cx, qint64 cy) -> qint64
+    {
+        return (cx << 32) ^ (cy & 0xffffffffLL);
+    };
+    auto cellOf = [cellSize](const QPointF & pt) -> QPair<qint64,qint64>
+    {
+        return { static_cast<qint64>(std::floor(pt.x() / cellSize)),
+                 static_cast<qint64>(std::floor(pt.y() / cellSize)) };
+    };
+
+    QHash<qint64, QVector<int>> grid;
     for (int i = 0; i < size; i++)
     {
-        for (int j = i+1 ;  j < size; j++)
+        auto [cx,cy] = cellOf(map->vertices[i]->pt);
+        grid[gridKey(cx,cy)].push_back(i);
+    }
+
+    for (int i = 0; i < size; i++)
+    {
+        QPointF pt = map->vertices[i]->pt;
+        auto [cx,cy] = cellOf(pt);
+
+        // Among all candidates j > i within tolerance in the 3x3 cell
+        // neighborhood, keep the highest index - reproduces the nested
+        // loop's "last match in increasing-j order wins" behaviour exactly.
+        int best = -1;
+        for (qint64 dx = -1; dx <= 1; dx++)
         {
-            if (Geo::dist2(map->vertices[i]->pt,map->vertices[j]->pt) < tolerance)
+            for (qint64 dy = -1; dy <= 1; dy++)
             {
-                replacements[map->vertices[i]] = map->vertices[j];
+                auto it = grid.constFind(gridKey(cx+dx,cy+dy));
+                if (it == grid.constEnd())
+                    continue;
+
+                for (int j : it.value())
+                {
+                    if (j > i && j > best && Geo::dist2(pt,map->vertices[j]->pt) < tolerance)
+                    {
+                        best = j;
+                    }
+                }
             }
+        }
+
+        if (best != -1)
+        {
+            replacements[map->vertices[i]] = map->vertices[best];
         }
     }
     qDebug() << "Vertices to replace =" << replacements.size();
@@ -279,7 +347,7 @@ bool MapCleanser::coalesceVertices(qreal tolerance)
 
     for (auto & vert : std::as_const(deletions))
     {
-        map->vertices.removeOne(vert);
+        map->removeVertexSimple(vert);
     }
 
     cleanseVertices();
@@ -295,8 +363,16 @@ bool MapCleanser::coalesceVertices(qreal tolerance)
 
 void MapCleanser::deDuplicateVertices(qreal tolerance)
 {
+    bool coalesced = false;
     while (coalesceVertices(tolerance))
-        ;
+        coalesced = true;
+
+    // coalescing can collapse short edges and make duplicate edges
+    if (coalesced)
+    {
+        removeBadEdges();
+        deDuplicateEdgesUsingNeighbours();
+    }
 }
 
 void MapCleanser::deDuplicateEdgesUsingNeighbours(bool silent)
@@ -361,7 +437,7 @@ void MapCleanser::cleanseVertices()
     qDebug() << "Bad vertices to delete:" << baddies.size();
     for (const auto & v  : std::as_const(baddies))
     {
-        map->vertices.removeOne(v);
+        map->removeVertexSimple(v);
     }
 }
 

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef PANELLISTWIDGET_H
-#define PANELLISTWIDGET_H
 
 #include <QListWidget>
 #include "sys/enums/epanelpage.h"
@@ -80,5 +78,3 @@ private:
 
     volatile bool localDrop;
 };
-
-#endif // PANELLISTWIDGET_H

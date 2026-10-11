@@ -1,13 +1,15 @@
 #pragma once
-#ifndef PAGE_BACKGROUNDS
-#define PAGE_BACKGROUNDD
 
+#include <QGroupBox>
 #include "gui/panels/panel_page.h"
+#include "gui/viewers/layer.h"
 #include "gui/widgets/layout_transform.h"
 
 class AQPushButton;
 class AQTableWidget;
 class BackgroundImageView;
+class FloatableTab;
+class MemoryCombo;
 class SMXWidget;
 
 class page_backgrounds : public panel_page
@@ -16,18 +18,23 @@ class page_backgrounds : public panel_page
 
 public:
     page_backgrounds(ControlPanel *apanel);
+    ~page_backgrounds();
 
-    QGroupBox * createBackgroundImageGroup();
+    QVBoxLayout * createBackgroundImageLayout();
     QGroupBox * createBackgroundColorGroup();
 
     void onRefresh() override;
     void onEnter() override;
     void onExit() override;
 
+public slots:
+    void slot_detach(int index);
+
 private slots:
+    void slot_selectBackground();
     void slot_loadBackground();
-    void slot_removeBackground();
-    void slot_clearBackground();
+    void slot_loadBackgroundReplace();
+    void slot_unloadBackground();
 
     void slot_startKeystoneAdjustment(bool checked);
     void slot_endKeystoneAdjust();
@@ -40,6 +47,10 @@ private slots:
     void slot_showImageChanged(bool checked);
 
 protected:
+    FloatableTab * createImageTab();
+    FloatableTab * createColorTab();
+
+    void loadBackground(bool replace);
     void saveModified(bool adjusted);
 
     void useAdjusted(bool checked);
@@ -47,30 +58,32 @@ protected:
 
     void setupBackgroundPixmap();
     void displayBackgroundImageStatus(bool force);
-    void selectColor(int row);
+    void updateImageNameTally();
+    void selectColor(Layer::Type vtype);
+    bool hasBkgdColor(Layer::Type vtype);
     void reInitBkgdColors(QColor bcolor);
+
+    QString convertJpgToPng(const QString & jpgPath);
 
 private:
     LayoutTransform tformLayout;
 
+    QTabWidget   * tabWidget;
+    FloatableTab * imageTab;
+    FloatableTab * colorTab;
+
     AQPushButton * startAdjustBtn;
     AQPushButton * startCropBtn;
 
+    QCheckBox    * chkConvertToPng;
     QCheckBox    * chkShowAdjusted;
     QCheckBox    * chkShowCropped;
     QCheckBox    * chkView;
 
-    QLineEdit    * imageName;
+    MemoryCombo  * imageName;
 
     AQTableWidget* viewTable;
 
     SMXWidget    * smxWidget;
 
-    QRadioButton * btnNone;
-    QRadioButton * btnMosaic;
-    QRadioButton * btnTiling;
-    QRadioButton * btnMaped;
-    QRadioButton * btnDefine;
 };
-
-#endif // PAGE_BACKGROUNDS

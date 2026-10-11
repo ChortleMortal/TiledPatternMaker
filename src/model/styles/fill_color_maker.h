@@ -1,6 +1,4 @@
 #pragma once
-#ifndef COLORMAKER_H
-#define COLORMAKER_H
 
 #include "sys/enums/efilltype.h"
 #include "sys/geometry/dcel.h"
@@ -32,6 +30,4 @@ protected:
     Filled *    filled;
     bool        initialised;
 };
-
-#endif // COLORMAKER_H
 

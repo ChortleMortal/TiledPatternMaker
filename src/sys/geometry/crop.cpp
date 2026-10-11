@@ -22,7 +22,6 @@ Crop::Crop()
 {
     _embed      = false;
     _apply      = false;
-    _clip       = false;
     _cropType   = CROP_UNDEFINED;
     _aspect     = ASPECT_UNCONSTRAINED;
     _vAspect    = false;
@@ -32,7 +31,6 @@ Crop::Crop(const Crop & other)
 {
     _embed      = false;
     _apply      = false;
-    _clip       = false;
     _cropType   = other._cropType;
     _aspect     = other._aspect;
     _vAspect    = other._vAspect;
@@ -40,6 +38,20 @@ Crop::Crop(const Crop & other)
     _poly       = other._poly;
     _circle     = other._circle;
     _rect       = other._rect;
+}
+
+Crop & Crop::operator=(const Crop & other)
+{
+    _embed      = false;
+    _apply      = false;
+    _cropType   = other._cropType;
+    _aspect     = other._aspect;
+    _vAspect    = other._vAspect;
+
+    _poly       = other._poly;
+    _circle     = other._circle;
+    _rect       = other._rect;
+    return *this;
 }
 
 void Crop::setRect(QRectF & rect)
@@ -255,7 +267,7 @@ void Crop::draw(QPainter * painter, QTransform t, bool active)
         painter->drawEllipse(center,radius,radius);
     }
 
-    if (Sys::config->showCenterDebug)
+    if (Sys::showCenterDebug)
     {
         // draw center X
         qreal len = 9.0;

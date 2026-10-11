@@ -1,0 +1,166 @@
+<?xml version="1.0"?>
+<!-- Written: Wed Sep 2 2026 07:30:13 -->
+<vector id="1" version="34">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>927</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-3,2,-5,4</Fill>
+	</design>
+	<style.Plain id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>10.5</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">0.9999999999999999,0.3249196962329063</Point>
+									<Point id="7">0.6180339887498948,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">6.438349236688752e-17,1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-0.6180339887498947,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-0.9999999999999999,0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-1,-0.3249196962329062</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">-0.6180339887498949,-0.8506508083520398</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">-1.931504771006626e-16,-1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">0.6180339887498946,-0.8506508083520401</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">0.9999999999999999,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="16">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>10</n>
+							<q>0</q>
+							<s>3</s>
+						</Rosette>
+					</entry>
+					<entry>
+						<Tile id="17">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="18">
+								<Line>
+									<Point id="19">0.9999999999999999,0.7265425280053608</Point>
+									<Point id="20">-0.381966011250105,1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">-1.23606797749979,1.51374669217366e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">-0.3819660112501053,-1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">0.9999999999999998,-0.7265425280053611</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point reference="19" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="24">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+							<q>0</q>
+							<s>2</s>
+						</Rosette>
+					</entry>
+					<entry>
+						<Tile id="25">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="26">
+								<Line>
+									<Point id="27">0.8389390300854789,-0.2729303156640797</Point>
+									<Point id="28">1.039750445971706,-0.8909643044139746</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">1.56548155809084,-1.27293031566408</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point id="30">2.091212670209973,-0.8909643044139743</Point>
+								</Line>
+								<Line>
+									<Point reference="30" />
+									<Point id="31">1.890401254323746,-0.2729303156640791</Point>
+								</Line>
+								<Line>
+									<Point reference="31" />
+									<Point id="32">1.364670142204612,0.109035695586025</Point>
+								</Line>
+								<Line>
+									<Point reference="32" />
+									<Point reference="27" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularInfer id="33" type="Explicit Map Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<cropToTile>t</cropToTile>
+						</IrregularInfer>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+	</style.Plain>
+</vector>

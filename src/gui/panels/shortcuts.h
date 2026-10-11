@@ -1,23 +1,18 @@
 #pragma once
-#ifndef SHORTCUTS_H
-#define SHORTCUTS_H
 
 #include <QString>
 
 class QWidget;
 
-#include "sys/enums/eviewtype.h"
+#include "gui/viewers/layer.h"
 
 class Shortcuts
 {
 public:
-    static void  popup(eViewType view);
+    static void  popup(Layer::Type type);
 
     static QString getGeneralShortcuts();
     static QString getLegacyShortcuts();
     static QString getTilingMakerShortcuts();
     static QString getMapEditorShortcuts();
-
 };
-
-#endif // SHORTCUTS_H

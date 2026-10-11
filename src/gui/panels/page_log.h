@@ -1,11 +1,10 @@
 ﻿#pragma once
-#ifndef PAGE_LOG_H
-#define PAGE_LOG_H
 
 class LogWidget;
 
 #include <QScrollBar>
 #include <QDialog>
+#include <QCheckBox>
 #include "gui/panels/panel_page.h"
 
 typedef std::shared_ptr<class QTextEdit> TextEditPtr;
@@ -22,6 +21,8 @@ public:
     void onExit() override {}
     void onRefresh() override;
 
+    void reinitLog();
+
 public slots:
     void slot_copyLog();
 
@@ -37,16 +38,14 @@ protected:
     void    viewLog();
 
 private:
-    QCheckBox   * follow;
-    QCheckBox   * reverseSearch;
+    LogWidget   * logWidget;
     TextEditPtr   logText;
     TextEditPtr   savedText;
+
+    QCheckBox   * follow;
+    QCheckBox   * reverseSearch;
     QLineEdit   * search;
-
-    LogWidget * tew;
-
     QPushButton * btnViewLog;
-
     bool          viewingLog;
 };
 
@@ -72,5 +71,3 @@ private slots:
     void    slot_elapsedTime(bool enable);
     void    slot_intervalTime(bool enable);
 };
-
-#endif

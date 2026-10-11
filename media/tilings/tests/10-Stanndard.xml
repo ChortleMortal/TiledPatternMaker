@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<!-- Written: Mon Jun 29 2026 21:26:49 -->
+<Tiling version="13">
+	<Name>10-Stanndard</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>-5.551115123125783e-17,2.775557561562891e-17</T0>
+	<T1>2.618033988749895,-0.8506508083520407</T1>
+	<T2>-2.307182223049153e-16,-2.752763840942347</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1.465890083133614</width__delta>
+		<theta__delta>0</theta__delta>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="10" rotation="0" scale="1">
+		<Placement>
+			<scale>0.9999999999999991</scale>
+			<rot>-3.915496312890385e-14</rot>
+			<tranX>9.992007221626409e-16</tranX>
+			<tranY>0.01554280799170266</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-2.289834988289385e-16</tranX>
+			<tranY>-2.752763840942346</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>2.618033988749894</tranX>
+			<tranY>-0.8351080003603383</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="5" rotation="0" scale="1">
+		<Placement>
+			<scale>0.4472135954999579</scale>
+			<rot>-35.99999999999999</rot>
+			<tranX>0.4472135954999577</tranX>
+			<tranY>-1.376381920471173</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.4472135954999579</scale>
+			<rot>-72.00000000000003</rot>
+			<tranX>1.170820393249937</tranX>
+			<tranY>-0.8506508083520403</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.4472135954999579</scale>
+			<rot>-108</rot>
+			<tranX>1.447213595499958</tranX>
+			<tranY>0.0155428079917016</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.4472135954999581</scale>
+			<rot>-71.99999999999999</rot>
+			<tranX>1.170820393249938</tranX>
+			<tranY>0.8661936163437427</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.4472135954999581</scale>
+			<rot>-144</rot>
+			<tranX>-0.4472135954999573</tranX>
+			<tranY>-1.360839112479471</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

@@ -1,8 +1,9 @@
 #include <QLabel>
 #include <QGridLayout>
+#include <QDir>
 #include "sys/engine/png_stepper.h"
 #include "sys/sys.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 
 ////////////////////////////////////////////
 ///
@@ -12,7 +13,7 @@
 
 PNGStepper::PNGStepper(ImageEngine * parent) : SteppingEngine(parent)
 {
-    connect(this,  &PNGStepper::cycle_sig_unloadView, Sys::viewController,  &SystemViewController::slot_unloadView);
+    connect(this,  &PNGStepper::cycle_sig_unloadView, Sys::systemViewController,  &ViewController::slot_unloadView);
 }
 
 bool PNGStepper::begin()
@@ -75,9 +76,9 @@ bool PNGStepper::next()
             pngCol = 0;
             if (++pngRow > 4)
             {
-                // pause
+                // pause - a full page was shown, so this tick did do work
                 pngRow = 0;
-                return false;   // TODO maybe true
+                return true;
             }
         }
     }
@@ -95,11 +96,11 @@ void PNGStepper::cycleShowPNG(VersionedName file, int row, int col)
     QLabel  * label = new QLabel("Put PNG Here");
     label->setPixmap(pix);
 
-    QLayout * l = Sys::viewController->layout();
+    QLayout * l = Sys::systemViewController->layout();
     QGridLayout * grid = dynamic_cast<QGridLayout*>(l);
     grid->addWidget(label,row,col);
 
-    Sys::viewController->showView();
+    Sys::systemViewController->showView();
 }
 
 bool PNGStepper::prev()

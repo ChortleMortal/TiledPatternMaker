@@ -1,6 +1,4 @@
 #pragma once
-#ifndef CROPWIDGET_H
-#define CROPWIDGET_H
 
 #include <QDialog>
 
@@ -13,7 +11,7 @@ class CropWidget : public QWidget
     Q_OBJECT
 
 public:
-    CropWidget();
+    CropWidget(QString name);
 
     void setCrop(CropPtr crop) { this->crop = crop; }
 
@@ -40,7 +38,7 @@ private slots:
 
 private:
     CropPtr           crop;
-
+    QString           name;
     bool              blocked;
 
     QButtonGroup    * cropTypes;
@@ -76,5 +74,3 @@ signals:
 private:
     CropPtr crop;
 };
-
-#endif // CROPWIDGET_H

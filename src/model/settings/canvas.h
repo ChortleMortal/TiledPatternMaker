@@ -1,9 +1,10 @@
 #pragma once
-#ifndef CANVAS_MODEL_H
-#define CANVAS_MODEL_H
 
 #include <QTransform>
 #include <QColor>
+
+#include "model/settings/filldata.h"
+#include "model/settings/distortion.h"
 #include "sys/geometry/bounds.h"
 
 /*
@@ -15,23 +16,38 @@
  * the screen view
  */
 
+#define OBSOLETE_CANVAS // 03MAY26 system view has shared pointer to controlling canvas
+
 class Canvas
 {
-    friend class SystemViewController;
+    friend class ViewController;
 
 public:
     Canvas();
+    Canvas(const Canvas & other);
 
+    Canvas & operator=  (const Canvas & other);
+    bool     operator== (const Canvas & other) const;
+    bool     operator!= (const Canvas & other) const { return !(*this == other); }
+
+    void            init();
     void            setDefaultSize();
 
-    QColor          getBkgdColor() const                { return _bkgdColor; }
-
     void            setCanvasSize(QSize size);
-    QSize           getCanvasSize() const               { return _canvasSize + _deltaSize; }
+    QSize           getCanvasSize() const               { return _canvasSize + _deltaCanvasSize; }
+    QSize           getRawCanvasSize() const            { return _canvasSize; }
+
     void            setDeltaCanvasSize(QSize size);
+    QSize           getDeltaCanvasSize() const          { return _deltaCanvasSize; }
 
     void            setViewSize(QSize size)             { _viewSize = size; }
-    QSize           getViewSize()                       { return _viewSize; }
+    QSize           getViewSize() const                 { return _viewSize; }
+
+    void            setFillData(FillData & fd)          { _fillData = fd; }
+    FillData        getFillData() const                 { return _fillData; };
+
+    void            setDistortion(Distortion & d)       { _distortion = d; computeCanvasTransform(); }
+    Distortion      getDistortion() const               { return _distortion; };
 
 #ifdef VARIABLE_BOUNDS
     Bounds          getBounds() const                   { return _bounds; }
@@ -39,29 +55,26 @@ public:
 #endif
 
     QTransform      getTransform() const                { return _canvasTransform; }
+    QTransform      getUndistortedTransform() const     { return _undistortedTransform; }
+    QTransform      getDistorionTransform() const       { return _distortion.getMode() == DISTORT_TILE ? _distortion.getTransform() : QTransform(); }
     QPointF         getCenter();
+    QPointF         getViewCenter();
 
-    void            dump();
+    void            dump() const;
 
 protected:
     void            computeCanvasTransform();
 
 private:
-    void            setBkgdColor(QColor color)          { _bkgdColor = color; }
-
     QTransform      _canvasTransform;
-
-    QColor          _bkgdColor;
-
+    QTransform      _undistortedTransform;   // same as _canvasTransform, but excludes distortion - used by borders and background images
     Bounds          _bounds;
 #ifdef VARIABLE_BOUNDS
     Bounds          _defaultBounds;
 #endif
-    QSize           _viewSize;    // the main window size
+    QSize           _viewSize;    // the main window sizeit builds
     QSize           _canvasSize;
-    QSize           _deltaSize;
-    QSize           _defaultSize;
+    QSize           _deltaCanvasSize;
+    FillData        _fillData;
+    Distortion      _distortion;
 };
-
-
-#endif

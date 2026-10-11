@@ -8,7 +8,7 @@
 #include <QButtonGroup>
 
 #include "gui/widgets/dlg_wlist_create.h"
-#include "sys/enums/emotiftype.h"
+#include "model/motifs/motif.h"
 #include "sys/sys.h"
 
 DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent)
@@ -55,7 +55,7 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent)
     }
 
     motifNames = new QComboBox();
-    for (int i = 0; i <=  MAX_MOTIF_TYPE; i++)
+    for (int i = 0; i <=  (int)Motif::Type::MaxMotifType; i++)
     {
         motifNames->addItem(sMotifType[i]);
     }
@@ -112,7 +112,7 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent)
 
 QStringList DlgWorklistCreate::selectedMotifNames()
 {
-    eMotifType type = (eMotifType) motifNames->currentIndex();
+    Motif::Type type = (Motif::Type) motifNames->currentIndex();
     QStringList qls = Sys::XMLgetMotifNames(type);
     return qls;
 }

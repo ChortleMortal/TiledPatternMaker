@@ -1,6 +1,4 @@
 #pragma once
-#ifndef ERENDER_H
-#define ERENDER_H
 
 enum eRenderType
 {
@@ -9,5 +7,3 @@ enum eRenderType
     RENDER_RESET_PROTOTYPES,
     RENDER_RESET_STYLES
 };
-
-#endif

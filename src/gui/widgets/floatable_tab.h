@@ -1,17 +1,18 @@
-#ifndef FLOATABLE_TAB_H
-#define FLOATABLE_TAB_H
+#pragma once
 
 #include <QWidget>
 
 class QTabWidget;
+class panel_page;
 
 class FloatableTab : public QWidget
 {
 public:
-    FloatableTab();
+    FloatableTab(panel_page * owner);
 
     void detach(QTabWidget * tabwidget, QString title);
     void reattach();
+    void savePosition();
 
     virtual void closeEvent(QCloseEvent * event) override;
 
@@ -22,5 +23,3 @@ public:
 public slots:
     void slot_raiseDetached();
 };
-
-#endif // FLOATABLE_TAB_H

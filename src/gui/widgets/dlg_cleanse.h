@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLG_CLEANSE_H
-#define DLG_CLEANSE_H
 
 #include <QDialog>
 
@@ -69,5 +67,3 @@ private:
     static qreal rvals[16];
     QComboBox  * box;
 };
-
-#endif

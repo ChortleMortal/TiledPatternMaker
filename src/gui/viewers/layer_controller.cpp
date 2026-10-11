@@ -1,8 +1,9 @@
 #include "gui/viewers/layer_controller.h"
 #include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "sys/sys.h"
 
-LayerController::LayerController(eViewType viewType,eModelType modelType, QString name) : Layer(viewType,modelType,name)
+LayerController::LayerController(Type viewType, Model model, ZLevel zlevel, QString name) : Layer(viewType,model, zlevel, name)
 {
     connectSignals();
 }
@@ -23,7 +24,7 @@ LayerController::~LayerController()
 
 void LayerController::connectSignals()
 {
-    auto view    = Sys::sysview;
+    SystemView * view    = Sys::systemViewController->getView();
 
     connect(view, &SystemView::sig_mousePressed,          this, &LayerController::slot_mousePressed);
     connect(view, &SystemView::sig_mouseDragged,          this, &LayerController::slot_mouseDragged);
@@ -40,9 +41,13 @@ void LayerController::connectSignals()
     connect(view, &SystemView::sig_deltaMoveX,            this, &LayerController::slot_moveX);
     connect(view, &SystemView::sig_deltaMoveY,            this, &LayerController::slot_moveY);
 
-    connect(_viewControl, &SystemViewController::sig_breakaway,   this, &LayerController::slot_breakaway);
-    connect(_viewControl, &SystemViewController::sig_lock,        this, &LayerController::slot_lock);
-    connect(_viewControl, &SystemViewController::sig_solo,        this, &LayerController::slot_solo);
+    connect(view, &SystemView::sig_prepare,               this, &LayerController::slot_prepare);
+    connect(view, &SystemView::sig_enlarge,               this, &LayerController::slot_enlarge);
+    connect(view, &SystemView::sig_restore,               this, &LayerController::slot_restore);
+
+    connect(_viewControl, &ViewController::sig_breakaway,   this, &LayerController::slot_breakaway);
+    connect(_viewControl, &ViewController::sig_lock,        this, &LayerController::slot_lock);
+    connect(_viewControl, &ViewController::sig_solo,        this, &LayerController::slot_solo);
 }
 
 bool LayerController::validateSignal()
@@ -143,4 +148,20 @@ void LayerController::slot_breakaway(Layer * l, bool set)
     breakaway(set);
 }
 
+void LayerController::slot_prepare()
+{
+    preEnlargeCopy = getModelXform();
+    //qDebug() << "saved" << preEnlargeCopy.info(4);
+}
 
+void LayerController::slot_enlarge(uint sigid, Xform xf)
+{
+    setModelXform(xf,true,sigid);
+    //qDebug() << "enlarged" << xf.info(4);
+}
+
+void LayerController::slot_restore(uint sigid)
+{
+    setModelXform(preEnlargeCopy,true,sigid);
+    //qDebug() << "restored" << preEnlargeCopy.info(4);
+}

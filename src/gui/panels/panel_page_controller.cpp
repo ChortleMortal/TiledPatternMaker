@@ -1,16 +1,15 @@
 #include "gui/panels/page_backgrounds.h"
 #include "gui/panels/page_borders.h"
+#include "gui/panels/page_canvas_settings.h"
 #include "gui/panels/page_settings.h"
 #include "gui/panels/page_crop_maker.h"
 #include "gui/panels/page_debug.h"
 #include "gui/panels/page_grid.h"
 #include "gui/panels/page_image_tools.h"
-#include "gui/panels/page_layers.h"
-#include "gui/panels/page_layer_alignmentl.h"
+#include "gui/panels/page_layers_tabs.h"
 #include "gui/panels/page_loaders.h"
 #include "gui/panels/page_log.h"
 #include "gui/panels/page_map_editor.h"
-#include "gui/panels/page_modelSettings.h"
 #include "gui/panels/page_mosaic_info.h"
 #include "gui/panels/page_mosaic_maker.h"
 #include "gui/panels/page_motif_maker.h"
@@ -83,13 +82,13 @@ void PanelPageController::populatePages()
     wp = new page_backgrounds(panel);
     pageList->addPage(wp);
 
-    wp = new page_modelSettings(panel);
+    wp = new page_canvas_settings(panel);
     pageList->addPage(wp);
 
     wp = new page_grid(panel);
     pageList->addPage(wp);
 
-    wp = new page_layer_algnment(panel);
+    wp = new page_layers_tabs(panel);
     pageList->addPage(wp);
 
     if (config->insightMode)
@@ -108,9 +107,6 @@ void PanelPageController::populatePages()
         pageList->addPage(wp);
 
         wp = new page_prototype_info(panel);
-        pageList->addPage(wp);
-
-        wp = new page_layers(panel);
         pageList->addPage(wp);
 
         wp = new page_system_info(panel);

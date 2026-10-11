@@ -16,13 +16,12 @@ FillSetEditor::FillSetEditor(FilledEditor * parent, FilledPtr filled, New2Colori
     QPushButton * cpyBtn = new QPushButton("Copy");
     QPushButton * pstBtn = new QPushButton("Paste");
 
-    QHBoxLayout * hbox = new QHBoxLayout;
+    QHBoxLayout * hbox = parent->getButtonRow();
     hbox->addWidget(upBtn);
     hbox->addWidget(dwnBtn);
     hbox->addWidget(rptBtn);
     hbox->addWidget(cpyBtn);
     hbox->addWidget(pstBtn);
-    vbox->addLayout(hbox);
 
     connect(upBtn,  &QPushButton::clicked, this, &FillSetEditor::up);
     connect(dwnBtn, &QPushButton::clicked, this, &FillSetEditor::down);
@@ -31,6 +30,7 @@ FillSetEditor::FillSetEditor(FilledEditor * parent, FilledPtr filled, New2Colori
     connect(pstBtn, &QPushButton::clicked, this, &FillSetEditor::pasteColor);
 
     table = new AQTableWidget();
+    table->setCapHeightToPanel(true);
     table->verticalHeader()->setVisible(false);
     table->setRowCount(cm->colorSet.size());
     table->setColumnCount(9);
@@ -42,7 +42,6 @@ FillSetEditor::FillSetEditor(FilledEditor * parent, FilledPtr filled, New2Colori
     table->setColumnWidth(COL_SEL,40);
     table->setSelectionMode(QAbstractItemView::SingleSelection);
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
-    table->setMinimumHeight(501);
 
     new TableRowSelector(table);     // install helper managed by the table
 
@@ -55,6 +54,7 @@ FillSetEditor::FillSetEditor(FilledEditor * parent, FilledPtr filled, New2Colori
 
     create();
 
+    table->adjustTableSize();
     vbox->addWidget(table);
 }
 
@@ -102,20 +102,19 @@ void FillSetEditor::populateRow(const FaceSetPtr & faceSet, int row)
     le->setText(color.name());
     connect(le, &AQLineEdit::editingFinished, this, [this,row] { colorChanged(row); });
 
-    QPushButton * btn = new QPushButton;
-    btn->setText("");
     QVariant variant = fullColor;
     QString colcode  = variant.toString();
-    btn->setStyleSheet("QPushButton { background-color :"+colcode+" ;}");
-    table->setCellWidget(row,COL_COLOR_PATCH,btn);
-    connect(btn,&QPushButton::clicked, this, &FillSetEditor::btnClicked);
+    ClickableLabel * label = new ClickableLabel;
+    label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
+    table->setCellWidget(row,COL_COLOR_PATCH,label);
+    connect(label, &ClickableLabel::clicked, this, [this,row] { edit(row); });
 
     AQCheckBox * cb = new AQCheckBox("Hide");
     table->setCellWidget(row,COL_HIDE,cb);
     cb->setChecked(tpcolor.hidden);
     connect(cb, &AQCheckBox::clicked, this, [this, row] { colorVisibilityChanged(row); });
 
-    btn = new QPushButton("Edit");
+    QPushButton * btn = new QPushButton("Edit");
     table->setCellWidget(row,COL_EDIT_BTN,btn);
     connect(btn, &QPushButton::clicked, this, [this,row] { edit(row); });
 }
@@ -151,7 +150,10 @@ void FillSetEditor::refresh()
         refreshRow(faceGroup[row],row);
     }
 
-    //table->adjustTableSize();
+    if (currentRows != neededRows)
+    {
+        table->adjustTableSize();
+    }
 }
 
 void FillSetEditor::refreshRow(const FaceSetPtr & faceSet, int row)
@@ -188,8 +190,8 @@ void FillSetEditor::refreshRow(const FaceSetPtr & faceSet, int row)
     QString colcode  = variant.toString();
 
     cellWidget = table->cellWidget(row,COL_COLOR_PATCH);
-    QPushButton * btn = static_cast<QPushButton*>(cellWidget);
-    btn->setStyleSheet("QPushButton { background-color :"+colcode+" ;}");
+    ClickableLabel * label = static_cast<ClickableLabel*>(cellWidget);
+    label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
 
     cellWidget = table->cellWidget(row,COL_HIDE);
     AQCheckBox * cb = static_cast<AQCheckBox*>(cellWidget);
@@ -395,44 +397,3 @@ void FillSetEditor::mousePressed(QPointF mpt, Qt::MouseButton btn)
     }
 }
 
-void FillSetEditor::btnClicked()
-{
-    auto *label = qobject_cast<QWidget*>(sender());
-    QWidget *cellWidget = findCellWidget(label, table);
-
-    if (!cellWidget)
-    {
-        qDebug() << "Could not find cell widget";
-        return;
-    }
-
-    QPoint center = cellWidget->geometry().center();  // already in viewport coords
-    int row       = table->indexAt(center).row();
-
-    qDebug() << "Row is:" << row;   // use this instead of currentRow()
-
-    TPColor tpc = new2cm->colorSet[row];
-
-    // FIXME this came from pickColor and maybe should be there?
-    AQColorDialog dlg(tpc.color,parent);
-    dlg.setCurrentColor(tpc.color);
-    int rv = dlg.exec();
-    if (rv != QDialog::Accepted)
-        return;
-
-    QColor acolor = dlg.selectedColor();
-    if (acolor.isValid())
-    {
-        tpc.color = acolor;
-        new2cm->colorSet[row] = tpc;
-        emit parent->sig_updateView();
-    }
-}
-
-QWidget* FillSetEditor::findCellWidget(QWidget *w, QTableWidget *table)
-{
-    QWidget *p = w;
-    while (p && p->parentWidget() != table->viewport())
-        p = p->parentWidget();
-    return p;
-}

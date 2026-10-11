@@ -1,6 +1,7 @@
 #include <QPainter>
 
 #include "gui/top/controlpanel.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/layer.h"
 #include "model/settings/configuration.h"
 #include "sys/geometry/transform.h"
@@ -8,60 +9,74 @@
 
 int Layer::refs = 0;
 
-Layer::Layer(eViewType viewType,eModelType modelType, QString name)
+Layer::Layer(Type type, Model model, ZLevel zlevel, QString name)
 {
-    _viewType    = viewType;
-    _modelType   = modelType;
+    _type        = type;
+    _model       = model;
+    _zlevel      = zlevel;
+    _opacity     = 1.0;
     _name        = name;
-    visible      = true;
     _clipable    = false;
+    _viewControl = Sys::systemViewController;
+
     visible      = true;
-    _viewControl = Sys::viewController;
     debug        = 0; //DEBUG_LAYER | DEBUG_TFORM | DEBUG_XFORM;
-    setZLevel(STANDARD_ZLEVEL);
+    centerConv   = false;
+    bkgdColor   = Qt::black;
 
     initLayer();
     connectSignals();
+
     refs++;
 }
 
 Layer::Layer(const Layer & other) : QObject()
 {
-    _viewType       = other._viewType;
-    _modelType      = other._modelType;
+    _type           = other._type;
+    _model          = other._model;
     _name           = other._name;
     _useSMX         = other._useSMX;
     _viewControl    = other._viewControl;
     _zlevel         = other._zlevel;
-    visible         = other.visible;
+    _opacity        = other._opacity;
     _clipable       = other._clipable;
+    visible         = other.visible;
+
     layerTransform  = other.layerTransform;
     subLayers       = other.subLayers;
     xf_model        = other.xf_model;
     debug           = other.debug;
+    centerConv      = other.centerConv;
+    bkgdColor       = other.bkgdColor;
 
     initLayer();
     connectSignals();
+
     refs++;
 }
 
 Layer::Layer(LayerPtr other)
 {
-    _viewType       = other->_viewType;
-    _modelType      = other->_modelType;
+    _type           = other->_type;
+    _model          = other->_model;
     _name           = other->_name;
     _useSMX         = other->_useSMX;
     _viewControl    = other->_viewControl;
     _zlevel         = other->_zlevel;
-    visible         = other->visible;
+    _opacity        = other->_opacity;
     _clipable       = other->_clipable;
+
+    visible         = other->visible;
     layerTransform  = other->layerTransform;
     subLayers       = other->subLayers;
     xf_model        = other->xf_model;
     debug           = other->debug;
+ 	centerConv      = other->centerConv;
+    bkgdColor       = other->bkgdColor;
 
     initLayer();
     connectSignals();
+
     refs++;
 }
 
@@ -74,23 +89,23 @@ void Layer::initLayer()
 {
     _solo      = false;
     _lockState = 0;
-    if (modelType() == PRIMARY)
+    if (model() == Model::Primary)
     {
         _useSMX = false;
     }
     else
     {
-        Q_ASSERT(modelType() == DERIVED);
+        Q_ASSERT(model() == Model::Derived);
         _useSMX = true;
     }
 }
 
 void Layer::connectSignals()
 {
-    connect(this, &Layer::sig_reconstructView, _viewControl, &SystemViewController::slot_reconstructView);
-    connect(this, &Layer::sig_updateView,      _viewControl, &SystemViewController::slot_updateView);
+    connect(this, &Layer::sig_reconstructView, _viewControl, &ViewController::slot_reconstructView);
+    connect(this, &Layer::sig_updateView,      _viewControl, &ViewController::slot_updateView);
 
-    connect(_viewControl, &SystemViewController::sig_resetLayers, this, &Layer::initLayer);
+    connect(_viewControl, &ViewController::sig_resetLayers, this, &Layer::initLayer);
 
 
     connect(Sys::controlPanel, &ControlPanel::sig_id_layers, this, &Layer::id_layer);
@@ -186,20 +201,31 @@ void  Layer::setModelXform(const Xform & xf, bool update, uint sigid)
 
 QTransform  Layer::getCanvasTransform()
 {
-    Canvas & canvas  = viewControl()->getCanvas();
-    QTransform t     = canvas.getTransform();
+    Canvas * canvas = viewControl()->getCanvas();
+    QTransform t     = canvas->getTransform();
     if (debug & DEBUG_TFORM) qDebug().noquote() << "Canvas transform:" << layerName() << Transform::info(t);
     return t;
 }
 
 QTransform  Layer::getModelTransform()
 {
-    QPointF center        = viewControl()->getCanvas().getCenter();
-    const Xform & modelXf = getModelXform();
-    QPointF trans         = modelXf.getTranslate();
-    QTransform t          = modelXf.getTransform(center - trans);  // NOTE - 24APR25 this is a major change
+    QTransform t = modelTransformOf(getModelXform());
     if (debug & DEBUG_TFORM) qDebug().noquote() << "Model transform:" << layerName() << Transform::info(t);
     return t;
+}
+
+QTransform Layer::modelTransformOf(const Xform & modelXf)
+{
+    QPointF center = viewControl()->getCanvas()->getCenter();
+    QPointF trans  = modelXf.getTranslate();
+    return modelXf.getTransform(center - trans);  // NOTE - 24APR25 this is a major change
+}
+
+QTransform Layer::getUndistortedLayerTransform()
+{
+    // used by painter crops, which frame the canvas rather than warping with its content
+    Canvas * canvas = viewControl()->getCanvas();
+    return canvas->getUndistortedTransform() * getModelTransform();
 }
 
 void Layer::computeLayerTransform()
@@ -214,12 +240,17 @@ QTransform Layer::getLayerTransform()
     {
         // compute Transform
         computeLayerTransform();
+        if (centerConv)
+        {
+            correctLegacyCenter(getLegacyCenter());
+            centerConv = false;
+        }
     }
     if (debug & DEBUG_LAYER) qDebug().noquote() << "Layer transform:" << layerName() << Transform::info(layerTransform);
     return layerTransform;
 }
 
-bool Layer::correctLegacyLayer(QPointF mpt)
+bool Layer::correctLegacyCenter(QPointF mpt)
 {
     qInfo() << "Layer::correctLegacyLayer" << mpt << _name;
 
@@ -230,14 +261,12 @@ bool Layer::correctLegacyLayer(QPointF mpt)
     {
         // one time conversion after loading for previous use of 'center'
         qreal canvasScale = Transform::scalex(getCanvasTransform());
-        //qreal modelScale  = Transform::scalex(getModelTransform());
         qreal layerScale  = Transform::scalex(getLayerTransform());
-        //qDebug() << "canvas scale" << canvasScale << "model scale" << modelScale << "layer scale" << layerScale;
 
         QPointF correction = mpt * (canvasScale-layerScale);
         if (!correction.isNull())
         {
-            //qWarning() << "applying correction for legacy center" << correction << "to translate" << xf.getTranslate();
+            qWarning() << "applying correction for legacy center" << correction << "to translate" << xf.getTranslate();
             xf.applyTranslate(correction);
             setModelXform(xf,false,Sys::nextSigid());
             rv = true;
@@ -252,11 +281,6 @@ bool Layer::correctLegacyLayer(QPointF mpt)
         xf.setTranslate(trans);
         setModelXform(xf,false,Sys::nextSigid());
         rv = true;
-    }
-
-    if (rv == true)
-    {
-        forceLayerRecalc(false);
     }
 
     return rv;
@@ -384,7 +408,7 @@ void Layer::setLoc(QPointF loc)
 
 void  Layer::drawLayerModelCenter(QPainter * painter)
 {
-    if (Sys::config->showCenterDebug || Sys::showCenterMouse)
+    if (Sys::showCenterDebug || Sys::showCenterMouse)
     {
         QPointF pt = getCenterScreenUnits();
         drawCenterSymbol(painter,pt,QColor(Qt::green),QColor(Qt::blue));
@@ -428,7 +452,7 @@ void Layer::paint(QPainter * painter)
 
 void Layer::id_layer()
 {
-    qInfo().noquote() << layerName() << sViewerType[viewType()];
+    qInfo().noquote() << layerName() << sLayerType[(int)type()];
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -536,4 +560,36 @@ void Layer::solo(Layer * layer, bool set)
     }
 }
 
+
+const QString sLayerType[] = {
+    E2STR(LegacyDesign),
+    E2STR(Mosaic),
+    E2STR(Prototype),
+    E2STR(MotifMaker),
+    E2STR(Tiling),
+    E2STR(TilingMaker),
+    E2STR(MapEditor),
+    E2STR(BkgdImage),
+    E2STR(Grid),
+    E2STR(ConstructionLines),
+    E2STR(Crop),
+    E2STR(DebugLayer),
+    E2STR(BMPImage),
+};
+
+const QString sLayerType2[] = {
+    "Legacy Design Layer",
+    "Mosaic Layer",
+    "Prototype Layer",
+    "Motif Maker Layer",
+    "Tiling Layer",
+    "Tiling Maker Layer",
+    "Map Editor Layer",
+    "Background Image Layer",
+    "Grid Layer",
+    "Construction Lines Layer",
+    "Crop Layer",
+    "Debug Layer",
+    "Image Viewer Layer"
+};
 

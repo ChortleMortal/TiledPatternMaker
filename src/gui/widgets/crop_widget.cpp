@@ -10,9 +10,10 @@
 #include "sys/sys.h"
 #include "gui/widgets/panel_misc.h"
 
-CropWidget::CropWidget()
+CropWidget::CropWidget(QString name)
 {
     blocked    = false;
+    this->name = name;
     setLayout(createLayout());
 }
 
@@ -20,7 +21,7 @@ QLayout * CropWidget::createLayout()
 {
     QRadioButton * undefinedBtn = new QRadioButton("No Crop");
     QRadioButton * rectBtn      = new QRadioButton("Rectangular Crop");
-    rectLayoutW                 = new LayoutQRectF("Model  units", 8, 0.05);
+    rectLayoutW                 = new LayoutQRectF(this,name, 8, 0.05);
 
     QHBoxLayout * rectW = new QHBoxLayout;
     rectW->addSpacing(21);
@@ -357,7 +358,7 @@ CropDlg::CropDlg(CropPtr crop)
 
     setAttribute(Qt::WA_DeleteOnClose);
 
-    cw = new CropWidget();
+    cw = new CropWidget("Map Crop");
     cw->setCrop(crop);
     cw->refresh();
 

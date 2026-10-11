@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DESIGNCONTROL_H
-#define DESIGNCONTROL_H
 
 #include <QObject>
 #include <QMap>
@@ -67,6 +65,7 @@ public:
     void     resetLegacyKbdMode();
 
 signals:
+    void sig_loadingDesign(eDesign design);
     void sig_loadedDesign(eDesign design);
     void sig_updateView();
     void sig_reconstructView();
@@ -84,7 +83,7 @@ public slots:
 private slots:
 
 private:
-    class  SystemViewController * viewControl;
+    class  ViewController * viewControl;
     class  Configuration        * config;
     class  LoadUnit             * loadUnit;
 
@@ -96,5 +95,3 @@ private:
     int                         stepsTaken;
     int                         selectedLayer;
 };
-
-#endif // DESIGNCONTROL_H

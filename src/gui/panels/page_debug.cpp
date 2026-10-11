@@ -1,28 +1,32 @@
 #include <QGroupBox>
 #include <QCheckBox>
 #include <QMessageBox>
+#include <QFileDialog>
+#include <QHeaderView>
+#include <QThread>
+#include <QTimer>
 
 #include "gui/map_editor/map_editor.h"
 #include "gui/panels/page_debug.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/debug_view.h"
 #include "gui/widgets/dlg_textedit.h"
 #include "gui/widgets/floatable_tab.h"
 #include "gui/widgets/layout_sliderset.h"
 #include "model/makers/mosaic_maker.h"
-#include "model/makers/prototype_maker.h"
+#include "model/makers/motif_maker.h"
 #include "model/makers/tiling_maker.h"
 #include "model/mosaics/mosaic.h"
-#include "model/mosaics/mosaic_manager.h"
 #include "model/mosaics/mosaic_reader.h"
+#include "model/prototypes/tile_motif.h"
 #include "model/prototypes/prototype.h"
 #include "model/settings/configuration.h"
 #include "model/styles/filled.h"
 #include "model/tilings/placed_tile.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
-#include "model/tilings/tiling_manager.h"
 #include "sys/geometry/map.h"
 #include "sys/geometry/map_verifier.h"
 #include "sys/qt/qtapplog.h"
@@ -46,7 +50,8 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_DEBUG_T
     QGroupBox   * meas          = createMeasure();
     QGroupBox   * clns          = createCleanse();
     QGroupBox   * debugView     = createDebugView();
-
+    QGroupBox   * renderings    = createRenderings();
+    QGroupBox   * cycleLayers   = createCycleLayers();
 
     // tab 2
     QWidget     * dbgFlags = creatDebugFlags();
@@ -75,23 +80,28 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_DEBUG_T
 
     QVBoxLayout * layout1 = new QVBoxLayout();
     layout1->addLayout(hbox);
+    layout1->addWidget(renderings);
     layout1->addStretch();
 
-    tab1 = new FloatableTab();
+    tab1 = new FloatableTab(this);
     tab1->setLayout(layout1);
 
     QVBoxLayout * layout2 = new QVBoxLayout();
     layout2->addWidget(dbgFlags);
     layout2->addStretch();
 
-    tab2 = new FloatableTab();
+    tab2 = new FloatableTab(this);
     tab2->setLayout(layout2);
 
     QVBoxLayout * layout3 = new QVBoxLayout();
     layout3->addWidget(debugTests);
+    QHBoxLayout * hbox3 = new QHBoxLayout();
+    hbox3->addWidget(cycleLayers);
+    hbox3->addStretch();
+    layout3->addLayout(hbox3);
     layout3->addStretch();
 
-    tab3 = new FloatableTab();
+    tab3 = new FloatableTab(this);
     tab3->setLayout(layout3);
 
     tabWidget = new QTabWidget;
@@ -109,7 +119,7 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_DEBUG_T
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &page_debug::slot_refreshFlags);
 
-    QSettings s;
+    QSettings s = Sys::settings();
 
     QString name = QString("panel2/%1/float_tab1").arg(pageName);
     bool tofloat = s.value(name,false).toBool();
@@ -129,18 +139,24 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_DEBUG_T
 
 page_debug::~page_debug()
 {
-    QSettings s;
+    QSettings s = Sys::settings();
 
     QString name = QString("panel2/%1/float_tab1").arg(pageName);
     s.setValue(name,tab1->floating);
+    if (tab1->floating)
+        tab1->savePosition();
     tab1->floating = false;
 
     name = QString("panel2/%1/float_tab2").arg(pageName);
     s.setValue(name,tab2->floating);
+    if (tab2->floating)
+        tab2->savePosition();
     tab2->floating = false;
 
     name = QString("panel2/%1/float_tab3").arg(pageName);
     s.setValue(name,tab3->floating);
+    if (tab3->floating)
+        tab3->savePosition();
     tab3->floating = false;
 }
 
@@ -177,7 +193,7 @@ QGroupBox * page_debug::createDebugSettings()
     QGroupBox * debugGroup = new QGroupBox("Debug Settings");
     debugGroup->setLayout(vbox);
 
-    connect(chkSuspendPaint,          &QCheckBox::clicked,       this,   [](bool enb) { Sys::viewController->debugSuspendPaint(enb); } );
+    connect(chkSuspendPaint,          &QCheckBox::clicked,       this,   [](bool enb) { Sys::systemViewController->debugSuspendPaint(enb); } );
     connect(chkDontTrap,              &QCheckBox::clicked,       this,   &page_debug::slot_dontTrapLog);
     connect(chkDontRefresh,           &QCheckBox::clicked,       this,   &page_debug::slot_dontRefresh);
     connect(chkLayerCen,              &QCheckBox::clicked,       this,   &page_debug::slot_viewViewCen);
@@ -196,7 +212,6 @@ QGroupBox * page_debug::createDebugTests()
     QPushButton * pbReformatTileXMLBtn  = new QPushButton("Reformat Tilings");
     QPushButton * pbReprocessDesXMLBtn  = new QPushButton("Regenerate Mosaic XML");
     QPushButton * pbReprocessTileXMLBtn = new QPushButton("Reprocess Tilings");
-    QPushButton * pbReformatTemplates   = new QPushButton("Reformat Old Templates");
 
     QPushButton * pbExamineAllMosaics   = new QPushButton("Examine All Mosaics");
     QPushButton * pbExamineMosaic       = new QPushButton("Examine Current Mosaic");
@@ -232,7 +247,6 @@ QGroupBox * page_debug::createDebugTests()
     // MISC
     grid->addWidget(pbClearMakers,         0,1);
     grid->addWidget(pbClearView,           1,1);
-    grid->addWidget(pbReformatTemplates,   2,1);
 
     // GENERIC
     grid->addWidget(pTestA,                0,0);
@@ -253,7 +267,6 @@ QGroupBox * page_debug::createDebugTests()
 
     connect(pbReformatTileXMLBtn,     &QPushButton::clicked,     this,   [this] { reformatTilingXML(); });
     connect(pbReprocessTileXMLBtn,    &QPushButton::clicked,     this,   [this] { reprocessTilingXML(); });
-    connect(pbReformatTemplates,      &QPushButton::clicked,     this,   [this] { reformatOldTemplates(); });
 
     connect(pbVerifyTileNames,        &QPushButton::clicked,     this,   [this] { verifyTilingNames(); });
     connect(pbVerifyTiling,           &QPushButton::clicked,     this,   [this] { verifyTiling(); });
@@ -264,10 +277,129 @@ QGroupBox * page_debug::createDebugTests()
 
     connect(pbPick,                   &AQPushButton::clicked,    this,   [this](bool checked) { slot_startPicker(checked); });
 
-    connect(pbClearMakers,            &QPushButton::clicked,     viewControl, [] { Sys::viewController->slot_unloadAll(); });
-    connect(pbClearView,              &QPushButton::clicked,     viewControl, [] { Sys::viewController->slot_unloadView(); });
+    connect(pbClearMakers,            &QPushButton::clicked,     viewControl, [] { Sys::systemViewController->slot_unloadAll(); });
+    connect(pbClearView,              &QPushButton::clicked,     viewControl, [] { Sys::systemViewController->slot_unloadView(); });
 
     return debugGroup;
+}
+
+// a replica of the Layer Enables (without Lock/Multi) - the spacebar in the view
+// cycles through the layers checked here, one at a time
+QGroupBox * page_debug::createCycleLayers()
+{
+    QCheckBox * cbMosaic    = new QCheckBox("Mosaic");
+    QCheckBox * cbProto     = new QCheckBox("Prototype");
+    QCheckBox * cbMapEd     = new QCheckBox("Map Editor");
+    QCheckBox * cbMotif     = new QCheckBox("Motif Maker");
+    QCheckBox * cbTiling    = new QCheckBox("Tiling");
+    QCheckBox * cbTM        = new QCheckBox("Tiling Maker");
+    QCheckBox * cbLegacy    = new QCheckBox("Fixed Design");
+    QCheckBox * cbBMP       = new QCheckBox("Image Viewer");
+    QCheckBox * cbBkgd      = new QCheckBox("Bkgd Image");
+    QCheckBox * cbCrop      = new QCheckBox("Crop");
+    QCheckBox * cbGrid      = new QCheckBox("Grid");
+    QCheckBox * cbCLines    = new QCheckBox("C-Lines");
+    QCheckBox * cbDebug     = new QCheckBox("Debug");
+
+    // the order added is the cycle order
+    cycleGroup.setExclusive(false);
+    cycleGroup.addButton(cbMosaic,  (int)Layer::Type::Mosaic);
+    cycleGroup.addButton(cbProto,   (int)Layer::Type::Prototype);
+    cycleGroup.addButton(cbMapEd,   (int)Layer::Type::MapEditor);
+    cycleGroup.addButton(cbMotif,   (int)Layer::Type::MotifMaker);
+    cycleGroup.addButton(cbTiling,  (int)Layer::Type::Tiling);
+    cycleGroup.addButton(cbTM,      (int)Layer::Type::TilingMaker);
+    cycleGroup.addButton(cbLegacy,  (int)Layer::Type::LegacyDesign);
+    cycleGroup.addButton(cbBMP,     (int)Layer::Type::BMPImage);
+    cycleGroup.addButton(cbBkgd,    (int)Layer::Type::BkgdImage);
+    cycleGroup.addButton(cbCrop,    (int)Layer::Type::Crop);
+    cycleGroup.addButton(cbGrid,    (int)Layer::Type::Grid);
+    cycleGroup.addButton(cbCLines,  (int)Layer::Type::ConstructionLines);
+    cycleGroup.addButton(cbDebug,   (int)Layer::Type::DebugLayer);
+
+    // 7 x 2 grid, filled across the rows in cycle order
+    QGridLayout * grid = new QGridLayout;
+    int index = 0;
+    for (auto button : cycleGroup.buttons())
+    {
+        grid->addWidget(button, index / 7, index % 7);
+        index++;
+    }
+
+    gbCycleLayers = new QGroupBox("Cycle Layers");
+    gbCycleLayers->setCheckable(true);
+    gbCycleLayers->setChecked(false);
+    gbCycleLayers->setLayout(grid);
+
+    connect(gbCycleLayers, &QGroupBox::clicked, this, &page_debug::slot_cycleLayersClicked);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_cycleLayers, this, &page_debug::slot_cycleLayers);
+
+    return gbCycleLayers;
+}
+
+void page_debug::slot_cycleLayersClicked(bool checked)
+{
+    auto vc = Sys::systemViewController;
+    if (checked)
+    {
+        // remember the real layer enables
+        savedEnables.clear();
+        for (auto button : cycleGroup.buttons())
+        {
+            Layer::Type vtype = (Layer::Type)cycleGroup.id(button);
+            if (vc->isEnabled(vtype))
+                savedEnables.push_back(vtype);
+        }
+    }
+    else
+    {
+        // restore them - disables first, so restoring a gang member is not undone by exclusivity
+        for (auto button : cycleGroup.buttons())
+        {
+            Layer::Type vtype = (Layer::Type)cycleGroup.id(button);
+            if (!savedEnables.contains(vtype) && vc->isEnabled(vtype))
+                panel->userDelegateView(vtype,false);
+        }
+        for (auto vtype : std::as_const(savedEnables))
+        {
+            if (!vc->isEnabled(vtype))
+                panel->userDelegateView(vtype,true);
+        }
+    }
+}
+
+void page_debug::slot_cycleLayers()
+{
+    if (!gbCycleLayers->isChecked())
+        return;
+
+    QList<Layer::Type> cycle;
+    for (auto button : cycleGroup.buttons())
+    {
+        if (button->isChecked())
+            cycle.push_back((Layer::Type)cycleGroup.id(button));
+    }
+    if (cycle.isEmpty())
+        return;
+
+    // advance from the first cycled layer currently showing
+    auto vc  = Sys::systemViewController;
+    int next = 0;
+    for (int i = 0; i < cycle.size(); i++)
+    {
+        if (vc->isEnabled(cycle[i]))
+        {
+            next = (i + 1) % cycle.size();
+            break;
+        }
+    }
+
+    for (int i = 0; i < cycle.size(); i++)
+    {
+        if (i != next && vc->isEnabled(cycle[i]))
+            panel->userDelegateView(cycle[i],false);
+    }
+    panel->userDelegateView(cycle[next],true);
 }
 
 QGroupBox * page_debug::createVerifyMaps()
@@ -331,21 +463,40 @@ QGroupBox * page_debug::createMeasure()
     return gb;
 }
 
+QGroupBox * page_debug::createRenderings()
+{
+    QPushButton * r1 = new QPushButton("Styles");
+    QPushButton * r2 = new QPushButton("Prototypes");
+    QPushButton * r3 = new QPushButton("Motifs (all)");
+
+    connect(r1, &QPushButton::clicked, this, [] { Sys::render(RENDER_RESET_STYLES); });
+    connect(r2, &QPushButton::clicked, this, [] { Sys::render(RENDER_RESET_PROTOTYPES); });
+    connect(r3, &QPushButton::clicked, this, [] { Sys::render(RENDER_RESET_ALL); });
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(r1);
+    hbox->addWidget(r2);
+    hbox->addWidget(r3);
+    hbox->addStretch();
+
+    QVBoxLayout * vbox = new QVBoxLayout;
+    vbox->addLayout(hbox);
+    vbox->addStretch();
+
+    QGroupBox * gb= new QGroupBox("Rendering");
+    gb->setLayout(vbox);
+
+    return gb;
+}
 
 QGroupBox * page_debug::createDebugView()
 {
-    QCheckBox * cbDebugMotif = new QCheckBox("Debug Motif");
-    cbDebugMotif->setChecked(config->debugMotifView);
-
-    connect(cbDebugMotif, &QCheckBox::clicked, this, [this] (bool checked) { Sys::config->debugMotifView = checked; emit sig_updateView(); } );
-
     pbEnbDbgView3 = new AQPushButton("Enable View");
-    pbEnbDbgView3->setChecked(viewControl->isEnabled(VIEW_DEBUG));
+    pbEnbDbgView3->setChecked(viewControl->isEnabled(Layer::Type::DebugLayer));
     connect(pbEnbDbgView3,  &AQPushButton::clicked, this, &page_debug::slot_dbgViewClicked);
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(pbEnbDbgView3);
-    hbox->addWidget(cbDebugMotif);
     hbox->addStretch();
 
     QVBoxLayout * vbox = new QVBoxLayout;
@@ -432,7 +583,7 @@ QGroupBox * page_debug::creatDebugMaps()
     mapGrid->addWidget(mapPaintCounts[ROW_CURVES],      ROW_CURVES, D_COL_PAINT,  Qt::AlignHCenter);
     mapGrid->addWidget(mapPaintCounts[ROW_ARC_CEN],     ROW_ARC_CEN,D_COL_PAINT,  Qt::AlignHCenter);
 
-    pbEnbDbgView->setChecked(viewControl->isEnabled(VIEW_DEBUG));
+    pbEnbDbgView->setChecked(viewControl->isEnabled(Layer::Type::DebugLayer));
     auto dview = Sys::debugView;
     chkLines->setChecked(dview->getShowLines());
     chkDBCdirn->setChecked(dview->getShowDirection());
@@ -459,7 +610,7 @@ QGroupBox * page_debug::creatDebugMaps()
 
     connect(pbEnbDbgView,   &AQPushButton::clicked, this, &page_debug::slot_dbgViewClicked);
     connect(pbUseProto,     &AQPushButton::clicked, this, &page_debug::slot_useProtoMap);
-    connect(pbClear,        &QPushButton::clicked,  this, []() { Sys::debugView->unloadLayerContent(); Sys::viewController->slot_updateView(); } );
+    connect(pbClear,        &QPushButton::clicked,  this, []() { Sys::debugView->unloadLayerContent(); Sys::systemViewController->slot_updateView(); } );
 
     return groupBox;
 }
@@ -480,7 +631,7 @@ QWidget * page_debug::creatDebugFlags()
     QPushButton * pbUpdateView    = new QPushButton("Repaint");
 
     pbEnbDbgFlags->setChecked(Sys::flags->enabled());
-    pbEnbDbgView2->setChecked(viewControl->isEnabled(VIEW_DEBUG));
+    pbEnbDbgView2->setChecked(viewControl->isEnabled(Layer::Type::DebugLayer));
 
     connect(pbResetStyles,  &QPushButton::clicked,  this, [] { Sys::render(RENDER_RESET_STYLES);} );
     connect(pbResetProtos,  &QPushButton::clicked,  this, [] { Sys::render(RENDER_RESET_PROTOTYPES);} );
@@ -488,10 +639,10 @@ QWidget * page_debug::creatDebugFlags()
     connect(pbEnbDbgFlags,  &AQPushButton::clicked, this, &page_debug::slot_dbgFlagsClicked);
     connect(pbEnbDbgView2,  &AQPushButton::clicked, this, &page_debug::slot_dbgViewClicked);
     connect(pbClearFlags,   &QPushButton::clicked,  this, &page_debug::slot_clearFlags);
-    connect(pbClearMap1,    &QPushButton::clicked,  this, [] { Sys::debugMapCreate->wipeout();  Sys::viewController->slot_updateView(); } );
-    connect(pbClearMap2,    &QPushButton::clicked,  this, [] { Sys::debugMapPaint->wipeout(); Sys::viewController->slot_updateView(); } );
-    connect(pbUpdateView,   &QPushButton::clicked, Sys::viewController, &SystemViewController::slot_updateView);
-    connect(pbRefreshView,  &QPushButton::clicked, Sys::viewController, &SystemViewController::slot_reconstructView);
+    connect(pbClearMap1,    &QPushButton::clicked,  this, [] { Sys::debugMapCreate->wipeout();  Sys::systemViewController->slot_updateView(); } );
+    connect(pbClearMap2,    &QPushButton::clicked,  this, [] { Sys::debugMapPaint->wipeout(); Sys::systemViewController->slot_updateView(); } );
+    connect(pbUpdateView,   &QPushButton::clicked, Sys::systemViewController, &ViewController::slot_updateView);
+    connect(pbRefreshView,  &QPushButton::clicked, Sys::systemViewController, &ViewController::slot_reconstructView);
     connect(pbReload,       &QPushButton::clicked,  panel,              &ControlPanel::slot_reload);
 
     pbTrigger              = new AQPushButton("Trigger");
@@ -521,7 +672,7 @@ QWidget * page_debug::creatDebugFlags()
 
     connect(pbEdge,         &AQPushButton::clicked, this, &page_debug::slot_edgeSelectClicked);
     connect(pbTrigger,      &QPushButton::clicked,  this, &page_debug::slot_triggerClicked);
-    connect(xyclr ,         &QPushButton::clicked,  this, [this] { xBox->setValue(0); yBox->setValue(0); Sys::viewController->repaintView();});
+    connect(xyclr ,         &QPushButton::clicked,  this, [this] { xBox->setValue(0); yBox->setValue(0); Sys::systemViewController->repaintView();});
     connect(xBox, &AQDoubleSpinBox::valueChanged,   this, [](qreal val) { Sys::flags->setXval(val,true);  });
     connect(yBox, &AQDoubleSpinBox::valueChanged,   this, [](qreal val) { Sys::flags->setYval(val,true); });
     connect(edgeBox,        &QSpinBox::valueChanged,this, [](int val)   { Sys::flags->setDbgIndex(val); } );
@@ -631,9 +782,9 @@ void  page_debug::onRefresh()
     if (pick)
         colorPicker();
 
-    pbEnbDbgView->setChecked(viewControl->isEnabled(VIEW_DEBUG));
-    pbEnbDbgView2->setChecked(viewControl->isEnabled(VIEW_DEBUG));
-    pbEnbDbgView3->setChecked(viewControl->isEnabled(VIEW_DEBUG));
+    pbEnbDbgView->setChecked(viewControl->isEnabled(Layer::Type::DebugLayer));
+    pbEnbDbgView2->setChecked(viewControl->isEnabled(Layer::Type::DebugLayer));
+    pbEnbDbgView3->setChecked(viewControl->isEnabled(Layer::Type::DebugLayer));
 
     pbEnbDbgFlags->setChecked(Sys::flags->enabled());
 
@@ -681,6 +832,8 @@ void page_debug::slot_refreshFlags()
             styleCount++;
             break;
         case FLAG_CREATE_MOTIF:
+            styleCount++;
+            break;
         case NUM_DFLAG_TYPES:
             break;
         }
@@ -817,8 +970,7 @@ void page_debug ::slot_clearFlags()
 
 void page_debug::verifyTilingNames()
 {
-    TilingManager tm;
-    bool rv = tm.verifyTilingFiles();
+    bool rv = tilingMaker->verifyTilingFiles();
 
     QMessageBox box(this);
     if (rv)
@@ -845,7 +997,7 @@ void page_debug::reformatMosaicXML()
     box.exec();
     if (box.clickedButton() == selBtn)
     {
-        QString fileName = QFileDialog::getOpenFileName(this,"Select XML File",Sys::config->rootMediaDir, "Image Files (*.xml)");
+        QString fileName = QFileDialog::getOpenFileName(this,"Select XML File",Sys::getRootMediaDir(), "Image Files (*.xml)");
         VersionedFile vf(fileName);
         bool rv =  FileServices::reformatXML(vf);
         if (rv)
@@ -1086,12 +1238,12 @@ void page_debug::reprocessTilingXML()
     {
         bool rv = false;
 
-        TilingManager tm;
-        TilingPtr tp = tm.loadTiling(file,TILM_LOAD_SINGLE);
+        QString failMsg;
+        TilingPtr tp = tilingMaker->readTiling(file,failMsg);
         if (tp)
         {
             Q_ASSERT(tp->getVName().get() == file.getVersionedName().get());
-            rv = tm.saveTiling(tp,file,true);
+            rv = tilingMaker->saveTiling(tp,file);
         }
         if (rv)
             goodTiles++;
@@ -1155,8 +1307,8 @@ bool page_debug::verifyTiling(TilingPtr tiling)
     log->trap(true);
     qInfo().noquote() << "Verifying tiling :" << tiling->getVName().get();
     bool rv = true;
-    PlacedTiles tilingUnit = tiling->unit().getIncluded();
-    for (const auto & placedTile : std::as_const(tilingUnit))
+    PlacedTileSet tileSet = tiling->unit().getIncluded();
+    for (const auto & placedTile : std::as_const(tileSet))
     {
         auto tile = placedTile->getTile();
         if (!tile->isClockwise())
@@ -1263,8 +1415,8 @@ void page_debug::verifyAllTilings()
             continue;
         }
 
-        TilingManager tm;
-        TilingPtr tp = tm.loadTiling(file,TILM_LOAD_SINGLE);
+        QString failMsg;
+        TilingPtr tp = tilingMaker->readTiling(file,failMsg);
         if (!tp)
         {
             QMessageBox box(this);
@@ -1296,7 +1448,7 @@ void page_debug::examineAllMosaics()
     {
         qDebug() << "LOG2 ==========" << file.getVersionedName().get() << "==========";
 
-        MosaicReader reader(Sys::viewController);
+        MosaicReader reader(Sys::systemViewController);
         MosaicPtr mosaic = reader.readXML(file);
         if (!mosaic)
         {
@@ -1308,7 +1460,7 @@ void page_debug::examineAllMosaics()
             continue;
         }
 
-        examineMosaic(mosaic,2);
+        examineMosaic(mosaic,3);
     }
 
     QMessageBox box(this);
@@ -1321,7 +1473,7 @@ void page_debug::examineAllMosaics()
 void page_debug::examineMosaic()
 {
     MosaicPtr mosaic = mosaicMaker->getMosaic();
-    examineMosaic(mosaic,1);
+    examineMosaic(mosaic,3);
 }
 
 void page_debug::examineMosaic(MosaicPtr mosaic, uint test)
@@ -1379,6 +1531,28 @@ void page_debug::examineMosaic(MosaicPtr mosaic, uint test)
         NeighbourMap nmap(map);
         nmap.examine();
     }
+    else if (test == 3)
+    {
+
+        auto proto = mosaic->getPrototypes().first();
+        auto dels  = proto->getTileMotifs();
+        for (const auto & del : dels)
+        {
+            auto motif = del->getMotif();
+            auto tile  = del->getTile();
+            int ntile  = tile->numPoints();
+            int nmotif = del->getMotif()->getN();
+            if (ntile == nmotif)
+            {
+                //qDebug() << motif->getMotifTypeString() <<  "equal" << ntile;
+            }
+            else
+            {
+                qInfo() << "LOG2:" << "examining mosaic :" << mosaic->getName().get() << "- START";
+                qInfo() << "LOG2:" << motif->getMotifTypeString() << "tile=" << ntile << "motif=" << nmotif;
+            }
+        }
+    }
 }
 
 void page_debug::slot_dontTrapLog(bool dont)
@@ -1393,8 +1567,8 @@ void page_debug::slot_dontRefresh(bool enb)
 
 void  page_debug::slot_dbgViewClicked(bool checked)
 {
-    panel->delegateView(VIEW_DEBUG,checked);
-    Sys::viewController->slot_reconstructView();
+    panel->userDelegateView(Layer::Type::DebugLayer,checked);
+    Sys::systemViewController->slot_reconstructView();
 }
 
 void  page_debug::slot_dbgFlagsClicked(bool checked)
@@ -1406,7 +1580,7 @@ void  page_debug::slot_dbgFlagsClicked(bool checked)
         Sys::debugMapPaint->wipeout();
     }
     Sys::render(RENDER_RESET_ALL);
-    Sys::viewController->slot_updateView();
+    Sys::systemViewController->slot_updateView();
 }
 
 void  page_debug::slot_edgeSelectClicked(bool checked)
@@ -1427,7 +1601,7 @@ void  page_debug::slot_triggerClicked(bool checked)
 
 void  page_debug::slot_viewViewCen(bool checked)
 {
-    config->showCenterDebug = checked;
+    Sys::showCenterDebug = checked;
     emit sig_updateView();
 }
 
@@ -1435,7 +1609,7 @@ void page_debug::slot_useProtoMap(bool checked)
 {
     if (checked)
     {
-        Map * protomap = Sys::prototypeMaker->getSelectedPrototype()->getProtoMap().get();
+        Map * protomap = motifMaker->motifData.getActivePrototype()->getProtoMap().get();
         if (protomap)
         {
            Sys::debugMapCreate->set(protomap,Qt::blue,Qt::red);
@@ -1461,29 +1635,6 @@ void page_debug::slot_measure(bool checked)
         Sys::debugView->clearMeasurements();
         emit sig_updateView();
     }
-}
-
-void page_debug::reformatOldTemplates()
-{
-    qInfo() << "Reformatting old construction line templates";
-    Sys::config->mapedOldTemplates = true;
-    VersionFileList xfl = FileServices::getFiles(FILE_TEMPLATE);
-    for (VersionedFile xfile : std::as_const(xfl))
-    {
-        qDebug() << "Processing" << xfile.getVersionedName().get();
-        Sys::mapEditor->unload();
-        bool rv = Sys::mapEditor->loadTemplate(xfile,false);
-        if (rv)
-        {
-            rv = Sys::mapEditor->saveTemplate(xfile.getVersionedName());
-            if (rv)
-            {
-                rv = QFile::remove(xfile.getPathedName());
-            }
-        }
-        if (!rv) qWarning() << "FAILED";
-    }
-    qInfo() << "Reformatting complete";
 }
 
 void  page_debug::testA()

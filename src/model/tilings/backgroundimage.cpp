@@ -1,17 +1,17 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
+#include <QImageReader>
 #include <QPainter>
 
-#include "gui/top/system_view_controller.h"
-#include "model/settings/configuration.h"
+#include "gui/top/view_controller.h"
 #include "model/tilings/backgroundimage.h"
 #include "sys/geometry/transform.h"
+#include "sys/sys.h"
 
-BackgroundImage::BackgroundImage() : LayerController(VIEW_BKGD_IMG,PRIMARY,"Bkgd Image View")
+BackgroundImage::BackgroundImage() : LayerController(Type::BkgdImage,Model::Primary, ZLevel::Bkgd_minus20, "Bkgd Image View")
 {
     unload();
-    setZLevel(BKGD_IMG_ZLEVEL);
 }
 
 BackgroundImage::~BackgroundImage()
@@ -33,16 +33,17 @@ void BackgroundImage::paint(QPainter *painter)
 
     // Draw pixmap always centered
     QSizeF sz = scaledPixmap.size();
-    pixmapTL = QPointF(-sz.width()/2.0, -sz.height()/2.0);
+    pixmapTL = QPointF(-sz.width()/2.0, -sz.height()/2.0) + pixmapOffset * modelScale;
 
     // Build layer transform but strip out scale (since pixmap is already scaled)
     worldT = getLayerTransform();
     worldT.scale(1.0/modelScale, 1.0/modelScale); // normalize out scale
 
+#if 0   // removed 10MAY26
     // fill the background
-    QColor color = Sys::viewController->getBackgroundColor(VIEW_BKGD_IMG);
-    painter->fillRect(Sys::viewController->viewRect(), color);
-
+    QColor color = Sys::systemViewController->getBkgdColor(VIEW_BKGD_IMG);
+    painter->fillRect(Sys::systemViewController->getViewRect(), color);
+#endif
     // paint
     painter->save();
 
@@ -52,13 +53,14 @@ void BackgroundImage::paint(QPainter *painter)
 
     painter->restore();
 
-    if (adjuster.isActive())
-    {
-        adjuster.draw(painter);
-    }
-    else if (cropper.isActive())
+    if (cropper.isActive())
     {
         cropper.draw(painter);
+    }
+    else if (adjuster.isActive() || adjuster.hasPoints())
+    {
+        // keeps the keystone rectangle visible after Complete, until it's explicitly cleared (e.g. on save)
+        adjuster.draw(painter);
     }
 
     drawLayerModelCenter(painter);
@@ -70,7 +72,17 @@ void BackgroundImage::unload()
     bUseAdjusted   = false;
     bUseCropped    = false;
     bkgdName       = "Bkgd Image";
- }
+
+    bkgdImage      = QImage();
+    adjustedImage  = QImage();
+    croppedImage   = QImage();
+    pixmap         = QPixmap();
+    pixmapOffset   = QPointF();
+    croppedOffset  = QPointF();
+    perspectiveT   = QTransform();
+    crop           = Crop();
+    adjuster.clear();
+}
 
 bool BackgroundImage::importIfNeeded(QString filename)
 {
@@ -78,7 +90,7 @@ bool BackgroundImage::importIfNeeded(QString filename)
     QFileInfo info(filename);
     QString name = info.fileName();
 
-    QString newFilename = Sys::config->rootMediaDir + "bkgd_photos/" + name;
+    QString newFilename = Sys::bkgdPhotosDir + name;
 
     if (QFile::exists(newFilename))
     {
@@ -95,12 +107,17 @@ bool BackgroundImage::importIfNeeded(QString filename)
 
 bool BackgroundImage::load(QString imageName)
 {
+    unload();
     bkgdName    = imageName;
 
-    QString filename = Sys::config->rootMediaDir + "bkgd_photos/" + bkgdName;
+    QString filename = Sys::bkgdPhotosDir + bkgdName;
     qDebug() << "BackgroundImage::load()" << filename;
 
-    loaded = bkgdImage.load(filename);
+    QImageReader reader(filename);
+    reader.setAutoTransform(true);     // applies EXIF orientation (e.g. camera-rotated JPEGs)
+
+    bkgdImage = reader.read();
+    loaded    = !bkgdImage.isNull();
 
     if (loaded)
         qDebug() << "BackgroundImage: loaded OK - size =" << bkgdImage.size();
@@ -108,6 +125,48 @@ bool BackgroundImage::load(QString imageName)
         qWarning() << "BackgroundImage: LOAD ERROR";
 
     return loaded;
+}
+
+bool BackgroundImage::load(const BkgdRecord & rec)
+{
+    if (rec.isEmpty())
+    {
+        unload();
+        return false;
+    }
+
+    if (!load(rec.name))
+    {
+        unload();
+        return false;
+    }
+
+    setModelXform(rec.xf,false,Sys::nextSigid());
+
+    if (rec.hasLegacyCenter)
+        setLegacyCenter(rec.legacyCenter);
+
+    if (!rec.perspective.isIdentity())
+    {
+        perspectiveT = rec.perspective;
+        createAdjustedImage();
+        bUseAdjusted = true;
+    }
+    createPixmap();
+    return true;
+}
+
+BkgdRecord BackgroundImage::toRecord()
+{
+    BkgdRecord rec;
+    if (loaded)
+    {
+        rec.name = bkgdName;
+        rec.xf   = getModelXform();
+        if (bUseAdjusted)
+            rec.perspective = perspectiveT;
+    }
+    return rec;
 }
 
 void BackgroundImage::createPixmap()
@@ -118,16 +177,19 @@ void BackgroundImage::createPixmap()
     {
         qDebug() << "using adjusted image";
         pixmap = QPixmap::fromImage(adjustedImage);
+        pixmapOffset = QPointF();
     }
     else if (bUseCropped && !croppedImage.isNull())
     {
         qDebug() << "using cropped image";
         pixmap = QPixmap::fromImage(croppedImage);
+        pixmapOffset = croppedOffset;     // stays where it was cut from
     }
     else
     {
         qDebug() << "using regular background image";
         pixmap = QPixmap::fromImage(bkgdImage);
+        pixmapOffset = QPointF();
     }
 }
 
@@ -152,26 +214,24 @@ void BackgroundImage::createCroppedImage()
 
     if (!bkgdImage.isNull())
     {
-        // this is tricky code - change at your peril
-        qreal modelScale = xf_model.getScale();
-        QRectF rect  = crop.getRect();
-        QPointF TL   = rect.topLeft();
-        QPointF PTL2 = pixmapTL / modelScale;
-        TL -= PTL2;
-        rect.moveTopLeft(TL);
+        // crop rect is in model space, where the full image is centered on the origin
+        QPointF imageCenter(bkgdImage.width()/2.0, bkgdImage.height()/2.0);
+        QRect rect = crop.getRect().translated(imageCenter).toRect();
 
-        croppedImage = bkgdImage.copy(rect.toRect());
+        croppedImage  = bkgdImage.copy(rect);
+        croppedOffset = QRectF(rect).center() - imageCenter;
     }
     else
     {
-        croppedImage = QImage();
+        croppedImage  = QImage();
+        croppedOffset = QPointF();
         Q_ASSERT(croppedImage.isNull());
     }
 }
 
 bool BackgroundImage::saveAdjusted(QString newName)
 {
-    QString file = Sys::config->rootMediaDir + "bkgd_photos/" +  newName;
+    QString file = Sys::bkgdPhotosDir +  newName;
     qDebug() << "Saving adjusted:" << file;
     bool rv = adjustedImage.save(file);
     return rv;
@@ -180,12 +240,15 @@ bool BackgroundImage::saveAdjusted(QString newName)
 
 bool BackgroundImage::saveCropped(QString newName)
 {
-    QString file = Sys::config->rootMediaDir + "bkgd_photos/" +  newName;
+    QString file = Sys::bkgdPhotosDir +  newName;
     qDebug() << "Saving cropped:" << file;
     bool rv = croppedImage.save(file);
     return rv;
 }
 
+// this is perspective correction
+// for images where camera was not normal to the plane of the tiling
+// topLeft/topRight/botRight/botLeft are already in keystone model space (see keystoneScreenToModel)
 void BackgroundImage::correctPerspective(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
 {
     qreal width = 0;
@@ -207,7 +270,7 @@ void BackgroundImage::correctPerspective(QPointF topLeft, QPointF topRight, QPoi
         width = bottomLine.length();
     }
 
-    if(topLine.length() > bottomLine.length())
+    if(leftLine.length() > rightLine.length())
     {
         height = leftLine.length();
     }
@@ -239,29 +302,39 @@ void BackgroundImage::correctPerspective(QPointF topLeft, QPointF topRight, QPoi
     }
 }
 
-
-// this is perspective correction
-// for images where camera was not normal to the plane of the tiling
-void BackgroundImage::createBackgroundAdjustment(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
+// keystone points are raw pixel coordinates in the currently-displayed pixmap. paint() draws
+// that pixmap centered at the layer's model origin (pixmapTL = -pixmap.size()/2, before the
+// layer transform), so pixel-space <-> model-space is just that centering offset, and
+// model-space <-> screen is exactly Layer::modelToScreen/screenToModel - already correct and
+// already used everywhere else, so reused here rather than re-deriving the canvas+model
+// composition by hand.
+QPointF BackgroundImage::keystoneScreenToModel(QPointF spt)
 {
-    QSize sz      = pixmap.size();
-    qreal offsetX = qreal(Sys::viewController->viewWidth() -  sz.width()) / 2.0;
-    qreal offsetY = qreal(Sys::viewController->viewHeight() - sz.height()) / 2.0;
-    QTransform t0 = QTransform::fromTranslate(offsetX,offsetY);
+    QPointF center(pixmap.width()/2.0, pixmap.height()/2.0);
+    return screenToModel(spt) + center;
+}
 
-    QTransform bkgdXform = t0 * getModelTransform();
-    QTransform t1        = bkgdXform.inverted();
+QPointF BackgroundImage::keystoneModelToScreen(QPointF mpt)
+{
+    if (bUseAdjusted && !adjustedImage.isNull())
+    {
+        // the displayed pixmap is now the warped result - carry the corner from its
+        // original photo-space position to where the correction actually put it.
+        // trueMatrix is the same adjustment QImage::transformed() applies internally
+        // (it shifts the result so it has no negative coordinates), so this has to be
+        // used rather than perspectiveT alone to land on the right pixel.
+        QTransform trueT = QPixmap::trueMatrix(perspectiveT, bkgdImage.width(), bkgdImage.height());
+        mpt = trueT.map(mpt);
+    }
 
-    correctPerspective(
-        t1.map(topLeft),
-        t1.map(topRight),
-        t1.map(botRight),
-        t1.map(botLeft));
+    QPointF center(pixmap.width()/2.0, pixmap.height()/2.0);
+    return modelToScreen(mpt - center);
 }
 
 QTransform BackgroundImage::getCanvasTransform()
 {
-    QTransform t  = Layer::getCanvasTransform();
+    // background images are not warped by canvas distortion, unlike the design content they surround
+    QTransform t  = viewControl()->getCanvas()->getUndistortedTransform();
     QPointF trans = Transform::trans(t);
     QTransform t1;
     t1.translate(trans.x(), trans.y());
@@ -278,7 +351,7 @@ void BackgroundImage::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 {
     Q_UNUSED(btn);
 
-    if (!viewControl()->isEnabled(VIEW_BKGD_IMG)) return;
+    if (!viewControl()->isEnabled(Layer::Type::BkgdImage)) return;
 
     if (adjuster.isActive())
     {
@@ -294,7 +367,7 @@ void BackgroundImage::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 
 void BackgroundImage::slot_mouseDragged(QPointF spt)
 {
-    if (!viewControl()->isEnabled(VIEW_BKGD_IMG)) return;
+    if (!viewControl()->isEnabled(Layer::Type::BkgdImage)) return;
 
     if (adjuster.isActive())
     {
@@ -313,7 +386,7 @@ void BackgroundImage::slot_mouseMoved(QPointF spt)
 
 void BackgroundImage::slot_mouseReleased(QPointF spt)
 {
-    if (!viewControl()->isEnabled(VIEW_BKGD_IMG)) return;
+    if (!viewControl()->isEnabled(Layer::Type::BkgdImage)) return;
 
     if (adjuster.isActive())
     {

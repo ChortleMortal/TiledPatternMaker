@@ -1,5 +1,4 @@
-#ifndef STEPPING_ENGINE_H
-#define STEPPING_ENGINE_H
+#pragma once
 
 #include <QObject>
 #include "sys/sys/versioning.h"
@@ -52,7 +51,5 @@ private:
     static bool paused;
     static int  runCount;
 };
-
-#endif // STEPPING_ENGINE_H
 
 

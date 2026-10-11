@@ -1,5 +1,4 @@
-#ifndef FLASH_MSGBOX_H
-#define FLASH_MSGBOX_H
+#pragma once
 
 #include <QMessageBox>
 
@@ -13,5 +12,3 @@ public:
 private:
     uint period;   // milliseconds
 };
-
-#endif // FLASH_MSGBOX_H

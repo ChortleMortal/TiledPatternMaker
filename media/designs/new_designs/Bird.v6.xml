@@ -1,0 +1,250 @@
+<?xml version="1.0"?>
+<!-- Written: Wed May 20 2026 10:47:16 -->
+<vector id="1" version="33">
+	<designNotes>with inserts</designNotes>
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1000</height>
+			<zwidth>1500</zwidth>
+			<zheight>1000</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<Fill singleton="f">-7,7,-8,7</Fill>
+	</design>
+	<style.Plain id="2">
+		<toolkit.GeoLayer>
+			<left__delta>132.1428571428571</left__delta>
+			<top__delta>-553.5714285714294</top__delta>
+			<width__delta>0.2799999999999998</width__delta>
+			<theta__delta>2.094395102393195e-17</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>Bird.v7</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Curve convex="t">
+									<Point id="6">-1.013333333333331,3.16</Point>
+									<Point id="7">-4.477434948471085,3.16</Point>
+									<Center>-2.745384140902208,1.427949192431123</Center>
+								</Curve>
+								<Curve convex="f">
+									<Point reference="7" />
+									<Point id="8">-2.74538414090221,0.160000000000001</Point>
+									<Center>-5.111409544686646,0.7939745962155644</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="8" />
+									<Point id="9">-1.013333333333335,-2.839999999999999</Point>
+									<Center>-0.3793587371177727,-0.4739745962155614</Center>
+								</Curve>
+								<Curve convex="f">
+									<Point reference="9" />
+									<Point id="10">0.7187174742355442,0.1599999999999997</Point>
+									<Center>1.352692070451104,-2.20602540378444</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="10" />
+									<Point id="11">2.450768281804423,3.159999999999998</Point>
+									<Center>0.08474287801998459,2.526025403784438</Center>
+								</Curve>
+								<Curve convex="f">
+									<Point reference="11" />
+									<Point reference="6" />
+									<Center>0.7187174742355471,4.892050807568875</Center>
+								</Curve>
+							</edges>
+						</Tile>
+						<NoMotif id="12" type="No Motif (for Tile)">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>10</n>
+						</NoMotif>
+					</entry>
+					<entry>
+						<Tile id="13">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="14">
+								<Curve convex="t">
+									<Point id="15">-1.013333333333331,3.16</Point>
+									<Point id="16">-4.477434948471085,3.16</Point>
+									<Center>-2.745384140902208,1.427949192431123</Center>
+								</Curve>
+								<Curve convex="f">
+									<Point reference="16" />
+									<Point id="17">-2.74538414090221,0.160000000000001</Point>
+									<Center>-5.111409544686646,0.7939745962155644</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="17" />
+									<Point id="18">-1.013333333333335,-2.839999999999999</Point>
+									<Center>-0.3793587371177727,-0.4739745962155614</Center>
+								</Curve>
+								<Curve convex="f">
+									<Point reference="18" />
+									<Point id="19">0.7187174742355442,0.1599999999999997</Point>
+									<Center>1.352692070451104,-2.20602540378444</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="19" />
+									<Point id="20">2.450768281804423,3.159999999999998</Point>
+									<Center>0.08474287801998459,2.526025403784438</Center>
+								</Curve>
+								<Curve convex="f">
+									<Point reference="20" />
+									<Point reference="15" />
+									<Center>0.7187174742355471,4.892050807568875</Center>
+								</Curve>
+							</edges>
+						</Tile>
+						<NoMotif id="21" type="No Motif (for Tile)">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>10</n>
+						</NoMotif>
+					</entry>
+					<entry>
+						<Tile id="22">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="23">
+								<Line>
+									<Point id="24">1,0.5773502691896256</Point>
+									<Point id="25">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point id="27">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point reference="24" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="30" onpoint="t">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<Extender extRays="f" extTips2B="f" extTips2T="f" conRays="0" stellation="1" embedBound="f" embedTile="f" fitToTile="t">
+								<boundarySides>6</boundarySides>
+								<boundaryScale>1</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
+							<q>0</q>
+							<s>2</s>
+						</Rosette>
+					</entry>
+					<entry>
+						<Tile id="31">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="32">
+								<Line>
+									<Point id="33">1,0.5773502691896256</Point>
+									<Point id="34">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="34" />
+									<Point id="35">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="35" />
+									<Point id="36">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point id="37">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="37" />
+									<Point id="38">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="38" />
+									<Point reference="33" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="39" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+						</ExplicitTile>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1840b2</color>
+		</style.Colored>
+	</style.Plain>
+	<style.Filled id="40">
+		<algorithm>3</algorithm>
+		<toolkit.GeoLayer>
+			<left__delta>132.1428571428571</left__delta>
+			<top__delta>-553.5714285714294</top__delta>
+			<width__delta>0.2799999999999998</width__delta>
+			<theta__delta>2.094395102393195e-17</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ffc59c0c</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffc2bcb0</color>
+			</Group>
+			<Group hideSet="t">
+				<color hide="f">#ffffff00</color>
+			</Group>
+			<Group hideSet="t">
+				<color hide="f">#ffffff00</color>
+			</Group>
+		</ColorGroup>
+	</style.Filled>
+	<style.TileColors id="41">
+		<toolkit.GeoLayer>
+			<left__delta>132.1428571428571</left__delta>
+			<top__delta>-553.5714285714294</top__delta>
+			<width__delta>0.2799999999999998</width__delta>
+			<theta__delta>2.094395102393195e-17</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<BkgdColors>#a35807,#234b30,#a35807,#234b30</BkgdColors>
+		<BkgdColors>#c2bcb0</BkgdColors>
+		<BkgdColors>#c2bcb0</BkgdColors>
+		<BkgdColors>#c2bcb0</BkgdColors>
+	</style.TileColors>
+</vector>

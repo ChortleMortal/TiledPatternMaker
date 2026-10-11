@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TPM_THREAD_H
-#define TPM_THREAD_H
 
 #include <QColor>
 #include "model/styles/colorset.h"
@@ -44,5 +42,3 @@ private:
     uint        chainCount;
 
 };
-
-#endif // THREAD_H

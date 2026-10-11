@@ -8,6 +8,7 @@
 #include "gui/model_editors/style_edit/fill_new1_editor.h"
 #include "gui/model_editors/style_edit/fill_original_editor.h"
 #include "gui/model_editors/style_edit/fill_set_editor.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/colorset_widget.h"
 #include "gui/widgets/panel_misc.h"
 #include "gui/top/controlpanel.h"
@@ -34,9 +35,6 @@ FilledEditor::FilledEditor(StylePtr style, eStyleType user) : StyleEditor(style,
     currentEditor = nullptr;
     panel         = Sys::controlPanel;
 
-    QLabel * label = new QLabel("Algorithm");
-    label->setMinimumHeight(31);
-
     algoBox = new QComboBox();
     algoBox->setMinimumHeight(31);
     algoBox->addItem(sFillType[FILL_ORIGINAL],                  FILL_ORIGINAL);
@@ -45,11 +43,9 @@ FilledEditor::FilledEditor(StylePtr style, eStyleType user) : StyleEditor(style,
     algoBox->addItem(sFillType[FILL_MULTI_FACE_MULTI_COLORS],   FILL_MULTI_FACE_MULTI_COLORS);
     algoBox->addItem(sFillType[FILL_FACE_DIRECT],               FILL_FACE_DIRECT);
 
+    // sub-editors append their own buttons to this same row (see createSubTypeEditor())
     hbox = new QHBoxLayout();
-    hbox->addStretch();
-    hbox->addWidget(label);
     hbox->addWidget(algoBox);
-    hbox->addStretch();
 
     vbox = new QVBoxLayout();
 
@@ -81,6 +77,15 @@ void FilledEditor::createSubTypeEditor(eFillType algo)
     qDebug() << "FilledEditor::createSubType" << algo;
 
     panel_misc::eraseLayout(dynamic_cast<QLayout*>(vbox));
+
+    // drop the previous sub-editor's buttons (and trailing stretch) from the combo row, keeping algoBox
+    while (hbox->count() > 1)
+    {
+        QLayoutItem * item = hbox->takeAt(1);
+        if (QWidget * w = item->widget())
+            delete w;
+        delete item;
+    }
 
     if (currentEditor)
     {
@@ -130,6 +135,8 @@ void FilledEditor::createSubTypeEditor(eFillType algo)
         }
     }
 
+    hbox->addStretch();
+
     if (currentEditor)
     {
         currentEditor->refresh();
@@ -162,13 +169,13 @@ void FilledEditor::slot_colorsChanged()
 
 void FilledEditor::onEnter()
 {
-    connect(Sys::sysview,     &SystemView::sig_mousePressed,   this, &FilledEditor::slot_mousePressed);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_mousePressed,   this, &FilledEditor::slot_mousePressed);
     connect(Sys::imageEngine, &ImageEngine::sig_colorPick,     this, &FilledEditor::slot_colorPick, Qt::QueuedConnection);
 }
 
 void FilledEditor::onExit()
 {
-    disconnect(Sys::sysview,     &SystemView::sig_mousePressed, this, &FilledEditor::slot_mousePressed);
+    disconnect(Sys::systemViewController->getView(), &SystemView::sig_mousePressed, this, &FilledEditor::slot_mousePressed);
     disconnect(Sys::imageEngine, &ImageEngine::sig_colorPick,   this, &FilledEditor::slot_colorPick);
 }
 

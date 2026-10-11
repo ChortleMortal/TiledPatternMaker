@@ -3,6 +3,7 @@
 #include <QDirIterator>
 #include <QDebug>
 #include <QDate>
+#include <QHash>
 #include "sys/sys/fileservices.h"
 #include "sys/sys/pugixml.hpp"
 #include "sys/sys.h"
@@ -30,20 +31,10 @@ VersionFileList FileServices::getFiles(eFileType type)
         return _getFiles(Sys::mapsDir,"*.xml");
 
     case FILE_GIRIH:
-        return _getFiles(Sys::config->rootMediaDir + "girih_shapes","*.xml");
+        return _getFiles(Sys::girihDir,"*.xml");
 
     case FILE_TEMPLATE:
-    {
-        VersionFileList xfiles = _getFiles(Sys::templateDir,"*.dat");
-        xfiles += _getFiles(QDir::currentPath(),"*.dat");
-        return xfiles;
-    }
-    case FILE_TEMPLATE2:
-    {
-        VersionFileList xfiles = _getFiles(Sys::templateDir,"*.xml");
-        xfiles += _getFiles(QDir::currentPath(),"*.xml");
-        return xfiles;
-    }
+        return _getFiles(Sys::templateDir,"*.xml");
     }
 
     VersionFileList compilerBug;
@@ -64,22 +55,10 @@ VersionedFile FileServices::getFile(const VersionedName & vname, eFileType type)
         return _getFile(Sys::mapsDir,"*.xml",vname);
 
     case FILE_GIRIH:
-        return _getFile(Sys::config->rootMediaDir + "girih_shapes","*.xml",vname);
+        return _getFile(Sys::girihDir,"*.xml",vname);
 
     case FILE_TEMPLATE:
-    {
-        VersionedFile xfile = _getFile(Sys::templateDir,"*.dat",vname);
-        if (xfile.isEmpty())
-            xfile = _getFile(QDir::currentPath(),"*.dat",vname);
-        return xfile;
-    }
-    case FILE_TEMPLATE2:
-    {
-        VersionedFile xfile = _getFile(Sys::templateDir,"*.xml",vname);
-        if (xfile.isEmpty())
-            xfile = _getFile(QDir::currentPath(),"*.xml",vname);
-        return xfile;
-    }
+        return _getFile(Sys::templateDir,"*.xml",vname);
     }
 
     VersionedFile compilerBug;
@@ -459,7 +438,6 @@ VersionedName FileServices::getNextVersion(eFileType type, VersionedName name)
         break;
     case FILE_GIRIH:
     case FILE_TEMPLATE:
-    case FILE_TEMPLATE2:
         qCritical("Not Supported");
     }
 
@@ -514,7 +492,9 @@ bool FileServices::reformatXML(VersionedFile file)
     }
 
     QFile afile(file.getPathedName());
-    afile. setPermissions(QFile::ReadOther | QFile::WriteOther);
+    QFileDevice::Permissions perms = afile.permissions();
+    perms |= QFile::ReadOther | QFile::WriteOther;
+    afile.setPermissions(perms);
 
     // Timestamp
     QDate cd = QDate::currentDate();
@@ -571,8 +551,7 @@ bool FileServices::verifyTilingFile(VersionedFile filename)
 
 bool FileServices::usesTilingInMosaic(VersionedFile mosaic, VersionedName tile)
 {
-    VersionedFile tiling = getTileFileFromMosaicFile(mosaic);
-    return (tiling.getVersionedName().get() == tile.get());
+    return (getTileNameFromMosaicFile(mosaic).get() == tile.get());
 }
 
 VersionFileList FileServices::whereTilingUsed(VersionedName tiling)
@@ -594,11 +573,20 @@ VersionFileList FileServices::whereTilingUsed(VersionedName tiling)
 
 VersionedFile FileServices::getTileFileFromMosaicFile(VersionedFile mosaicFile)
 {
-    VersionedFile fname;
+    VersionedName vn = getTileNameFromMosaicFile(mosaicFile);
+    if (vn.isEmpty())
+        return VersionedFile();
+
+    return getFile(vn,FILE_TILING);
+}
+
+VersionedName FileServices::getTileNameFromMosaicFile(VersionedFile mosaicFile)
+{
+    VersionedName vn;
 
     QFile afile(mosaicFile.getPathedName());
     bool rv = afile.open(QFile::ReadOnly);
-    if (!rv) return fname;
+    if (!rv) return vn;
 
     QTextStream str(&afile);
     QString aline;
@@ -609,23 +597,19 @@ VersionedFile FileServices::getTileFileFromMosaicFile(VersionedFile mosaicFile)
         {
             aline.remove("<Tiling>");
             aline.remove("</Tiling>");
-            aline = aline.trimmed();
-            VersionedName vn(aline);
-            fname = getFile(vn,FILE_TILING);
-            return fname;
+            vn.set(aline.trimmed());
+            return vn;
         }
         else if (aline.contains("<string>"))
         {
             aline.remove("<string>");
             aline.remove("</string>");
-            aline = aline.trimmed();
-            VersionedName vn(aline);
-            fname = getFile(vn,FILE_TILING);
-            return fname;
+            vn.set(aline.trimmed());
+            return vn;
         }
     } while (!aline.isNull());
 
-    return fname;
+    return vn;
 }
 
 QString FileServices::getBackgroundFilenameFromMosaicFile(VersionedFile mosaicFile)
@@ -657,16 +641,15 @@ QString FileServices::getBackgroundFilenameFromMosaicFile(VersionedFile mosaicFi
     return QString();
 }
 
-QDate FileServices::getDateFromXMLFile(VersionedFile file)
+QDateTime FileServices::getDateTimeFromXMLFile(VersionedFile file)
 {
-    if (file.isEmpty()) return QDate();
+    if (file.isEmpty()) return QDateTime();
 
     QFile afile(file.getPathedName());
     bool rv = afile.open(QFile::ReadOnly);
-    if (!rv) return QDate();
+    if (!rv) return QDateTime();
 
     // <!-- Written: Tue Jul 11 2023 10:36:18 -->
-    //QString date("Tue Jul 11 2023");
 
     // 'Written' appears in line 2 or line 3 or not at all
     QTextStream str(&afile);
@@ -675,24 +658,34 @@ QDate FileServices::getDateFromXMLFile(VersionedFile file)
     for (int i=0; i< 3; i++)
     {
         str.readLineInto(&aline);
-        if (aline.contains("Written:"))
+        int idx = aline.indexOf("Written:");
+        if (idx >= 0)
         {
-            aline = aline.trimmed();
-            aline.remove("<!-- Written: ");
-            aline.resize(aline.length()-13);
-            QDate da = QDate::fromString(aline,"ddd MMM dd yyyy");
-            if (!da.isValid())
+            aline = aline.mid(idx + 8);
+            aline.remove("-->");
+            aline = aline.simplified();
+            QDateTime dt = QDateTime::fromString(aline,"ddd MMM d yyyy HH:mm:ss");
+            if (!dt.isValid())
             {
-                da = QDate::fromString(aline,"ddd MMM d yyyy");
+                dt = QDateTime::fromString(aline,"ddd MMM dd yyyy HH:mm:ss");
             }
-            return da;
+            return dt;
         }
     }
-    return QDate();
+    return QDateTime();
 }
 
 TilingUses FileServices::getTilingUses()
 {
+    // scan the tilings once, rather than once per mosaic
+    QHash<QString,VersionedFile> tilings;
+    for (VersionedFile & tiling : getFiles(FILE_TILING))
+    {
+        QString name = tiling.getVersionedName().get();
+        if (!tilings.contains(name))
+            tilings.insert(name,tiling);
+    }
+
     TilingUses uses;
     QString path(Sys::rootMosaicDir);
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
@@ -700,30 +693,25 @@ TilingUses FileServices::getTilingUses()
     {
         VersionedFile mosaicFile;
         mosaicFile.setFromFullPathname(it.next());
-        VersionedFile tile   = getTileFileFromMosaicFile(mosaicFile);
+        VersionedFile tile   = tilings.value(getTileNameFromMosaicFile(mosaicFile).get());
         uses.push_back(TilingUse(tile, mosaicFile));
     }
     return uses;
 }
 
-VersionList FileServices::getDirBMPFiles(QString path)
+// gets old .bmp and new .png
+VersionFileList FileServices::getDirImageFiles(QString path)
 {
-    VersionList vl;
+    VersionFileList vl;
 
     if (path.isEmpty())
     {
-        qInfo() << "directory not configured for BMP file comparision";
+        qInfo() << "directory not configured for Image file comparision";
         return vl;
     }
 
-    QDirIterator it(path, QStringList() << "*.bmp", QDir::Files, QDirIterator::NoIteratorFlags);
-    while (it.hasNext())
-    {
-        it.next();
-        VersionedName vn(it.fileName());
-        vn.set(it.fileName());
-        vl.add(vn);
-    }
+    vl =  _getFiles(path,"*.bmp");
+    vl += _getFiles(path,"*.png");
     vl.sort();
     return vl;
 }
@@ -732,12 +720,16 @@ bool FileServices::relocateTemplateFiles()
 {
     // move template files if necessary
     QString oldLoc = Sys::rootMosaicDir + "/templates";
+    QDir oldDir(oldLoc);
+    if (!oldDir.exists() || oldDir.isEmpty())
+        return true;
+
     QString newLoc = Sys::templateDir;
 
     QDir newDir(newLoc);
     if (!newDir.exists())
     {
-        bool rv = QDir().mkdir(newLoc);
+        bool rv = QDir().mkpath(newLoc);
         if (!rv)
         {
             qWarning() << "Could not create directory:" << newLoc;
@@ -745,30 +737,27 @@ bool FileServices::relocateTemplateFiles()
         }
     }
 
-    QDir oldDir(oldLoc);
-    if (oldDir.exists() && !oldDir.isEmpty())
+    QFileInfoList infos = oldDir.entryInfoList(QDir::Files);
+    for (QFileInfo & info : infos)
     {
-        QFileInfoList infos = oldDir.entryInfoList(QDir::Files);
-        for (QFileInfo & info : infos)
-        {
-            QString name    = info.fileName();
-            QString newname = newLoc + "/" + name;
-            QFile afile(info.canonicalFilePath());
-            bool rv = afile.rename(newname);
-            if (!rv)
-            {
-                qWarning().noquote() << "could not move" << info.canonicalFilePath() << "to" << newname;
-                return false;
-            }
-        }
-        bool rv = oldDir.removeRecursively();
+        QString name    = info.fileName();
+        QString newname = newLoc + "/" + name;
+        QFile afile(info.canonicalFilePath());
+        bool rv = afile.rename(newname);
         if (!rv)
         {
-            qWarning().noquote() << "could not delete directory:" << oldLoc;
+            qWarning().noquote() << "could not move" << info.canonicalFilePath() << "to" << newname;
             return false;
         }
-        qInfo().noquote() << "moved template files from" << oldLoc << "to:" << newLoc;
-        return true;
     }
+
+    bool rv = oldDir.removeRecursively();
+    if (!rv)
+    {
+        qWarning().noquote() << "could not delete directory:" << oldLoc;
+        return false;
+    }
+
+    qInfo().noquote() << "moved template files from" << oldLoc << "to:" << newLoc;
     return true;
 }

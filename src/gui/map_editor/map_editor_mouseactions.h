@@ -1,6 +1,4 @@
 #pragma once
-#ifndef MAP_EDITOR_MOUSEACTIONS_H
-#define MAP_EDITOR_MOUSEACTIONS_H
 
 #include <QLineF>
 #include <QObject>
@@ -47,6 +45,7 @@ protected:
     void    forceRedraw();
 
     QPointF              last_drag;
+    MapEditor          * editor;
     MapEditorDb        * db;
     MapEditorSelection * selector;
 };
@@ -108,6 +107,49 @@ public:
 protected:
 };
 
+// moves one endpoint of the selected construction line - snaps like DrawLine
+class MoveConstructionEndpoint : public MapMouseAction
+{
+public:
+    MoveConstructionEndpoint(int lineIndex, int endpoint, QPointF spt);
+    ~MoveConstructionEndpoint() override;
+
+    virtual void updateDragging(QPointF spt) override;
+    virtual void endDragging( QPointF spt) override;
+    virtual void draw(QPainter * painter) override;
+
+protected:
+    void    moveTo(QPointF spt);
+
+    int     lineIndex;
+    int     endpoint;       // 0 = p1, 1 = p2
+    QLineF  currentLine;
+    bool    snapped;
+};
+
+// extends/shortens one endpoint of the selected construction line along its own direction -
+// snaps to where the line meets map/construction lines, or to points lying on its axis
+class ExtendConstructionLine : public MapMouseAction
+{
+public:
+    ExtendConstructionLine(int lineIndex, int endpoint, QPointF spt);
+    ~ExtendConstructionLine() override;
+
+    virtual void updateDragging(QPointF spt) override;
+    virtual void endDragging( QPointF spt) override;
+    virtual void draw(QPainter * painter) override;
+
+protected:
+    void    extendTo(QPointF spt);
+
+    int     lineIndex;
+    int     endpoint;       // 0 = p1, 1 = p2
+    QPointF anchor;         // the fixed endpoint
+    QPointF direction;      // unit vector anchor -> dragged endpoint
+    QLineF  currentLine;
+    bool    snapped;
+};
+
 class ExtendLineP1 : public MapMouseAction
 {
 public:
@@ -162,7 +204,3 @@ protected:
     QPointF   * start;
     QPointF   * end;
 };
-
-
-
-#endif

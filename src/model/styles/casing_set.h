@@ -1,6 +1,4 @@
 #pragma once
-#ifndef CASING_SET_H
-#define CASING_SET_H
 
 #include <QVector>
 #include "model/styles/casing_side.h"
@@ -27,5 +25,3 @@ public:
     MapPtr    map;
     QMap<VertexPtr,CNeighboursPtr>  weavings;
 };
-
-#endif // CASING_SET_H

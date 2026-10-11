@@ -1,6 +1,4 @@
 #pragma once
-#ifndef SHAPES_H
-#define SHAPES_H
 
 #include <QPolygonF>
 #include <QPen>
@@ -87,5 +85,3 @@ public:
     Circle2 & operator=(const Circle2 & other);
 
 };
-
-#endif // SHAPES_H

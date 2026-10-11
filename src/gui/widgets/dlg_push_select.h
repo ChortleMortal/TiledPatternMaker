@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLGPUSHSELECT_H
-#define DLGPUSHSELECT_H
 
 class QRadioButton;
 
@@ -23,5 +21,3 @@ private:
     QRadioButton * rbMotif;
     QRadioButton * rbTiling;
 };
-
-#endif // DLGPUSHSELECT_H

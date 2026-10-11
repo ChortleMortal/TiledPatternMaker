@@ -1,5 +1,7 @@
 #include "gui/viewers/geo_graphics.h"
 #include "gui/viewers/viewer_services.h"
+#include "model/motifs/extended_boundary.h"
+#include "model/motifs/extender.h"
 #include "model/motifs/motif.h"
 #include "model/tilings/tile.h"
 #include "sys/geometry/edge.h"
@@ -24,7 +26,7 @@ void  ViewerServices::drawTile(GeoGraphics * gg, TilePtr tile, QBrush brush, QPe
 
 void  ViewerServices ::drawMotif(GeoGraphics * gg, MotifPtr motif, QPen pen)
 {
-    MapPtr map = motif->getMotifMap();
+    MapPtr map = motif->getValidMotifMap();
     if (!map) return;
 
     for(auto & edge :  std::as_const(map->getEdges()))
@@ -37,5 +39,30 @@ void  ViewerServices ::drawMotif(GeoGraphics * gg, MotifPtr motif, QPen pen)
         {
             gg->drawArc(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->getCurveType(),pen,true);
         }
+    }
+}
+
+void ViewerServices::drawExtendedBoundary(GeoGraphics * gg, MotifPtr motif, QPen pen)
+{
+    for (const ExtenderPtr & ep : std::as_const(motif->getExtenders()))
+    {
+        const ExtendedBoundary & eb = ep->getExtendedBoundary();
+
+        QPainterPath path;
+        if (!eb.isCircle())
+        {
+            path.addPolygon(eb.getPoly());
+            path.closeSubpath();
+        }
+        else
+        {
+            qreal radius = eb.getRadius();
+            path.addEllipse(QPointF(0,0),radius,radius);
+        }
+
+        QPainter * painter = gg->getPainter();
+        painter->setPen(pen);
+        painter->setBrush(Qt::NoBrush);
+        painter->drawPath(gg->getTransform().map(path));
     }
 }

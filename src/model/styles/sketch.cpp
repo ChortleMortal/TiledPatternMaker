@@ -31,14 +31,12 @@ using std::make_shared;
 
 // Creation.
 
-Sketch::Sketch(ProtoPtr proto) : Plain(proto)
+Sketch::Sketch(ProtoPtr proto) : Plain(proto), rng(279401u)
 {
-    srand(279401L);    // TODO depecated
 }
 
-Sketch::Sketch(StylePtr other) : Plain(other)
+Sketch::Sketch(StylePtr other) : Plain(other), rng(279401u)
 {
-    srand(279401L);    // TODO depecated
 }
 
 Sketch::~Sketch()
@@ -74,10 +72,10 @@ void Sketch::draw(GeoGraphics * gg)
 
         for( int c = 0; c < 8; ++c )
         {
-            volatile qreal r1 = (rand()/RAND_MAX) * jitter;
-            volatile qreal r2 = (rand()/RAND_MAX) * jitter;
-            volatile qreal r3 = (rand()/RAND_MAX) * jitter;
-            volatile qreal r4 = (rand()/RAND_MAX) * jitter;
+            qreal r1 = rng.generateDouble() * jitter;
+            qreal r2 = rng.generateDouble() * jitter;
+            qreal r3 = rng.generateDouble() * jitter;
+            qreal r4 = rng.generateDouble() * jitter;
             VertexPtr v1 = make_shared<Vertex>(a + QPointF(r1,r2));
             VertexPtr v2 = make_shared<Vertex>(b + QPointF(r3,r4));
             EdgePtr edge2;

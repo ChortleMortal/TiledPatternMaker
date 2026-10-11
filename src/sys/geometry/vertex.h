@@ -1,6 +1,4 @@
 #pragma once
-#ifndef VERTEX_H
-#define VERTEX_H
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -39,6 +37,4 @@ public:
 
     static int  refs;
 };
-
-#endif
 

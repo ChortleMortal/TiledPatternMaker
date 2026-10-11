@@ -1,3 +1,140 @@
+Version 4.3
+===========
+
+Version 4.3 is a large release. Alongside a good deal of internal rework, it adds new tools
+for building tilings and mosaics from photographs, new distortion and border options, and
+many fixes.
+
+Installers:
+    Linux               A Linux installer (.deb) is provided for the first time, alongside
+                        the Windows installer.
+
+New and Improved:
+    Tiling Maker        Construction lines are now a full tool in the Tiling Maker. You can
+                        draw guide lines (for example, by tracing over a background photo),
+                        then select them, drag their ends to move them, extend them, and
+                        delete them. While you draw, a line's end snaps to the ends,
+                        midpoints and crossings of other lines, and to any point on a tile
+                        edge. Tile vertices, tile centers and translation vectors snap to
+                        the construction lines and their crossings, which makes it much
+                        easier to build a tiling that matches a photo. Construction lines
+                        have their own C-Lines tab and their own layer, are not affected by
+                        distortion, and are saved with the tiling.
+
+                        Anchors: two placed tiles can be anchored together at an edge, so
+                        that moving, scaling or rotating one keeps the others in contact.
+                        Translation vectors can also be anchored to tiles, so the repeat
+                        stays correct when tiles are moved.
+
+                        Tiles excluded from the tiling unit are now saved with the tiling
+                        rather than being discarded. The translation vector and repetition
+                        controls have moved to a new Repeat tab, and tiles can be drawn with
+                        a semi-transparent fill so a background image shows through.
+
+                        Load Replace swaps in a different tiling while keeping the existing
+                        motifs, matching them to the new tiles by shape.
+
+                        Tiles now rotate and scale around their centroid, so irregular tiles
+                        and girih shapes turn in place. Older files are converted on load.
+
+    Motif Maker         Substantially reworked and reorganised. Adaptive motifs have a new
+                        "Crop to tile" option. Rosette2 has new tip types, including Outward
+                        Point and tips that extend to the extender boundary. An older Rosette
+                        can be converted to a Rosette2, and a Rosette2 to an AdaptiveRosette,
+                        without changing its shape. Cleanse now works on every motif type.
+
+    Map Editor          Pushing edits back from the Map Editor to a mosaic, motif or tiling is
+                        now reliable; previously it could lose data or update the wrong item.
+                        A prototype can be converted to a fixed map (this cannot be undone).
+                        Construction lines can now be selected, moved, extended and deleted
+                        (F4), and are kept automatically between sessions; they can still be
+                        saved and loaded as named templates as before.
+
+    Distortion          Distortion has been redesigned. A design can be stretched or skewed to
+                        match a photograph that was not taken square-on. It is set in Canvas
+                        Settings (and on the Tiling Maker Adjust tab), with three modes: None,
+                        Canvas (the whole view is distorted) and Tile (the geometry of each
+                        tile is distorted; experimental). Borders, background and grid are
+                        not distorted.
+
+    Borders             A mosaic can now have more than one border. Borders are drawn on top
+                        of the design, in the order they appear in the style list.
+
+    Background Image    Tilings and mosaics now share a single background image, and each
+                        saves its own placement of it. Perspective (keystone) correction is
+                        done by picking the four corners, which can then be dragged to
+                        fine-tune them. Photos are shown the right way up using their EXIF
+                        orientation, and JPGs can optionally be converted to PNG on load.
+
+    Grid                The grid has been rewritten. All grid types now always fill the view
+                        and can be positioned Centered, Offset or Fixed. Grids based on the
+                        tiling's repeat unit now follow its translation vectors correctly.
+                        Snapping uses exactly the grid that is drawn, so every visible
+                        crossing can be snapped to. As well as new tile vertices, the
+                        vertices, centers and edge midpoints of existing tiles now snap to
+                        grid crossings when they are dragged. "No Grid" is now called
+                        "Centers Only".
+
+    Layers              Layer Info and Layer Align are combined into a single Layers page,
+                        whose tabs can be floated as separate windows. Each layer's opacity
+                        can be adjusted.
+
+    Views               The view's aspect ratio can be locked. The background color can be
+                        set separately for the Light and Dark themes. Show Mosaic and Show
+                        Tiling now bring the view back if it was minimized.
+
+    Saving              Mosaics, tilings and maps all use the same Save dialog, which offers
+                        to bump the version number.
+
+    Controls            Number fields keep their full precision even when fewer decimals are
+                        displayed, and no longer change if the mouse wheel is scrolled over
+                        them by accident. Switching between Insight and Designer mode now
+                        takes effect the next time the application starts.
+
+    Outline/Interlace   Curved edges are now handled when drawing outlines and interlaces,
+                        fixing gaps where curves cross.
+
+    Stellation          Early, experimental support.
+
+    Performance         Large maps are cleaned and verified much faster.
+
+Fixes:
+    Map Editor          Selection works correctly when the view is zoomed or panned. Deleting
+                        an edge no longer leaves stray vertices. Fixed a crash when pushing
+                        to a motif.
+    Tilings             Girih tile names are no longer lost when a tiling is reloaded.
+    Views               The window no longer reverts to its old size after a rebuild, and is
+                        no longer cut off when larger than the screen. Layer settings are
+                        restored correctly at startup. Filled styles no longer go blank when
+                        distortion is turned on or off.
+    Motifs              Fixed a crash in Inferred motifs caused by zero-length edges.
+    Sketch Style        Fixed jitter.
+
+File Locations:
+    The default folders for media (sample designs, tilings, backgrounds, templates and
+    worklists) and logs have changed:
+
+        4.2 and earlier (Windows only):
+            Media   %LOCALAPPDATA%\DAC\TiledPatternMaker\media\...
+            Logs    %LOCALAPPDATA%\DAC\TiledPatternMaker\cache\tiledPatternmaker\logs\...
+
+        4.3:
+            Windows Media   Documents\TiledPatternMaker\media\...
+            Windows Logs    %LOCALAPPDATA%\TiledPatternMaker\logs\...
+            Linux   Media   ~/Documents/TiledPatternMaker/media/...
+            Linux   Logs    ~/.cache/TiledPatternMaker/logs/...
+
+    On Linux, the installer places the media in /usr/share/tiledpatternmaker/media. When the
+    application first runs after an install or upgrade, it copies anything new or changed
+    from there into ~/Documents/TiledPatternMaker/media.
+
+    If you build the application yourself and run it from the source tree, it uses the
+    media/ folder in the source tree instead.
+
+    Any of these folders can be changed in the control panel's App Settings page, under
+    "App Path Settings": uncheck the "Default" box for Media, Images or Log, then choose the
+    folder you want.
+
 Version 4.2
 ===========
 
@@ -11,7 +148,7 @@ now characterised as:
 - Color per Face.
 
 The 'Color per Face' fill type has been rewritten to make the assignment of colors to faces more
-stable than previously.  Thr older version is deprecated and older mosaic XML files are converted
+stable than previously.  The older version is deprecated and older mosaic XML files are converted
 on load.  If re-saved they will be saved in the new format.
 
 Tiling Color code has also been substantially simplified and revised.
@@ -37,7 +174,7 @@ Version 4.1
 Improvements:
 
 - Addition of Mosaic distortion to fit into spaces (via mosaic maker and the prototype info page)
-- Additon of cropping Background Images
+- Addition of cropping Background Images
 - Addition of a third tip type to the Rosette2 Style
 - Improvements to Mosaic and Painter crops and their interaction with Border crops
 - Addition of pressing 'b' and 'shift-b' for toggling view of background images
@@ -105,7 +242,7 @@ Improvements:
                         However layers can now be locked (to avoid modification) or soloed such that keyboard actions
                         only modify that layer. These selections of independent, locked, soloed, are used throughout
                         the menu system. A new menu page 'Layer Control' is added which summarizes all the visible layers.
-    Map Editor          Map line extensions have been revised, and F-key functions have been reorded. Some help
+    Map Editor          Map line extensions have been revised, and F-key functions have been reordered. Some help
                         messages on panel status line have been added.
     File Services       The construction line template directory (used by the map editor) has been moved
                         from media/design/templates to media/templates and re-implemented as .xml files.
@@ -267,14 +404,14 @@ Improvements:
     Control Panel       Model Settings page - improved
     Control Panel       Image tools page - new layout which is clearer
 
-Fixed
+Fixes:
     Tiling Maker        Occasional crash in Snap-to introduced in version 3.3
     Tiling Maker        Detection of overlaps/touching was slowing down the maker
     Tiling Maker        Repeat points not shown correctly while creating them
-    Save Tilng          Removed spurious exhortations to save tiling
+    Save Tiling         Removed spurious exhortations to save tiling
     Image Tools         Repair of "Show original PNGs"
     Image Tools         Color filter only used for direct viewing not ping-pong.
-                        Its use during pin-pong was causing more confusion than benefit.
+                        Its use during ping-pong was causing more confusion than benefit.
     Startup             Race condition at startup causing crash fixed
     Background Images   Alignment to mosaics and tilings improved
     Background Images   Background images from tiling were not being carried forward into mosaic
@@ -390,7 +527,7 @@ for tiles (features) which were irregular polygons.  The ExplicitFigure class co
 of ways, but its data was persisted (saved) as a map which did not have any indication of how it was made. 
 So for version 3.0, the TPM application was used to re-create the original map using the various supported
 ways of creating the motif map.  This painstaking process has been largely successful, but there are a few
-instances where the ExpicitFigure could not be recreated. The inference is that the design was created with
+instances where the ExplicitFigure could not be recreated. The inference is that the design was created with
 taprats code that differed from that which has been released/distributed and the exact way the design was
 created is now lost. Since the development of taprats was experimental and part of work done for Dr. Kaplan's
 PhD thesis, it is quite understandable that his work on rosettes and stars changed over time as his expertise
@@ -410,7 +547,7 @@ derived from that to handle the difficulties associated with multiple inferred m
 speculation.  Islamic designs do have these shapes in contact, it is just this software that has difficulties
 with this.
 
-There are still places where the IrregularMotifMap class (ex Explicitfigure) is used intentionally,
+There are still places where the IrregularMotifMap class (ex ExplicitFigure) is used intentionally,
 where maps are created (or modified) using the Map Editor.
 
 
@@ -455,14 +592,14 @@ Version 2.6.0
         ○ Introduces layers and composites
 - Use of worklists for loading, generating and comparing images
 - Adds multi-view
-- Irregular features default to Explicit Feature rather then Infer
+- Irregular features default to Explicit Feature rather than Infer
 - Motifs displayed actual size or enlarged
 - Multi-select of motifs support superposition of figures which can be made into a composite figure
 - Maps merging improved support overlapping in tiles (this deviates from the concept of just using
   PICs (polygons in contact))
 - Fill Region definition improvements
 
-BugFixes:
+Bug Fixes:
 - Style duplication
 - Linux build repaired
 

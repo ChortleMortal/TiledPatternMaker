@@ -1,6 +1,4 @@
 #pragma once
-#ifndef SPLITSCREEN_H
-#define SPLITSCREEN_H
 
 #include <QFrame>
 #include <QBoxLayout>
@@ -38,5 +36,3 @@ protected:private:
     panel_page   * floater;
     QWidget      * dummy;
 };
-
-#endif // SPLITSCREEN_H

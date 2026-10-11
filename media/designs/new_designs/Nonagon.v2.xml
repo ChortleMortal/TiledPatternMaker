@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="12">
-	<!-- Written:  Wed Dec 1 2021 07:32:17 -->
+<!-- Written: Thu Aug 27 2026 06:30:47 -->
+<vector id="1" version="34">
 	<design>
 		<size>
 			<width>1603</width>
@@ -13,21 +13,20 @@
 		</background>
 		<Fill singleton="f">-4,5,-5,5</Fill>
 	</design>
-	<style.Thick id="2" serialization="custom">
+	<style.Thick id="2">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>0,0</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
-					<string>Nonangon.v3</string>
+					<Tiling>Nonangon.v3</Tiling>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -69,19 +68,24 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitRosette id="15" type="FIG_TYPE_EXPLICIT_ROSETTE">
+						</Tile>
+						<IrregularRosette id="15" type="Adaptive Inferred Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>9</n>
+							<Extender extRays="f" extTips2B="f" extTips2T="f" conRays="0" stellation="0" embedBound="f" embedTile="f" fitToTile="f">
+								<boundarySides>1</boundarySides>
+								<boundaryScale>1</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
+							<cropToTile>f</cropToTile>
 							<s>2</s>
 							<q>0.3</q>
 							<rFlexPt>0.4399999999999999</rFlexPt>
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>4</r>
-						</app.ExplicitRosette>
+						</IrregularRosette>
 					</entry>
 					<entry>
-						<tile.Feature id="16">
+						<Tile id="16">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -115,15 +119,20 @@
 									<Point reference="18" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitStar id="25" type="FIG_TYPE_EXPLICIT_STAR">
-							<s>1</s>
-							<d>2.279999999999995</d>
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<IrregularStar id="25" type="Adaptive Girih Motif">
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitStar>
+							<n>7</n>
+							<Extender extRays="f" extTips2B="f" extTips2T="f" conRays="0" stellation="0" embedBound="f" embedTile="f" fitToTile="f">
+								<boundarySides>1</boundarySides>
+								<boundaryScale>1</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
+							<cropToTile>t</cropToTile>
+							<s>1</s>
+							<d>2.279999999999995</d>
+						</IrregularStar>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -134,6 +143,8 @@
 		<style.Thick>
 			<draw__outline>true</draw__outline>
 			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
 </vector>

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLG_POINT_EDIT_H
-#define DLG_POINT_EDIT_H
 
 #include <QDoubleSpinBox>
 #include "sys/geometry/edge_poly.h"
@@ -38,5 +36,3 @@ private:
     EdgePoly & _poly;
     QPointF    _orig;
 };
-
-#endif

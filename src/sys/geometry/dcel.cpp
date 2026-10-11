@@ -1,9 +1,8 @@
 #include <QDebug>
-#include <QMessageBox>
-#include <QElapsedTimer>
 #include <QApplication>
 #include <math.h>
 
+#include "model/makers/mosaic_maker.h"
 #include "sys/geometry/dcel.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/vertex.h"
@@ -146,8 +145,6 @@ void DCEL::cleanseEdges()
 
 bool DCEL::fill_half_edge_table()
 {
-    QElapsedTimer qet;
-    qet.start();
     qDebug() << "DCEL::fill_half_edge_table" << info();
 
     NeighbourMap nmap(this);
@@ -161,17 +158,16 @@ bool DCEL::fill_half_edge_table()
 
             EdgePtr current = edge;
             EdgePtr next    = next_half_edge(nmap,current);
+            int     steps   = 0;
             while (next != edge)
             {
-                if (qet.elapsed() > (10 * 1000))
+                // a walk longer than the edge count has repeated an edge, so it can never return to the start
+                if (++steps > edges.size())
                 {
-                    qWarning() << "DCEL creation timeout";
+                    qWarning() << "DCEL creation failed - malformed map";
                     if (Sys::isGuiThread())
                     {
-                        QMessageBox box;
-                        box.setIcon(QMessageBox::Critical);
-                        box.setText("DCEL creation failed");
-                        box.exec();
+                        emit Sys::mosaicMaker->sig_messageBox("DCEL creation failed - the map may be malformed",QString(),QMessageBox::Critical,false);
                     }
                     return false;
                 }

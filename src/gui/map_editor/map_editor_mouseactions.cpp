@@ -1,13 +1,12 @@
 #include <QMessageBox>
 
-#include "gui/map_editor/map_editor.h"
 #include "gui/map_editor/map_editor_db.h"
 #include "gui/map_editor/map_editor_mouseactions.h"
 #include "gui/map_editor/map_selection.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/map_editor_view.h"
 #include "model/motifs/motif.h"
-#include "model/prototypes/design_element.h"
+#include "model/prototypes/tile_motif.h"
 #include "model/settings/configuration.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/geo.h"
@@ -24,11 +23,12 @@ typedef std::weak_ptr<class Edge>   WeakEdgePtr;
 MapMouseAction::MapMouseAction(QPointF spt)
 {
     desc      = "MapMouseAction";
+    editor    = Sys::mapEditor;
     selector  = Sys::mapEditorView->getSelector();
     db        = Sys::mapEditorView->getDb();
     last_drag = spt;
 
-    connect(this, &MapMouseAction::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
+    connect(this, &MapMouseAction::sig_updateView, Sys::systemViewController, &ViewController::slot_updateView);
 
     forceRedraw();
 }
@@ -53,16 +53,21 @@ void MapMouseAction::endDragging(QPointF spt)
 {
     Q_UNUSED(spt)
 
-    MapEditorLayer & layer = db->getEditLayer();
-    DELPtr delp  = layer.getDel();
-    if (delp)
+    MapEditorLayer & layer       = editor->getEditLayer();
+    MapEditorMap::MapType mtype  = layer.getLayerMapType();
+    if (mtype == MapEditorMap::MapType::Motif || mtype == MapEditorMap::MapType::MotifUnit )
     {
-        Q_ASSERT(db->isMotif(layer.getLayerMapType()));
-        MotifPtr motif = delp->getMotif();
-        if (motif)
+        MapedMapPtr memp = layer.getWorking();
+        TimoMap * mm     = static_cast<TimoMap*>(memp.get());
+        TileMotifSet set = mm->getTileMotifs();
+        for (auto & timo : set)
         {
-            //map has been changed
-            motif->setMotifType(MOTIF_TYPE_EXPLICIT_MAP);
+            MotifPtr motif = timo->getMotif();
+            if (motif)
+            {
+                //map has been changed
+                motif->setMotifType(Motif::Type::MapMotif);
+            }
         }
     }
 
@@ -97,7 +102,7 @@ void MoveVertex::updateDragging(QPointF spt)
 
 void MoveVertex::endDragging( QPointF spt)
 {
-    MapPtr map = db->getEditMap();
+    MapPtr map = editor->getEditMap();
     if (!map)
     {
         return;
@@ -155,7 +160,7 @@ void MoveVertex::endDragging( QPointF spt)
             endsel = selector->findALine(endset);
             if (endsel)
             {
-                qDebug() << "end is on line"  << sMapSelection[endsel->getType()];
+                qDebug() << "end is on line"  << sMapSelection[(int)endsel->getType()];
                 _vp->setPt(endsel->getPointNear(endsel,Sys::mapEditorView->viewTinv.map(spt)));
             }
             else
@@ -213,7 +218,7 @@ void MoveEdge::updateDragging(QPointF spt)
 
 void MoveEdge::endDragging(QPointF spt)
 {
-    MapPtr map = db->getEditMap();
+    MapPtr map = editor->getEditMap();
     if (map)
     {
         MapCleanser mc(map);
@@ -234,26 +239,7 @@ DrawLine::DrawLine(SelectionSet & set, QPointF spt) : MapMouseAction(spt)
     end   = nullptr;
     desc = "DrawLine";
 
-    MapSelectionPtr sel = selector->findAPoint(set);
-    if (sel)
-    {
-        start = new QPointF(sel->getPoint());
-        qDebug() << "start is point" << *start;
-    }
-    else
-    {
-        sel = selector->findALine(set);
-        if (sel)
-        {
-            start = new QPointF(sel->getPointNear(sel,Sys::mapEditorView->viewTinv.map(spt)));
-            qDebug() << "start is on line"  << sMapSelection[sel->getType()] << *start;
-        }
-        else
-        {
-            start = new QPointF(Sys::mapEditorView->viewTinv.map(spt));
-            qDebug() << "no start selection - point is point" << *start;
-        }
-    }
+    start = new QPointF(selector->snapPoint(set,spt));
 }
 
 DrawLine::~DrawLine()
@@ -274,9 +260,9 @@ void DrawLine::updateDragging(QPointF spt)
     QLineF newline(*start,*end);
 
     intersectPoints.clear();
-    for (const LineInfo & linfo : std::as_const(selector->lines))
+    for (const LineInfo & linfo : std::as_const(db->getLines()))
     {
-        if (linfo.type == LINE_EDGE && linfo.edge->isCurve())
+        if (linfo.type == LineInfo::Type::LINE_EDGE && linfo.edge->isCurve())
         {
             QPointF isect1;
             QPointF isect2;
@@ -305,29 +291,10 @@ void DrawLine::updateDragging(QPointF spt)
 void DrawLine::endDragging( QPointF spt)
 {
     SelectionSet endset = selector->findSelectionsUsingDB(spt);
+    if (end) delete end;
+    end = new QPointF(selector->snapPoint(endset,spt));
 
-    MapSelectionPtr endsel = selector->findAPoint(endset);
-    if (endsel)
-    {
-        end = new QPointF(endsel->getPoint());
-        qDebug() << "end is point" << *end;
-    }
-    else
-    {
-        endsel = selector->findALine(endset);
-        if (endsel)
-        {
-            end = new QPointF(endsel->getPointNear(endsel,Sys::mapEditorView->viewTinv.map(spt)));
-            qDebug() << "end is on line"  << sMapSelection[endsel->getType()] << *end;
-        }
-        else
-        {
-            end = new QPointF(Sys::mapEditorView->viewTinv.map(spt));
-            qDebug() << "no end selection - point is point" << *end;
-        }
-    }
-
-    MapPtr map = db->getEditMap();
+    MapPtr map = editor->getEditMap();
     if (map)
     {
         if (end && (*start != *end))
@@ -345,7 +312,7 @@ void DrawLine::endDragging( QPointF spt)
     }
     else
     {
-        QMessageBox box((QWidget*)Sys::sysview);
+        QMessageBox box(Sys::systemViewController->getWidget());
         box.setIcon(QMessageBox::Warning);
         box.setText("Cannot save line\nPlease load a map or create a new map first");
         box.exec();
@@ -392,27 +359,8 @@ ConstructionLine::ConstructionLine(SelectionSet & set, QPointF spt) : DrawLine(s
 void ConstructionLine::endDragging( QPointF spt)
 {
     SelectionSet endset = selector->findSelectionsUsingDB(spt);
-
-    MapSelectionPtr endsel = selector->findAPoint(endset);
-    if (endsel)
-    {
-        end = new QPointF(endsel->getPoint());
-        qDebug() << "end is point" << *end;
-    }
-    else
-    {
-        endsel = selector->findALine(endset);
-        if (endsel)
-        {
-            end = new QPointF(endsel->getPointNear(endsel,Sys::mapEditorView->viewTinv.map(spt)));
-            qDebug() << "end is on line"  << sMapSelection[endsel->getType()] << *end;
-        }
-        else
-        {
-            end = new QPointF(Sys::mapEditorView->viewTinv.map(spt));
-            qDebug() << "no end selection - point is point" << *end;
-        }
-    }
+    if (end) delete end;
+    end = new QPointF(selector->snapPoint(endset,spt));
 
     if (end && (*start != *end))
     {
@@ -421,6 +369,201 @@ void ConstructionLine::endDragging( QPointF spt)
     }
 
     forceRedraw();
+}
+
+/////////
+///
+///  MoveConstructionEndpoint
+///
+/////////
+
+MoveConstructionEndpoint::MoveConstructionEndpoint(int lineIndex, int endpoint, QPointF spt)
+    : MapMouseAction(spt), lineIndex(lineIndex), endpoint(endpoint)
+{
+    desc        = "MoveConstructionEndpoint";
+    currentLine = db->constructionLines[lineIndex];
+    snapped     = false;
+
+    db->liftedCLine = lineIndex;
+    db->buildEditorDB();
+}
+
+MoveConstructionEndpoint::~MoveConstructionEndpoint()
+{
+    db->liftedCLine = -1;
+}
+
+void MoveConstructionEndpoint::moveTo(QPointF spt)
+{
+    SelectionSet set = selector->findSelectionsUsingDB(spt);
+    QPointF pt = selector->snapPoint(set,spt,&snapped);
+    if (endpoint == 0)
+        currentLine.setP1(pt);
+    else
+        currentLine.setP2(pt);
+}
+
+void MoveConstructionEndpoint::updateDragging(QPointF spt)
+{
+    moveTo(spt);
+    MapMouseAction::updateDragging(spt);
+}
+
+void MoveConstructionEndpoint::endDragging(QPointF spt)
+{
+    moveTo(spt);
+    db->liftedCLine = -1;
+
+    const QTransform & t = Sys::mapEditorView->viewT;
+    if (db->isCLine(lineIndex) && !Geo::isNear(t.map(currentLine.p1()),t.map(currentLine.p2())))
+    {
+        db->constructionLines[lineIndex] = currentLine;
+        Sys::mapEditor->stash();
+    }
+    forceRedraw();
+}
+
+static void drawEditedCLine(QPainter * painter, const QLineF & line, int endpoint, bool snapped)
+{
+    const QTransform & t = Sys::mapEditorView->viewT;
+    painter->setPen(QPen(Qt::yellow,3));
+    painter->drawLine(t.map(line));
+
+    QColor color = snapped ? Qt::green : Qt::yellow;
+    QPointF pt   = (endpoint == 0) ? line.p1() : line.p2();
+    painter->setPen(QPen(color,3));
+    painter->setBrush(color);
+    painter->drawEllipse(t.map(pt), 4.0, 4.0);
+}
+
+void MoveConstructionEndpoint::draw(QPainter * painter)
+{
+    drawEditedCLine(painter,currentLine,endpoint,snapped);
+}
+
+/////////
+///
+///  ExtendConstructionLine
+///
+/////////
+
+ExtendConstructionLine::ExtendConstructionLine(int lineIndex, int endpoint, QPointF spt)
+    : MapMouseAction(spt), lineIndex(lineIndex), endpoint(endpoint)
+{
+    desc        = "ExtendConstructionLine";
+    currentLine = db->constructionLines[lineIndex];
+    snapped     = false;
+
+    anchor         = (endpoint == 0) ? currentLine.p2() : currentLine.p1();
+    QPointF moving = (endpoint == 0) ? currentLine.p1() : currentLine.p2();
+    direction      = (moving - anchor) / currentLine.length();
+
+    db->liftedCLine = lineIndex;
+    db->buildEditorDB();
+}
+
+ExtendConstructionLine::~ExtendConstructionLine()
+{
+    db->liftedCLine = -1;
+}
+
+void ExtendConstructionLine::extendTo(QPointF spt)
+{
+    const QTransform & t = Sys::mapEditorView->viewT;
+
+    auto project = [this](QPointF p) { return anchor + direction * QPointF::dotProduct(p - anchor, direction); };
+
+    QPointF pt  = project(Sys::mapEditorView->viewTinv.map(spt));
+    QPointF ptS = t.map(pt);
+
+    snapped      = false;
+    qreal best2  = 10.0 * 10.0;
+    QPointF best = pt;
+    auto consider = [&](QPointF cand)
+    {
+        qreal d2 = Geo::dist2(t.map(cand), ptS);
+        if (d2 < best2)
+        {
+            best2   = d2;
+            best    = cand;
+            snapped = true;
+        }
+    };
+
+    // where the axis meets map edges, construction lines and circles
+    QLineF axis(anchor - direction * 1.0e6, anchor + direction * 1.0e6);
+    for (const LineInfo & linfo : std::as_const(db->getLines()))
+    {
+        if (linfo.type == LineInfo::Type::LINE_EDGE && !db->showMap)
+            continue;
+
+        if (linfo.type == LineInfo::Type::LINE_EDGE && linfo.edge->isCurve())
+        {
+            QPointF isect1;
+            QPointF isect2;
+            int count = Geo::findLineCircleIntersections(linfo.edge->getArcCenter(),linfo.edge->getRadius(),axis,isect1,isect2);
+            if (count && linfo.edge->pointWithinArc(isect1))
+                consider(isect1);
+            if (count == 2 && linfo.edge->pointWithinArc(isect2))
+                consider(isect2);
+        }
+        else
+        {
+            QPointF ipt;
+            if (axis.intersects(linfo.line,&ipt) == QLineF::BoundedIntersection)
+                consider(ipt);
+        }
+    }
+    for (const CirclePtr & c : std::as_const(db->getCircles()))
+    {
+        QPointF isect1;
+        QPointF isect2;
+        int count = Geo::findLineCircleIntersections(c->centre,c->radius,axis,isect1,isect2);
+        if (count)
+            consider(isect1);
+        if (count == 2)
+            consider(isect2);
+    }
+
+    // points lying on the axis
+    QLineF axisS(t.map(anchor),t.map(anchor + direction));
+    for (const PointInfo & pi : std::as_const(db->getPoints()))
+    {
+        if ((pi.type == PointInfo::Type::Vertex || pi.type == PointInfo::Type::VertexMid) && !db->showMap)
+            continue;
+        if (qAbs(Geo::signedDistToLine(t.map(pi.pt),axisS)) < 1.0)
+            consider(project(pi.pt));
+    }
+
+    if (endpoint == 0)
+        currentLine.setP1(best);
+    else
+        currentLine.setP2(best);
+}
+
+void ExtendConstructionLine::updateDragging(QPointF spt)
+{
+    extendTo(spt);
+    MapMouseAction::updateDragging(spt);
+}
+
+void ExtendConstructionLine::endDragging(QPointF spt)
+{
+    extendTo(spt);
+    db->liftedCLine = -1;
+
+    const QTransform & t = Sys::mapEditorView->viewT;
+    if (db->isCLine(lineIndex) && !Geo::isNear(t.map(currentLine.p1()),t.map(currentLine.p2())))
+    {
+        db->constructionLines[lineIndex] = currentLine;
+        Sys::mapEditor->stash();
+    }
+    forceRedraw();
+}
+
+void ExtendConstructionLine::draw(QPainter * painter)
+{
+    drawEditedCLine(painter,currentLine,endpoint,snapped);
 }
 
 /////////
@@ -436,7 +579,7 @@ ExtendLineP2::ExtendLineP2(SelectionSet & set, QPointF spt) : MapMouseAction(spt
     MapSelectionPtr sel = selector->findALine(set);
     if (sel)
     {
-        if (sel->getType() == MAP_EDGE)
+        if (sel->getType() == MapSelection::Type::MAP_EDGE)
         {
             startEdge   = sel->getEdge();
             startLine   = sel->getLine();
@@ -444,7 +587,7 @@ ExtendLineP2::ExtendLineP2(SelectionSet & set, QPointF spt) : MapMouseAction(spt
         }
         else
         {
-            Q_ASSERT(sel->getType() == MAP_LINE);
+            Q_ASSERT(sel->getType() == MapSelection::Type::MAP_LINE);
             startLine   = sel->getLine();
             currentLine = startLine;
         }
@@ -477,7 +620,7 @@ void ExtendLineP2::updateDragging(QPointF spt)
 
     intersectPoints.clear();
     QPointF intersect;
-    for (const auto & linfo : std::as_const(selector->lines))
+    for (const auto & linfo : std::as_const(db->getLines()))
     {
         QLineF::IntersectType itype = currentLine.intersects(linfo.line,&intersect);
         if (itype == QLineF::BoundedIntersection)
@@ -525,7 +668,7 @@ void ExtendLineP2::endDragging( QPointF spt)
         if (endsel)
         {
             currentLine.setP2(endsel->getPointNear(endsel,Sys::mapEditorView->viewTinv.map(currentP2)));
-            qDebug() << "end is on line"  << sMapSelection[endsel->getType()] << end;
+            qDebug() << "end is on line"  << sMapSelection[(int)endsel->getType()] << end;
         }
         else
         {
@@ -535,7 +678,7 @@ void ExtendLineP2::endDragging( QPointF spt)
 
     if (startEdge)
     {
-        MapPtr map = db->getEditMap();
+        MapPtr map = editor->getEditMap();
         if (map)
         {
             // extending an edge
@@ -592,7 +735,7 @@ ExtendLineP1::ExtendLineP1(SelectionSet & set, QPointF spt) : MapMouseAction(spt
     MapSelectionPtr sel = selector->findALine(set);
     if (sel)
     {
-        if (sel->getType() == MAP_EDGE)
+        if (sel->getType() == MapSelection::Type::MAP_EDGE)
         {
             startLine   = sel->getLine();
             currentLine = startLine;
@@ -600,7 +743,7 @@ ExtendLineP1::ExtendLineP1(SelectionSet & set, QPointF spt) : MapMouseAction(spt
         }
         else
         {
-            Q_ASSERT(sel->getType() == MAP_LINE);
+            Q_ASSERT(sel->getType() == MapSelection::Type::MAP_LINE);
             startLine   = sel->getLine();
             currentLine = startLine;
         }
@@ -637,7 +780,7 @@ void ExtendLineP1::updateDragging(QPointF spt)
 
     intersectPoints.clear();
     QPointF intersect;
-    for (const auto & linfo : std::as_const(selector->lines))
+    for (const auto & linfo : std::as_const(db->getLines()))
     {
         QLineF::IntersectType itype = currentLine.intersects(linfo.line,&intersect);
         if (itype == QLineF::BoundedIntersection)
@@ -688,7 +831,7 @@ void ExtendLineP1::endDragging(QPointF spt)
         if (endsel)
         {
             currentLine.setP1(endsel->getPointNear(endsel,Sys::mapEditorView->viewTinv.map(currentP1)));
-            qDebug() << "end is on line"  << sMapSelection[endsel->getType()] << end;
+            qDebug() << "end is on line"  << sMapSelection[(int)endsel->getType()] << end;
         }
         else
         {
@@ -698,7 +841,7 @@ void ExtendLineP1::endDragging(QPointF spt)
 
     if (startEdge)
     {
-        MapPtr map = db->getEditMap();
+        MapPtr map = editor->getEditMap();
         if (map)
         {
             // extending an edge
@@ -818,6 +961,7 @@ void EditConstructionCircle::endDragging( QPointF spt)
 {
     updateDragging(spt);
     origCircle->set(&currentCircle);
+    Sys::mapEditor->stash();
     MapMouseAction::endDragging(spt);
 }
 

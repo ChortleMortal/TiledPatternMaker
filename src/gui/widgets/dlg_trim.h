@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLG_TRIM_H
-#define DLG_TRIM_H
 
 #include <QDialog>
 
@@ -24,5 +22,3 @@ private:
     class DoubleSpinSet * trimmerX;
     class DoubleSpinSet * trimmerY;
 };
-
-#endif

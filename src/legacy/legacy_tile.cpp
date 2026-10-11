@@ -4,7 +4,7 @@
 
 int LegacyTile::refs = 0;
 
-LegacyTile::LegacyTile(int Row, int Col) : Layer(VIEW_LEGACY,PRIMARY,"Master Tile")
+LegacyTile::LegacyTile(int Row, int Col) : Layer(Type::LegacyDesign, Model::Primary, ZLevel::Standard_Z0,"Master Tile")
 {
     row = Row;
     col = Col;
@@ -17,7 +17,7 @@ LegacyTile::~LegacyTile()
     refs--;
 }
 
-void LegacyTile::addLayer(LayerPtr layer, eZLevel zlevel)
+void LegacyTile::addLayer(LayerPtr layer, Layer::ZLevel zlevel)
 {
     layer->setZLevel(zlevel);
     addSubLayer(layer);

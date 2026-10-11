@@ -1,4 +1,5 @@
-#include <QtWidgets>
+#include <QDebug>
+#include <QTransform>
 #include "model/tilings/tiling.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling_unit.h"
@@ -12,19 +13,11 @@ using std::make_shared;
 ///
 ///////////////////////////////////////////////////////////////////////////
 
-TilingUnit::TilingUnit(Tiling * parent) : tiling(parent)
+TilingUnitController::TilingUnitController(Tiling * parent) : tiling(parent)
 {}
 
-void TilingUnit::group(PlacedTiles & ptiles)
-{
-    for (const PlacedTilePtr & placedTile : std::as_const(ptiles))
-    {
-        addPlacedTile(placedTile);
-    }
-    if (tiling) tiling->setTilingViewChanged();
-}
 
-bool TilingUnit::operator ==(const TilingUnit &other) const
+bool TilingUnitController::operator ==(const TilingUnitController &other) const
 {
     int numthis = tunit.count();
     if (numthis != other.tunit.count())
@@ -32,13 +25,13 @@ bool TilingUnit::operator ==(const TilingUnit &other) const
 
     for (int i=0; i < numthis; i++)
     {
-        const QPair<TilePtr,PlacedTiles> & thisPair  = tunit[i];
-        const QPair<TilePtr,PlacedTiles> & otherPair = other.tunit[i];
-        if (*thisPair.first.get() != *otherPair.first.get())
+        const TileUnit & thisTuleUnit  = tunit[i];
+        const TileUnit & otherTileUnit = other.tunit[i];
+        if (*thisTuleUnit.first.get() != *otherTileUnit.first.get())
             return false;
 
-        const PlacedTiles &  myp = thisPair.second;
-        const PlacedTiles & othp = otherPair.second;
+        const PlacedTileSet &  myp = thisTuleUnit.second;
+        const PlacedTileSet & othp = otherTileUnit.second;
         int numPl = myp.count();
         if (numPl != othp.count())
             return false;
@@ -52,21 +45,21 @@ bool TilingUnit::operator ==(const TilingUnit &other) const
     return true;
 }
 
-TilingUnit  TilingUnit::uniqueCopy()
+TilingUnitController  TilingUnitController::uniqueCopy()
 {
-    TilingUnit acopy(tiling);
-    for (auto & apair : tunit)
+    TilingUnitController acopy(tiling);
+    for (TileUnit & tileUnit : tunit)
     {
-        TilePtr newTile = make_shared<Tile>(apair.first);
-        PlacedTiles newPs;
-        PlacedTiles & tps = apair.second;
-        for (auto  & placed : tps)
+        TilePtr newTile = make_shared<Tile>(tileUnit.first);
+        PlacedTileSet newPs;
+        PlacedTileSet & tps = tileUnit.second;
+        for (PlacedTilePtr & placed : tps)
         {
             PlacedTilePtr ptp = placed->copy();
             ptp->setTile(newTile);
             newPs.push_back(ptp);
         }
-        QPair<TilePtr,PlacedTiles> newpair(newTile,newPs);
+        QPair<TilePtr,PlacedTileSet> newpair(newTile,newPs);
         acopy.tunit.push_back(newpair);
     }
 
@@ -74,11 +67,11 @@ TilingUnit  TilingUnit::uniqueCopy()
     return acopy;
 }
 
-bool TilingUnit::containsTile(TilePtr fp)
+bool TilingUnitController::containsTile(TilePtr fp)
 {
-    for (auto & apair : tunit)
+    for (TileUnit & tileUnit : tunit)
     {
-        TilePtr f = apair.first;
+        TilePtr f = tileUnit.first;
         if (f == fp)
         {
             return true;
@@ -87,31 +80,31 @@ bool TilingUnit::containsTile(TilePtr fp)
     return false;
 }
 
-PlacedTiles & TilingUnit::getPlacedTiles(TilePtr fp)
+PlacedTileSet & TilingUnitController::getPlacedTiles(TilePtr fp)
 {
     Q_ASSERT(containsTile(fp));
 
-    for (auto & apair : tunit)
+    for (TileUnit & tileUnit : tunit)
     {
-        TilePtr f = apair.first;
+        TilePtr f = tileUnit.first;
         if (f == fp)
         {
-            return apair.second;
+            return tileUnit.second;
         }
     }
 
     qWarning("should never reach here");
-    static PlacedTiles tpls;
+    static PlacedTileSet tpls;
     return tpls;
 }
 
-int TilingUnit::numIncluded() const
+int TilingUnitController::numIncluded() const
 {
     int num = 0;
-    for (auto & apair : tunit)
+    for (const TileUnit & tileUnit : tunit)
     {
-        const PlacedTiles & tps = apair.second;
-        for (auto & placed : tps)
+        const PlacedTileSet & tps = tileUnit.second;
+        for (const PlacedTilePtr & placed : tps)
         {
             if (placed->isIncluded())
             {
@@ -122,13 +115,13 @@ int TilingUnit::numIncluded() const
     return num;
 }
 
-int TilingUnit::numExcluded() const
+int TilingUnitController::numExcluded() const
 {
     int num = 0;
-    for (auto & apair : tunit)
+    for (const TileUnit & tileUnit : tunit)
     {
-        const PlacedTiles & tps = apair.second;
-        for (auto & placed : tps)
+        const PlacedTileSet & tps = tileUnit.second;
+        for (const PlacedTilePtr & placed : tps)
         {
             if (!placed->isIncluded())
             {
@@ -139,71 +132,93 @@ int TilingUnit::numExcluded() const
     return num;
 }
 
-int TilingUnit::numAll() const
+int TilingUnitController::numAll() const
 {
     int num = 0;
-    for (auto & apair : tunit)
+    for (const TileUnit & tileUnit : tunit)
     {
-        const PlacedTiles & tps = apair.second;
+        const PlacedTileSet & tps = tileUnit.second;
         num += tps.count();
     }
     return num;
 }
 
-void TilingUnit::addPlacedTile(const PlacedTilePtr placedTile)
+void TilingUnitController::addPlacedTile(const PlacedTilePtr placedTile)
 {
+    // adds to TilingUnit are always included
+    // they move from Undefined to False and can always be excluded (True) later
+    placedTile->getState().excluded.set(Tristate::eTristate::False);
+
     TilePtr tile = placedTile->getTile();
     if (containsTile(tile))
     {
-        PlacedTiles & v = getPlacedTiles(tile);
-        v.push_back(placedTile);
+        PlacedTileSet & v = getPlacedTiles(tile);
+        if (!v.contains(placedTile))
+        {
+            // not a duplicate
+            v.push_back(placedTile);
+        }
     }
     else
     {
-        PlacedTiles tps;
+        PlacedTileSet tps;
         tps.push_back(placedTile);
-        QPair<TilePtr,PlacedTiles> apair(tile,tps);
+        QPair<TilePtr,PlacedTileSet> apair(tile,tps);
         tunit.push_back(apair);
     }
     if (tiling) tiling->setTilingViewChanged();
 }
 
-void TilingUnit::replaceUnitData(TilingUnit & other)
+void TilingUnitController::replaceUnitData(TilingUnitController & other)
 {
     tunit = other.tunit;
     if (tiling) tiling->setTilingViewChanged();
 }
 
-void TilingUnit::addUnitData(TilingUnit & other)
+void TilingUnitController::addUnitData(TilingUnitController & other)
 {
     tunit += other.tunit;
     if (tiling) tiling->setTilingViewChanged();
 }
 
-void TilingUnit::removeExcludeds()
+void TilingUnitController::removeExcludeds()
 {
-    const PlacedTiles excludes = getExcluded();
-    for (const auto & ptp : std::as_const(excludes))
+    PlacedTileSet excludes;
+    for (TileUnit & tileUnit : tunit)
+    {
+        const PlacedTileSet & tps = tileUnit.second;
+
+        for (const PlacedTilePtr & placed : tps)
+        {
+            if (placed->isExcluded())
+            {
+                excludes.push_back(placed);
+            }
+        }
+    }
+
+    for (const PlacedTilePtr & ptp : std::as_const(excludes))
     {
         removePlacedTile(ptp);
     }
+
     if (tiling) tiling->setTilingViewChanged();
 }
 
-void TilingUnit::removePlacedTile(PlacedTilePtr placedTile)
+void TilingUnitController::removePlacedTile(PlacedTilePtr placedTile)
 {
     TilePtr tile = placedTile->getTile();
-    for (UnitPlacedTiles & apair : tunit)
+    for (TileUnit & tileUnit : tunit)
     {
-        if (apair.first == tile)
+        if (tileUnit.first == tile)
         {
-            PlacedTiles & tps = apair.second;
+            PlacedTileSet & tps = tileUnit.second;
             if (tps.contains(placedTile))
             {
                 tps.removeOne(placedTile);
                 if (tps.isEmpty())
                 {
-                    tunit.removeOne(apair);
+                    tunit.removeOne(tileUnit);
                 }
             }
             if (tiling) tiling->setTilingViewChanged();
@@ -212,46 +227,79 @@ void TilingUnit::removePlacedTile(PlacedTilePtr placedTile)
     }
 }
 
-void TilingUnit::clearPlacedTiles()
+void TilingUnitController::clearPlacedTiles()
 {
     tunit.clear();
     if (tiling) tiling->setTilingViewChanged();
 }
 
-QVector<TilePtr> TilingUnit::getUniqueTiles() const
+TileSet TilingUnitController::getUniqueTiles() const
 {
-    QVector<TilePtr> tiles;
+    TileSet tiles;
 
-    for (auto & pair : tunit)
+    for (const TileUnit & tileUnit : tunit)
     {
-        tiles.push_back(pair.first);
+        tiles.push_back(tileUnit.first);
     }
 
     return tiles;
 }
 
-int TilingUnit::numPlacements(TilePtr tile)
+PlacedTileSet TilingUnitController::getUniquePlacedTiles() const
 {
-    for (auto & pair : tunit)
+    PlacedTileSet tiles;
+
+    for (const TileUnit & tileUnit : tunit)
     {
-        if (pair.first == tile)
+        tiles.push_back(tileUnit.second.first());
+    }
+
+    return tiles;
+}
+
+int TilingUnitController::numPlacements(TilePtr tile)
+{
+    for (TileUnit & tileUnit : tunit)
+    {
+        if (tileUnit.first == tile)
         {
-            return pair.second.count();
+            return tileUnit.second.count();
         }
     }
     return 0;
 }
 
-Placements TilingUnit::getPlacements(TilePtr tile)
+Placements TilingUnitController::getPlacements(TilePtr tile, const QTransform & distortion)
 {
     Placements placements;
 
-    for (auto & pair : tunit)
+    for (TileUnit & tileUnit : tunit)
     {
-        if (pair.first == tile)
+        if (tileUnit.first == tile)
         {
-            const PlacedTiles & tps = pair.second;
-            for (auto & placed : tps)
+            const PlacedTileSet & tps = tileUnit.second;
+            for (const PlacedTilePtr & placed : tps)
+            {
+                if (placed->isIncluded())
+                {
+                    placements.push_back(placed->getWorldTransform(distortion));
+                }
+            }
+        }
+    }
+    return placements;
+}
+
+Placements TilingUnitController::getPlacementsWithExcludes(Tile * tile)
+{
+    Placements placements;
+
+    for (TileUnit & tileUnit : tunit)
+    {
+        if (tileUnit.first.get() == tile)
+        {
+            const PlacedTileSet & tps = tileUnit.second;
+            for (const PlacedTilePtr & placed : tps)
             {
                 placements.push_back(placed->getPlacement());
             }
@@ -260,31 +308,30 @@ Placements TilingUnit::getPlacements(TilePtr tile)
     return placements;
 }
 
-QTransform TilingUnit::getFirstPlacement(TilePtr tile)
+QTransform TilingUnitController::getFirstPlacement(TilePtr tile, const QTransform & distortion)
 {
     QTransform placement;
-    PlacedTiles tilingUnit = getIncluded();
-    for (const auto & placedTile : std::as_const(tilingUnit))
+    PlacedTileSet tileSet = getIncluded();
+    for (const PlacedTilePtr & placedTile : std::as_const(tileSet))
     {
         TilePtr atile = placedTile->getTile();
         if (atile == tile)
         {
-            placement = placedTile->getPlacement();
-            return placement;
+            return placedTile->getWorldTransform(distortion);
         }
     }
     // none found
     return placement;
 }
 
-PlacedTiles TilingUnit::getIncluded() const
+PlacedTileSet TilingUnitController::getIncluded() const
 {
-    PlacedTiles placements;
-    for (auto & apair : tunit)
+    PlacedTileSet placements;
+    for (const TileUnit & tileUnit : tunit)
     {
-        const PlacedTiles & tps = apair.second;
+        const PlacedTileSet & tps = tileUnit.second;
 
-        for (auto & placed : tps)
+        for (const PlacedTilePtr & placed : tps)
         {
             if (placed->isIncluded())
             {
@@ -295,32 +342,14 @@ PlacedTiles TilingUnit::getIncluded() const
     return placements;
 }
 
-PlacedTiles TilingUnit::getExcluded() const
+PlacedTileSet  TilingUnitController::getWithExcluded() const
 {
-    PlacedTiles placements;
-    for (auto & apair : tunit)
+    PlacedTileSet placements;
+    for (const TileUnit & tileUnit : tunit)
     {
-        const PlacedTiles & tps = apair.second;
+        const PlacedTileSet & tps = tileUnit.second;
 
-        for (auto & placed : tps)
-        {
-            if (!placed->isIncluded())
-            {
-                placements.push_back(placed);
-            }
-        }
-    }
-    return placements;
-}
-
-PlacedTiles  TilingUnit::getAll() const
-{
-    PlacedTiles placements;
-    for (auto & apair : tunit)
-    {
-        const PlacedTiles & tps = apair.second;
-
-        for (auto & placed : tps)
+        for (const PlacedTilePtr & placed : tps)
         {
             placements.push_back(placed);
         }
@@ -328,11 +357,26 @@ PlacedTiles  TilingUnit::getAll() const
     return placements;
 }
 
-QString TilingUnit::info() const
+QString TilingUnitController::info() const
 {
     QString astring;
     QDebug  deb(&astring);
 
     deb.noquote() << "num tiles=" << numAll();
     return astring;
+}
+
+void TilingUnitController::dump()
+{
+    for (TileUnit & tileUnit: tunit)
+    {
+        TilePtr tp = tileUnit.first;
+        qDebug() << "*** "  << tp->info() << tp.get();
+
+        PlacedTileSet set = tileUnit.second;
+        for (PlacedTilePtr & placedTile : set)
+        {
+            qDebug().noquote() << placedTile->info()  << placedTile.get();
+        }
+    }
 }

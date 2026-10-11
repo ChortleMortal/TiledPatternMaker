@@ -1,4 +1,4 @@
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "model/settings/configuration.h"
 #include "sys/sys.h"
 #include "sys/sys/debugflags.h"
@@ -66,6 +66,12 @@ eDbgFlagDefinition definitions[NUM_DEBUG_FLAGS] = {
     {USE_MID_FIX,           "use mid fix",      FLAG_CREATE_STYLE },
 
     {USE_NEWER_PAINT,       "newer paint",      FLAG_REPAINT },
+
+    {SHOW_UNIT_RAYS,       "show unit rays",    FLAG_CREATE_MOTIF },
+    {SHOW_FULL_RAYS,       "show full rays",    FLAG_CREATE_MOTIF },
+    {MOTIF_FLAG_1,         "motif flag 1",      FLAG_CREATE_MOTIF },
+    {MOTIF_FLAG_2,         "motif flag 2",      FLAG_CREATE_MOTIF },
+    {MOTIF_FLAG_3,         "motif flag 3",      FLAG_REPAINT },
 };
 
 DebugFlags::DebugFlags()
@@ -89,7 +95,7 @@ void DebugFlags::toggleFlag(eDbgFlag flag)
     Q_ASSERT(dflag);
     dflag->enb = !dflag->enb;
     if (dflag->type == FLAG_REPAINT )
-        Sys::viewController->repaintView();
+        Sys::systemViewController->repaintView();
     else
         emit sig_dbgChanged(dflag->type);
     bumpRef();
@@ -137,7 +143,7 @@ void DebugFlags::clearFlags()
 
 void DebugFlags::persist()
 {
-    QSettings settings;
+    QSettings settings = Sys::settings();
 
     settings.setValue("dbgIndex", _dbgIndex);
     settings.setValue("dbgTriggerIndex", _triggerIndex);
@@ -160,7 +166,7 @@ void DebugFlags::persist()
 
 void DebugFlags::retrieveOld()
 {
-    QSettings settings;
+    QSettings settings = Sys::settings();
     _dbgIndex     = settings.value("dbgIndex",0).toInt();
     _triggerIndex = settings.value("dbgTriggerIndex",0).toInt();
     _enabled      = settings.value("dbgFlagsEnb",false).toBool();
@@ -209,7 +215,7 @@ void DebugFlags::retrieveOld()
 
 void DebugFlags::eraseHistory()
 {
-    QSettings settings;
+    QSettings settings = Sys::settings();
     settings.beginGroup("debugflags");
     settings.remove(""); // Removes all keys within the current group
     settings.endGroup();
@@ -247,14 +253,14 @@ void DebugFlags::setXval(qreal val, bool repaint)
 {
     _xval = val;
     if (repaint)
-        Sys::viewController->repaintView();
+        Sys::systemViewController->repaintView();
 
 }
 void DebugFlags::setYval(qreal val, bool repaint)
 {
     _yval = val;
     if (repaint)
-        Sys::viewController->repaintView();
+        Sys::systemViewController->repaintView();
 }
 
 DbgFlag * DebugFlags::find(eDbgFlag flag)

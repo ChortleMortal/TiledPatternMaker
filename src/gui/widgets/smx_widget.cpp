@@ -1,8 +1,9 @@
 #include <QHBoxLayout>
 
-#include "gui/widgets/panel_misc.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/smx_widget.h"
 #include "gui/viewers/layer.h"
+#include "sys/sys.h"
 
 SMXWidget::SMXWidget(Layer * layer, bool abbrev, bool box)
 {
@@ -10,7 +11,6 @@ SMXWidget::SMXWidget(Layer * layer, bool abbrev, bool box)
     _box   = box;
     _selected = false;
 
-    setContentsMargins(0,0,0,0);
 
     if (abbrev)
     {
@@ -86,7 +86,7 @@ void  SMXWidget::slot_breakaway(bool enb)
 {
     if (_layer)
     {
-        emit Sys::viewController->sig_breakaway(_layer,enb);
+        emit Sys::systemViewController->sig_breakaway(_layer,enb);
         emit _layer->sig_updateView();
     }
 }
@@ -95,7 +95,7 @@ void SMXWidget::slot_lock(bool enb)
 {
     if (_layer)
     {
-        emit Sys::viewController->sig_lock(_layer,enb);
+        emit Sys::systemViewController->sig_lock(_layer,enb);
         emit _layer->sig_updateView();
     }
 }
@@ -104,7 +104,7 @@ void SMXWidget::slot_solo(bool enb)
 {
     if (_layer)
     {
-        emit Sys::viewController->sig_solo(_layer,enb);
+        emit Sys::systemViewController->sig_solo(_layer,enb);
         emit _layer->sig_updateView();
     }
 }

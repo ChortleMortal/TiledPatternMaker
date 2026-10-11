@@ -1,7 +1,6 @@
 #pragma once
-#ifndef TILING_READER_H
-#define TILING_READER_H
 
+#include "model/tilings/backgroundimage.h"
 #include <QTextStream>
 #include "sys/geometry/xform.h"
 #include "sys/sys/pugixml.hpp"
@@ -12,7 +11,7 @@
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
 
-class SystemViewController;
+class ViewController;
 class ReaderBase;
 class Layer;
 
@@ -20,13 +19,13 @@ class TilingReader
 {
 
 public:
-    TilingReader(SystemViewController * vc) { _vc = vc; legacyCenterConverted = false; }
+    TilingReader(ViewController * vc) { _vc = vc; legacyCenterConverted = false; }
 
     TilingPtr    readTiling(QString file);
     TilingPtr    readTiling(QTextStream & st);
     TilingPtr    readTilingXML(VersionedFile & xfile, ReaderBase * mrbase);
 
-    BkgdImagePtr getBackgroundImage(pugi::xml_node & node);
+    BkgdRecord   getBkgdRecord(pugi::xml_node & node);
 
 protected:
     TilingPtr   readTilingXML(pugi::xml_node & tiling_node, ReaderBase * mrbase);
@@ -45,14 +44,11 @@ protected:
     bool        legacyCenterConverted;
 
 private:
-    SystemViewController * _vc;
+    ViewController * _vc;
 
     VersionedFile  _xfile;
     TilingPtr      tiling;
-    BkgdImagePtr   bip;
 
     static bool    debug;
     uint           _tilingVersion;
 };
-
-#endif

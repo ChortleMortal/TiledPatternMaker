@@ -1,10 +1,11 @@
-﻿#include "gui/top/system_view.h"
+﻿#include <QCoreApplication>
+
+#include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "legacy/design.h"
 #include "legacy/patterns.h"
 #include "sys/sys.h"
-#include "model/settings/configuration.h"
 #include "sys/tiledpatternmaker.h"
-#include <QCoreApplication>
 
 int Design::refs = 0;
 
@@ -29,7 +30,7 @@ Design::Design(eDesign design, QString title)
 
     Design::init();
 
-    connect (this, &Design::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
+    connect (this, &Design::sig_updateView, Sys::systemViewController, &ViewController::slot_updateView);
 }
 
 Design::~Design()
@@ -135,9 +136,9 @@ void  Design::zPlus(int layerNum)
         LayerPtr layer = t->geSubLayer(layerNum);
         if (layer)
         {
-            eZLevel z = layer->getZLevel();
-            layer->setZLevel(eZLevel(z + 1));
-            qDebug() << layerNum << "z-level:" << layer->getZLevel();
+            Layer::ZLevel z = layer->getZLevel();
+            layer->setZLevel(Layer::ZLevel((int)z + 1));
+            qDebug() << layerNum << "z-level:" << (int)layer->getZLevel();
         }
     }
 }
@@ -150,9 +151,9 @@ void  Design::zMinus(int layerNum)
         LayerPtr layer = t->geSubLayer(layerNum);
         if (layer)
         {
-            eZLevel zlevel = layer->getZLevel();
-            layer->setZLevel(eZLevel(zlevel-1));
-            qDebug() << layerNum << "z-level:" << layer->getZLevel();
+            Layer::ZLevel zlevel = layer->getZLevel();
+            layer->setZLevel(Layer::ZLevel((int)zlevel-1));
+            qDebug() << layerNum << "z-level:" << (int)layer->getZLevel();
         }
     }
 }

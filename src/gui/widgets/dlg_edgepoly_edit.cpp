@@ -1,10 +1,10 @@
 #include <QHeaderView>
 
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/dlg_edgepoly_edit.h"
 #include "gui/widgets/dlg_point_edit.h"
 #include "model/makers/tiling_maker.h"
-#include "model/makers/prototype_maker.h"
+#include "model/makers/motif_maker.h"
 #include "model/tilings/tile.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/vertex.h"
@@ -84,7 +84,7 @@ DlgEdgePolyEdit::DlgEdgePolyEdit(TilingPtr tp, TilePtr tile, QTransform placemen
     connect(moveDown,   &QPushButton::clicked, this, &DlgEdgePolyEdit::slot_moveDown);
     connect(refresh,    &QPushButton::clicked, this, [this] { display(TMR_PLACED_TILE);} );
     connect(makeCWBtn,  &QPushButton::clicked, this, &DlgEdgePolyEdit::slot_makeClockwise);
-    connect(this,       &DlgEdgePolyEdit::sig_updateView,   Sys::viewController, &SystemViewController::slot_updateView);
+    connect(this,       &DlgEdgePolyEdit::sig_updateView,   Sys::systemViewController, &ViewController::slot_updateView);
     connect(this,       &DlgEdgePolyEdit::sig_currentPoint, Sys::tilingMakerView.get(), &TilingMakerView::slot_setTileEditPoint);
     connect(Sys::tilingMaker, &TilingMaker::sig_close_editor,this,&DlgEdgePolyEdit::slot_ok);
     connect(Sys::tilingMaker, &TilingMaker::sig_menuRefresh, this,&DlgEdgePolyEdit::display);
@@ -113,13 +113,14 @@ void DlgEdgePolyEdit::finish(bool good)
     }
     if (Sys::tilingMaker->getPropagate())
     {
-        ProtoEvent pevent;
-        pevent.event  = PROM_TILE_UNIQUE_NATURE_CHANGED;
+        MotifEvent pevent;
+        pevent.event  = MotifMaker::Event::UniqueTileNatureChanged;
         pevent.tiling = tiling;
         pevent.tile   = tile;
-        Sys::prototypeMaker->sm_takeUp(pevent);
+        Sys::motifMaker->sm_takeUp(pevent);
     }
     Sys::tilingMaker->setEdgePolyEditor(nullptr);   // must be in this order
+    Sys::tilingMaker->setMouseMode(TilingMaker::MouseMode::None);
     emit sig_updateView();
     emit Sys::tilingMaker->sig_menuRefresh(TMR_PLACED_TILE);
     finished = true;
@@ -145,7 +146,7 @@ void DlgEdgePolyEdit::display(eTileMenuRefresh refresh)
 
     table.clearContents();
     const EdgeSet & eset = epoly.get();
-    for (uint row = 0; row < epoly.size(); row++)
+    for (int row = 0; row < epoly.size(); row++)
     {
         EdgePtr edge = eset[row];
         QPointF pos  = edge->v1->pt;

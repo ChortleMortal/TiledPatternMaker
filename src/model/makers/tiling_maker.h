@@ -1,9 +1,15 @@
 #pragma once
-#ifndef TILING_MAKER_H
-#define TILING_MAKER_H
 
-#include "sys/enums/edgetype.h"
+#include <QMessageBox>
+#include <QString>
+
+#include "gui/viewers/tiling_maker_view.h"
+#include "model/tilings/tiling.h"
 #include "model/tilings/tiling_header.h"
+#include "sys/enums/edgetype.h"
+#include "sys/enums/etilingmaker.h"
+#include "sys/qt/unique_qvector.h"
+#include "sys/sys.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -14,40 +20,42 @@
 // than expressing the tilings directly as code, which is what I did in a
 // previous version.
 
-#include <QString>
-#include "gui/viewers/tiling_maker_view.h"
-#include "model/tilings/tiling.h"
-#include "sys/enums/estatemachineevent.h"
-#include "sys/enums/etilingmaker.h"
-#include "sys/qt/unique_qvector.h"
-
+class LoadUnit;
 class QKeyEvent;
+class TilingEvent;
 class TilingHeader;
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Prototype>        ProtoPtr;
 typedef std::shared_ptr<class TilingMouseAction>MouseActionPtr;
 typedef std::shared_ptr<class Tile>              TilePtr;
+typedef std::shared_ptr<class Edge>              EdgePtr;
+
+// A persistent link between two placed tiles' edge midpoints (runtime-only, not saved to file).
+// Edges are identified by index into the tile's edge list rather than by EdgePtr: scaling or
+// rotating a Tile's shape (EdgePoly::compose()) discards and replaces all of its Edge objects,
+// which would leave a stored EdgePtr pointing at stale, orphaned geometry. The index survives
+// because compose() preserves edge count and order.
+struct TileAnchor
+{
+    PlacedTilePtr tileA;
+    int           edgeIndexA;
+    PlacedTilePtr tileB;
+    int           edgeIndexB;
+};
+
+// Ties one of a tiling's translation-vector points (origin, or a vector's endpoint) to a placed
+// tile, so it tracks that tile's placement. Runtime-only, not saved to file. A null tile means
+// unanchored: the point stays fixed in absolute space.
+struct TransAnchor
+{
+    PlacedTilePtr tile;
+    QPointF       localPt;   // anchor point in tile's local (pre-placement) frame
+};
 
 extern const QString sTMModelMode[];
-
-enum eTMKbdMode
-{
-    TM_MODE_XFORM_ALL,
-    TM_MODE_XFORM_TILING,
-    TM_MODE_XFORM_UNIQUE_TILE,
-    TM_MODE_XFORM_PLACED_TILE
-};
-
-
-enum eTMState
-{
-    TM_EMPTY,
-    TM_SINGLE,
-    TM_MULTI
-};
-
-class LoadUnit;
+extern const QString sTILM_Events[];
+extern const QString sTilingMakerMouseMode[];
 
 class TMStack
 {
@@ -55,46 +63,103 @@ public:
     TMStack() { stackIndex  = -1; }
 
     void    clear()               { stack.clear(); stackIndex = -1; }
-    bool    add(TilingUnit & td);
-    bool    pop(TilingUnit & td);
-    bool    redo(TilingUnit & td);
+    bool    add(TilingUnitController & td);
+    bool    pop(TilingUnitController & td);
+    bool    redo(TilingUnitController & td);
 
-    QString getStackStatus()      { return QString("Stack=%1 index=%2").arg(stack.size()).arg(stackIndex); }
+    QString getStackStatus();
 
 private:
-    int                   stackIndex;
-    QVector<TilingUnit>   stack;
+    int stackIndex;
+    QVector<TilingUnitController>   stack;
 };
 
 class TilingMaker : public QObject
 {
     Q_OBJECT
 
+    enum class State
+    {
+        Empty = 0,
+        Single,
+        Multi
+    };
+
 public:
+
+    enum class eTilingMakerEvent
+    {
+        LoadEmpty = 0,
+        LoadFromMosaic,
+        LoadSingle,
+        LoadMulti,
+        LoadReplace,
+        ReplaceAll,
+        Reload,
+        LoadFromStepper,
+        UnloadTiling
+    };
+
+    enum class eTilingMakerMouseMode
+    {
+        None = 0,
+        Copy,
+        Delete,
+        TranslationVectors,
+        DrawPolygon,
+        Inclusion,
+        Position,
+        Measure,
+        Edit,
+        CurveEdge,
+        MirrorX,
+        MirrorY,
+        ConstructionLines,
+        ReflectEdge,
+        Uniquify,
+        Unify,
+        Decompose,
+    };
+
+    enum eKeyboardMode
+    {
+        XformAll = 0,
+        XformTiling,
+        XFormUniqueTile,
+        XFormPlacedTile
+    };
+
+    using Event     = eTilingMakerEvent;
+    using MouseMode = eTilingMakerMouseMode;
+    using KeybdMode = eKeyboardMode;
+
+
     TilingMaker();
     ~TilingMaker();
 
     void        init();
     void        unload();
 
-    TilingPtr   loadTiling(VersionedFile vfile, eTILM_Event event);
-    bool        saveTiling(TilingPtr tiling, bool forceOverwrite);
+    void        loadTiling(VersionedFile vfile, Event event);
+    bool        saveTiling(TilingPtr tiling, VersionedFile vfile);
+    TilingPtr   readTiling(VersionedFile & vfile, QString & failMsg);     // no state change
+    bool        verifyTilingFiles();
 
     void        sm_takeUp(const TilingEvent & tilingEvent);
-    void        sm_takeDown(QVector<TilingPtr> &proto_tilings, eTILM_Event event);
+    void        sm_takeDown(QVector<TilingPtr> &proto_tilings, Event event);
     bool        getPropagate()         { return _tm_propagate; }
     void        reload();
 
     QString     getStatus();
-    LoadUnit  * getLoadUnit() { return loadUnit; }
+    LoadUnit  * getLoadUnit() { return tilingLoadUnit; }
 
     bool        procKeyEvent(QKeyEvent * k);
 
     // Tiling related
     const QVector<TilingPtr> & getTilings() { return tilings; }
 
-    void        select(TilingPtr tiling);
-    TilingPtr   getSelected() { return selectedTiling; }
+    void        selectTiling(TilingPtr tiling);
+    TilingPtr   getSelectedTiling() { return selectedTiling; }
     int         numTilings() { return tilings.size(); }
     void        removeTiling(TilingPtr tp);
 
@@ -113,7 +178,7 @@ public:
     void        addPlacedTile(PlacedTilePtr placedTile);
     void        deletePlacedTile(PlacedTilePtr ptp);
 
-    void        replaceTilingUnit(TilingUnit & tilingUnit);
+    void        replaceTilingUnit(TilingUnitController & tilingUnit);
 
     void        unifyTile(PlacedTilePtr pf);
     void        uniquifyTile(PlacedTilePtr pf);
@@ -122,28 +187,24 @@ public:
 
     void        flipTileRegularity(TilePtr tile);
 
-    eTilingMakerMouseMode getTilingMakerMouseMode() { return _tilingMakerMouseMode; }
-    int         getPolygonSides() { return poly_side_count; }
+    MouseMode   getMouseMode() { return _tilingMakerMouseMode; }
 
     // Tile management.
     PlacedTileSelectorPtr addTileSelectionPointer(PlacedTileSelectorPtr sel );
     void        deleteTile(PlacedTileSelectorPtr sel);
-    void        addToTranslate(QLineF mLine, QPointF origin);
+    void        addToTranslate(QLineF mLine, QPointF origin, PlacedTileSelectorPtr originSel, PlacedTileSelectorPtr endSel);
     void        duplicateSelectedTiling();
     void        mergeTilings();
 
     void        toggleInclusion(PlacedTileSelectorPtr sel);
     void        clearConstructionLines() { Sys::tilingMakerView->clearConstructionLines(); }
+    void        saveConstructionLines();   // pushes the live construction lines into the selected tiling
+    void        loadConstructionLines();   // pulls the selected tiling's saved construction lines into the view
+    bool        constructionLinesNotSaved(TilingPtr tiling);  // view lines differ from the tiling's
 
-    // selected tile
-    inline PlacedTilePtr selectedTile()       { return _selectedTile; }
-    void        selectTile(PlacedTilePtr ptp) { _selectedTile = ptp;  emit sig_tileSelected(ptp); }
-    void        deselectTile()                { _selectedTile.reset(); }
-
-    // tile selctor
-    inline PlacedTileSelectorPtr clickedSelector()              { return _clickedSelector; }
-    void        setClickedSelector(PlacedTileSelectorPtr tsp)   { _clickedSelector = tsp; }
-    void        resetClickedSelector()                          { _clickedSelector.reset(); }
+    // selected placed tile
+    inline PlacedTilePtr selectedTile()                         { return _selectedPlacedTile; }
+    void        selectTile(PlacedTilePtr ptp,bool toggle = false);
 
     void        setClickedPoint(QPointF pt)                     { clickedSpt      = pt; }
 
@@ -177,6 +238,19 @@ public:
     void uniqueTileDeltaScale(qreal scale);
     void uniqueTileDeltaRotate(qreal rotate);
 
+    // Tile anchors - persistent edge-midpoint links used to keep anchored tiles in contact.
+    const QVector<TileAnchor> & getAnchors() const { return anchors; }
+    void snapEdgeToEdge(PlacedTilePtr moveTile, EdgePtr moveEdge, PlacedTilePtr fixedTile, EdgePtr fixedEdge);
+    void propagateAnchors(PlacedTilePtr root);
+    static EdgePtr edgeAt(PlacedTilePtr tile, int edgeIndex);
+
+    // Translation-vector anchors: origin/T1-end/T2-end each independently track a placed tile.
+    const TransAnchor & getOriginAnchor() const { return originAnchor; }
+    const TransAnchor & getT1Anchor()     const { return t1Anchor; }
+    const TransAnchor & getT2Anchor()     const { return t2Anchor; }
+    void resolveTranslationAnchors();
+    void clearTranslationAnchors();
+
     // Possible user actions.
     void copyPolygon(PlacedTileSelectorPtr sel );
     void mirrorPolygonX(PlacedTileSelectorPtr sel);
@@ -186,19 +260,21 @@ public:
     void moveTileTo(QPointF pt);
 
     // keyboard view modes
-    void     setTMKbdMode(eTMKbdMode mode);
-    bool     isTMKbdMode(eTMKbdMode mode);
-    eTMKbdMode  getTMKbdMode() { return _tilingMakerKeyboardMode; }
-    QString  getTMKbdModeStr();
-    void     resetTMKbdMode();
+    void      setKeybdMode(KeybdMode mode);
+    bool      isKeybdMode(KeybdMode mode);
+    KeybdMode getKeybdMode() { return _tilingMakerKeyboardMode; }
+    QString   getKeybdModeString();
+    void      resetKeybdMode();
 
     void forceRedraw();
 
 signals:
     void sig_close();
     void sig_close_editor();
-    void sig_tilingLoaded(VersionedFile name);
-    void sig_tilingWritten();
+    void sig_tilingLoading(VersionedFile name);
+    void sig_tilingLoaded( VersionedFile name);   // a new/different tiling is now in memory
+    void sig_tilingWritten(VersionedFile name);   // the current in-memory tiling was saved (data unchanged)
+    void sig_messageBox(QString msg, QString info, QMessageBox::Icon icon, bool modal);
 
     void sig_menuRefresh(eTileMenuRefresh scope);
     void sig_raiseMenu();
@@ -206,29 +282,38 @@ signals:
     void sig_updateView();
     void sig_reconstructView();
 
-    void sig_tileSelected(PlacedTilePtr ptp);
-
-    void sig_TMKbdMode(eTMKbdMode);
+    void sig_TMKbdMode(TilingMaker::eKeyboardMode mode);
 
 public slots:
-    void updatePolygonSides(int number);
-    void updatePolygonRot(qreal angle);
-    void setTilingMakerMouseMode(eTilingMakerMouseMode mode);
-    void clearTranslationVectors();
-
     void slot_propagate_changed(bool val);
-    void slot_deleteTile();
-    void slot_hideTile();
-    void slot_showTile();
-    void slot_includeTile();
-    void slot_excludeTile();
     void slot_view_menu_editTile();
+
+    void setMouseMode(TilingMaker::eTilingMakerMouseMode mode);
     void slot_copyMoveTile();
     void slot_copyJoinPoint();
     void slot_copyJoinMidPoint();
     void slot_copyJoinEdge();
+
+    void slot_createAnchor();
+    void slot_removeAnchor();
+
+    void slot_hideTile();
+    void slot_deselectTile();
+    void slot_showTile();
+    void slot_deleteTile();
+    void slot_includeTile();
+    void slot_excludeTile();
     void slot_uniquifyTile();
     void slot_convertTile();
+    void slot_stack_save();
+    void slot_stack_undo();
+    void slot_stack_redo();
+
+    void clearTranslationVectors();
+
+private slots:
+    void slot_deleteConstructionLine();
+
     void slot_createConvex();
     void slot_createConcave();
     void slot_flatenCurve();
@@ -237,53 +322,55 @@ public slots:
     void slot_moveArcCenter();
     void slot_editMagnitude();
 
-    void slot_stack_save();
-    void slot_stack_undo();
-    void slot_stack_redo();
-
-protected:
+private:
     // state machine
+    void     setPropagate(bool enb) { _tm_propagate = enb; }
+    void     sm_takeUp();
     void     sm_resetAllAndAdd(TilingPtr tiling);
     void     sm_replaceCurrent(TilingPtr tiling);
     void     sm_replace(TilingPtr tiling, TilingPtr old);
     void     sm_add(TilingPtr tiling);
-    eTMState sm_getState();
-    bool     sm_askAdd();
+    State    sm_getState();
+
+    void     sm_syncConstructionLinesOnLoad();     // loads selectedTiling's lines if the view is enabled, else clears
 
     void     createCurveFromEdge(eCurveType ctype);
 
+    TransAnchor bindTranslationAnchor(PlacedTileSelectorPtr sel);
+    void        updateAnchoredTranslationVectors();
+
 private:
-    void setPropagate(bool enb) { _tm_propagate = enb; }
-
-    LoadUnit *                  loadUnit;
-
     UniqueQVector<TilingPtr>    tilings;
-
     TilingPtr                   selectedTiling;
-
-    PlacedTilePtr               _selectedTile;      // current menu column selection too
+    PlacedTilePtr               _selectedPlacedTile;      // current menu column selection too
     PlacedTilePtr               unifyBase;
-
     TilingPtr                   decomposedTiling;   // contents decompsed from another tiling
-
     eVectorState                vectorState;
-
-    PlacedTileSelectorPtr       _clickedSelector;
     QPointF                     clickedSpt;
 
-    int                         poly_side_count;    // number of selected vertices when drawing polygons.
-    qreal                       poly_rotation;      // regular polygon tile rotation
-
     TMStack                     tmStack;
-
-    eTilingMakerMouseMode       _tilingMakerMouseMode;
-    eTMKbdMode                  _tilingMakerKeyboardMode;
-
+    QVector<TileAnchor>         anchors;
+    TransAnchor                 originAnchor;
+    TransAnchor                 t1Anchor;
+    TransAnchor                 t2Anchor;
+    MouseMode                   _tilingMakerMouseMode;
+    KeybdMode                   _tilingMakerKeyboardMode;
     bool                        _tm_propagate;
-
     DlgEdgePolyEdit *           _epolyEdit;
 
-    class PrototypeMaker      * prototypeMaker;
+    LoadUnit *                  tilingLoadUnit;
+    MotifMaker                * motifMaker;
 };
 
-#endif
+class TilingEvent
+{
+public:
+    using Event = TilingMaker::eTilingMakerEvent;
+
+    Event              event;
+    TilingPtr          tiling;
+    TilingPtr          lastTiling;   // used by replace
+};
+
+Q_DECLARE_METATYPE(TilingMaker::KeybdMode);
+Q_DECLARE_METATYPE(TilingMaker::MouseMode);

@@ -1,4 +1,5 @@
 #include <QPainter>
+#include "gui/top/view_controller.h"
 #include "gui/viewers/debug_view.h"
 #include "gui/viewers/geo_graphics.h"
 #include "gui/viewers/motif_maker_view.h"
@@ -16,12 +17,10 @@ using std::make_shared;
 
 typedef std::shared_ptr<class Vertex> VertexPtr;
 
-DebugView::DebugView() : LayerController(VIEW_DEBUG,DERIVED,"Debug View")
+DebugView::DebugView() : LayerController(Type::DebugLayer,Model::Derived,Sys::config->gridZLevel,"Debug View")
 {
     doTestA = false;
     doTestB = false;
-
-    setZLevel(Sys::config->gridZLevel);
 
     readConfig();
 
@@ -33,12 +32,8 @@ DebugView::~DebugView()
 
 void DebugView::paint(QPainter * painter)
 {
-    QTransform t;
-
-    if (Sys::config->debugMotifView)
-        t = Sys::motifMakerView->getLayerTransform();
-    else
-        t = getLayerTransform();
+    QTransform t  = getLayerTransform();
+    QTransform t2 = (Sys::systemViewController->isEnabled(Layer::Type::MotifMaker)) ? Sys::motifMakerView->getUsedTransform() : t;
 
     if (doTestA)
     {
@@ -48,6 +43,7 @@ void DebugView::paint(QPainter * painter)
     // draw debugMap
     Sys::debugMapCreate->paint(painter,t);
     Sys::debugMapPaint->paint(painter,t);
+    Sys::debugMapMotif->paint(painter,t2);
 
     // draw mwasurements
     if (canMeasure() && !measurePt.isNull())
@@ -116,26 +112,26 @@ void DebugView::writeConfig()
 void DebugView::do_testA(bool enb)
 {
     doTestA = enb;
-    Sys::viewController->slot_updateView();
+    Sys::systemViewController->slot_updateView();
 }
 
 void DebugView::do_testB(bool enb)
 {
     doTestB = enb;
-    Sys::viewController->slot_updateView();
+    Sys::systemViewController->slot_updateView();
 }
 
 void DebugView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 {
     Q_UNUSED(btn);
 
-    if (!viewControl()->isEnabled(VIEW_DEBUG))
+    if (!viewControl()->isEnabled(Layer::Type::DebugLayer))
         return;
 
     if (!canMeasure())
         return;
 
-    auto layers =  Sys::viewController->getActiveLayers();
+    auto layers =  Sys::systemViewController->getActiveLayers();
     std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevelP);
     Layer * measuredLayer = nullptr;
     for (auto layer : layers)
@@ -254,33 +250,33 @@ void DebugView::execTestB(QPainter * painter, QTransform tr)
     QString tilingName = "6 Motif";
     VersionedName vn(tilingName);
     VersionedFile filename = FileServices::getFile(vn,FILE_TILING);
-    TilingReader treader(Sys::viewController);
+    TilingReader treader(Sys::systemViewController);
     ReaderBase mrbase;
     auto tp1 = treader.readTilingXML(filename, &mrbase);
 
-    PlacedTiles pts = tp1->unit().getIncluded();
+    PlacedTileSet pts = tp1->unit().getIncluded();
     for (auto & pt : pts)
     {
         auto tile = pt->getTile();
         qDebug() << tile->getBasePoints();
         qDebug() << tile->getPoints();
-        qDebug() << pt->getPlacedPoints();
+        qDebug() << pt->getWorldPoints();
     }
 
     tilingName = "6 Motif.v1";
     VersionedName vn2(tilingName);
     VersionedFile filename2 = FileServices::getFile(vn,FILE_TILING);
-    TilingReader treader2(Sys::viewController);
+    TilingReader treader2(Sys::systemViewController);
     ReaderBase mrbase2;
     auto tp2 = treader2.readTilingXML(filename, &mrbase2);
 
-    PlacedTiles pts2 = tp2->unit().getIncluded();
+    PlacedTileSet pts2 = tp2->unit().getIncluded();
     for (auto & pt : pts2)
     {
         auto tile = pt->getTile();
         qDebug() << tile->getBasePoints();
         qDebug() << tile->getPoints();
-        qDebug() << pt->getPlacedPoints();
+        qDebug() << pt->getWorldPoints();
     }
 
 }

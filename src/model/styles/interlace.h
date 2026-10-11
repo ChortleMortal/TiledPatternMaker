@@ -1,6 +1,4 @@
 #pragma once
-#ifndef INTERLACE_H
-#define INTERLACE_H
 
 #include <QStack>
 #include <QPainterPath>
@@ -28,6 +26,7 @@ public:
     qreal   getShadow()             { return shadow; }
     bool    getInitialStartUnder()  { return interlace_start_under; }
     bool    getIncludeTipVertices() { return includeTipVertices; }
+    int     getUnwovenVertices()    { return unwovenVertices; }
 
     void    setGap(qreal Gap)                   { gap = Gap; }
     void    setShadow(qreal Shadow)             { shadow = Shadow; }
@@ -55,9 +54,6 @@ public slots:
     void    slot_styleMapUpdated(MapPtr map) override;
 
 protected:
-  // void    createUnders();
-  //void    alignCurvedEdges(eDbgFlag flag);
-
     void    buildFrom();
     void    propagate(InterlaceCasingPtr &cp, InterlaceSide *s, bool edge_under_at_vert);
     void    drawDebugInterlace(bool solo, int index);
@@ -69,13 +65,13 @@ private:
     qreal  shadow;
     bool   includeTipVertices;
     bool   interlace_start_under;
-    QColor defaultColor;
+    int    unwovenVertices = 0;
 
 
     // Internal representations of the rendering.
     InterlaceCasingSet            casings;       // these are drawn
     Threads                       threads;
     QStack<InterlaceCasingPtr>    todo;
+    QColor                        defaultColor;
 };
-#endif
 

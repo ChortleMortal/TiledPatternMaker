@@ -1,7 +1,7 @@
 #include <QMenu>
 
 #include "gui/widgets/dlg_point_edit.h"
-#include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/vertex.h"
 #include "sys/sys.h"
@@ -11,13 +11,13 @@ DlgPointEdit::DlgPointEdit(EdgePoly & epoly, int row, int col, QWidget *parent) 
     setContextMenuPolicy(Qt::CustomContextMenu);
     setMinimum(-4096.0);
     setMaximum(4096.0);
-    setDecimals(16);
+    setDisplayDecimals(16);
     setSingleStep(0.01);
 
     connect(this, &DlgPointEdit::customContextMenuRequested, this, &DlgPointEdit::slot_menu);
     connect(this, &DlgPointEdit::editingFinished,            this, &DlgPointEdit::slot_editingFinished);
     connect(this, &DlgPointEdit::valueChanged,               this, &DlgPointEdit::slot_editingFinished);
-    connect(this, &DlgPointEdit::sig_updateView,             Sys::viewController, &SystemViewController::slot_updateView);
+    connect(this, &DlgPointEdit::sig_updateView,             Sys::systemViewController, &ViewController::slot_updateView);
 
     this->row = row;
     this->col = col;
@@ -38,7 +38,7 @@ void DlgPointEdit::slot_menu(QPointF spt)
 
 void DlgPointEdit::focusInEvent(QFocusEvent * event)
 {
-    Q_UNUSED(event)
+    AQDoubleSpinBox::focusInEvent(event);
     emit currentPoint(_poly.get()[row]->v1->pt);
 }
 

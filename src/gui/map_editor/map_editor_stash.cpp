@@ -1,10 +1,10 @@
-#include <QTimer>
+#include <QDir>
 #include <QFile>
 #include <QDebug>
+#include <QStandardPaths>
 
 #include "gui/map_editor/map_editor_stash.h"
 #include "gui/map_editor/map_editor_db.h"
-#include "model/settings/configuration.h"
 #include "sys/sys/fileservices.h"
 #include "sys/sys.h"
 #include "sys/qt/tpm_io.h"
@@ -12,31 +12,42 @@
 
 using namespace pugi;
 
-#define STASH_VERSION 3
-
-MapEditorStash::MapEditorStash()
+QString MapEditorStash::workingFile()
 {
-    init();
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    QDir().mkpath(dir);
+    return dir + "/maped_construction.xml";
 }
 
 bool MapEditorStash::stash(MapEditorDb * db)
 {
-    int next = current + 1;
-    if (next > MAX_STASH) next = 0;
+    return write(workingFile(),db);
+}
 
-    QString nextName = getStashName(next);
-    bool rv = writeStash(nextName,db);
+bool MapEditorStash::restore(MapEditorDb * db)
+{
+    QString name = workingFile();
+    if (!QFile::exists(name))
+        return false;
+    return read(name,db);
+}
 
+bool MapEditorStash::saveTemplate(VersionedName vname, MapEditorDb * db)
+{
+    VersionedFile xfile = FileServices::getFile(vname,FILE_TEMPLATE);
+    QString name = xfile.isEmpty() ? Sys::templateDir + vname.get() + ".xml" : xfile.getPathedName();
+    return write(name,db);
+}
+
+bool MapEditorStash::loadTemplate(VersionedFile xfile, MapEditorDb * db)
+{
+    bool rv = read(xfile.getPathedName(),db);
     if (rv)
-    {
-        // update local data
-        add(next);
-    }
-
+        stash(db);
     return rv;
 }
 
-bool MapEditorStash::writeStash(QString name, MapEditorDb * db)
+bool MapEditorStash::write(QString name, MapEditorDb * db)
 {
     QFile file(name);
     bool rv = file.open(QIODevice::WriteOnly | QIODevice::Truncate);
@@ -74,116 +85,17 @@ bool MapEditorStash::writeStash(QString name, MapEditorDb * db)
 
     // reformat
     VersionedFile xfile;
-    xfile.setFromFullPathname(name);    // name works for current directory
+    xfile.setFromFullPathname(name);
     return FileServices::reformatXML(xfile);
 }
 
-bool MapEditorStash::destash()
+bool MapEditorStash::read(QString name, MapEditorDb * db)
 {
-#if 0
-    QString name = getStashName(current);
-
-    return readStash(name);
-#else
-    return false;
-#endif
-}
-
-bool MapEditorStash::animateReadStash(VersionedFile &xfile)
-{
-    if (Sys::config->mapedOldTemplates)
-        return readStashDat(xfile, localLines, localCircs);
-    else
-        return readStashXML(xfile, localLines, localCircs);
-}
-
-bool MapEditorStash::readStash(VersionedFile & xfile, MapEditorDb * db)
-{
-     if (Sys::config->mapedOldTemplates)
-         return readStashDat(xfile,db->constructionLines, db->constructionCircles);
-     else
-         return readStashXML(xfile,db->constructionLines, db->constructionCircles);
-}
-
-bool MapEditorStash::readStashDat(VersionedFile & xfile ,QVector<QLineF>  & lines, QVector<CirclePtr> & circs)
-{
-    qInfo() << "Loading template" << xfile.getPathedName();
-
-    QFile file(xfile.getPathedName());
-    bool rv = file.open(QIODevice::ReadOnly);
-    if (!rv)
-    {
-        qWarning() << "could not open" << file.fileName();
-        return false;
-    }
-
-    QDataStream in(&file);
-
-    // Read and check the header
-    quint64 magic;
-    in >> magic;
-    if (magic != 0xA0B0C0D00)
-    {
-        qWarning() << "invalid stash header"  << Qt::hex <<  magic;
-        return false;
-    }
-    qint64 version = 0;
-    in >> version;
-    if ( version < 0 || version > STASH_VERSION)
-    {
-        qWarning() << "invalid vesion" << version;
-        return false;
-    }
-    else
-    {
-        qInfo() << "Template version =" << version;
-    }
-
-    // read data
-    lines.clear();
-    circs.clear();
-
-    if (version >= 1)
-    {
-        in >> lines;
-    }
-
-    if (version == 2 && !in.atEnd())
-    {
-        QVector<Circle> circles;
-        in >> circles;
-
-        for (const auto & c : circles)
-        {
-            CirclePtr circle = std::make_shared<Circle>(c);
-            circs.push_back(circle);
-        }
-    }
-    else if (version >= 3 && !in.atEnd())
-    {
-        QVector<Circle> circles;
-        in >> circles;
-
-        for (const auto & c : circles)
-        {
-            CirclePtr circle = std::make_shared<Circle>(c);
-            circs.push_back(circle);
-        }
-    }
-
-    file.close();
-
-    qInfo() << "Template loaded" << xfile.getPathedName();
-    return true;
-}
-
-bool MapEditorStash::readStashXML(VersionedFile &xfile,QVector<QLineF>  & lines, QVector<CirclePtr> & circs)
-{
-    qInfo() << "Loading template" << xfile.getPathedName();
+    qInfo() << "Loading construction lines" << name;
 
     xml_document doc;
 
-    xml_parse_result result = doc.load_file(xfile.getPathedName().toStdString().c_str());
+    xml_parse_result result = doc.load_file(name.toStdString().c_str());
     if (result == false)
     {
         qWarning() << result.description();
@@ -193,9 +105,13 @@ bool MapEditorStash::readStashXML(VersionedFile &xfile,QVector<QLineF>  & lines,
     xml_node node = doc.child("template");
     if (!node)
     {
-        qWarning() << "Invalid templa4e XML file";
+        qWarning() << "Invalid template XML file";
         return false;
     }
+
+    db->constructionLines.clear();
+    db->constructionCircles.clear();
+    db->selectedCLine = -1;
 
     xml_node node2 = node.child("lines");
     if (node2)
@@ -205,7 +121,7 @@ bool MapEditorStash::readStashXML(VersionedFile &xfile,QVector<QLineF>  & lines,
             QString line = node3.child_value();
             QStringList l = line.split(',');
             QLineF aline(l[0].toDouble(),l[1].toDouble(),l[2].toDouble(),l[3].toDouble());
-            lines.push_back(aline);
+            db->constructionLines.push_back(aline);
         }
     }
 
@@ -235,109 +151,9 @@ bool MapEditorStash::readStashXML(VersionedFile &xfile,QVector<QLineF>  & lines,
                 QString str = attr.value();
                 y = str.toDouble();
             }
-            CirclePtr c = std::make_shared<Circle>(QPointF(x,y),radius);
-            circs.push_back(c);
+            db->constructionCircles.push_back(std::make_shared<Circle>(QPointF(x,y),radius));
         }
     }
 
-    qInfo() << "Template loaded" << xfile.getPathedName();
     return true;
-}
-
-bool MapEditorStash::initStash(VersionedName mosaicname, MapEditorDb * db)
-{
-    VersionedFile xfile = FileServices::getFile(mosaicname,FILE_TEMPLATE2);
-    if (xfile.isEmpty())
-    {
-        // there is no existing template assocoated with the newly
-        // loaded mosaic
-        return false;
-    }
-
-    bool rv = readStash(xfile,db);
-    stash(db);
-    return rv;
-}
-
-bool MapEditorStash::saveTemplate(VersionedName vname)
-{
-    if (current == -1)
-        return false;
-
-    VersionedFile xfile = FileServices::getFile(vname,FILE_TEMPLATE2);
-    if (xfile.isEmpty())
-    {
-        QString pname = Sys::templateDir + vname.get() + ".xml";
-        xfile.setFromFullPathname(pname);
-    }
-    else
-    {
-        // delete existing file
-        QFile afile(xfile.getPathedName());
-        afile.remove(xfile.getPathedName());
-    }
-
-    QString currentName = getStashName(current);
-    QFile bfile(currentName);
-    bool rv = bfile.copy(xfile.getPathedName());
-
-    return rv;
-}
-
-int MapEditorStash::getNext()
-{
-    if (current == last)
-        return current;
-
-    current++;
-    if (current > MAX_STASH) current = 0;
-    return current;
-}
-
-int MapEditorStash::getPrev()
-{
-    if (current == first)
-        return current;
-
-    current--;
-    if (current < 0)
-        current = MAX_STASH;
-    return current;
-}
-
-void MapEditorStash::add(int index)
-{
-    current = index;
-    last    = index;
-    if (first == index)
-    {
-        first++;
-        if (first > MAX_STASH)
-            first = 0;
-    }
-}
-
-QString MapEditorStash::getStashName(int index)
-{
-    QString name = QString("constructionstash%1.xml").arg(QString::number(index));
-    return name;
-}
-
-void MapEditorStash::nextAnimationStep(MapEditorDb * db, QTimer * timer)
-{
-    while (!localLines.isEmpty())
-    {
-        QLineF line = localLines.takeFirst();
-        db->constructionLines.push_back(line);
-        return;
-    }
-
-    while (!localCircs.isEmpty())
-    {
-        auto cp = localCircs.takeFirst();
-        db->constructionCircles.push_back(cp);
-        return;
-    }
-
-    timer->stop();
 }

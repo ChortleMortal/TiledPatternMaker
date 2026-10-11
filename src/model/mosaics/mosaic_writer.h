@@ -1,13 +1,10 @@
 #pragma once
-#ifndef XMLWRITER_H
-#define XMLWRITER_H
 
 #include <string>
+#include "gui/viewers/layer.h"
 #include "model/mosaics/writer_base.h"
 #include "model/motifs/extender.h"
 #include "model/styles/colorset.h"
-#include "sys/enums/efilltype.h"
-#include "sys/enums/eviewtype.h"
 #include "sys/enums/estyletype.h"
 #include "sys/geometry/edge_poly.h"
 #include "sys/geometry/polygon.h"
@@ -20,12 +17,12 @@ using std::shared_ptr;
 using std::weak_ptr;
 using namespace pugi;
 
-class SystemViewController;
+class ViewController;
 class Configuration;
 
 typedef shared_ptr<class Border>           BorderPtr;
 typedef shared_ptr<class Crop>             CropPtr;
-typedef shared_ptr<class IrregularMotif>   ExplicitPtr;
+typedef shared_ptr<class AdaptiveMotif>    ExplicitPtr;
 typedef shared_ptr<class Tile>             TilePtr;
 typedef shared_ptr<class Motif>            MotifPtr;
 typedef shared_ptr<class Map>              MapPtr;
@@ -35,6 +32,7 @@ typedef shared_ptr<class Rosette>          RosettePtr;
 typedef shared_ptr<class Rosette2>         Rosette2Ptr;
 typedef shared_ptr<class Star>             StarPtr;
 typedef shared_ptr<class Star2>            Star2Ptr;
+typedef shared_ptr<class JeweledStar>      JeweledStarPtr;
 typedef shared_ptr<class Style>            StylePtr;
 
 class MosaicWriter
@@ -47,6 +45,9 @@ public:
 
     bool    writeXML(VersionedFile xfile, MosaicPtr design);
     QString getFailMsg() { return _failMsg; }
+
+    void        setCleanseMaps(bool cleanse) { _cleanseMaps = cleanse; }  // otherwise maps failing verify are written as is
+    QStringList getUnverifiedMaps()          { return _unverifiedMaps; }
 
     static int currentXMLVersion;
 
@@ -77,7 +78,7 @@ protected:
     bool    processTileColors(QTextStream &ts, StylePtr style);
 
     // styles
-    void    procesToolkitGeoLayer(QTextStream &ts, const Xform &xf, eZLevel zlevel);
+    void    procesToolkitGeoLayer(QTextStream &ts, const Xform &xf, Layer::ZLevel zlevel);
     void    processsStyleThick(QTextStream &ts, eDrawOutline draw_outline, qreal width, qreal outlineWidth, QColor outlineColor, Qt::PenJoinStyle join_style, Qt::PenCapStyle cap_style);
     void    processsStyleInterlace(QTextStream &ts, qreal gap, qreal shadow, bool includeSVerts, bool startUnder);
     void    processsStyleFilledFaces(QTextStream &ts, class Filled * filled);
@@ -95,10 +96,10 @@ protected:
     void    setRosette(       QTextStream & ts, QString name, MotifPtr motif);
     void    setRosette2(      QTextStream & ts, QString name, MotifPtr motif);
 
-    void    setStarCommon(    QTextStream & ts, StarPtr star);
-    void    setStar2Common(   QTextStream & ts, Star2Ptr star);
-    void    setRosetteCommon(QTextStream & ts, RosettePtr rose);
-    void    setRosette2Common(QTextStream & ts, Rosette2Ptr rose);
+    void    setStarCommon(       QTextStream & ts, StarPtr star);
+    void    setStar2Common(      QTextStream & ts, Star2Ptr star);
+    void    setRosetteCommon(    QTextStream & ts, RosettePtr rose);
+    void    setRosette2Common(   QTextStream & ts, Rosette2Ptr rose);
 
     void    setPrototype(QTextStream & ts, ProtoPtr pp);
     bool    setMap(QTextStream & ts, MapPtr map);
@@ -130,6 +131,7 @@ protected:
     bool   hasReference(Rosette2Ptr n);
     bool   hasReference(StarPtr ep);
     bool   hasReference(Star2Ptr ep);
+    bool   hasReference(JeweledStarPtr ep);
     bool   hasReference(MapPtr map);
     bool   hasReference(EdgePtr map);
 
@@ -143,6 +145,7 @@ protected:
 
     void   setStarReference(int id, StarPtr ptr);
     void   setStar2Reference(int id, Star2Ptr ptr);
+    void   setJeweledStarReference(int id, JeweledStarPtr ptr);
 
     void   setRosetteReference(int id, RosettePtr ptr);
     void   setRosette2Reference(int id, Rosette2Ptr ptr);
@@ -157,11 +160,14 @@ protected:
 
     QString getStarReference(StarPtr ptr);
     QString getStar2Reference(Star2Ptr ptr);
+    QString getJeweledStarReference(JeweledStarPtr ptr);
 
     QString getRosetteReference(RosettePtr ptr);
     QString getRosette2Reference(Rosette2Ptr ptr);
 
     QString      _failMsg;
+    QStringList  _unverifiedMaps;
+    bool         _cleanseMaps = false;
     WriterBase    mwbase;
 
 private:
@@ -177,6 +183,7 @@ private:
     QMap<ExplicitPtr,int>   explicit_ids;
     QMap<StarPtr,int>       star_ids;
     QMap<Star2Ptr,int>      star2_ids;
+    QMap<JeweledStarPtr,int>jstar_ids;
     QMap<RosettePtr,int>    rosette_ids;
     QMap<Rosette2Ptr,int>   rosette2_ids;
 
@@ -184,5 +191,3 @@ private:
 
     bool                    debug;
 };
-
-#endif

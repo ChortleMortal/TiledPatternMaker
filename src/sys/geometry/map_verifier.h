@@ -1,7 +1,5 @@
-#ifndef MAP_VERIFIER_H
-#define MAP_VERIFIER_H
+#pragma once
 
-#include <QtTypes>
 #include "sys/geometry/map.h"
 
 enum eMapError
@@ -32,7 +30,7 @@ public:
     MapVerifier(Map *  map) { this->map = map; }
 
     bool        verify(bool force = false);
-    bool        verifyAndFix(bool force = false, bool confirm = false);
+    bool        verifyAndFix(bool force = false);
 
     void        verifyEdges();
     void        verifyNeighbours(NeighbourMap *nMap);
@@ -48,5 +46,3 @@ private:
     UniqueQVector<eMapError>    errors;
 
 };
-
-#endif // MAP_VERIFIER_H

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef STYLE_COLOR_FILL_FACE_H
-#define STYLE_COLOR_FILL_FACE_H
 
 #include <QVBoxLayout>
 #include <QPushButton>
@@ -53,5 +51,3 @@ private:
 
     DirectColoring  * dcm;
 };
-
-#endif

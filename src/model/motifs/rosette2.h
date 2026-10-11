@@ -1,6 +1,4 @@
 #pragma once
-#ifndef ROSETTE2_H
-#define ROSETTE2_H
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -20,27 +18,30 @@
 
 #include "model/motifs/radial_motif.h"
 
-enum eTipTypes
+enum class TipType
 {
-    TIP_TYPE2_OUTER     = 0x01,
-    TIP_TYPE2_INNER     = 0x02,
-    TIP_TYPE2_FLIPPED   = 0x04,
+    REPEAT,
+    OUTER,
+    INNER,
+    FLIPPED,
+    OUTER_POINT,
+    OUTER_TO_BOUNDARY,          // as OUTER, then the extender moves the tip to its boundary
+    OUTER_POINT_TO_BOUNDARY,    // as OUTER_POINT, then the extender moves the tip to its boundary
 };
 
-enum eTipMode
-{
-    TIP_MODE_REGULAR,
-    TIP_MODE_ALTERNATE,
-};
+extern  const QString sTipType[];
+
+class Rosette;
 
 class Rosette2 : public RadialMotif
 {
 public:
-    Rosette2(const Motif & fig,  int n, qreal kneeX, qreal kneeY, int ss, qreal kk, bool c);
     Rosette2(int n, qreal kneeX, qreal kneeY, int ss, qreal kk, bool c);
     Rosette2(const Rosette2 & other);
+    Rosette2(const Motif & motif);
+    Rosette2(const Rosette & rosette);
 
-    virtual void  buildUnitMap()   override;
+    virtual void  buildUnitRays()   override;
 
     qreal   getKneeX()              { return kneeX;}
     qreal   getKneeY()              { return kneeY;}
@@ -54,30 +55,32 @@ public:
     void    setS(int ss)            { s = ss; }
     void    setConstrain(bool c)    { constrain = c; }
 
-    void    addTipType(eTipTypes t)     { tipTypes |= t; }
-    void    removeTipType(eTipTypes t)  { tipTypes &= ~t; }
-    void    setTipTypes(uint tt)        { tipTypes = tt; }
-    uint    getTipTypes()               { return tipTypes; }
+    void             initTipTypes()                         { tipTypes.push_back(TipType::OUTER); }
+    void             setTipTypes(QList<TipType> tiptypes)   { tipTypes = tiptypes; }
+    QList<TipType> & getTipTypes()                          { return tipTypes; }
+    TipType          getTipType(int tip);
+    static bool      isBoundaryTip(TipType tt)              { return tt == TipType::OUTER_TO_BOUNDARY || tt == TipType::OUTER_POINT_TO_BOUNDARY; }
 
-    void    setTipMode(eTipMode mode)   { _tipMode = mode; }
-    eTipMode getTipMode() const         { return _tipMode; }
+    bool    hasTipsToMove()                     override;
+    bool    moveTipToBoundary(int rayIndex)     override;
 
     virtual QString getMotifDesc() override { return "Rosette2";}
     virtual void    dump()         override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "kneeX:" << kneeX << "kneeY:" << kneeY << "s:" << s << "k:" << k
-                                            << ((getRadialConnector()) ? "has connector" : "no connector")
                                             << "extenders" << getExtenders().count() ; }
+    virtual int     maxVersions()  override { return 1; }
 
     bool    equals(const MotifPtr other) override;
     bool    pointOnLineLessThan(QPointF p1, QPointF v2);
     bool    convertConstrained();
 
 protected:
-    void    buildRay(RaySet &set, QPointF tip, const QVector<QPointF> & epoints);
+    int     buildUnitRays(QPointF tip, const RadialRay &epoints, int side);
     void    calcConstraintLine();
 
 private:
-    eTipMode _tipMode;
-    uint     tipTypes;
+    QList<TipType> tipTypes;
+    QList<TipType> unitTipTypes;    // generated - tip type of each LR pair in unitRays
+
     bool     constrain;     // use Kaplan's constraint
     QLineF   constraint;    // Kaplan's aesthetic call of line where knee should lie on
 
@@ -86,6 +89,4 @@ private:
     qreal    yRange;
     qreal    xRange;
 };
-
-#endif
 

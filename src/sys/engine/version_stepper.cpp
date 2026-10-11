@@ -1,5 +1,6 @@
 #include <QProcess>
 #include <QMessageBox>
+#include <QComboBox>
 #include "sys/engine/image_engine.h"
 #include "sys/engine/version_stepper.h"
 #include "model/makers/mosaic_maker.h"
@@ -198,25 +199,45 @@ void VersionStepper::compareVersions()
         // tiling
         if (config->vCompXML)
         {
+            // tiling XML
             VersionedFile tileA = FileServices::getFile(vna,FILE_TILING);
             VersionedFile tileB = FileServices::getFile(vnb,FILE_TILING);
             QStringList qsl;
             qsl << tileA.getPathedName() << tileB.getPathedName();
-            QProcess::startDetached(config->diffTool,qsl);
+
+#ifdef Q_OS_WINDOWS
+            QProcess::startDetached(Sys::diffTool,qsl);
+#else
+            QProcess *process = new QProcess(this);
+            QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+            env.remove("LD_LIBRARY_PATH");
+            env.remove("QT_PLUGIN_PATH");
+            env.remove("QML2_IMPORT_PATH");
+
+            process->setProgram(Sys::diffTool);
+            process->setArguments(qsl);
+            process->setProcessEnvironment(env);
+
+            qint64 pid = 0;
+            bool ok = process->startDetached(&pid);   // <-- non-static, no cmd/args passed here
+            if (!ok)
+            {
+                qDebug() << "Failed to start" << Sys::diffTool << process->errorString();
+            }
+#endif
         }
         else
         {
+            // tiling images (created here)
             auto maker = Sys::tilingMaker;
             VersionedFile vfa = FileServices::getFile(vna,FILE_TILING);
-            maker->loadTiling(vfa,TILM_LOAD_SINGLE);
-            auto pixA = Sys::viewController->grabView();
+            maker->loadTiling(vfa,TilingMaker::Event::LoadSingle);
+            auto imgA = Sys::systemViewController->paintToImage();
 
             VersionedFile vfb = FileServices::getFile(vnb,FILE_TILING);
-            maker->loadTiling(vfb,TILM_LOAD_SINGLE);
-            auto pixB = Sys::viewController->grabView();
+            maker->loadTiling(vfb,TilingMaker::Event::LoadSingle);
+            auto imgB = Sys::systemViewController->paintToImage();
 
-            imgA = pixA.toImage();
-            imgB = pixB.toImage();
             parent->closeAllImageViewers();
             VersionedFile fileA;
             fileA.updateFromVersionedName(vna);
@@ -230,36 +251,44 @@ void VersionStepper::compareVersions()
         // mosaic
         if (config->vCompXML)
         {
+            // mopsaic XML
             VersionedFile mosA = FileServices::getFile(vna,FILE_MOSAIC);
             VersionedFile mosB = FileServices::getFile(vnb,FILE_MOSAIC);
             QStringList qsl;
             qsl << mosA.getPathedName() << mosB.getPathedName();
-            QProcess::startDetached(config->diffTool,qsl);
+#ifdef Q_OS_WINDOWS
+            QProcess::startDetached(Sys::diffTool,qsl);
+#else
+            QProcess *process = new QProcess(this);
+            QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+            env.remove("LD_LIBRARY_PATH");
+            env.remove("QT_PLUGIN_PATH");
+            env.remove("QML2_IMPORT_PATH");
+
+            process->setProgram(Sys::diffTool);
+            process->setArguments(qsl);
+            process->setProcessEnvironment(env);
+
+            qint64 pid = 0;
+            bool ok = process->startDetached(&pid);   // <-- non-static, no cmd/args passed here
+            if (!ok)
+            {
+                qDebug() << "Failed to start" << Sys::diffTool << process->errorString();
+            }
+#endif
         }
         else
         {
+            // mosaic images (created here
             auto maker   = Sys::mosaicMaker;
 
             VersionedFile vfa = FileServices::getFile(vna,FILE_MOSAIC);
-            MosaicPtr mosaicA = maker->loadMosaic(vfa);
-            QPixmap pixA      = Sys::viewController->grabView();
+            MosaicPtr mosaicA = maker->load(vfa);
+            QImage imgA       = Sys::systemViewController->paintToImage();
 
             VersionedFile vfb = FileServices::getFile(vnb,FILE_MOSAIC);
-            MosaicPtr mosaicB = maker->loadMosaic(vfb);
-            QPixmap pixB      = Sys::viewController->grabView();
-
-            if (mosaicA)
-            {
-                mosaicA->dumpMotifs();
-                mosaicA->dumpStyles();
-            }
-            if (mosaicB)
-            {
-                mosaicB->dumpMotifs();
-                mosaicB->dumpStyles();
-            }
-            imgA = pixA.toImage();
-            imgB = pixB.toImage();
+            MosaicPtr mosaicB = maker->load(vfb);
+            QImage imgB       = Sys::systemViewController->paintToImage();
 
             VersionedFile fileA;
             fileA.updateFromVersionedName(vna);
@@ -267,7 +296,8 @@ void VersionStepper::compareVersions()
             fileB.updateFromVersionedName(vnb);
 
             parent->closeAllImageViewers();
-            parent->compareImages(imgA,imgB,fileA,fileB);
+            QImage imgDiff;
+            parent->compareImages(imgA,imgB,fileA,fileB,true);  // force popup result
         }
     }
 }
@@ -284,18 +314,11 @@ void VersionStepper::compareNextVersions()
 
     VersionedName vnb(versionsB->currentText());
     VersionedFile vfb = FileServices::getFile(vnb,FILE_MOSAIC);
-    maker->loadMosaic(vfb);
+    maker->load(vfb);
 
-    QPixmap pixB = Sys::viewController->grabView();
+    imgB = Sys::systemViewController->paintToImage();
 
     MosaicPtr mosaicB = maker->getMosaic();
-
-    mosaicA->dumpMotifs();
-    mosaicA->dumpStyles();
-    mosaicB->dumpMotifs();
-    mosaicB->dumpStyles();
-
-    imgB = pixB.toImage();
 
     VersionedFile fileA;
     fileA.updateFromVersionedName(vna);

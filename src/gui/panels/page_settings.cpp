@@ -12,9 +12,9 @@
 
 #include "gui/panels/page_settings.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/splash_screen.h"
-#include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/dlg_textedit.h"
+#include "gui/widgets/memory_combo.h"
 #include "model/settings/configuration.h"
 #include "sys/qt/qtapplog.h"
 #include "sys/sys.h"
@@ -37,9 +37,7 @@ page_settings:: page_settings(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_C
     hbox->addStretch();
 
     vbox->addLayout(hbox);
-    vbox->addStretch();
     vbox->addWidget(pathGroup);
-    vbox->addStretch();
     vbox->addWidget(infoGroup);
     vbox->addStretch();
 }
@@ -96,7 +94,7 @@ QGroupBox * page_settings::createAppInfo()
 QGroupBox * page_settings::createAppSetup()
 {
     QRadioButton * designerMode = new QRadioButton("Designer Mode (basic)");
-    QRadioButton * insightMode  = new QRadioButton("Insight Mode (advanced");
+    QRadioButton * insightMode  = new QRadioButton("Insight Mode (advanced)");
     QButtonGroup * btnGroup     = new QButtonGroup;
     btnGroup->addButton(designerMode,0);
     btnGroup->addButton(insightMode,1);
@@ -127,7 +125,6 @@ QGroupBox * page_settings::createAppSetup()
 
     QCheckBox   * chkResize = new QCheckBox("Disable resize notifications");
     chkResize->setChecked(config->disableResizeNotify);
-
 
     QHBoxLayout *hbox = new QHBoxLayout;
     hbox->addWidget(designerMode);
@@ -176,7 +173,7 @@ QGroupBox * page_settings::createAppSetup()
     connect(dualScreen,     &QRadioButton::clicked,   this, [this](bool checked) { config->integratedScreen = !checked; restartApp(); });
     connect(monoScreen,     &QRadioButton::clicked,   this, [this](bool checked) { config->integratedScreen =  checked; restartApp(); });
     connect(chkLimitView,   &QCheckBox::clicked,      this, [this](bool checked) { config->limitViewSize = checked; emit sig_reconstructView(); });
-    connect(chkSplash,      &QCheckBox::clicked,      this, [this](bool checked) { config->disableSplash = checked; Sys::splash->disable(checked); });
+    connect(chkSplash,      &QCheckBox::clicked,      this, [this](bool checked) { config->disableSplash = checked; Sys::systemViewController->splash_disable(checked); });
     connect(chkResize,      &QCheckBox::clicked,      this, [this](bool checked) { config->disableResizeNotify = checked; });
     connect(chkBigScreen,   &QCheckBox::clicked,      this, &page_settings::slot_bigScreen);
     connect(btnGroup,       &QButtonGroup::idClicked, this, &page_settings::slot_mode);
@@ -187,32 +184,33 @@ QGroupBox * page_settings::createAppSetup()
 
 QGroupBox * page_settings::createMediaPaths()
 {
-    le_rootMedia   = new QLineEdit();
-    le_rootImages  = new QLineEdit();
-    le_xmlTool     = new QLineEdit();
-    le_diffTool    = new QLineEdit();
+    rootMediaCombo = new MemoryCombo("rootMediaCombo");
+    rootImagesCombo= new MemoryCombo("rootImagesCombo");
+    xmlToolCombo   = new MemoryCombo("xmlTool2");
+    diffToolCombo  = new MemoryCombo("diffTool2");
+    logPathCombo   = new MemoryCombo("logPathCombo");
     le_logName     = new QLineEdit();
-    le_logPath     = new QLineEdit();
 
-    le_rootMedia->setMinimumWidth(501);
+    rootMediaCombo->setMinimumWidth(501);
+    le_logName->setReadOnly(true);
 
     rootMediaBtn   = new QPushButton("Root Media Directory");
     rootImagesBtn  = new QPushButton("Root Image Directory");
+    rootLogBtn     = new QPushButton("Log Directory");
+
     QPushButton * xmlToolBtn  = new QPushButton("XML Viewer/Editor");
-    QPushButton * diffToolBtn = new QPushButton("Difference Tool");
+    QPushButton * diffToolBtn =  new QPushButton("Difference Tool");
 
-    defaultDesigns = new QCheckBox("Default Media Directory");
+    defaultMedia   = new QCheckBox("Default Media Directory");
     defaultImages  = new QCheckBox("Default Images Directory");
-
-    QCheckBox * chklogApp = new QCheckBox("Log To App Directory");
-    chklogApp->setChecked(config->logToAppDir);
+    defaultLogs    = new QCheckBox("Default Log Directory");
 
     QLabel * logLabel = new QLabel("Log name");
 
     QHBoxLayout * hbox = new QHBoxLayout();
-    hbox->addWidget(defaultDesigns);
+    hbox->addWidget(defaultMedia);
     hbox->addWidget(defaultImages);
-    hbox->addStretch();
+    hbox->addWidget(defaultLogs);
 
     QHBoxLayout * hbox2 = new QHBoxLayout;
     hbox2->addWidget(logLabel);
@@ -227,23 +225,23 @@ QGroupBox * page_settings::createMediaPaths()
 
     row++;
     configGrid->addWidget(rootMediaBtn,row,0);
-    configGrid->addWidget(le_rootMedia,row,1);
+    configGrid->addWidget(rootMediaCombo,row,1);
 
     row++;
     configGrid->addWidget(rootImagesBtn,row,0);
-    configGrid->addWidget(le_rootImages,row,1);
+    configGrid->addWidget(rootImagesCombo,row,1);
 
     row++;
     configGrid->addWidget(xmlToolBtn,row,0);
-    configGrid->addWidget(le_xmlTool,row,1);
+    configGrid->addWidget(xmlToolCombo,row,1);
 
     row++;
     configGrid->addWidget(diffToolBtn,row,0);
-    configGrid->addWidget(le_diffTool,row,1);
+    configGrid->addWidget(diffToolCombo,row,1);
 
     row++;
-    configGrid->addWidget(chklogApp,row,0);
-    configGrid->addWidget(le_logPath,row,1);
+    configGrid->addWidget(rootLogBtn,row,0);
+    configGrid->addWidget(logPathCombo,row,1);
 
     row++;
     configGrid->addWidget(logLabel,row,0);
@@ -256,17 +254,26 @@ QGroupBox * page_settings::createMediaPaths()
 
     connect(rootImagesBtn,  &QPushButton::clicked,   this,  &page_settings::slot_selectRootImageDir);
     connect(rootMediaBtn,   &QPushButton::clicked,   this,  &page_settings::slot_selectRootMediaDir);
+    connect(rootLogBtn,     &QPushButton::clicked,   this,  &page_settings::slot_selectRootLogDir);
+
     connect(xmlToolBtn,     &QPushButton::clicked,   this,  &page_settings::slot_selectXMLTool);
     connect(diffToolBtn,    &QPushButton::clicked,   this,  &page_settings::slot_selectDiffTool);
 
-    connect(le_rootMedia,   &QLineEdit::textChanged,     this, &page_settings::slot_rootDesignChanged);
-    connect(le_rootImages,  &QLineEdit::textChanged,     this, &page_settings::slot_rootImageChanged);
-    connect(le_logName,     &QLineEdit::textChanged,     this, [this](QString txt) {config->baseLogName = txt;});
-    connect(le_logName,     &QLineEdit::editingFinished, this, [this]() {restartApp();});
+    connect(rootMediaCombo, &QComboBox::currentIndexChanged, this, &page_settings::slot_rootMediaIndexChanged);
+    connect(rootImagesCombo,&QComboBox::currentIndexChanged, this, &page_settings::slot_rootImagesIndexChanged);
+    connect(logPathCombo,   &QComboBox::currentIndexChanged, this, &page_settings::slot_rootLogIndexChanged);
+    connect(xmlToolCombo,   &QComboBox::currentIndexChanged, this, &page_settings::slot_XMLToolChanged1);
+    connect(diffToolCombo,  &QComboBox::currentIndexChanged, this, &page_settings::slot_DiffToolChanged2);
 
-    connect(defaultDesigns, &QCheckBox::clicked, this, &page_settings::slot_designDefaultChanged);
+    connect(rootMediaCombo->lineEdit(), &QLineEdit::editingFinished, this, &page_settings::slot_rootMediaEditChanged);
+    connect(logPathCombo->lineEdit(),   &QLineEdit::editingFinished, this, &page_settings::slot_rootLogEditChanged);
+    connect(rootImagesCombo->lineEdit(),&QLineEdit::editingFinished, this, &page_settings::slot_rootImagesEditChanged);
+    connect(xmlToolCombo->lineEdit(),   &QLineEdit::editingFinished, this, &page_settings::slot_XMLToolChanged1);
+    connect(diffToolCombo->lineEdit(),  &QLineEdit::editingFinished, this, &page_settings::slot_DiffToolChanged2);
+
+    connect(defaultMedia,   &QCheckBox::clicked, this, &page_settings::slot_mediaDefaultChanged);
     connect(defaultImages,  &QCheckBox::clicked, this, &page_settings::slot_imageDefaultChanged);
-    connect(chklogApp,      &QCheckBox::clicked, this, &page_settings::slot_logToAppDir);
+    connect(defaultLogs,    &QCheckBox::clicked, this, &page_settings::slot_logDefaultChanged);
 
     return pathGroup;
 }
@@ -277,96 +284,252 @@ void  page_settings::onEnter()
 void  page_settings::onRefresh()
 {}
 
-void page_settings::slot_selectRootMediaDir()
+void page_settings::updatePaths()
 {
-    QString old = config->rootMediaDir;
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Media Directory"),
-                   old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    defaultMedia->setChecked(config->defaultMediaRoot);
+    defaultImages->setChecked(config->defaultImageRoot);
+    defaultLogs->setChecked(config->defaultLogRoot);
 
-    if (dir.isEmpty())
-    {
-        qDebug() << "Cancel Pressed";
-        config->defaultMediaRoot = true;
-        return;
-    }
+    rootMediaCombo->setCurrentText(Sys::getRootMediaDir());
+    rootImagesCombo->setCurrentText(Sys::getRootImageDir());
+    logPathCombo->setCurrentText(Sys::getLogDir());
 
-    le_rootMedia->setText(dir);
-    config->rootMediaDir = dir;
-    config->defaultMediaRoot = false;
-    slot_reconfigurePaths();
+    le_logName->setText(Sys::logName);
+
+    Sys::xmlTool  = xmlToolCombo->getCurrentText();
+    Sys::diffTool = diffToolCombo->getCurrentText();
+
+    rootMediaCombo->setEnabled(!config->defaultMediaRoot);
+    rootImagesCombo->setEnabled(!config->defaultImageRoot);
+    logPathCombo->setEnabled(!config->defaultLogRoot);
 }
 
-void page_settings::slot_selectRootImageDir()
-{
-    QString old = config->rootImageDir;
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Image Directory"),
-                   old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+//////////////////////////////////////////////////
+///
+///  Media
+///
+//////////////////////////////////////////////////
 
-    if (dir.isEmpty())
-    {
-        qDebug() << "Cancel Pressed";
-        config->defaultImageRoot = true;
-        return;
-    }
-    if (!dir.endsWith("/"))
-    {
-        dir += "/";
-    }
-
-    le_rootImages->setText(dir);
-    config->rootImageDir = dir;
-    config->defaultImageRoot = false;
-    updatePaths();
-}
-
-void page_settings::slot_selectXMLTool()
-{
-    QString old = config->xmlTool;
-    QString fileName = QFileDialog::getOpenFileName(this, "Select XML Editor/Viewer", old);
-
-    le_xmlTool->setText(fileName);
-    config->xmlTool = fileName;
-}
-
-void page_settings::slot_selectDiffTool()
-{
-    QString old = config->diffTool;
-    QString fileName = QFileDialog::getOpenFileName(this, "Select Difference Tool", old);
-
-    le_diffTool->setText(fileName);
-    config->diffTool = fileName;
-}
-
-void page_settings::slot_rootDesignChanged(QString txt)
-{
-    Sys::rootMosaicDir= txt;
-    if (!config->defaultMediaRoot)
-    {
-        slot_reconfigurePaths();    // reboot
-    }
-}
-
-void page_settings::slot_rootImageChanged(QString txt)
-{
-    config->rootImageDir = txt;
-    if (!config->defaultImageRoot)
-    {
-        config->configurePaths();   // does not reboot
-    }
-    updatePaths();
-}
-
-void page_settings::slot_designDefaultChanged(bool checked)
+void page_settings::slot_mediaDefaultChanged(bool checked)
 {
     config->defaultMediaRoot = checked;
-    slot_reconfigurePaths();        // reboots
+    config->configureMediaPaths(true);
+    updatePaths();
 }
+
+void page_settings::slot_rootMediaIndexChanged(int index)
+{
+    Q_UNUSED(index);
+    QString str = rootMediaCombo->currentText();
+
+    rootMediaChanged(str);
+}
+
+void page_settings::slot_rootMediaEditChanged()
+{
+    QString str = rootMediaCombo->currentText();
+
+    rootMediaChanged(str);
+}
+
+void page_settings::slot_selectRootMediaDir()
+{
+    QString old = Sys::getRootMediaDir();
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Media Directory"),
+                                                    old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    if (dir.isEmpty())
+    {
+        qDebug() << "Cancel Pressed";
+        return;
+    }
+
+    if (!dir.endsWith("/"))
+        dir += "/";
+
+    rootMediaCombo->setCurrentText(dir);
+
+    config->defaultMediaRoot = false;
+
+    rootMediaChanged(dir);
+}
+
+void page_settings::rootMediaChanged(QString dir)
+{
+    Q_ASSERT(config->defaultMediaRoot == false);
+
+    if (dir == Sys::getRootMediaDir())
+    {
+        return;     // not a real change
+    }
+
+    config->setAlternateRootMediaDir(dir);
+    config->configureMediaPaths(true);
+    updatePaths();
+}
+
+//////////////////////////////////////////////////
+///
+///  Log
+///
+//////////////////////////////////////////////////
+
+void page_settings::slot_logDefaultChanged(bool checked)
+{
+    config->defaultLogRoot = checked;
+    config->configureLogPaths(true);
+    updatePaths();
+}
+
+void page_settings::slot_selectRootLogDir()
+{
+    QString old = Sys::getLogDir();
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Log Directory"),
+                                                    old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    if (dir.isEmpty())
+    {
+        qDebug() << "Cancel Pressed";
+        return;
+    }
+
+    if (!dir.endsWith("/"))
+        dir += "/";
+
+    logPathCombo->setCurrentText(dir);
+
+    config->defaultLogRoot = false;
+
+    logPathChanged(dir);
+}
+
+void page_settings::slot_rootLogIndexChanged(int index)
+{
+    Q_UNUSED(index);
+    QString str = logPathCombo->currentText();
+
+    logPathChanged(str);
+}
+
+void page_settings::slot_rootLogEditChanged()
+{
+    QString str = logPathCombo->currentText();
+
+    logPathChanged(str);
+}
+
+void page_settings::logPathChanged(QString dir)
+{
+    Q_ASSERT(config->defaultLogRoot == false);
+
+    if (dir == Sys::getLogDir())
+    {
+        return;     // not a real change
+    }
+
+    config->setAlternateRootLogDir(dir);
+    config->configureLogPaths(true);
+    updatePaths();
+}
+
+//////////////////////////////////////////////////
+///
+///  Images
+///
+//////////////////////////////////////////////////
 
 void page_settings::slot_imageDefaultChanged(bool checked)
 {
     config->defaultImageRoot = checked;
-    config->configurePaths();       // does not reboot
+    config->configureImagePaths(true);
     updatePaths();
+}
+
+void page_settings::slot_rootImagesIndexChanged(int index)
+{
+    Q_UNUSED(index);
+    QString str = rootImagesCombo->currentText();
+
+    rootImagesChanged(str);
+}
+
+void page_settings::slot_rootImagesEditChanged()
+{
+    QString str = rootImagesCombo->currentText();
+
+    rootImagesChanged(str);
+}
+
+void page_settings::slot_selectRootImageDir()
+{
+    QString old = Sys::getRootImageDir();
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Image Directory"),
+                                                    old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    if (dir.isEmpty())
+    {
+        qDebug() << "Cancel Pressed";
+        return;
+    }
+
+    if (!dir.endsWith("/"))
+        dir += "/";
+
+    rootImagesCombo->setCurrentText(dir);
+
+    config->defaultImageRoot = false;
+
+    rootImagesChanged(dir);
+}
+
+void page_settings::rootImagesChanged(QString dir)
+{
+    Q_ASSERT(config->defaultImageRoot == false);
+
+    if (dir == Sys::getRootImageDir())
+    {
+        return;     // not a real change
+    }
+
+    config->setAlternateRootImageDir(dir);
+    config->configureImagePaths(true);
+    updatePaths();
+}
+
+//////////////////////////////////////////////////
+///
+///  Other
+///
+//////////////////////////////////////////////////
+
+void page_settings::slot_XMLToolChanged1()
+{
+    xmlToolCombo->select(xmlToolCombo->currentIndex());
+    Sys::xmlTool = xmlToolCombo->getCurrentText();
+}
+
+void page_settings::slot_DiffToolChanged2()
+{
+    diffToolCombo->select(diffToolCombo->currentIndex());
+    Sys::diffTool = diffToolCombo->getCurrentText();
+}
+
+void page_settings::slot_selectXMLTool()
+{
+    QString old = xmlToolCombo->getCurrentText();
+    QString fileName = QFileDialog::getOpenFileName(this, "Select XML Editor/Viewer", old);
+
+    xmlToolCombo->setCurrentText(fileName);
+    Sys::xmlTool = fileName;
+}
+
+void page_settings::slot_selectDiffTool()
+{
+    QString old = diffToolCombo->getCurrentText();
+    QString fileName = QFileDialog::getOpenFileName(this, "Select Difference Tool", old);
+
+    diffToolCombo->setCurrentText(fileName);
+    Sys::diffTool = fileName;
 }
 
 void page_settings::slot_darkThemeChanged(int id)
@@ -375,51 +538,36 @@ void page_settings::slot_darkThemeChanged(int id)
     restartApp();
 }
 
-void page_settings::slot_reconfigurePaths()
-{
-    config->configurePaths();
-    restartApp();
-}
-
-void page_settings::updatePaths()
-{
-    // basic config
-    defaultDesigns->setChecked(config->defaultMediaRoot);
-    defaultImages->setChecked(config->defaultImageRoot);
-
-    le_rootMedia->setText(config->rootMediaDir);
-    le_rootImages->setText(config->rootImageDir);
-    le_xmlTool->setText(config->xmlTool);
-    le_diffTool->setText(config->diffTool);
-    le_logName->setText(config->baseLogName);
-    le_logPath->setText(log->logDir());
-
-    update();
-}
-
 void page_settings::slot_mode(int id)
 {
-    config->insightMode = (id == 1);
+    config->pendingInsightMode = (id == 1);
     restartApp();
 }
 
 void page_settings::restartApp()
 {
+    QMessageBox box(panel);
+    box.setIcon(QMessageBox::Critical);
+    box.setText("Application restart required to apply settings");
+    QPushButton * nowBtn   = box.addButton("Restart now",QMessageBox::AcceptRole);
+    QPushButton * laterBtn = box.addButton("Later",QMessageBox::RejectRole);
+    box.exec();
+
+    if (box.clickedButton() == laterBtn)
+        return;
+
+    if (box.clickedButton() != nowBtn)
+    {
+        qWarning("Unexpected button clicked");
+        return;
+    }
+
     // restart the application
+    Sys::updatePanel = false;
     viewControl->slot_unloadView();
 
-#if 0
-    QString cmd = qApp->arguments()[0];
-
-    guard->release();
-    qApp->quit();
-
-    QStringList empty;
-    QProcess::startDetached(cmd,empty);
-#else
-    qDebug() << "Performing application reboot...";
+    qInfo() << "Performing application reboot...";
     qApp->exit(TiledPatternMaker::EXIT_CODE_REBOOT);
-#endif
 }
 
 void page_settings::slot_bigScreen(bool enb)
@@ -431,17 +579,9 @@ void page_settings::slot_bigScreen(bool enb)
     }
 }
 
-void page_settings::slot_logToAppDir(bool checked)
-{
-    config->logToAppDir = checked;
-    log->logToAppDir(checked);
-    log->init();
-    updatePaths();
-}
-
 void page_settings::slot_firstBirthday()
 {
-    QMessageBox box(this);
+    QMessageBox box(panel);
     box.setIcon(QMessageBox::Critical);
     box.setWindowTitle("First Birthday TiledPatternMaker");
     box.setText("This is VERY DRASTIC - it erases all registry settings\nand sets them back to defaults.\nThere is no coming back from this.\nOK to  Proceed?");
@@ -451,7 +591,7 @@ void page_settings::slot_firstBirthday()
     if (rv == QMessageBox::Cancel)
         return;
 
-    QSettings settings;
+    QSettings settings = Sys::settings();
     settings.remove("");
 
     Sys::config->firstBirthday = true;  // prevents persistence on exit
@@ -461,7 +601,7 @@ void page_settings::slot_firstBirthday()
 
 void page_settings::slot_eraseDebugFlagHistory()
 {
-    QMessageBox box(this);
+    QMessageBox box(panel);
     box.setIcon(QMessageBox::Critical);
     box.setText("This will erase all previous debug flag settings.\nOK to  Proceed?");
     box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
@@ -475,24 +615,24 @@ void page_settings::slot_eraseDebugFlagHistory()
 
 void page_settings::slot_about()
 {
-    DlgAbout dlg(this);
+    DlgAbout dlg(panel);
     dlg.exec();
 }
 
 void page_settings::slot_start_options()
 {
-    DlgStartOptions dlg(this);
+    DlgStartOptions dlg(panel);
     dlg.exec();
 }
 
 void page_settings::slot_showSupport()
 {
-    DlgSupport dlg(this);
+    DlgSupport dlg(panel);
     dlg.exec();
 }
 
 void page_settings::slot_showShortcuts()
 {
-    DlgKbdOpts dlg(this);
+    DlgKbdOpts dlg(panel);
     dlg.exec();
 }

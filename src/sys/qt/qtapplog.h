@@ -1,6 +1,4 @@
 #pragma once
-#ifndef QTAPPLOG_H
-#define QTAPPLOG_H
 
 #include <QMutex>
 #include <QTextDocument>
@@ -28,13 +26,15 @@ public:
     static void crashMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
     void init();
+    void reinit();
+    void create();
+
     void clear();
     void suspend(bool enable);  // suspend takes precedence over trap
     void trap(bool enable);
 
     void logToStdErr(bool enable)   { _logToStderr = enable; }
     void logToDisk(bool enable)     { _logToDisk   = enable; }
-    void logToAppDir(bool enable)   { _logToAppDir = enable; }
     void logToPanel(bool enable)    { _logToPanel  = enable; }
     void logLines(bool enable)      { _logLines    = enable; }
     void logDebug(bool enable)      { _logDebug    = enable; }
@@ -44,7 +44,7 @@ public:
 
     void saveLog(QString to);
 
-    QString logDir()                { return this->_logDir; }
+    //QString logDir()                { return this->_logDir; }
     static QString currentLogName;
     static QString baseLogName;
     static const QVector<sTrapMsg> & getTrap() { return _trappedMsgs; }
@@ -92,5 +92,3 @@ private:
     QString _logDir;
 
 };
-
-#endif

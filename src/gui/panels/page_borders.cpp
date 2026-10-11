@@ -7,7 +7,7 @@
 #include "gui/map_editor/map_editor.h"
 #include "gui/panels/page_borders.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/layout_sliderset.h"
 #include "gui/widgets/smx_widget.h"
 #include "model/makers/mosaic_maker.h"
@@ -50,6 +50,9 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORD
 
     connect(chkUseViewSize, &QCheckBox::clicked, this, &page_borders::slot_useViewSzChanged);
 
+    btnEdit = new AQPushButton("Edit");
+    connect(btnEdit, &QPushButton::clicked, this, &page_borders::slot_editBorder);
+
     // border shapes
     cropTypes = new AQComboBox();
     cropTypes->addItem("Undefined", CROP_UNDEFINED);
@@ -62,6 +65,8 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORD
     hbox2->addWidget(cropTypes);
     hbox2->addSpacing(21);
     hbox2->addWidget(chkUseViewSize);
+    hbox2->addSpacing(21);
+    hbox2->addWidget(btnEdit);
     hbox2->addStretch();
 
     // stacked layout
@@ -86,6 +91,13 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORD
     cropTypeBox->setMinimumWidth(400);
     cropTypeBox->setLayout(cropTypeStack);
 
+    // border selection
+    QLabel * label0 = new QLabel("Border");
+    borderSelect    = new QComboBox();
+    borderSelect->setMinimumWidth(160);
+
+    connect(borderSelect, &QComboBox::activated, this, &page_borders::slot_borderSelected);
+
     // border types
     QLabel * label = new QLabel("Border Type");
 
@@ -98,6 +110,9 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORD
     smxWidget = new SMXWidget(nullptr,false,true);
 
     QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(label0);
+    hbox->addWidget(borderSelect);
+    hbox->addSpacing(21);
     hbox->addWidget(label);
     hbox->addWidget(borderTypes);
     hbox->addStretch();
@@ -309,10 +324,10 @@ QWidget * page_borders::createUndefinedShapeWidget()
 
 QWidget * page_borders::createRectShapeWidget()
 {
-    rectBoundaryLayout = new LayoutQRectF("Model Units:");
+    rectBoundaryLayout = new LayoutQRectF(this,"Border");
 
     // initial value
-    QSize sz = Sys::viewController->viewSize();
+    QSize sz = Sys::systemViewController->viewSize();
     QRectF rect(QPointF(0,0),sz);
     rectBoundaryLayout->set(rect);
 
@@ -362,17 +377,27 @@ QWidget * page_borders::createPolyShapeWidget()
 ///
 ////////////////////////////////
 
+void page_borders::onEnter()
+{
+    if (Sys::bm_editBorder)
+        emit sig_updateView();
+}
+
 void page_borders::onExit()
 {
     clearPageStatus();
+    if (Sys::bm_editBorder)
+        emit sig_updateView();
 }
 
 // refresh updates the page from the mosaic
 void  page_borders::onRefresh()
 {
-    BorderPtr border = getMosaicBorder();
+    BorderPtr border = getCurrentBorder();
 
     blockPage(true);
+    btnEdit->setChecked(Sys::bm_editBorder);
+    refreshBorderSelect(border);
     if (border)
     {
         chkUseViewSize->setChecked(border->getUseViewSize());
@@ -393,6 +418,69 @@ void  page_borders::onRefresh()
     }
     blockPage(false);
 
+}
+
+void page_borders::refreshBorderSelect(BorderPtr border)
+{
+    auto borders = getBorders();
+
+    QStringList labels;
+    for (int i = 0; i < borders.size(); i++)
+    {
+        BorderPtr bp = borders[i];
+        labels << QString("%1: %2 %3").arg(i+1).arg(bp->getBorderTypeString()).arg(bp->getCropTypeString());
+    }
+
+    QStringList current;
+    for (int i = 0; i < borderSelect->count(); i++)
+    {
+        current << borderSelect->itemText(i);
+    }
+
+    if (labels != current)
+    {
+        borderSelect->clear();
+        borderSelect->addItems(labels);
+    }
+
+    borderSelect->setCurrentIndex(borders.indexOf(border));
+}
+
+void page_borders::slot_borderSelected(int index)
+{
+    if (pageBlocked()) return;
+
+    auto borders = getBorders();
+    if (index >= 0 && index < borders.size())
+    {
+        currentBorder = borders[index];
+        onRefresh();
+        emit sig_updateView();
+    }
+}
+
+void page_borders::slot_editBorder(bool checked)
+{
+    Sys::bm_editBorder = checked;
+    emit sig_updateView();
+}
+
+// in Mosaic Maker table order
+QVector<BorderPtr> page_borders::getBorders()
+{
+    QVector<BorderPtr> borders;
+    MosaicPtr m = mosaicMaker->getMosaic();
+    if (!m)
+        return borders;
+
+    const StyleSet & sset = m->getStyleSet();
+    for (auto it = sset.crbegin(); it != sset.crend(); ++it)
+    {
+        BorderPtr bp = std::dynamic_pointer_cast<Border>(*it);
+        if (bp)
+            borders.push_back(bp);
+    }
+    return borders;
 }
 
 void page_borders::refreshBorderType(BorderPtr border)
@@ -512,7 +600,7 @@ void page_borders::slot_loadFromCrop()
         return;
     }
 
-    BorderPtr border =mosaic->getBorder();
+    BorderPtr border = getCurrentBorder();
     if (!border || border->getBorderType() == BORDER_NONE)
     {
         QMessageBox box(panel);
@@ -598,7 +686,7 @@ void page_borders::slot_loadFromPainterCrop()
         return;
     }
 
-    BorderPtr border =mosaic->getBorder();
+    BorderPtr border = getCurrentBorder();
     if (!border || border->getBorderType() == BORDER_NONE)
     {
         QMessageBox box(panel);
@@ -720,15 +808,17 @@ void page_borders::createBorder()
         qreal width = controlBlocks->borderWidth->value();
 
         bp = make_shared<BorderBlocks>(mosaic.get(),rect,color1,rows,cols,width);
-    }
+    }   break;
+
     case BORDER_NONE:
         break;
     }
 
     if (bp)
     {
-        bp->setModelXform(Sys::viewController->getSystemModelXform(),true,Sys::nextSigid());
-        mosaic->setBorder(bp);
+        bp->setModelXform(Sys::systemViewController->getSystemModelXform(),true,Sys::nextSigid());
+        mosaic->replaceBorder(getCurrentBorder(),bp);
+        currentBorder = bp;
 
         emit sig_reconstructView();
         emit sig_updateView();
@@ -742,10 +832,11 @@ void page_borders::slot_removeBorder()
     auto mosaic = mosaicMaker->getMosaic();
     if (mosaic)
     {
-        BorderPtr bp = mosaic->getBorder();
+        BorderPtr bp = getCurrentBorder();
         if (bp)
         {
             mosaic->deleteStyle(bp);
+            currentBorder.reset();
             emit sig_reconstructView();
         }
     }
@@ -762,7 +853,7 @@ void page_borders::slot_borderTypeChanged(int row)
     }
     else
     {
-        auto border = getMosaicBorder();
+        auto border = getCurrentBorder();
         if (!border)
         {
             cropTypes->select(CROP_RECTANGLE); // default
@@ -772,7 +863,7 @@ void page_borders::slot_borderTypeChanged(int row)
             Q_ASSERT(mosaic);
             auto style = mosaic->getFirstStyle();
             Q_ASSERT(style);
-            QRectF rect(Sys::viewController->viewRect());
+            QRectF rect(Sys::systemViewController->getViewRect());
             rect = style->screenToModel(rect);
             rectBoundaryLayout->blockSignals(true);
             rectBoundaryLayout->set(rect);
@@ -791,13 +882,19 @@ void page_borders::slot_cropTypeChanged(int row)
     createBorder();
 }
 
-BorderPtr page_borders::getMosaicBorder()
+BorderPtr page_borders::getCurrentBorder()
 {
     BorderPtr bp;
     MosaicPtr m = mosaicMaker->getMosaic();
-    if (m)
+    if (!m)
+        return bp;
+
+    // defaults to the first border if current is not in this mosaic
+    bp = currentBorder.lock();
+    if (!bp || !m->getStyleSet().contains(bp))
     {
         bp = m->getBorder();
+        currentBorder = bp;
     }
     return bp;
 }
@@ -806,10 +903,11 @@ void page_borders::slot_borderWidthChanged(qreal width)
 {
     if (pageBlocked()) return;
 
-    BorderPtr bp = getMosaicBorder();
+    BorderPtr bp = getCurrentBorder();
     if (!bp) return;
 
     bp->setWidth(width);
+    bp->createStyleRepresentation();
     emit sig_updateView();
 }
 
@@ -817,13 +915,14 @@ void page_borders::slot_borderLengthChanged(qreal length)
 {
     if (pageBlocked()) return;
 
-    BorderPtr bp = getMosaicBorder();
+    BorderPtr bp = getCurrentBorder();
     if (!bp) return;
 
     BorderTwoColor * bp2 = dynamic_cast<BorderTwoColor*>(bp.get());
     if (bp2)
     {
         bp2->setLength(length);
+        bp2->createStyleRepresentation();
         emit sig_updateView();
     }
 }
@@ -832,13 +931,14 @@ void page_borders::slot_borderRowsChanged(int rows)
 {
     if (pageBlocked()) return;
 
-    BorderPtr bp = getMosaicBorder();
+    BorderPtr bp = getCurrentBorder();
     if (!bp) return;
 
     BorderBlocks * bp3 = dynamic_cast<BorderBlocks*>(bp.get());
     if (bp3)
     {
         bp3->setRows(rows);
+        bp3->createStyleRepresentation();
         emit sig_updateView();
     }
 }
@@ -847,13 +947,14 @@ void page_borders::slot_borderColumnsChanged(int cols)
 {
     if (pageBlocked()) return;
 
-    BorderPtr bp = getMosaicBorder();
+    BorderPtr bp = getCurrentBorder();
     if (!bp) return;
 
     BorderBlocks * bp3 = dynamic_cast<BorderBlocks*>(bp.get());
     if (bp3)
     {
         bp3->setCols(cols);
+        bp3->createStyleRepresentation();
         emit sig_updateView();
     }
 }
@@ -862,11 +963,12 @@ void page_borders::slot_borderColorChanged(const QString &text)
 {
     if (pageBlocked()) return;
 
-    BorderPtr bp = getMosaicBorder();
+    BorderPtr bp = getCurrentBorder();
     if (!bp) return;
 
     QColor qc(text);
     bp->setColor(qc);
+    bp->createStyleRepresentation();
     emit sig_updateView();
 }
 
@@ -874,11 +976,12 @@ void page_borders::slot_borderColor2Changed(const QString &text)
 {
     if (pageBlocked()) return;
 
-    BorderPtr bp = getMosaicBorder();
+    BorderPtr bp = getCurrentBorder();
     if (!bp) return;
 
     QColor qc(text);
     bp->setColor2(qc);
+    bp->createStyleRepresentation();
     emit sig_updateView();
 }
 
@@ -886,7 +989,7 @@ void page_borders::slot_pickBorderColor()
 {
     if (pageBlocked()) return;
 
-    BorderPtr bp = getMosaicBorder();
+    BorderPtr bp = getCurrentBorder();
     if (!bp) return;
 
     QColor color = bp->getColor();
@@ -900,6 +1003,7 @@ void page_borders::slot_pickBorderColor()
     if (color.isValid())
     {
         bp->setColor(color);
+        bp->createStyleRepresentation();
         emit sig_updateView();
     }
 }
@@ -907,7 +1011,7 @@ void page_borders::slot_pickBorderColor()
 void page_borders::slot_pickBorderColor2()
 {
     if (pageBlocked()) return;
-    BorderPtr bp = getMosaicBorder();
+    BorderPtr bp = getCurrentBorder();
     if (!bp) return;
 
     QColor color = bp->getColor2();
@@ -921,6 +1025,7 @@ void page_borders::slot_pickBorderColor2()
     if (color.isValid())
     {
         bp->setColor2(color);
+        bp->createStyleRepresentation();
         emit sig_updateView();
     }
 }
@@ -931,15 +1036,15 @@ void page_borders::slot_rectBoundaryChanged()
     if (pageBlocked()) return;
 
     qDebug() << "page_borders::slot_rectBoundaryChanged";
-    BorderPtr bp = getMosaicBorder();
-    if (!bp)
+    BorderPtr border = getCurrentBorder();
+    if (!border)
         return;
 
     QRectF rect = rectBoundaryLayout->get();
-    bp->setRect(rect);
+    border->setRect(rect);
 
-    bp->resetStyleRepresentation();
-    emit sig_updateView();
+    border->resetStyleRepresentation();
+    emit sig_reconstructView();
 }
 
 void page_borders::slot_useViewSzChanged(bool checked)
@@ -947,11 +1052,12 @@ void page_borders::slot_useViewSzChanged(bool checked)
     if (pageBlocked()) return;
 
     qDebug() << "page_borders::slot_useViewSzChanged";
-    BorderPtr bp = getMosaicBorder();
+    BorderPtr bp = getCurrentBorder();
     if (!bp)
         return;
 
     bp->setUseViewSize(checked);
+    bp->createStyleRepresentation();
     emit sig_updateView();
 }
 
@@ -959,7 +1065,7 @@ void page_borders::slot_centreChanged()
 {
     if (pageBlocked()) return;
 
-    BorderPtr bp = getMosaicBorder();
+    BorderPtr bp = getCurrentBorder();
     if (!bp)
         return;
 
@@ -968,14 +1074,14 @@ void page_borders::slot_centreChanged()
     c.setCenter(p);
 
     bp->resetStyleRepresentation();
-    emit sig_updateView();
+    emit sig_reconstructView();
 }
 
 void page_borders::slot_radiusChanged(qreal r)
 {
     if (pageBlocked()) return;
 
-    BorderPtr bp = getMosaicBorder();
+    BorderPtr bp = getCurrentBorder();
     if (!bp)
         return;
 
@@ -983,5 +1089,5 @@ void page_borders::slot_radiusChanged(qreal r)
     c.setRadius(r);
 
     bp->resetStyleRepresentation();
-    emit sig_updateView();
+    emit sig_reconstructView();
 }

@@ -1,11 +1,11 @@
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/geo_graphics.h"
 #include "gui/viewers/prototype_view.h"
 #include "gui/viewers/viewer_services.h"
-#include "model/makers/prototype_maker.h"
+#include "model/makers/motif_maker.h"
 #include "model/mosaics/mosaic.h"
 #include "model/motifs/motif.h"
-#include "model/prototypes/design_element.h"
+#include "model/prototypes/tile_motif.h"
 #include "model/prototypes/prototype.h"
 #include "model/settings/configuration.h"
 #include "model/settings/configuration.h"
@@ -19,7 +19,7 @@
 
 using std::make_shared;
 
-PrototypeView::PrototypeView() : LayerController(VIEW_PROTOTYPE,DERIVED,"Prototype")
+PrototypeView::PrototypeView() : LayerController(Type::Prototype,Model::Derived,ZLevel::Standard_Z0,"Prototype")
 {
     colors.setColors(Sys::config->protoViewColors);
 }
@@ -51,20 +51,17 @@ void PrototypeView::draw()
 
     const int mode = Sys::config->protoViewMode;
 
-    for (const auto & proto : Sys::prototypeMaker->getPrototypes())
+    for (const auto & proto : Sys::motifMaker->protoData.getPrototypes())
     {
-        if (proto->hasContent() && !Sys::prototypeMaker->isHidden(MVD_PROTO,proto))
+        if (proto->hasContent() && Sys::motifMaker->protoData.isVisible(proto))
         {
             drawProto(mode, proto);
         }
-    }
-    for (const auto & proto : Sys::prototypeMaker->getPrototypes())
-    {
-        for (const auto & del : proto->getDesignElements())
+        for (const TileMotifPtr & timo : proto->getTileMotifs())
         {
-            if (!Sys::prototypeMaker->isHidden(MVD_PROTO,del))
+            if (Sys::motifMaker->protoData.isVisible(timo))
             {
-                drawDEL(mode,proto,del);
+                drawTileMotif(mode,proto,timo);
             }
         }
     }
@@ -73,13 +70,6 @@ void PrototypeView::draw()
 void PrototypeView::drawProto(const int mode, ProtoPtr proto)
 {
     Q_ASSERT(proto);
-
-    TilingPtr tiling = proto->getTiling();
-    if (!tiling)
-    {
-        qWarning() << "Tiling not found in Prototype";
-        return;
-    }
 
     if (mode & SHOW_MAP)
     {
@@ -142,19 +132,25 @@ void PrototypeView::drawProto(const int mode, ProtoPtr proto)
         }
     }
 
-    FillRegion flood(tiling.get(),proto->getMosaic()->getCanvasSettings().getFillData());
+    TilingPtr tiling = proto->getTiling();
+    if (!tiling)
+    {
+        return;     // tiling-less (explicit map) prototype - nothing further to draw
+    }
+
+    FillRegion flood(tiling.get(),proto->getCanvas()->getFillData());
     Placements fillPlacements = flood.getPlacements(Sys::config->repeatMode);
 
-    if (mode & (SHOW_TILES | SHOW_MOTIFS))
+    if (mode & (SHOW_TILES | SHOW_MOTIFS | SHOW_EXT_BOUNDARY))
     {
         for (const auto & T1 : std::as_const(fillPlacements))
         {
-            for (const auto & del : std::as_const(proto->getDesignElements()))
+            for (const auto & del : std::as_const(proto->getTileMotifs()))
             {
                 auto motif = del->getMotif();
                 auto tile  = del->getTile();
 
-                auto tilePlacements = tiling->unit().getPlacements(tile);
+                auto tilePlacements = tiling->unit().getPlacements(tile,proto->getCanvas()->getDistorionTransform());
                 for (const auto & T0 : std::as_const(tilePlacements))
                 {
                     QTransform T2 = T0 * T1;
@@ -168,6 +164,11 @@ void PrototypeView::drawProto(const int mode, ProtoPtr proto)
                     if (mode & SHOW_MOTIFS)
                     {
                         ViewerServices::drawMotif(gg,motif,QPen(colors.motifColor,lineWidth));
+                    }
+
+                    if (mode & SHOW_EXT_BOUNDARY)
+                    {
+                        ViewerServices::drawExtendedBoundary(gg,motif,QPen(colors.extBoundaryColor,lineWidth));
                     }
 
                     gg->pop();
@@ -184,13 +185,13 @@ void PrototypeView::drawProto(const int mode, ProtoPtr proto)
         QPen pen2(colors.tileBrushColor,   lineWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
 
         // paint background of each DEL, then its tile edges and motifs
-        for (const auto & del : std::as_const(proto->getDesignElements()))
+        for (const auto & del : std::as_const(proto->getTileMotifs()))
         {
             auto motif  = del->getMotif();
             auto tile   = del->getTile();
             const EdgePoly & ep = tile->getEdgePoly();
 
-            auto tilePlacements = tiling->unit().getPlacements(tile);
+            auto tilePlacements = tiling->unit().getPlacements(tile,proto->getCanvas()->getDistorionTransform());
             for (const auto & T0 : std::as_const(tilePlacements))
             {
                 gg->pushAndCompose(T0);
@@ -214,7 +215,7 @@ void PrototypeView::drawProto(const int mode, ProtoPtr proto)
     }
 }
 
-void PrototypeView::drawDEL(const int mode, ProtoPtr proto, DELPtr del)
+void PrototypeView::drawTileMotif(const int mode, ProtoPtr proto, TileMotifPtr del)
 {
     TilingPtr tiling = proto->getTiling();
     if (!tiling)
@@ -227,7 +228,7 @@ void PrototypeView::drawDEL(const int mode, ProtoPtr proto, DELPtr del)
     {
         auto motif = del->getMotif();
         auto tile  = del->getTile();
-        auto tilePlacements = tiling->unit().getPlacements(tile);
+        auto tilePlacements = tiling->unit().getPlacements(tile,proto->getCanvas()->getDistorionTransform());
         for (const auto & T0 : std::as_const(tilePlacements))
         {
             gg->pushAndCompose(T0);
@@ -249,7 +250,7 @@ void PrototypeView::drawDEL(const int mode, ProtoPtr proto, DELPtr del)
     {
         auto motif = del->getMotif();
         auto tile  = del->getTile();
-        auto placements = tiling->unit().getPlacements(tile);
+        auto placements = tiling->unit().getPlacements(tile,proto->getCanvas()->getDistorionTransform());
         QTransform T0;
         if (placements.size())
         {
@@ -302,6 +303,7 @@ QStringList ProtoViewColors::getColors()
     qsl << delTileColor.name(QColor::HexArgb);
     qsl << delMotifColor.name(QColor::HexArgb);
     qsl << tileBrushColor.name(QColor::HexArgb);
+    qsl << extBoundaryColor.name(QColor::HexArgb);
     return qsl;
 }
 
@@ -314,4 +316,5 @@ void ProtoViewColors::setColors(QStringList & colors)
     delTileColor     = QColor(colors.at(index++));
     delMotifColor    = QColor(colors.at(index++));
     tileBrushColor   = QColor(colors.at(index++));
+    extBoundaryColor = (index < colors.size()) ? QColor(colors.at(index++)) : QColor(Qt::yellow);
 }

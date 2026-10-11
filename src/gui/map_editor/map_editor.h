@@ -1,22 +1,13 @@
 #pragma once
-#ifndef MAP_EDITOR_H
-#define MAP_EDITOR_H
 
-#include "sys/enums/emapeditor.h"
-#include "sys/enums/estatemachineevent.h"
-#include "model/tilings/tiling.h"
+#include "gui/map_editor/map_editor_layer.h"
 #include "gui/map_editor/map_editor_mouseactions.h"
 #include "gui/map_editor/map_editor_stash.h"
-#include "gui/map_editor/map_selection.h" // needed
+#include "model/makers/mosaic_maker.h"
 
-typedef std::shared_ptr<class Tiling>        TilingPtr;
-typedef std::shared_ptr<class Mosaic>        MosaicPtr;
-typedef std::shared_ptr<class Style>         StylePtr;
-typedef std::shared_ptr<class Prototype>     ProtoPtr;
-
-class MapEditorSelection;
-class MapEditorDb;
-class MapEditorLayer;
+extern const QString sMapEditorMapType[];
+extern const QString sMapEditorMode[];
+extern const QString sMapEditorMouseMode[];
 
 class MapEditor : public  QObject
 {
@@ -27,46 +18,91 @@ class MapEditor : public  QObject
     friend class ExtendLine;
     friend class EditConstructionCircle;
 
+    using LayerId = MapEditorLayer::LayerId;
+    using MapType = MapEditorMap::MapType;
+
     Q_OBJECT
 
 public:
+
+    enum class EditorMode
+    {
+        Map = 0,
+        DCEL,
+    };
+
+    enum class MouseMode
+    {
+        None,
+        Delete,
+        DrawLine,
+        SplitLine,
+        ExtendP1,
+        ExtendP2,
+        CreateLine,
+        ConstructionLines,
+        ConstructionCircles,
+    };
+
     MapEditor();
     ~MapEditor();
+
     void    init();
 
     bool    loadFromMosaicStyle(StylePtr style);
-    void    loadFromfPrototypeMaker();
+    bool    loadFromfPrototypeMaker();
+    bool    loadMotifUnit();
     bool    loadSelectedMotifs();
-    void    loadTilingUnit();
-    void    loadTilingRepeated();
-    void    loadFromMap(MapPtr map, eMapEditorMapType type);
+    bool    loadTilingUnit();
+    bool    loadTilingRepeated();
+    bool    loadFromMap(MapPtr map, MapEditorMap::MapType type);
 
     void    unload();
 
     bool    useExistingDCEL(MapPtr map);
     bool    createLocalDCEL(MapPtr map);
 
-    bool    pushToMosaic(MapEditorLayer & layer);
+    bool    embedCrop(MapPtr map);
+    bool    cropMap(MapPtr map);
+
+    bool    pushToMosaic(MapEditorLayer & layer, bool convertToMap = false);
     bool    pushToMotif(MapEditorLayer & layer);
     bool    pushToTiling(MapEditorLayer &layer, bool outer);
-
 
     QString  getStatus();
 
     bool    procKeyEvent(QKeyEvent *k);
 
-    void    initStash() { _stash.init(); }
-    void    stash()     { _stash.stash(db); }
-    bool    loadTemplate(VersionedFile xfile, bool animate);
-    bool    saveTemplate(VersionedName & vname);
-    bool    loadCurrentStash();
-    bool    loadPrevStash();
-    bool    loadNextStash();
-    bool    keepStash(VersionedName name);
-    bool    initStashFrom(VersionedName mosaicname);
+    void    setViewSelect(LayerId layer, bool on);
+    bool    isViewSelected(LayerId layer)   { return viewSelect & (int)layer; }
+    void    setEditSelect(LayerId layer)    { editSelect = layer; }
+    LayerId getEditSelect()                 { return editSelect; }
 
-    void setMapedMouseMode(eMapEditorMouseMode mapType);
-    eMapEditorMouseMode getMapedMouseMode();
+    void    stash()     { MapEditorStash::stash(db); }
+    bool    loadTemplate(VersionedFile xfile);
+    bool    saveTemplate(VersionedName & vname);
+
+    void      setMapedMouseMode(MouseMode mapType);
+    MouseMode getMapedMouseMode();
+
+    MapEditorLayer &    getLayer(LayerId layer);
+    MapEditorLayer &    getLayer(MapPtr map);
+    MapEditorLayer &    getEditLayer();
+
+    LayerId             obtainEmptyLayer();
+    void                createComposite();
+
+    QVector<const MapEditorLayer *> gerUsedComposableLayers();
+    QVector<const MapEditorLayer *> getDrawLayers();
+    QVector<TimoMap *>              getDrawTimoMaps();
+    TileMotifSet                    getEditTileMotifs();
+
+    QVector<MapPtr>     getMapLayerMaps();    // all layers
+    MapPtr              getMap(LayerId mode);
+    MapType             getMapType(MapPtr map);
+    MapPtr              getEditMap();
+    MapPtr              getFirstDrawMap();
+    QVector<MapPtr>     getDrawMaps();
 
     MapEditorDb        * getDb()        { return db; }
     MapEditorSelection * getSelector()  { return selector; }
@@ -80,19 +116,22 @@ signals:
     void    sig_styleMapUpdated(MapPtr map);
 
 protected:
-    void     updateMosiacWithPrototype(ProtoPtr proto, eMOSM_Event event);
+    void     updateMosiacWithPrototype(ProtoPtr proto, MosaicMaker::Event event, ProtoPtr oldProto = ProtoPtr());
 
 private:
-    MapEditorStash         _stash;                // stash of construction lines
-    QTimer                * timer;
-
     MapEditorDb           * db;
     MapEditorSelection    * selector;
 
+    int                     viewSelect;     // OR'd bits
+    MapEditorLayer::LayerId editSelect;
+
+    MapEditorLayer  __compositeLayer;
+    MapEditorLayer  __layer1;
+    MapEditorLayer  __layer2;
+    MapEditorLayer  __layer3;
+
     class Configuration   * config;
     class MosaicMaker     * mosaicMaker;
-    class PrototypeMaker  * prototypeMaker;
+    class MotifMaker      * motifMaker;
     class TilingMaker     * tilingMaker;
 };
-
-#endif

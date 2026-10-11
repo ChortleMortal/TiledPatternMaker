@@ -1,4 +1,6 @@
 #include <QDebug>
+#include <QFile>
+
 #include "compare_bmp_engine.h"
 #include "gui/panels/page_image_tools.h"
 
@@ -6,7 +8,12 @@ CompareBMPEngine::CompareBMPEngine() {}
 
 bool CompareBMPEngine::compareBMPs(VersionedName name, QString pathA, QString pathB)
 {
+    if (!QFile::exists(pathA) && pathA.contains(".png"))
+        pathA.replace(".png",".bmp");
     QImage imgA(pathA);
+
+    if (!QFile::exists(pathB) && pathB.contains(".png"))
+        pathB.replace(".png",".bmp");
     QImage imgB(pathB);
 
     bool rv = compareImages(name.get(), imgA, imgB);

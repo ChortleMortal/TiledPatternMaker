@@ -1,5 +1,6 @@
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/settings/configuration.h"
 #include "sys/engine/mosaic_stepper.h"
@@ -15,7 +16,7 @@
 MosaicStepper::MosaicStepper(ImageEngine * parent) : SteppingEngine(parent)
 {
     mImmediate = false;
-    connect(Sys::sysview, &SystemView::sig_loadComplete, this, &MosaicStepper::do_immediate, Qt::QueuedConnection);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_loadComplete, this, &MosaicStepper::do_immediate, Qt::QueuedConnection);
 }
 
 bool MosaicStepper::begin()
@@ -67,7 +68,7 @@ bool MosaicStepper::next()
     if (++cydata.cIndex < cydata.files.size())
     {
         VersionedFile file = cydata.files.at(cydata.cIndex);
-        Sys::mosaicMaker->loadMosaic(file);
+        Sys::mosaicMaker->load(file);
     }
     else
     {
@@ -91,7 +92,7 @@ bool MosaicStepper::do_immediate()
     if (++cydata.cIndex < cydata.files.size())
     {
         VersionedFile file = cydata.files.at(cydata.cIndex);
-        Sys::mosaicMaker->loadMosaic(file);
+        Sys::mosaicMaker->load(file);
     }
     else
     {

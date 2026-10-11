@@ -1,8 +1,12 @@
 #include "gui/widgets/layout_qrectf.h"
 
-LayoutQRectF::LayoutQRectF(QString name, int decimals, qreal singleStep)
+LayoutQRectF::LayoutQRectF(QWidget * parent, QString name, int decimals, qreal singleStep)
 {
-    QLabel * label = new QLabel(name);
+    this->name   = name;
+    this->parent = parent;
+
+    QPushButton * adjBtn = new QPushButton("Adjust");
+
     width   = new DoubleSpinSet("Width",    0,  0,      3840);
     height  = new DoubleSpinSet("Height",   0,  0,      2160);
     X       = new DoubleSpinSet("X",        0,  -9000,  9000);
@@ -17,7 +21,7 @@ LayoutQRectF::LayoutQRectF(QString name, int decimals, qreal singleStep)
     Y->setDecimals(decimals);
     Y->setSingleStep(singleStep);
 
-    addWidget(label);
+    addWidget(adjBtn);
     addSpacing(5);
     addLayout(X);
     addSpacing(9);
@@ -34,6 +38,7 @@ LayoutQRectF::LayoutQRectF(QString name, int decimals, qreal singleStep)
     connect(height, &DoubleSpinSet::valueChanged,     this,    &LayoutQRectF::rectChanged);
     connect(X,      &DoubleSpinSet::valueChanged,     this,    &LayoutQRectF::rectChanged);
     connect(Y,      &DoubleSpinSet::valueChanged,     this,    &LayoutQRectF::rectChanged);
+    connect(adjBtn, &QPushButton::clicked,            this,    &LayoutQRectF::slot_adjust_pos);
 }
 
 void LayoutQRectF::init()
@@ -61,6 +66,59 @@ QRectF LayoutQRectF::get()
     QRectF rv(X->value(),Y->value(),width->value(),height->value());
     return rv;
 }
+
+void LayoutQRectF::slot_adjust_pos()
+{
+    PositionWidget * posWidget = new PositionWidget(name,parent);
+    posWidget->show();
+
+    connect(posWidget,   &PositionWidget::sig_pos,    this, &LayoutQRectF::slot_pos);
+}
+
+void LayoutQRectF::slot_pos(Pos pos)
+{
+    switch (pos)
+    {
+    case Pos::UP:
+        Y->setValue(Y->value() - 0.1);
+        break;
+    case Pos::DOWN:
+        Y->setValue(Y->value() + 0.1);
+        break;
+    case Pos::LEFT:
+        X->setValue(X->value() - 0.1);
+        break;
+    case Pos::RIGHT:
+        X->setValue(X->value() + 0.1);
+        break;
+
+    case Pos::PLUS:
+    {
+        QRectF rect    = get();
+        QPointF center = rect.center();
+        rect.setWidth(rect.width()   * 1.01);
+        rect.setHeight(rect.height() * 1.01);
+        rect.moveCenter(center);
+        set(rect);
+    }   break;
+
+    case Pos::MINUS:
+    {
+        QRectF rect    = get();
+        QPointF center = rect.center();
+        rect.setWidth(rect.width()   * 0.99);
+        rect.setHeight(rect.height() * 0.99);
+        rect.moveCenter(center);
+        set(rect);
+    }   break;
+    }
+    emit rectChanged();
+}
+
+////////////////////////////////////////////////////////////////
+///
+///  LayoutQPointF
+///
 ////////////////////////////////////////////////////////////////
 
 LayoutQPointF::LayoutQPointF(QString name, int decimals)

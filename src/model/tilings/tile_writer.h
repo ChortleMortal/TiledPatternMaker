@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TILE_WRITER_H
-#define TILE_WRITER_H
 
 #include <QTextStream>
 #include "model/mosaics/writer_base.h"
@@ -19,11 +17,9 @@ public:
     void setEdgePoly(QTextStream & ts, const EdgePoly & epoly);
     void setTransform(QTextStream & ts, QTransform T);
 
-protected:
+private:
     void setVertex(QTextStream & ts,VertexPtr v, QString name);
     void setPoint(QTextStream & ts, QPointF pt, QString name);
 
     WriterBase    twbase;
 };
-
-#endif // FEATUREWRITER_H

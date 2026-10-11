@@ -1,5 +1,4 @@
-#ifndef PNG_STEPPING_ENGINE_H
-#define PNG_STEPPING_ENGINE_H
+#pragma once
 
 #include "sys/engine/stepping_engine.h"
 
@@ -27,7 +26,5 @@ private:
     int             pngIndex;
 
 };
-
-#endif
 
 

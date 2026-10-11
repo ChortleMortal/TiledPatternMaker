@@ -1,5 +1,4 @@
-#ifndef DLG_SAVENAME_H
-#define DLG_SAVENAME_H
+#pragma once
 
 #include <QDialog>
 #include <QLineEdit>
@@ -33,5 +32,3 @@ private:
 
     uint    selections;
 };
-
-#endif // DLG_SAVENAME_H

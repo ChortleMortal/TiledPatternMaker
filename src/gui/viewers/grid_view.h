@@ -1,12 +1,12 @@
 #pragma once
-#ifndef GRID_VIEW_H
-#define GRID_VIEW_H
 
 #include "gui/viewers/layer_controller.h"
 #include "gui/viewers/geo_graphics.h"
+#include "model/settings/configuration.h"
 
 typedef std::shared_ptr<class PlacedTileSelector>   PlacedTileSelectorPtr;
-typedef std::shared_ptr<class Map>                  MapPtr;
+
+class Tiling;
 
 class GridView : public LayerController
 {
@@ -16,19 +16,21 @@ public:
 
     void paint(QPainter * painter ) override;
 
+    QTransform getCanvasTransform() override;
+    void       setModelXform(const Xform & xf, bool update, uint sigid) override;
+
+    void       setPosition(eGridUnits units, eGridPosition pos);
+    void       setMoving(bool move);
+    void       restorePosition();
+    void       syncPosition();
+
     bool nearGridPoint(QPointF spt, QPointF & foundGridPoint);  // used by tiling maker
 
 protected:
     void draw(QPainter * painter);
 
-    void drawFromTilingFlood(QPainter * painter);
+    void drawLattice(QPainter * painter);
     void drawFromTilingRegion(QPainter * painter);
-
-    void drawModelUnits(QPainter * painter);
-    void drawModelUnitsCentered(QPainter * painter);
-
-    void drawScreenUnits(QPainter * painter);
-    void drawScreenUnitsCentered(QPainter * painter);
 
     void drawCenters(QPainter *painter);
 
@@ -44,23 +46,15 @@ public slots:
     void slot_mouseDoublePressed(QPointF spt) override;
 
 private:
-    void drawScreenUnits(QPainter * painter, QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step);
-    void drawModelUnits( GeoGraphics * gg, QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step);
+    bool    getLattice(QTransform & S, bool & third);
+    bool    getBasis(qreal step, QPointF & u, QPointF & v, bool & third);
+    QPointF getTilingOrigin(Tiling * tiling);
 
-    void ggdrawLine(GeoGraphics * gg, QLineF line, QPen pen);
-    void ggdrawLine(GeoGraphics * gg, QPointF p1, QPointF p2, QPen  pen);
-    void ggdrawPoly(GeoGraphics * gg, QPolygonF & poly, QPen  pen);
+    QTransform getDesignTransform();
 
-    void ppdrawLine(QPainter * painter, QLineF &line);
-    void ppdrawLine(QPainter * painter, QPointF p1, QPointF p2);
-
-    bool intersects(QVector<QLineF> &edges , QLineF & line);
-    QVector<QLineF> toEdges(const QRectF & r);
+    void            storeXform();
+    eGridPosition * positionOf(eGridUnits units);
+    Xform         * xformOf(eGridUnits units);
 
     Configuration   * config;
-    MapPtr          gridMap;
-
-    QLineF      corners[2];
-    bool        genMap;
 };
-#endif

@@ -94,18 +94,17 @@ VersionFileList PanelWorker::sortMosaicsByDate(VersionFileList & vlist)
 {
     VersionFileList results;
 
-    QMultiMap<uint,VersionedFile> datedMosaics;
+    QMultiMap<QDateTime,VersionedFile> datedMosaics;
 
     for (VersionedFile & file : vlist)
     {
-        QDate date = FileServices::getDateFromXMLFile(file);
-        uint idate = date.toJulianDay();
-        datedMosaics.insert(idate,file);
+        QDateTime date = FileServices::getDateTimeFromXMLFile(file);
+        datedMosaics.insert(date,file);
     }
 
     // multimap sorts by key - so it is already sorted
     // just put the values into the result
-    QMultiMap<uint, VersionedFile>::iterator it;
+    QMultiMap<QDateTime, VersionedFile>::iterator it;
     for (it = datedMosaics.begin(); it!= datedMosaics.end(); it++)
     {
         results.prepend(it.value());
@@ -118,18 +117,17 @@ VersionFileList PanelWorker::sortTilingsByDate(VersionFileList &vlist)
 {
     VersionFileList results;
 
-    QMultiMap<uint,VersionedFile> datedMosaics;
+    QMultiMap<QDateTime,VersionedFile> datedMosaics;
 
     for (VersionedFile & file : vlist)
     {
-        QDate date = FileServices::getDateFromXMLFile(file);
-        uint idate = date.toJulianDay();
-        datedMosaics.insert(idate,file);
+        QDateTime date = FileServices::getDateTimeFromXMLFile(file);
+        datedMosaics.insert(date,file);
     }
 
     // multimap sorts by key - so it is already sorted
     // just put the values into the result
-    QMultiMap<uint, VersionedFile>::iterator it;
+    QMultiMap<QDateTime, VersionedFile>::iterator it;
     for (it = datedMosaics.begin(); it!= datedMosaics.end(); it++)
     {
         results.prepend(it.value());

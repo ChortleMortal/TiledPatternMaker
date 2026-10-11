@@ -1,6 +1,4 @@
 #pragma once
-#ifndef EDESIGN_H
-#define EDESIGN_H
 
 #include <QString>
 #include <QMap>
@@ -29,5 +27,3 @@ enum eDesign
     DESIGN_KUMIKO2,
     NO_DESIGN
 };
-
-#endif // EDESIGN_H

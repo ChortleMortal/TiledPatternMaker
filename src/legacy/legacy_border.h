@@ -1,6 +1,4 @@
 #pragma once
-#ifndef LEGACY_BORDER_H
-#define LEGACY_BORDER_H
 
 #include "gui/viewers/layer.h"
 #include "sys/enums/eborder.h"
@@ -74,5 +72,3 @@ private:
     int         rows;
     int         cols;
 };
-
-#endif // LEGACY_BORDER_H

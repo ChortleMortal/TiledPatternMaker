@@ -1,6 +1,4 @@
 #pragma once
-#ifndef INTERLACE_CASING_H
-#define INTERLACE_CASING_H
 
 #include "model/styles/casing.h"
 #include "model/styles/casing_set.h"
@@ -16,7 +14,7 @@ public:
 
     void    reset()  { weavings.clear(); this->clear(); }
 
-    void    weave();
+    int     weave();     // returns number of unwoven vertices
     void    useMap();
 
     void    dumpWeaveStatus();
@@ -77,4 +75,3 @@ private:
     VertexPtr vs2mid ;
     VertexPtr vs2below;
 };
-#endif

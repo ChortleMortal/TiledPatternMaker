@@ -1,8 +1,7 @@
-#ifndef PRTOTOYPE_VIEW
-#define PRTOTOYPE_VIEW
+#pragma once
 
 #include "gui/viewers/layer_controller.h"
-#include "model/prototypes/design_element.h"
+#include "model/prototypes/tile_motif.h"
 #include "sys/geometry/edge_poly.h"
 
 typedef std::shared_ptr<class Prototype> ProtoPtr;
@@ -21,6 +20,7 @@ public:
     QColor          delMotifColor;
     QColor          delTileColor;
     QColor          tileBrushColor;
+    QColor          extBoundaryColor;
     QColor          visibleTileColor;
     QColor          visibleMotifColor;
 };
@@ -31,7 +31,7 @@ public:
     PrototypeView();
     ~PrototypeView();
 
-    ProtoViewColors & getColors()                    { return colors; }
+    ProtoViewColors & getColors()   { return colors; }
 
      void iamaLayerController() override {}
 
@@ -47,13 +47,11 @@ protected:
 
 private:
     void   draw();
-    void   drawProto(const int mode, ProtoPtr proto);
-    void   drawDEL(  const int mode, ProtoPtr proto, DELPtr del);
+    void   drawProto(      const int mode, ProtoPtr proto);
+    void   drawTileMotif(  const int mode, ProtoPtr proto, TileMotifPtr del);
 
     GeoGraphics    * gg;
 
     ProtoViewColors colors;
     qreal           lineWidth;
 };
-
-#endif

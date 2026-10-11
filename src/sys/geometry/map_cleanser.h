@@ -1,7 +1,5 @@
-#ifndef MAP_CLEANSER_H
-#define MAP_CLEANSER_H
+#pragma once
 
-#include <QtTypes>
 #include "sys/geometry/map.h"
 
 enum eMCOptions
@@ -37,7 +35,7 @@ protected:
     void divideIntersectingEdges();
     void joinColinearEdges();
     bool coalesceVertices(qreal tolerance);
-    void combineLinearEdges(const EdgePtr & a, const EdgePtr & b, const VertexPtr & common);
+    void combineLinearEdges(const EdgePtr & a, const EdgePtr & b, const VertexPtr & common, NeighbourMap & nmap);
     void deDuplicateEdges(const NeighboursPtr & vec);
     void removeVerticesWithEdgeCount(uint edgeCount);
 
@@ -46,5 +44,3 @@ private:
 
     Map * map;
 };
-
-#endif // MAP_CLEANSER_H

@@ -1,14 +1,29 @@
 #include <QDebug>
 
-#include "model/motifs/motif.h"
+#include "gui/model_editors/motif_edit/adaptive_motif_editors.h"
 #include "gui/model_editors/motif_edit/motif_editor_widget.h"
-#include "gui/model_editors/motif_edit/motif_editors.h"
-#include "gui/model_editors/motif_edit/irregular_motif_editors.h"
-#include "model/makers/prototype_maker.h"
-#include "model/prototypes/design_element.h"
-#include "sys/tiledpatternmaker.h"
-#include "model/settings/configuration.h"
+#include "gui/model_editors/motif_edit/motif_maker_widget.h"
+#include "gui/viewers/motif_maker_view.h"
 #include "gui/widgets/dlg_cleanse.h"
+#include "model/makers/motif_maker.h"
+#include "model/motifs/adaptive_girih.h"
+#include "model/motifs/adaptive_motif.h"
+#include "model/motifs/adaptive_hourglass.h"
+#include "model/motifs/adaptive_inference.h"
+#include "model/motifs/adaptive_intersect.h"
+#include "model/motifs/adaptive_rosette.h"
+#include "model/motifs/adaptive_star.h"
+#include "model/motifs/adaptive_tile.h"
+#include "model/motifs/explicit_map_motif.h"
+#include "model/motifs/motif.h"
+#include "model/motifs/rosette.h"
+#include "model/motifs/rosette2.h"
+#include "model/motifs/star.h"
+#include "model/motifs/star2.h"
+#include "model/prototypes/tile_motif.h"
+#include "sys/sys.h"
+
+using std::static_pointer_cast;
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -16,189 +31,342 @@
 //
 // The top-level motif editor that understands the complete range of
 // motif editors available in the applet and branches out to the right
-// kind of editor as the DesignElement being edited is changed.
+// kind of editor as the TileMotif being edited is changed.
 
-MotifEditorWidget::MotifEditorWidget()
+MotifEditorWidget::MotifEditorWidget(MotifMakerWidget * parent)
 {
-    // combo to select motif type for tile
-    typeCombo              = new MotifTypeCombo();
+    this->parent = parent;
+    createLayout();
+}
 
-                  cleanBtn = new QPushButton("Clean");
-               cleanStatus = new QLabel();
+void MotifEditorWidget::createLayout()
+{
+    QPushButton * addExt    = new QPushButton("Add Extender");
+    QPushButton * delExt    = new QPushButton("Delete Extender");
+    QPushButton * pbSwapReg = new QPushButton("Swap Tile Regularity");
+                  pbLock    = new QCheckBox("Lock view scale");
+                  cropChk   = new QCheckBox("Crop to tile");
+                  cleanBtn  = new QPushButton("Motif Cleanse : OFF");
 
-                  QPushButton * addExt   = new QPushButton("Add Extender");
-    QPushButton * delExt   = new QPushButton("Delete Extender");
-    QPushButton * addCon   = new QPushButton("Add Connector");
-    QLabel      * lMot     = new QLabel("Motif: ");
+    pbLock->setChecked(false);
+    cropChk->setEnabled(false);
 
-    connect(typeCombo, &MotifTypeCombo::sig_motifTypeChanged, this, &MotifEditorWidget::slot_motifTypeChanged);
-    connect(addExt,    &QPushButton::clicked,                 this, &MotifEditorWidget::slot_addExtender);
-    connect(delExt,    &QPushButton::clicked,                 this, &MotifEditorWidget::slot_deleteExtender);
-    connect(addCon,    &QPushButton::clicked,                 this, &MotifEditorWidget::slot_addConnector);
-    connect(cleanBtn,  &QPushButton::clicked,                 this, &MotifEditorWidget::slot_cleanse);
+    connect(cleanBtn,   &QPushButton::clicked,                 this, &MotifEditorWidget::slot_cleanse);
+    connect(addExt,     &QPushButton::clicked,                 this, &MotifEditorWidget::slot_addExtender);
+    connect(delExt,     &QPushButton::clicked,                 this, &MotifEditorWidget::slot_deleteExtender);
+    connect(pbSwapReg,  &QPushButton::clicked,                 this, &MotifEditorWidget::slot_swapTileRegularity);
+    connect(pbLock,     &QCheckBox::clicked,                   this, &MotifEditorWidget::slot_lockBtnView);
+    connect(cropChk,    &QCheckBox::clicked,                   this, &MotifEditorWidget::slot_cropToTile);
+    connect(&typeSelector, &MotifTypeSelector::sig_motifTypeChanged,    this, &MotifEditorWidget::slot_motifTypeChanged);
+    connect(&typeSelector, &MotifTypeSelector::sig_motifVersionChanged, this, &MotifEditorWidget::slot_motifVersionChanged);
 
     QHBoxLayout * hbox = new QHBoxLayout();
-    hbox->addWidget(lMot);
-    hbox->addWidget(typeCombo);
+    hbox->addWidget(&typeSelector);
     hbox->addStretch();
+    hbox->addWidget(pbSwapReg);
+    hbox->addSpacing(20);
     hbox->addWidget(cleanBtn);
-    hbox->addWidget(cleanStatus);
-
     hbox->addStretch();
     hbox->addWidget(addExt);
+    hbox->addSpacing(5);
     hbox->addWidget(delExt);
-    hbox->addWidget(addCon);
 
-    // Panel containing the editors.
-    specificEditorWidget = new SpecificEditorWidget();
+    QHBoxLayout * hbox2 = new QHBoxLayout();
+    hbox2->addWidget(cropChk);
+    hbox2->addWidget(pbLock);
+    hbox2->setContentsMargins(0,0,0,0);
 
-    QVBoxLayout * layout = new QVBoxLayout();
+    cornerWidget = new QWidget;
+    cornerWidget->setContentsMargins(0,0,0,3);
+    cornerWidget->setLayout(hbox2);
+
+    for (auto & lt : lowerThirds)
+    {
+        lt = new LowerThirdWidget;
+        thirdStack.addWidget(lt);
+    }
+    frontThirdWidget = lowerThirds[0];
+    backThirdWidget  = lowerThirds[1];
+    frontThirdWidget->setCornerWidget(cornerWidget);
+    thirdStack.setCurrentWidget(frontThirdWidget);
+
+    AQVBoxLayout * layout = new AQVBoxLayout();
+    layout->setContentsMargins(0,9,0,5);
     layout->addLayout(hbox);
-    layout->addWidget(specificEditorWidget);
+    layout->addWidget(&thirdStack);
     setLayout(layout);
 }
 
-void MotifEditorWidget::delegate(DELPtr del)
+void MotifEditorWidget::refresh()
 {
-    delegatedDesignElement = del;
+    auto del = delegatedTileMotif.lock();
+    if (!del) return;
 
-    if (!del)
+    bool dontAutoFit = Sys::motifMakerView->getDontAutoFit();
+
+    pbLock->blockSignals(true);
+    pbLock->setChecked(dontAutoFit);
+    if (dontAutoFit || Sys::motifMakerView->getViewMode() == MotifMakerView::ViewType::Single)
+        pbLock->setEnabled(true);
+    else
+        pbLock->setEnabled(false);
+    pbLock->blockSignals(false);
+
+    auto motif = del->getMotif();
+    cleanBtn->setText((motif->getCleanse() > 0) ? "Motif Cleanse : ON " : "Motif Cleanse : OFF");
+
+    // refreshes the 'lower third'
+    frontThirdWidget->refresh();
+}
+
+void MotifEditorWidget::delegateComboAndLowerThird(TileMotifPtr tileMotif)
+{
+    delegatedTileMotif = tileMotif;
+
+    if (!tileMotif)
     {
-        specificEditorWidget->setEditor(nullptr);
+        //lowerThirdWidget.set(nullptr,nullptr);
         return;
     }
 
-    MotifPtr motif = del->getMotif();
+    MotifPtr motif = tileMotif->getMotif();
     if (!motif)
     {
-        specificEditorWidget->setEditor(nullptr);
+        //lowerThirdWidget.set(nullptr,nullptr);
         return;
     }
 
-    // DAC note:  When a design element is creeated from a tile in the tiling it defaults to a rosette
+    // DAC note:  When a TileMotif is creeated from a tile in the tiling it defaults to a rosette
     // So everything starts as a rosette (except for explicit)
 
     qDebug() << "MotifEditor::selectMotif :" << motif->getMotifDesc();
 
-    typeCombo->updateChoices(motif);
+    typeSelector.updateTypeChoices(motif);
 
-    eMotifType motifType = motif->getMotifType();
-    delegate(del,motifType,false);
+    delegateLowerThird(tileMotif);
 }
 
-void MotifEditorWidget::delegate(DELPtr del,eMotifType type,bool doEmit)
+
+void MotifEditorWidget::delegateChangedMotifType(TileMotifPtr tileMotif, Motif::Type type)
 {
-    NamedMotifEditor * ed = nullptr;
-    switch (type)
+    // places a new motif into an existing TileMotif
+    MotifPtr oldMotif = tileMotif->getMotif();
+
+    // create new motif
+    MotifPtr motif = Sys::motifMaker->create(type,tileMotif);
+
+    // place into TileMotif
+    tileMotif->setMotif(motif);
+
+    // reparent extenders
+    for (auto & ext : oldMotif->getExtenders())
     {
-    case MOTIF_TYPE_UNDEFINED:
-    case MOTIF_TYPE_RADIAL:
-        qCritical("unexpected motif type");
-        break;
-    case MOTIF_TYPE_STAR:
-        ed = new StarEditor("radial_star_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_STAR2:
-        ed = new Star2Editor("radial_star2_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_ROSETTE:
-        ed = new RosetteEditor("radial_rosette_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_ROSETTE2:
-        ed = new Rosette2Editor("radial_rosette2_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_EXPLICIT_MAP:
-        ed = new ExplicitMapEditor("explcit_map_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_IRREGULAR_NO_MAP:
-        ed = new IrregularNoMapEditor("irregular_npomap_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_INFERRED:
-        ed = new InferEditor("infer_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_IRREGULAR_ROSETTE:
-        ed = new IrregularRosetteEditor("irregular_rosette_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_HOURGLASS:
-        ed = new HourglassEditor("hourglass_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_INTERSECT:
-        ed = new IntersectEditor("intersect_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_GIRIH:
-        ed = new GirihEditor("girih_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_IRREGULAR_STAR:
-        ed = new IrregularStarEditor("irregular_star_edit",del,doEmit);
-        break;
-    case MOTIF_TYPE_EXPLCIT_TILE:
-        ed = new ExplicitTileEditor("explicit_tile_edit",del,doEmit);
-        break;
+        ext->reparent(motif.get());
     }
 
-    specificEditorWidget->setEditor(ed);
+    // delegate lower third editor
+    delegateLowerThird(tileMotif);
+
+    // tigger rebuild and paint
+    frontThirdWidget->getCurrentEditor()->motifModified(motif);
+}
+
+void MotifEditorWidget::updateCropCheckbox(MotifPtr motif)
+{
+    auto adaptive = std::dynamic_pointer_cast<AdaptiveMotif>(motif);
+    cropChk->setEnabled(adaptive != nullptr);
+    cropChk->blockSignals(true);
+    cropChk->setChecked(adaptive ? adaptive->cropToTile : false);
+    cropChk->blockSignals(false);
+}
+
+void MotifEditorWidget::delegateLowerThird(TileMotifPtr tileMotif, bool force)
+{
+    // replaces lower third editor with a new editor
+    MotifPtr motif = tileMotif->getMotif();
+
+    MotifEditor * ed = frontThirdWidget->getCurrentEditor();
+
+    if (force || !ed || ed->getMotif() != motif)
+    {
+        switch (motif->getMotifType())
+        {
+        case Motif::Type::Undefined:
+        case Motif::Type::Radial:
+            qCritical("unexpected motif type");
+            break;
+
+        case Motif::Type::Star:
+        {
+            StarPtr star = std::static_pointer_cast<Star>(motif);
+            ed = new StarEditor("radial_star_edit",star);
+        }   break;
+
+        case Motif::Type::Star2:
+        {
+            Star2Ptr star = std::static_pointer_cast<Star2>(motif);
+            ed = new Star2Editor("radial_star2_edit",star);
+        }   break;
+
+        case Motif::Type::Rosette:
+        {
+            RosettePtr rose = std::static_pointer_cast<Rosette>(motif);
+            ed = new RosetteEditor("radial_rosette_edit",rose);
+        }   break;
+
+        case Motif::Type::Rosette2:
+        {
+            Rosette2Ptr rose = std::static_pointer_cast<Rosette2>(motif);
+            ed = new Rosette2Editor("radial_rosette2_edit",rose);
+        }   break;
+
+        case Motif::Type::MapMotif:
+        {
+            shared_ptr<ExplicitMapMotif> expmap = std::static_pointer_cast<ExplicitMapMotif>(motif);
+            ed = new ExplicitMapEditor("explcit_map_edit",expmap);
+        }   break;
+        case Motif::Type::NoMapMotif:
+        {
+            auto nomap = std::static_pointer_cast<IrregularNoMap>(motif);
+            ed = new IrregularNoMapEditor("irregular_npomap_edit",nomap);
+        }   break;
+
+        case Motif::Type::Inferred:
+        {
+            auto infer = std::static_pointer_cast<AdaptiveInference>(motif);
+            ed = new InferEditor("infer_edit",infer);
+        }   break;
+
+        case Motif::Type::AdaptiveRosette:
+        {
+            auto rose = std::static_pointer_cast<AdaptiveRosette>(motif);
+            ed = new IrregularRosetteEditor("irregular_rosette_edit",rose);
+        }   break;
+
+        case Motif::Type::Hourglass:
+        {
+            auto hour = std::static_pointer_cast<AdaptiveHourglass>(motif);
+            ed = new HourglassEditor("hourglass_edit",hour);
+        }   break;
+
+        case Motif::Type::Intersect:
+        {
+            auto isect = std::static_pointer_cast<AdaptiveIntersect>(motif);
+            ed = new IntersectEditor("intersect_edit",isect);
+        }   break;
+
+        case Motif::Type::Girih:
+        {
+            auto girih = std::static_pointer_cast<AdaptiveGirih>(motif);
+            ed = new GirihEditor("girih_edit",girih);
+        }   break;
+
+        case Motif::Type::AdaptiveStar:
+        {
+            auto star = std::static_pointer_cast<AdaptiveStar>(motif);
+            ed = new IrregularStarEditor("irregular_star_edit",star);
+        }   break;
+
+        case Motif::Type::ExplicitTile:
+        {
+            auto tmotif = std::static_pointer_cast<AdaptiveTile>(motif);
+            ed = new ExplicitTileEditor("explicit_tile_edit",tmotif);
+        }   break;
+
+        }
+
+        // build the new editor into the currently-hidden "back" tab widget and let it
+        // fully refresh/settle there. It is never shown until the swap below, so Qt never
+        // paints it in a provisional, not-yet-laid-out state - this is what caused the
+        // sliders' spin boxes to visibly jump when rebuilding a live, visible tab.
+        backThirdWidget->set(ed,motif);
+        ed->refresh();
+        updateCropCheckbox(motif);
+
+        backThirdWidget->setCornerWidget(cornerWidget);
+        thirdStack.setCurrentWidget(backThirdWidget);
+        std::swap(frontThirdWidget,backThirdWidget);
+    }
+    else
+    {
+        ed->refresh();
+        updateCropCheckbox(motif);
+    }
 
     adjustSize();
 }
 
 // the type combo has changed
-void MotifEditorWidget::slot_motifTypeChanged(eMotifType type)
+void MotifEditorWidget::slot_motifTypeChanged(Motif::Type type)
 {
-    auto del = delegatedDesignElement.lock();
-    if (!del)
+    // this is where a new motif needs to be put into the existing TileMotif
+    auto timo = delegatedTileMotif.lock();
+    if (!timo)
     {
-        qWarning("MotifEditor::motifChoiceSelected - no design element");
+        qWarning("MotifEditorWidget::slot_motifTypeChanged - no TileMotif");
         return;
     }
 
-    delegate(del,type,true);
-    Sys::prototypeMaker->select(MVD_DELEM,del,(Sys::config->motifMakerView == MOTIF_VIEW_SELECTED));
+    delegateChangedMotifType(timo,type);
+
+    typeSelector.setVersion(timo->getMotif());  // uses modified timo
+
+    Sys::motifMaker->motifData.show(timo);
 }
 
-void MotifEditorWidget::slot_addConnector()
+void MotifEditorWidget::slot_motifVersionChanged(int version)
 {
-    auto ed = specificEditorWidget->getEditor();
-    if (ed)
+    // this is where a new motif needs to be put into the existing TileMotif
+    auto timo = delegatedTileMotif.lock();
+    if (!timo)
     {
-        ed->addConnector();
-
-        auto del = delegatedDesignElement.lock();
-        auto type = del->getMotif()->getMotifType();
-        delegate(del,type,true);
+        qWarning("MotifEditorWidget::slot_motifVersionChanged - no TileMotif");
+        return;
     }
+
+    auto motif = timo->getMotif();
+    motif->setVersion(version);
+
+    // delegate lower third editor
+    delegateLowerThird(timo);
+
+    // tigger rebuild and paint
+    frontThirdWidget->getCurrentEditor()->motifModified(motif);
 }
+
 
 void MotifEditorWidget::slot_addExtender()
 {
-    auto ed = specificEditorWidget->getEditor();
+    auto ed = frontThirdWidget->getCurrentEditor();
     if (ed)
     {
         ed->addExtender();
 
-        auto del = delegatedDesignElement.lock();
-        auto type = del->getMotif()->getMotifType();
-        delegate(del,type,true);
+        auto del = delegatedTileMotif.lock();
+        delegateLowerThird(del,true);
+        frontThirdWidget->getCurrentEditor()->motifModified(del->getMotif());
+        frontThirdWidget->setCurrentIndex(1);
     }
 }
 
 void MotifEditorWidget::slot_deleteExtender()
 {
-    auto ed = specificEditorWidget->getEditor();
+    MotifEditor * ed = frontThirdWidget->getCurrentEditor();
     if (ed)
     {
         ed->deleteExtender();
 
-        auto del = delegatedDesignElement.lock();
-        auto type = del->getMotif()->getMotifType();
-        delegate(del,type,true);
+        auto del  = delegatedTileMotif.lock();
+        delegateLowerThird(del,true);
+        frontThirdWidget->getCurrentEditor()->motifModified(del->getMotif());
     }
 }
 
 void MotifEditorWidget::slot_cleanse()
 {
-    auto del = delegatedDesignElement.lock();
-    if (!del) return;
-    auto motif = del->getMotif();
+    auto timo  = delegatedTileMotif.lock();
+    if (!timo) return;
+    auto motif = timo->getMotif();
     auto map   = motif->getMotifMap();
     auto level = motif->getCleanse();
     auto sens  = motif->getCleanseSensitivity();
@@ -211,27 +379,46 @@ void MotifEditorWidget::slot_cleanse()
         sens  = dlg.getSsnsitivity();
         motif->setCleanse(level);
         motif->setCleanseSensitivity(sens);
-        motif->resetMotifMap();
-        motif->buildMotifMap();
+        frontThirdWidget->getCurrentEditor()->motifModified(timo->getMotif());
+        //motif->resetMotifMap();
+        //motif->buildMotifMap();
     }
 }
 
-void MotifEditorWidget::onRefresh()
+void MotifEditorWidget::slot_swapTileRegularity()
 {
-    auto del = delegatedDesignElement.lock();
-    if (!del) return;
-    auto motif = del->getMotif();
-    if (motif->getCleanse() > 0)
-    {
-        cleanBtn->setText("Cleanse : ON ");
-        uint level = motif->getCleanse();
-        qreal sensitivity = motif->getCleanseSensitivity();
-        QString str = QString("0x%1 : %2").arg(QString::number(level,16)).arg(sensitivity);
-        cleanStatus->setText(str);
-    }
-    else
-    {
-        cleanBtn->setText("Cleanse : OFF");
-        cleanStatus->setText("");
-    }
+    auto timo  = delegatedTileMotif.lock();
+    if (!timo) return;
+
+    auto tile  = timo->getTile();
+    tile->flipRegularity();
+
+    MotifEvent pevent;
+    pevent.event  = MotifMaker::Event::UniqueTileRegularityChanged;
+    pevent.tiling = timo->getTiling();
+    pevent.tile = tile;
+    Sys::motifMaker->sm_takeUp(pevent);
+
+    TileMotifBtnPtr btn = parent->getButton(timo);
+    parent->delegate(btn,true);
+
+    Sys::render(RENDER_RESET_MOTIFS);
+}
+
+void MotifEditorWidget::slot_lockBtnView(bool checked)
+{
+    Sys::motifMakerView->setDontAutoFit(checked);
+}
+
+void MotifEditorWidget::slot_cropToTile(bool checked)
+{
+    auto timo = delegatedTileMotif.lock();
+    if (!timo) return;
+
+    auto adaptive = std::dynamic_pointer_cast<AdaptiveMotif>(timo->getMotif());
+    if (!adaptive) return;
+
+    adaptive->cropToTile = checked;
+
+    frontThirdWidget->getCurrentEditor()->motifModified(adaptive);
 }

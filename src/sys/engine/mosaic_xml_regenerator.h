@@ -1,5 +1,4 @@
-#ifndef MOSAIC_XML_REGENERATOR_H
-#define MOSAIC_XML_REGENERATOR_H
+#pragma once
 
 #include "sys/sys/versioning.h"
 #include <QImage>
@@ -8,7 +7,7 @@
 typedef std::shared_ptr<class Tiling>        TilingPtr;
 typedef std::shared_ptr<class Mosaic>        MosaicPtr;
 
-class SystemViewController;
+class ViewController;
 
 class MosaicXMLRegenerator
 {
@@ -23,7 +22,5 @@ protected:
     bool        saveMosaic(MosaicPtr mosaic, bool forceOverwrite);
 
 private:
-    class SystemViewController * bmpViewController;
+    class ViewController * bmpViewController;
 };
-
-#endif

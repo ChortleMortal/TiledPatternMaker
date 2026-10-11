@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TILING
-#define TILING
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -16,11 +14,14 @@
 
 #include <QStack>
 #include <QObject>
+#include <QLineF>
 #include "gui/viewers/layer_controller.h"
+#include "model/tilings/backgroundimage.h"
 #include "model/styles/colorset.h"
 #include "model/settings/tristate.h"
 #include "model/tilings/tiling_header.h"
 #include "model/tilings/tiling_unit.h"
+#include "sys/sys/versioning.h"
 
 #define MAX_UNIQUE_TILE_INDEX 7
 
@@ -41,7 +42,8 @@ public:
     bool    needsSaving();      // compares with parents current state
 
     TilingHeader    header;
-    TilingUnit      unit;
+    TilingUnitController      unit;
+    QVector<QLineF> constructionLines;
 
 private:
     Tiling *        parent;
@@ -65,6 +67,7 @@ public:
 
     bool                isEmpty();
     bool                hasIntrinsicOverlaps();
+    QTransform          getDistortion();        // from the tiling's own canvas
     bool                hasTiledOverlaps();
 
     void                paint(QPainter *painter) override;
@@ -81,16 +84,12 @@ public:
 
     // Data
     inline TilingHeader & hdr()   { return _header; }
-    inline TilingUnit   & unit()  { return _tilingUnit;}
+    inline TilingUnitController   & unit()  { return _tilingUnit;}
 
-    void                createViewablePlacedTiles();
-    int                 numViewable()                       { return _viewable.count(); }
-    PlacedTiles &       getViewablePlacements()             { return _viewable; }
     QTransform          getFirstPlacement(TilePtr tile)     { return _tilingUnit.getFirstPlacement(tile); }
 
-    BkgdImagePtr        getBkgdImage()                      { return bip; }
-    void                setBkgdImage(BkgdImagePtr bp)       { bip = bp; }
-    void                removeBkgdImage()                   { bip.reset(); }
+    const BkgdRecord &  getBkgdRecord()                     { return bkgdRecord; }
+    void                setBkgdRecord(const BkgdRecord & r) { bkgdRecord = r; }
 
     void                resetOverlaps()                     { intrinsicOverlaps.reset(); tiledOverlaps.reset(); }
 
@@ -105,11 +104,17 @@ public:
     void                setViewable(bool enb)   { _view = enb; }
     bool                isViewable()            { return _view; }
 
-    void                setTilingViewChanged()  { _tilingViewChange = true;  }
+    void                setTilingViewChanged()  { _tilingViewChange = true; /*qDebug() << "tiling view change";*/ }
     bool                isTilingViewChanged()   { return _tilingViewChange;  }
     void                resetTilingViewChanged(){ _tilingViewChange = false; }
 
-    SaveStatus *        getSaveStatus()          { return  _saveStatus; }
+    void                setDrawSet(const PlacedTileSet & set) { _drawSet = set;}
+    const PlacedTileSet & getDrawSet()                        { return _drawSet; }
+
+    const QVector<QLineF> & getConstructionLines() const                        { return _constructionLines; }
+    void                    setConstructionLines(const QVector<QLineF> & lines) { _constructionLines = lines; }
+
+    SaveStatus *        getSaveStatus()         { return  _saveStatus; }
     bool                requiresSaving();
 
     ColorGroup &        legacyTileColors()      { return _legacyTileColors; }
@@ -120,7 +125,7 @@ public:
 
     void                setLegacyModelConverted(bool set) { _legacyCenterConverted = set; }
     bool                legacyModelConverted()            { return _legacyCenterConverted; }
-    void                correctBackgroundAlignment(BkgdImagePtr bip);
+    void                correctBackgroundAlignment(BkgdRecord & rec);
 
     static int          refs;
 
@@ -149,22 +154,22 @@ private:
     QString             desc;
     QString             author;
 
-    TilingHeader        _header;
-    TilingUnit          _tilingUnit;
-    ColorGroup          _legacyTileColors;   // tile colors now stored in style  - TileColors
-
-    PlacedTiles         _viewable;
-    bool                _tilingViewChange;
-    bool                _view;          // view in TilingMakerView
+    TilingHeader         _header;
+    TilingUnitController _tilingUnit;
+    ColorGroup           _legacyTileColors;   // tile colors now stored in style  - TileColors
 
     SaveStatus *        _saveStatus;
 
-    BkgdImagePtr        bip;
+    BkgdRecord          bkgdRecord;
     Tristate            intrinsicOverlaps;
     Tristate            tiledOverlaps;
 
     bool                _legacyCenterConverted;
-};
 
-#endif
+    // for use by tling maker view
+    bool                _tilingViewChange;
+    bool                _view;          // view in TilingMakerView
+    PlacedTileSet       _drawSet;
+    QVector<QLineF>     _constructionLines;     // Tiling Maker's construction lines, persisted with the tiling
+};
 

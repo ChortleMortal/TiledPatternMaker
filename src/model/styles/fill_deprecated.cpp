@@ -107,8 +107,7 @@ void DeprecatedDirectColoring::initFrom(eFillType old)
 
 QString DeprecatedDirectColoring::sizeInfo()
 {
-    QString astring("TODO");
-    return astring;
+    return QString("Deprecated");
 }
 
 // deprecated code - used by legacy mosaics

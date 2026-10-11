@@ -3,6 +3,7 @@
 
 #include "gui/model_editors/style_edit/fill_face_editor.h"
 #include "gui/model_editors/style_edit/style_editor.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/panel_misc.h"
 #include "gui/widgets/dlg_colorSet.h"
 
@@ -19,23 +20,18 @@ FillFaceEditor::FillFaceEditor(FilledEditor * parent, FilledPtr style, DirectCol
     QPushButton * deleteC = new QPushButton("Delete Color");
     QPushButton * resetC  = new QPushButton("Reset Faces");
 
-    QWidget * widget    = new QWidget();
-    QHBoxLayout * hbox  = new QHBoxLayout();
-    hbox->addStretch(2);
+    QHBoxLayout * hbox = parent->getButtonRow();
     hbox->addWidget(addC);
     hbox->addWidget(modifyC);
     hbox->addWidget(deleteC);
-    hbox->addStretch(3);
     hbox->addWidget(resetC);
-    hbox->addStretch(2);
-    widget->setLayout(hbox);
 
     table = new AQTableWidget();
+    table->setCapHeightToPanel(true);
     table->verticalHeader()->setVisible(false);
     table->setRowCount(cm->palette.size());
     table->setColumnCount(2);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    table->setMinimumHeight(301);
 
     QStringList qslH;
     qslH << "Selection" <<  "Color";
@@ -46,11 +42,10 @@ FillFaceEditor::FillFaceEditor(FilledEditor * parent, FilledPtr style, DirectCol
     connect(modifyC,    &QPushButton::clicked,      this, &FillFaceEditor::slot_modify);
     connect(deleteC,    &QPushButton::clicked,      this, &FillFaceEditor::slot_delete);
     connect(resetC,     &QPushButton::clicked,      this, &FillFaceEditor::slot_resetColorMap);
-    connect(this,       &FillFaceEditor::sig_updateView, Sys::viewController, &SystemViewController::slot_updateView);
+    connect(this,       &FillFaceEditor::sig_updateView, Sys::systemViewController, &ViewController::slot_updateView);
 
     create();
 
-    vbox->addWidget(widget);
     vbox->addWidget(table);
 }
 
@@ -87,6 +82,7 @@ void FillFaceEditor::create()
         connect(label, &ClickableLabel::clicked, this, [this,row] { modify(row);} );
     }
 
+    table->adjustTableSize();
     table->updateGeometry();
     parent->updateGeometry();
 

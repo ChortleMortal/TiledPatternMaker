@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Aug 22 2026 14:40:50 -->
+<Tiling version="14">
+	<Name>10.5</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>0.5140193338525725,0.7270696843359197</T0>
+	<T1>0.8506508083520394,2.618033988749894</T1>
+	<T2>2.752763840942347,4.440892098500626e-16</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="girih" name="gDecagon">
+		<Placement>
+			<scale>1</scale>
+			<rot>-17.99999999999999</rot>
+			<tranX>0.5140193338525725</tranX>
+			<tranY>0.7270696843359197</tranY>
+			<excluded>f</excluded>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999994</scale>
+			<rot>-162</rot>
+			<tranX>1.364670142204612</tranX>
+			<tranY>3.345103673085814</tranY>
+			<excluded>t</excluded>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>-17.99999999999999</rot>
+			<tranX>3.266783174794919</tranX>
+			<tranY>0.7270696843359201</tranY>
+			<excluded>t</excluded>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="5" rotation="0" scale="1">
+		<Placement>
+			<scale>0.4472135954999581</scale>
+			<rot>18.00000000000001</rot>
+			<tranX>1.890401254323746</tranX>
+			<tranY>0.2798560888359619</tranY>
+			<excluded>f</excluded>
+		</Placement>
+		<Placement>
+			<scale>0.4472135954999581</scale>
+			<rot>54.00000000000001</rot>
+			<tranX>1.890401254323746</tranX>
+			<tranY>1.174283279835878</tranY>
+			<excluded>f</excluded>
+		</Placement>
+		<Placement>
+			<scale>0.4472135954999581</scale>
+			<rot>18.00000000000002</rot>
+			<tranX>1.364670142204612</tranX>
+			<tranY>1.897890077585857</tranY>
+			<excluded>f</excluded>
+		</Placement>
+		<Placement>
+			<scale>0.4472135954999581</scale>
+			<rot>-17.99999999999999</rot>
+			<tranX>0.5140193338525721</tranX>
+			<tranY>2.174283279835878</tranY>
+			<excluded>f</excluded>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">0.8389390300854789,-0.2729303156640797</Point>
+			<Point id="2">1.039750445971706,-0.8909643044139746</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">1.56548155809084,-1.27293031566408</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">2.091212670209973,-0.8909643044139743</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">1.890401254323746,-0.2729303156640791</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">1.364670142204612,0.109035695586025</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+			<excluded>f</excluded>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

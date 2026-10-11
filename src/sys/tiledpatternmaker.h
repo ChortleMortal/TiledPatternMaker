@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TILEDPATTERNMAKER_H
-#define TILEDPATTERNMAKER_H
 
 /* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
@@ -38,7 +36,6 @@ signals:
 
     void sig_reconstructView();
 
-    void sig_lockStatus();
     void sig_workListChanged();
 
     void sig_primaryDisplay();
@@ -54,9 +51,7 @@ protected:
     void setPaletteColors();
 
 private:
-    Sys         * sys;
+    Sys * sys;
 };
 
 extern TiledPatternMaker * theApp;
-
-#endif // TILEDPATTERNMAKER_H

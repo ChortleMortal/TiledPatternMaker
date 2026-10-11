@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Oct 9 2026 13:29:00 -->
+<Tiling version="17">
+	<Name>Alh383</Name>
+	<Fill singleton="f">-1,1,-1,2</Fill>
+	<Distort type="tile">
+		<scalex>1.24</scalex>
+		<scaley>1</scaley>
+	</Distort>
+	<T0>-0.002103593084619604,9.232224552482005</T0>
+	<T1>11.14333002276782,-9.201475249887949</T1>
+	<T2>-0.01453863005961509,-18.52221469595111</T2>
+	<ViewSettings>
+		<width>1203</width>
+		<height>1886</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>-341.9704614210112</left__delta>
+		<top__delta>1051.375127794295</top__delta>
+		<width__delta>0.4567632</width__delta>
+		<theta__delta>0</theta__delta>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="16" rotation="0" scale="5.949999999999916">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.002103593084620207</tranX>
+			<tranY>9.232224552482009</tranY>
+			<excluded>f</excluded>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="8" rotation="0" scale="3.033284">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.006834048016925</tranX>
+			<tranY>-0.0512217303302053</tranY>
+			<excluded>f</excluded>
+		</Placement>
+	</Tile>
+	<Desc>8sed math to scale the 8-gon
+Side lengths. A regular 16-gon has side 2·sin(11.25°) ≈ 0.390181. A regular octagon has side 2·sin(22.5°) ≈ 0.765367.
+Scale factor. To make the octagon's side equal the 16-gon's side, multiply the octagon by sin(11.25°)/sin(22.5°) = 1/(2·cos(11.25°)) ≈ 0.509796.
+Final product. 0.509796 × 5.95 ≈ 3.03328.
+If the circle were instead inscribed in the polygons (radius 1 as the apothem), the sides would be 0.397825 and 0.828427, and the scale factor would be ≈ 0.480217.</Desc>
+	<Auth />
+	<BackgroundImage name="IMG_0383.png">
+		<Scale>0.4567632</Scale>
+		<Rot>0</Rot>
+		<X>-329.47046142</X>
+		<Y>1087.87512779</Y>
+	</BackgroundImage>
+	<ConstructionLines>
+		<Line>-14.61502136374382,-0.1586348723576088,14.60135326770997,0.05619141169719818</Line>
+		<Line>-9.393683540224867,-9.357548078030201,14.86123128495198,-9.182800853064949</Line>
+		<Line>-0.02336667331817566,-17.85693966506733,0.005824236399011085,19.33227931462865</Line>
+		<Line>11.15675174836436,-12.04794863134716,11.12756083864718,10.66257912862417</Line>
+		<Line>-11.29105782415228,9.232224552482013,10.4269790054347,9.232224552482013</Line>
+	</ConstructionLines>
+</Tiling>

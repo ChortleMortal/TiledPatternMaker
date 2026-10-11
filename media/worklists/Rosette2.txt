@@ -1,5 +1,34 @@
+Alh1485
+Alh1485.v1
+Alh1485.v6
+Alh1485.v8
+Alh1485.v9
 Alhambra3
 Alhambra3.v1
+Alhambra3.v2
+Alhambra3.v3
+Alhambra3.v4
+Alhambra3.v5
+Alhambra3.v6
+Alhambra3.v7
+Broug Ben Yusuf Madrasa.v4
 Broug Huand Hatun Complex
-Broug Huand Hatun Complex.v9
+Broug Huand Hatun Complex.v1
+Broug Huand Hatun Complex.v2
+epc3
+epc3.v1
+epc3.v2
 HexagonRosette.v1
+Rosette2-Test
+Rosette2-Test.v1
+Rosette2-Test.v2
+Rosette2-Test.v3
+Test Rosettes
+Test03.v1
+Test07.v1
+Test08
+Test08.v2
+Test13.v5
+Test13.v6
+Test13.v7
+Test13.v8

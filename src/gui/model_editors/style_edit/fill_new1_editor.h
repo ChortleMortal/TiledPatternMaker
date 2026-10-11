@@ -1,13 +1,11 @@
 #pragma once
-#ifndef STYLE_COLOR_FILL_NEW1_H
-#define STYLE_COLOR_FILL_NEW1_H
 
 #include <QCheckBox>
 
 #include "gui/model_editors/style_edit/fill_editor.h"
 #include "model/styles/filled.h"
 
-class QTableWidget;
+class AQTableWidget;
 class ColorSetWidget;
 class QTableWidgetItem;
 
@@ -40,7 +38,7 @@ private slots:
 private:
     New1Coloring        * n1cm;
 
-    QTableWidget        * table;
+    AQTableWidget       * table;
 
     QCheckBox           * inside_checkbox;
     QCheckBox           * outside_checkbox;
@@ -51,5 +49,3 @@ private:
     QTableWidgetItem    * infoW;
     QTableWidgetItem    * infoB;
 };
-
-#endif

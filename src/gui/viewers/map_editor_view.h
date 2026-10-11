@@ -1,40 +1,43 @@
 ﻿#pragma once
-#ifndef MAP_EDITOR_VIEW_H
-#define MAP_EDITOR_VIEW_H
 
+#include "gui/map_editor/map_editor_db.h"
 #include "gui/viewers/layer_controller.h"
-#include "sys/enums/emapeditor.h"
 
-typedef std::shared_ptr<class DesignElement>    DELPtr;
-typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class Tile>             TilePtr;
+typedef std::shared_ptr<class TileMotif>    TileMotifPtr;
+typedef std::shared_ptr<class Map>          MapPtr;
+typedef std::shared_ptr<class Tile>         TilePtr;
 
-typedef std::weak_ptr<class DesignElement>      WeakDELPtr;
-typedef std::weak_ptr<class Map>                WeakMapPtr;
+typedef std::weak_ptr<class TileMotif>      WeakTileMotifPtr;
+typedef std::weak_ptr<class Map>            WeakMapPtr;
 
 class MapEditorDb;
 class MapEditorSelection;
 
 class MapEditorView : public LayerController
 {
+    using LayerId = MapEditorLayer::LayerId;
+    using MapType = MapEditorMap::MapType;
+
 public:
     MapEditorView();
     ~MapEditorView();
 
-    void                init(MapEditorDb * maped_db, MapEditorSelection * selector);
+    void                init(MapEditor * maped, MapEditorSelection * selector);
 
     void                paint(QPainter * painter) override;
 
     void                draw(QPainter * painter);
-    void                drawMap(QPainter * painter, eMapedLayer layer, QColor color);
+    void                drawMap(QPainter * painter, QTransform t, MapPtr map, QColor color);
     void                drawDCEL(QPainter * painter);
-    void                drawTile(QPainter * painter, DELPtr del);
-    void                drawBoundaries(QPainter * painter, DELPtr del);
+    void                drawTile(QPainter * painter, TileMotifPtr timo);
+    void                drawBoundaries(QPainter * painter, TileMotifPtr timo);
     void                drawPoints(QPainter * painter, QVector<class PointInfo> & points);
     void                drawConstructionLines(QPainter * painter);
+    void                drawSelectedConstructionLine(QPainter * painter);
     void                drawConstructionCircles(QPainter * painter);
 
     void                startMouseInteraction(QPointF spt, Qt::MouseButton mouseButton);
+    void                startConstructionLineInteraction(QPointF spt, Qt::MouseButton mouseButton);
 
     MapEditorSelection * getSelector() { return selector; }
     MapEditorDb        * getDb() { return db; }
@@ -66,8 +69,7 @@ private:
     QPointF             mousePos;             // used by menu
     bool                debugMouse;
 
+    MapEditor          * editor;
     MapEditorDb        * db;
     MapEditorSelection * selector;
 };
-
-#endif

@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!-- Written: Wed May 13 2026 08:22:28 -->
+<Poly name="star3">
+	<Line>
+		<Point id="1">-0.9999999999999999,1.732050807568877</Point>
+		<Point id="2">-1.073871500692704,0.6200000000000003</Point>
+	</Line>
+	<Line>
+		<Point reference="2" />
+		<Point id="3">-2,4.440892098500626e-16</Point>
+	</Line>
+	<Line>
+		<Point reference="3" />
+		<Point id="4">-1.073871500692704,-0.6199999999999997</Point>
+	</Line>
+	<Line>
+		<Point reference="4" />
+		<Point id="5">-1,-1.732050807568877</Point>
+	</Line>
+	<Line>
+		<Point reference="5" />
+		<Point id="6">-6.661338147750939e-16,-1.24</Point>
+	</Line>
+	<Line>
+		<Point reference="6" />
+		<Point id="7">0.9999999999999999,-1.732050807568877</Point>
+	</Line>
+	<Line>
+		<Point reference="7" />
+		<Point id="8">1.073871500692704,-0.6200000000000003</Point>
+	</Line>
+	<Line>
+		<Point reference="8" />
+		<Point id="9">2,-1.110223024625157e-15</Point>
+	</Line>
+	<Line>
+		<Point reference="9" />
+		<Point id="10">1.073871500692704,0.6199999999999992</Point>
+	</Line>
+	<Line>
+		<Point reference="10" />
+		<Point id="11">1.000000000000002,1.732050807568877</Point>
+	</Line>
+	<Line>
+		<Point reference="11" />
+		<Point id="12">0,1.24</Point>
+	</Line>
+	<Line>
+		<Point reference="12" />
+		<Point reference="1" />
+	</Line>
+</Poly>

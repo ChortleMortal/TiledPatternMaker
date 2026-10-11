@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLG_RENAME_H
-#define DLG_RENAME_H
 
 class QLineEdit;
 
@@ -16,5 +14,3 @@ public:
     QLineEdit * oldEdit;
     QLineEdit * newEdit;
 };
-
-#endif // DLG_RENAME_H

@@ -11,6 +11,7 @@
 #include "sys/geometry/geo.h"
 #include "sys/geometry/loose.h"
 #include "sys/geometry/vertex.h"
+#include "sys/sys/debugflags.h"
 
 bool Geo::isValid(QPointF &pt)
 {
@@ -99,28 +100,71 @@ QLineF Geo::extendAsRay(QLineF line, qreal scale)
     return reversed(l);
 }
 
-bool Geo::intersectPoly(QLineF line, const QPolygonF & bounds, QPointF & intersect)
+bool Geo::intersectPoly(QLineF line, const QPolygonF &bounds, QPointF &intersect)
 {
-    Q_ASSERT(bounds.isClosed());
-    for (int i=0; i < (bounds.size()-1); i++)
+    const QPointF p1 = line.p1();
+    const QPointF p2 = line.p2();
+    qreal bestDist2  = std::numeric_limits<qreal>::max();
+    bool found       = false;
+
+    const int n = bounds.size();
+    if (n < 2)
+        return false;
+
+    for (int i = 0; i < n; ++i)
     {
-        QLineF l2(bounds[i],bounds[i+1]);
-        QLineF::IntersectType it = line.intersects(l2,&intersect);
-        if (it == QLineF::BoundedIntersection)
+        //qDebug() << "side" << i;
+        QPointF a = bounds[i];
+        QPointF b = bounds[(i + 1) % n];
+
+        QLineF edge(a, b);
+        QPointF pt;
+
+        QLineF::IntersectionType type = line.intersects(edge, &pt);
+        if (type == QLineF::NoIntersection)
         {
-            return true;
+            //qDebug() << "no intersect";
+            continue;
         }
 
-        if (it == QLineF::UnboundedIntersection)
+#if 0
+        if (type == QLineF::UnboundedIntersection &&  !Loose::equalsPt(pt,p1) && !Loose::equalsPt(pt,p2))
         {
-            if (Loose::equalsPt(intersect,line.p1()) || Loose::equalsPt(intersect,line.p2()))
-            {
-                return true;
-            }
+            qWarning() << "Unbounded isect and on edge";
+            if (Sys::flags->flagged(MOTIF_FLAG_1))
+                continue;
+        }
+#endif
+        // Reject intersections that lie "behind" p1 (relative to p1→p2)
+        QLineF p1_to_p2(p1, p2);
+        QLineF p1_to_pt(p1, pt);
+
+        qreal ang = p1_to_p2.angleTo(p1_to_pt);   // member function
+        if (ang > 1e-6)                           // not in forward direction
+        {
+            //qDebug() << "angle" << ang << "not forward";
+            continue;
+        }
+        else
+        {
+            //qDebug() << "angle" << ang;
+        }
+
+        // Squared distance from p1 to intersection
+        qreal adist2 = dist2(pt,p1);
+        if (adist2 < bestDist2)
+        {
+            //qDebug() << "best dist so far" << adist2;
+            bestDist2  = adist2;
+            intersect  = pt;
+            found      = true;
+        }
+        else
+        {
+            //qDebug() << "adist2" << adist2;
         }
     }
-
-    return false;
+    return found;
 }
 
 QLineF Geo::clipLine(QLineF line,QPolygonF bounds)
@@ -197,7 +241,7 @@ QLineF Geo::calculateInnerParallelLine(QLineF line, double distance)
     return QLineF(p1m,p2m);
 }
 
-QPointF Geo::normalize(QPointF & pt)
+QPointF Geo::normalize(QPointF pt)
 {
     qreal m = mag(pt);
     if (m != 0.0)
@@ -1313,6 +1357,44 @@ QPointF Geo::snapTo(QPointF pt, QLineF trackLine)
     return newPoint;
 }
 
+#if 0
+QPolygonF circumscribedPolygon(int n, double R)
+{
+    QPolygonF poly;
+    for (int k = 0; k < n; ++k)
+    {
+        double angle = -M_PI / 2.0 + 2.0 * M_PI * k / n;
+        poly << QPointF(R * cos(angle), R * sin(angle));
+    }
+    return poly;
+}
+
+QPolygonF inscribedPolygon(int n, double r)
+{
+    double R = r / cos(M_PI / n);
+    return circumscribedPolygon(n, R);
+}
+
+QPolygonF inscribedPolygon2(int n, double r)
+{
+    QPolygonF poly;
+    double R = r / cos(M_PI / n);
+    for (int k = 0; k < n; ++k)
+    {
+        double angle = -M_PI / 2.0 + 2.0 * M_PI * k / n;
+        poly << QPointF(R * cos(angle), R * sin(angle));
+    }
+    return poly;
+}
+
+QPolygonF circumscribedPolygon2(int n, double R)
+{
+    double r = R * cos(M_PI / n);
+    return inscribedPolygon(n, r);
+}
+#endif
+
+// not used
 QPolygonF Geo::getInscribedPolygon(int n)
 {
     QPolygonF p;
@@ -1328,15 +1410,22 @@ QPolygonF Geo::getInscribedPolygon(int n)
     return p;
 }
 
+//  Used for regular tile creation
+//  R - Circumradius       (circle centre to vertex)
+//  r - Inradius / apothem (circle centre to edge midpoint):
+//      r = R * cos(π/n)
+//      R = r / cos(π/n)
+
 QPolygonF Geo::getCircumscribedPolygon(int n)
 {
-    QPolygonF p;
+    qreal inradius     = 1.0;
+    qreal circumradius = inradius / cos(M_PI / n);
     qreal centralAngle = 2.0 * M_PI / n;
-    qreal circumradius = 1.0 / cos(M_PI / n);
 
+    QPolygonF p;
     for (int i = 0; i < n; ++i)
     {
-        qreal angle = (qreal(i) + 0.5) * centralAngle;
+        qreal angle = (i + 0.5) * centralAngle;
         QPointF pt(circumradius * qCos(angle), circumradius * qSin(angle));
         p << pt;
     }

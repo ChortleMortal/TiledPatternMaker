@@ -5,17 +5,21 @@
 #include <QPrinter>
 #include <QSvgGenerator>
 #include <QTextEdit>
+#include <QLineEdit>
+#include <QPushButton>
 
 #include "gui/panels/page_save.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
 #include "gui/widgets/dlg_print.h"
+#include "gui/widgets/dlg_saveversion.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/tiling_maker.h"
 #include "model/mosaics/mosaic.h"
 #include "model/settings/configuration.h"
 #include "model/styles/style.h"
 #include "model/tilings/tiling.h"
+#include "sys/sys/fileservices.h"
 
 page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_SAVE, "Save")
 {
@@ -49,12 +53,12 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_SAVE, "Sav
     connect(mosaicMaker,    &MosaicMaker::sig_mosaicLoaded,     this,   &page_save::setup);
     connect(tilingMaker,    &TilingMaker::sig_tilingLoaded,     this,   &page_save::setup);
     connect(pbSaveMenu,     &QPushButton::clicked,              this,   &page_save::slot_saveMenu);
-    connect(Sys::sysview,   &SystemView::sig_saveMenu,          this,   &page_save::slot_saveMenu);
-    connect(Sys::sysview,   &SystemView::sig_saveImage,         this,   &page_save::slot_saveImage);
-    connect(Sys::sysview,   &SystemView::sig_print,             this,   &page_save::slot_print);
-    connect(Sys::sysview,   &SystemView::sig_saveSVG,           this,   &page_save::slot_saveSvg);
     connect(pbSaveImage,    &QPushButton::clicked,              this,   &page_save::slot_saveImage);
     connect(pbSaveSVG,      &QPushButton::clicked,              this,   &page_save::slot_saveSvg);
+    connect(Sys::systemViewController->getView(),   &SystemView::sig_saveMenu,          this,   &page_save::slot_saveMenu);
+    connect(Sys::systemViewController->getView(),   &SystemView::sig_saveImage,         this,   &page_save::slot_saveImage);
+    connect(Sys::systemViewController->getView(),   &SystemView::sig_print,             this,   &page_save::slot_print);
+    connect(Sys::systemViewController->getView(),   &SystemView::sig_saveSVG,           this,   &page_save::slot_saveSvg);
 }
 
 page_save::~page_save()
@@ -102,7 +106,10 @@ void page_save::createTilingSave()
     requiresSave->setStyleSheet("color: red");
     requiresSave->setAlignment(Qt::AlignRight);
 
+    chkSaveBkgd = new QCheckBox("Save background image with tiling");
+
     QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(chkSaveBkgd);
     hbox->addStretch();
     hbox->addWidget(requiresSave);
 
@@ -134,9 +141,9 @@ void page_save::createTilingSave()
     tile_desc->setFixedHeight(101);
 
     QVBoxLayout * vlayout = new QVBoxLayout();
-    vlayout->addLayout(hbox);
-    vlayout->addSpacing(3);
     vlayout->addLayout(hbox2);
+    vlayout->addSpacing(3);
+    vlayout->addLayout(hbox);
     vlayout->addSpacing(3);
     vlayout->addWidget(label3);
     vlayout->addWidget(tile_desc);
@@ -170,6 +177,14 @@ void page_save::setup()
         designNotes->setText("");
     }
 
+    // defaults on only while there is no real mosaic - reset only when the mosaic changes
+    QString mosaicName = mosaic ? mosaic->getName().get() : QString();
+    if (mosaicName != lastMosaicName)
+    {
+        lastMosaicName = mosaicName;
+        chkSaveBkgd->setChecked(!mosaic || mosaicName == Sys::defaultMosaicName);
+    }
+
     auto tilings = tilingMaker->getTilings();
     Q_ASSERT(!tilings.isEmpty());
 
@@ -183,7 +198,7 @@ void page_save::setup()
         tile_names->addItem(tiling->getVName().get(),qv);
     }
 
-    TilingPtr selected = tilingMaker->getSelected();
+    TilingPtr selected = tilingMaker->getSelectedTiling();
     int idx = 0;
     if (selected)
     {
@@ -300,7 +315,95 @@ void page_save::slot_saveMosaic()
     }
 
     mosaic->setName(vname);
-    mosaicMaker->saveMosaic(mosaic,false);
+
+    if (mosaic->hasDeprecatedFill())
+    {
+        QMessageBox box(panel);
+        box.setIcon( QMessageBox::Warning);
+        box.setText("Cannot save Mosaic with deprecated fill type");
+        box.setInformativeText("Select Mosiac Maker in Control Panel and select another Algorithm for Filled Style Type");
+        box.exec();
+        return;
+    }
+
+    VersionedFile mosaicFile = FileServices::getFile(vname,FILE_MOSAIC);
+    if (!mosaicFile.isEmpty())
+    {
+        QString fname   = mosaicFile.getPathedName();
+        bool isOriginal = fname.contains("original");
+        bool isNew      = fname.contains("new_");
+        bool isTest     = fname.contains("tests");
+
+        DlgSaveVersion msgBox(panel);
+        QString str = QString("Mosaic <%1> already exists.").arg(mosaicFile.getVersionedName().get());
+        msgBox.setText1(str);
+        int rv = msgBox.exec();
+
+        switch (rv)
+        {
+        case QDialog::Rejected:
+            return;
+
+        case QDialog::Accepted:
+            break;
+
+        default:
+        {
+            // bumps version
+            vname = msgBox.bumpedName(FILE_MOSAIC,vname);
+            mosaic->setName(vname);
+            leSaveXmlName->setText(vname.get());
+            if (isOriginal)
+                mosaicFile.setFromFullPathname(Sys::originalMosaicDir + vname.get() + ".xml");
+            else if (isNew)
+                mosaicFile.setFromFullPathname(Sys::newMosaicDir + vname.get() + ".xml");
+            else if (isTest)
+                mosaicFile.setFromFullPathname(Sys::testMosiacDir + vname.get() + ".xml");
+        } break;
+        }
+    }
+    else
+    {
+        if (config->saveMosaicTest)
+        {
+            mosaicFile.setFromFullPathname(Sys::testMosiacDir + vname.get() + ".xml");
+        }
+        else
+        {
+            mosaicFile.setFromFullPathname(Sys::newMosaicDir + vname.get() + ".xml");
+        }
+    }
+
+    QString     failMsg;
+    QStringList unverifiedMaps;
+    bool rv = mosaicMaker->save(mosaicFile,failMsg,false,unverifiedMaps);
+
+    if (rv && !unverifiedMaps.isEmpty() && askCleanseMaps(unverifiedMaps))
+    {
+        rv = mosaicMaker->save(mosaicFile,failMsg,true,unverifiedMaps);
+    }
+
+    QMessageBox box(panel);
+    if (rv)
+    {
+        box.setText("Mosaic (" + mosaicFile.getVersionedName().get() + ") - saved OK");
+    }
+    else
+    {
+        box.setIcon(QMessageBox::Critical);
+        box.setText(QString("Save File (%1) FAILED %2").arg(mosaicFile.getPathedName()).arg(failMsg));
+    }
+    box.exec();
+}
+
+bool page_save::askCleanseMaps(const QStringList & unverifiedMaps)
+{
+    QMessageBox box(panel);
+    box.setIcon(QMessageBox::Warning);
+    box.setText("These maps failed verification:\n" + unverifiedMaps.join("\n"));
+    box.setInformativeText("Cleanse them and save again?");
+    box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    return (box.exec() == QMessageBox::Yes);
 }
 
 void page_save::slot_tilingChanged(int idx)
@@ -375,12 +478,93 @@ bool page_save::saveTiling()
         }
     }
 
+    if (tilingMaker->constructionLinesNotSaved(tiling))
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle("Save Tiling");
+        box.setText("Construction lines have not been saved to the tiling");
+        box.setInformativeText("Use Save on the Tiling Maker C-Lines tab to include them");
+        box.setStandardButtons(QMessageBox::Ignore | QMessageBox::Cancel);
+        box.setDefaultButton(QMessageBox::Cancel);
+        if (box.exec() == QMessageBox::Cancel)
+        {
+            return false;
+        }
+    }
+
+    if (chkSaveBkgd->isChecked())
+    {
+        tiling->setBkgdRecord(Sys::backgroundImage->toRecord());
+    }
+
     // perform the save
     tiling->setVName(vname);
     tiling->setAuthor(tile_author->text());
     tiling->setDescription(tile_desc->toPlainText());
 
-    bool rv = tilingMaker->saveTiling(tiling,false);
+    VersionedFile vfile = FileServices::getFile(tiling->getVName(),FILE_TILING);
+    if (!vfile.isEmpty())
+    {
+        // file already exists
+        bool isOriginal  = vfile.getPathOnly().contains("original");
+        bool isNewTiling = vfile.getPathOnly().contains("new_tilings");
+
+        DlgSaveVersion msgBox(panel);
+        msgBox.setText1(QString("Tiling <%1> already exists.").arg(tiling->getVName().get()));
+        int rv = msgBox.exec();
+
+        if (rv == QDialog::Rejected)
+        {
+            return false;
+        }
+        else if (rv != QDialog::Accepted)
+        {
+            // bumps version
+            VersionedName bumped = msgBox.bumpedName(FILE_TILING,tiling->getVName());
+            tiling->setVName(bumped);
+            if (isOriginal)
+            {
+                vfile.setFromFullPathname(Sys::originalTileDir + bumped.get() + ".xml");
+            }
+            else if (isNewTiling)
+            {
+                vfile.setFromFullPathname(Sys::newTileDir + bumped.get() + ".xml");
+            }
+            else
+            {
+                vfile.setFromFullPathname(Sys::testTileDir + bumped.get() + ".xml");
+            }
+        }
+        // save drops thru
+    }
+    else
+    {
+        // new file
+        if (config->saveTilingTest)
+        {
+            vfile.setFromFullPathname(Sys::testTileDir + tiling->getVName().get() + ".xml");
+        }
+        else
+        {
+            vfile.setFromFullPathname(Sys::newTileDir + tiling->getVName().get() + ".xml");
+        }
+    }
+
+    bool rv = tilingMaker->saveTiling(tiling,vfile);
+
+    QMessageBox box(panel);
+    if (rv)
+    {
+        box.setIcon(QMessageBox::Information);
+        box.setText(QString("Saved: %1 - OK").arg(vfile.getPathedName()));
+    }
+    else
+    {
+        box.setIcon(QMessageBox::Critical);
+        box.setText(QString("Error saving: %1 - FAILED").arg(vfile.getPathedName()));
+    }
+    box.exec();
 
     emit sig_updateView();
 
@@ -393,15 +577,15 @@ void page_save::slot_saveImage()
 {
     VersionedName name = config->lastLoadedMosaic;
 
-    QPixmap pixmap = Sys::viewController->grabView();
+    QImage image = Sys::systemViewController->paintToImage();
 
-    savePixmap(pixmap, name.get());
+    saveImage(image, name.get());
 }
 
 void page_save::slot_print()
 {
     auto printer = new QPrinter;
-    auto dlg     = new DlgPrint(printer, Sys::sysview);
+    auto dlg     = new DlgPrint(printer,Sys::systemViewController->getWidget());
     dlg->show();
 }
 
@@ -410,32 +594,36 @@ void page_save::slot_saveMenu()
     auto page      = panel->getCurrentPage();
     QString name   = page->getName();
 
-    QPixmap pixmap = panel->grab();
+    QPixmap pm = panel->grab();
+    QImage img = pm.toImage();
+    img.setDevicePixelRatio(1.0);
+    //QImage downscaled = img.scaled(panel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-    savePixmap(pixmap,name);
+    saveImage(img,name);
 }
 
-void page_save::savePixmap(QPixmap & pixmap, QString name)
+void page_save::saveImage(QImage &image, QString name)
 {
     static bool firstTime = true;
     static QString path;
 
-    QSettings s;
+    QSettings s = Sys::settings();
+
     if (firstTime)
     {
-        path = Sys::config->rootImageDir + "snaps/";
+        path = Sys::snapsDir;
         QDir adir(path);
         if (!adir.exists())
-            adir.mkdir(path);
+            adir.mkpath(path);
         Q_ASSERT(adir.exists());
         firstTime = false;
     }
     qDebug() << "path=" << path;
 
     QString nameList;
-    if (path.contains(".png"))
+    if (path.contains(".bmp"))
     {
-        nameList = "PNG (*.png);;BMP Files (*.bmp);;JPG (*.jpg)";
+        nameList = "BMP Files (*.bmp);;JPG (*.jpg);;PNG (*.png)";
     }
     else if (path.contains(".jpg"))
     {
@@ -443,7 +631,7 @@ void page_save::savePixmap(QPixmap & pixmap, QString name)
     }
     else
     {
-        nameList = "BMP Files (*.bmp);;JPG (*.jpg);;PNG (*.png)";
+        nameList = "PNG (*.png);;BMP Files (*.bmp);;JPG (*.jpg)";
     }
 
     QFileDialog dlg(panel, "Save image", path, nameList);
@@ -490,7 +678,7 @@ void page_save::savePixmap(QPixmap & pixmap, QString name)
     }
 
     qDebug() << "saving:" << file;
-    bool rv = pixmap.save(file);
+    bool rv = image.save(file);
 
     if (rv)
     {
@@ -516,7 +704,7 @@ void page_save::savePixmap(QPixmap & pixmap, QString name)
 
 void page_save::slot_saveSvg()
 {
-    if (!viewControl->isEnabled(VIEW_MOSAIC))
+    if (!viewControl->isEnabled(Layer::Type::Mosaic))
     {
         QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);
@@ -545,9 +733,9 @@ void page_save::slot_saveSvg()
         return;
     }
 
-    QString path = config->rootMediaDir;
     QString name = mosaic->getName().get();
-    QString pathplus = path + "/" + name + ".svg";
+    QString path = Sys::renderedDir;
+    QString pathplus = path + name + ".svg";
 
     QString newPath = QFileDialog::getSaveFileName(panel, "Save SVG", pathplus, "SVG files (*.svg)");
     if (newPath.isEmpty())
@@ -557,8 +745,8 @@ void page_save::slot_saveSvg()
 
     QSvgGenerator generator;
     generator.setFileName(path);
-    generator.setSize(Sys::viewController->viewSize());
-    generator.setViewBox(Sys::viewController->viewRect());
+    generator.setSize(Sys::systemViewController->viewSize());
+    generator.setViewBox(Sys::systemViewController->getViewRect());
     generator.setTitle(QString("SVG Image: %1").arg(name));
     generator.setDescription("Created using Tiled Pattern Maker (David Casper)");
 

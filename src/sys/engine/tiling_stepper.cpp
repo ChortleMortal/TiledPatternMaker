@@ -59,7 +59,7 @@ bool TilingStepper::next()
     if (++cydata.cIndex < cydata.files.size())
     {
         VersionedFile file = cydata.files.at(cydata.cIndex);
-        Sys::tilingMaker->loadTiling(file,TILM_LOAD_FROM_STEPPER);
+        Sys::tilingMaker->loadTiling(file,TilingMaker::Event::LoadFromStepper);
     }
     else
     {

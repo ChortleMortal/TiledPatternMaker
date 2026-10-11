@@ -1,11 +1,10 @@
 #pragma once
-#ifndef EXTENDER_H
-#define EXTENDER_H
 
-#include <QtCore>
-#include "sys/qt/unique_qvector.h"
+#include <QLineF>
+
 #include "model/motifs/extended_boundary.h"
 #include "model/motifs/radial_ray.h"
+#include "sys/geometry/edge_poly.h"
 
 typedef std::shared_ptr<class Vertex>     VertexPtr;
 typedef std::shared_ptr<class Map>        MapPtr;
@@ -23,22 +22,18 @@ class Extender
     friend class RadialMotif;
 
 public:
-    Extender(MotifPtr motif);
+    Extender(Motif * motif);
     Extender(const Extender & other);
 
-    Extender& operator=(const Extender& rhs)  {
-        _extendedBoundary   = rhs._extendedBoundary;
-        _extendTipsToBound  = rhs._extendTipsToBound;
-        _extendRays         = rhs._extendRays;
-        _extendTipsToTile   = rhs._extendTipsToTile;
-        _connectRays        = rhs._connectRays;
-        _motif              = rhs._motif;
-        return *this; }
+    Extender& operator=(const Extender& rhs);
+
+    void    reparent(Motif * motif)  { this->motif = motif; }
+    Motif * getParent()              { return motif; }
 
     bool    equals(ExtenderPtr other);
     bool    isUnity();
 
-    void    extendMotifMap(QTransform Tr = QTransform());
+    virtual void    extend() = 0;
     void    buildExtendedBoundary();
 
     inline const ExtendedBoundary& getExtendedBoundary()   { return _extendedBoundary; }
@@ -50,6 +45,9 @@ public:
     void    setConnectRays(uint connect)        { _connectRays          = connect; }
     void    setEmbedBoundary(bool set)          { _embedBoundary        = set; }
     void    setEmbedTile(bool set)              { _embedTile            = set; }
+    void    setStellate(uint stellate)          { _stellation           = stellate; }
+    void    setFitToTile(bool set)              { _fitToTile            = set; }
+    void    setFitScale(qreal scale)            { _fitScale             = scale; }
 
     bool    getExtendRays()              { return _extendRays; }
     bool    getExtendTipsToBound()       { return _extendTipsToBound; }
@@ -57,39 +55,32 @@ public:
     uint    getConnectRays()             { return _connectRays; }
     bool    getEmbedBoundary()           { return _embedBoundary; }
     bool    getEmbedTile()               { return _embedTile; }
+    uint    getStellation()              { return _stellation; }
+    bool    getFitToTile()               { return _fitToTile; }
+    qreal   getFitScale()                { return _fitScale; }
 
     void    dump();
 
 protected:
-    void    extendMotifRays(MapPtr motifMap);
-    void    extendBoundaryMap(MapPtr motifMap, TilePtr tile);
-    void    extendTipsToBoundary(MapPtr motifMap, QTransform unitRotationTr);
-    void    connectOuterVertices(MapPtr motifMap);
-
-    void    embedBoundary(MapPtr motifMap);
-    void    embedTile(MapPtr motifMap, TilePtr tile);
-
-    void    extendRayToBoundary(RadialRay & ray);
-    void    extendRayToTilePerp(RadialRay & ray, TilePtr tile);
-    void    extendRayToBoundaryPerp(RadialRay & ray);
-    void    connectRays(uint method, RaySet & set1, RaySet & set2);
+    void    embedBoundaryInMap(MapPtr motifMap);
+    void    embedTileInMap(MapPtr motifMap, TilePtr tile);
 
     qreal   len(VertexPtr v1, VertexPtr v2);
     QLineF  perpLine(QLineF line, QPointF pt);
+
+    Motif * motif;
 
 private:
     bool    _extendRays;
     bool    _extendTipsToBound;
     bool    _extendTipsToTile;
     uint    _connectRays;
+    uint    _stellation;
     bool    _embedBoundary;
     bool    _embedTile;
+    bool    _fitToTile;
+    qreal   _fitScale;  // calculated
 
     ExtendedBoundary _extendedBoundary;
-    WeakMotifPtr     _motif;
-
-    UniqueQVector<VertexPtr> newVertices;
 };
-
-#endif
 

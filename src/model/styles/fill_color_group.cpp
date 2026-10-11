@@ -93,7 +93,7 @@ void New3Coloring::createStyleRepresentation(DCELPtr dcel)
 
 void New3Coloring::draw(GeoGraphics *gg)
 {
-    qDebug() << "New3Coloring::draw";
+    //qDebug() << "New3Coloring::draw";
     Q_ASSERT(faceGroup.size() == colorGroup.size());
 
     // each face set has a set of colors
@@ -136,8 +136,7 @@ void New3Coloring::draw(GeoGraphics *gg)
 
 QString New3Coloring::sizeInfo()
 {
-    QString astring("TODO");
-    return astring;
+    return QString("Faces:%1 Colors:%2").arg(faceGroup.size()).arg(colorGroup.size());
 }
 
 void New3Coloring::adjustColorGroupSizeIfNeeded()

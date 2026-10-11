@@ -1,6 +1,4 @@
 #pragma once
-#ifndef IMAGE_VIEWER_H
-#define IMAGE_VIEWER_H
 
 #include <QMouseEvent>
 #include "gui/viewers/layer_controller.h"
@@ -40,5 +38,3 @@ protected:
 private:
     QPixmap pixmap;
 };
-
-#endif // IMAGE_LAYER_H

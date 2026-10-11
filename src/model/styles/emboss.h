@@ -1,6 +1,4 @@
 #pragma once
-#ifndef EMBOSS_H
-#define EMBOSS_H
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -52,7 +50,6 @@ protected:
 private:
     QVector<QColor> greys;
 };
-#endif
 
 
 

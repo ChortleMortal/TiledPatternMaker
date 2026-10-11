@@ -1,6 +1,4 @@
 #pragma once
-#ifndef NEIGHBOURMAP_H
-#define NEIGHBOURMAP_H
 
 #include <QVector>
 #include <QMap>
@@ -31,5 +29,3 @@ private:
     QMap<VertexPtr,NeighboursPtr>   nmap;
     MapBase *                       map;
 };
-
-#endif // NEIGHBOURMAP_H

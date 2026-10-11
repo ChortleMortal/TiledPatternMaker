@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Mon Jul 29 2024 14:43:03 -->
-<vector id="1" version="25">
+<!-- Written: Sat Jun 20 2026 16:05:27 -->
+<vector id="1" version="33">
 	<design>
 		<size>
 			<width>1246</width>
@@ -11,7 +11,7 @@
 		<background>
 			<color>#ff000000</color>
 		</background>
-		<Crop embed="f" apply="f" clip="f">
+		<Crop embed="f" apply="f">
 			<rect>
 				<X>-6.689333333333332</X>
 				<Y>-5.749333333333332</Y>
@@ -25,7 +25,6 @@
 			<Rot>0</Rot>
 			<X>-126</X>
 			<Y>-14</Y>
-			<Center>0,0</Center>
 		</BackgroundImage>
 	</design>
 	<style.Thick id="2">
@@ -34,7 +33,6 @@
 			<top__delta>-14</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>0,0</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
@@ -85,7 +83,7 @@
 							<figureScale>1.08108108</figureScale>
 							<r>22.5</r>
 							<n>8</n>
-							<Extender extRays="t" extTips2B="f" extTips2T="f" conRays="4" embedBound="f" embedTile="f">
+							<Extender extRays="t" extTips2B="f" extTips2T="f" conRays="2" stellation="0" embedBound="f" embedTile="f" fitToTile="f">
 								<boundarySides>4</boundarySides>
 								<boundaryScale>2.27</boundaryScale>
 								<boundaryRotate>0</boundaryRotate>

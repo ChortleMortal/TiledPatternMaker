@@ -1,6 +1,7 @@
-#ifndef PAGE_TILING_MAKER_H
-#define PAGE_TILING_MAKER_H
+#pragma once
 
+#include <QGroupBox>
+#include <QTextEdit>
 #include "gui/widgets/panel_misc.h"
 #include "gui/panels/panel_page.h"
 #include "gui/widgets/layout_sliderset.h"
@@ -10,13 +11,14 @@
 typedef std::shared_ptr<class Tiling>         TilingPtr;
 typedef std::shared_ptr<class PlacedTile>     PlacedTilePtr;
 
-typedef std::weak_ptr<class Tiling>           wTilingPtr;
+typedef std::weak_ptr<class Tiling>           WeakTilingPtr;
 typedef std::weak_ptr<class PlacedTile>       WeakPlacedTilePtr;
 
 class EdgePoly;
 class TilingMakerView;
 class FloatableTab;
 class SMXWidget;
+class AQPushButton;
 
 enum epageTi
 {
@@ -54,7 +56,8 @@ private slots:
     void slot_reloadTiling();
     void slot_duplicateTiling();
 
-    void slot_refreshMenu(eTileMenuRefresh scop = TMR_ALL);
+    void slot_refreshMenu(eTileMenuRefresh scope);
+    void slot_viewModeChanged(int id);
 
     void slot_currentItemChanged(QListWidgetItem * current, QListWidgetItem * prev);
     void slot_itemChanged(QListWidgetItem * item);
@@ -69,50 +72,59 @@ private slots:
     void slot_t1t2LenChanged(double val);
     void slot_t1t2AngleChanged(double val);
 
-    void slot_cellSelected(int row, int col);
+    void slot_infoTableCellSelected(int row, int col);
+    void slot_infoTableMenu(QPointF spt);
+    void slot_infoTableHeaderClicked(int index);
 
-    void slot_showExludes(bool checked);
-    void slot_showDebug(bool checked);
-    void slot_autofill(bool checked);
-    void slot_showTranslations(bool checked);
+    void slot_showExludesInTable(bool checked);
+    void slot_fillOnLoad(bool checked);
 
     void slot_swapTrans();
     void slot_delete_clicked();
     void slot_convert_tile_regularity();
     void slot_uniquify_clicked();
     void slot_setModes(QAbstractButton *btn);
+    void slot_setTranslationsMode(bool checked);
     void slot_set_reps(int val);
-    void slot_menu(QPointF spt);
     void slot_table_menu_edit_tile();
     void slot_menu_includePlaced();
     void slot_exportPoly();
     void slot_importGirihPoly();
     void slot_addGirihShape();
-
-    void tableHeaderClicked(int index);
     void slot_trim(qreal valX, qreal valY);
 
     void singleton_changed(bool checked);
-    void reps_changed(bool checked);
     void slot_hideVectors(bool checked);
     void slot_mergeTilings();
 
+    void slot_setDistortion();
+    void slot_loadConstructionLines();
+    void slot_setConstructionLinesMode(bool checked);
+
     void slot_setKbdMode1(QAbstractButton *btn, QButtonGroup *kbdGroup);
-    void slot_kbdMode1(eTMKbdMode mode);
+    void slot_kbdMode1(TilingMaker::eKeyboardMode mode);
 
 protected:
-    FloatableTab * createControlTab();
-    FloatableTab * createStateTab();
+    FloatableTab * createCreateTab();
+    FloatableTab * createAdjustTab();
+    FloatableTab * createRepeatTab();
+    FloatableTab * createConstructionLinesTab();
+    FloatableTab * createDetailsTab();
 
     AQTableWidget * createTilingTable();
     QWidget       * createDebugInfo();
     QGroupBox     * createModesGroup();
-    QGroupBox     * createActionsGroup();
+    QGroupBox     * createStackGroup();
+    QGroupBox     * createConstructionLinesGroup();
     QGroupBox     * createTilingsGroup();
-    QGroupBox     * createKbdModes(QButtonGroup *kbdGroup, SMXWidget *smxwidget);
+    QGroupBox     * createTileGroup();
+    QGroupBox     * createActionsGroup();
+    QGroupBox     * createKbdModesAdjustTab();
+    QGroupBox     * createKbdModesCreateTab();
     QGroupBox     * createRepetitionsGroup();
+    QGroupBox     * createDistortionGroup();
 
-    QHBoxLayout   * createSecondControlRow();
+    QVBoxLayout   * createSecondControlRow();
     QVBoxLayout   * createTranslationsRow();
     QHBoxLayout   * createFillDataRow();
     QVBoxLayout   * createBackgroundInfo();
@@ -121,11 +133,12 @@ protected:
     void refreshMenuStatus();
     void tallyMouseMode();
     void tallyKbdMode();
+    void enterConstructionLinesMode(bool checked);
     void initPageStatusString();
+    void setViewState(TilingMakerView::ViewMode mode);
 
     QString getTileInfo(PlacedTilePtr pfp);
 
-    void          selectTileColumn(PlacedTilePtr pfp);
     PlacedTilePtr getTileColumn(int col);
     int           getColumn(PlacedTilePtr pfp);
 
@@ -141,22 +154,30 @@ private:
     void buildTableEntry(PlacedTilePtr pf, int col, QString inclusion);
     void refreshTableEntry(PlacedTilePtr pf, int col, QString inclusion);
 
-    wTilingPtr      currentTiling;
+    WeakTilingPtr   currentTiling;
 
     QTabWidget    * tabWidget;
     FloatableTab  * controlTab;
     FloatableTab  * stateTab;
+    FloatableTab  * repeatTab;
+    FloatableTab  * clinesTab;
+    FloatableTab  * detailsTab;
 
     QGroupBox     * tilingsGroup;
     QListWidget   * tilingList;
 
+    QButtonGroup  * viewModeGroup;
     QButtonGroup  * mouseModeBtnGroup;
     QButtonGroup  * kbdBtnGroup1;
     QButtonGroup  * kbdBtnGroup2;
     SMXWidget     * smxwidget1;
     SMXWidget     * smxwidget2;
+    SMXWidget     * smxwidgetCL;
 
-    QCheckBox     * fillVectorsChk;
+    AQPushButton  * drawTransRepeat;   // duplicate of the "Set Translations" mode button, on the Repeat tab
+    AQPushButton  * drawConstRepeat;   // duplicate of the "Construction Lines" mode button, on the C-Lines tab
+
+    QCheckBox     * fillBtn;
 
     DoubleSpinSet * t1x;
     DoubleSpinSet * t1y;
@@ -185,43 +206,67 @@ private:
     AQSpinBox    * yRepMax;
 
     AQSpinBox      * sides;
-    AQDoubleSpinBox* tileRot;
+    FullPrecisionDoubleSpinBox * tileRot;
     QComboBox      * girihShapes;
 
-    QRadioButton    * chkSingle;
-    QRadioButton    * chkReps;
-    QCheckBox       * chkShowDebug;
+    QCheckBox       * chkSingle;
+    AQComboBox      * distortCombo;
+    QCheckBox       * chkShowCLines;
+    QLabel          * clNotSaved;
+    DoubleSpinSet   * distortX;
+    DoubleSpinSet   * distortY;
     QCheckBox       * chkBkgd;
     QPushButton     * pbExam;
 
     QPushButton     * pbRender;
     QCheckBox       * chkPropagate;
+    QCheckBox       * chkTileAnchorMode;
 
     QAbstractButton * lastChecked;
+    QAbstractButton * lastChecked2;
 };
 
-class BQSpinBox : public AQSpinBox
+class BQSpinBox : public QSpinBox
 {
+    Q_OBJECT
+
 public:
     BQSpinBox(page_tiling_maker * parent, PlacedTilePtr ptp);
 
-    virtual void  enterEvent(QEnterEvent *event) override;
+    void setValue(int val);
+
+    bool blocked;
+
+
+    virtual void focusInEvent(QFocusEvent * event) override;
+    virtual void focusOutEvent(QFocusEvent * event) override;
+    virtual void wheelEvent(QWheelEvent * event) override;
+             void mousePressEvent(QMouseEvent *event) override;
+             bool eventFilter(QObject *watched, QEvent *event) override;
 
 protected:
     WeakPlacedTilePtr   tile;
     page_tiling_maker * parent;
 };
 
-class BQDoubleSpinBox : public AQDoubleSpinBox
+class BQDoubleSpinBox : public FullPrecisionDoubleSpinBox
 {
+    Q_OBJECT
+
 public:
     BQDoubleSpinBox(page_tiling_maker * parent, PlacedTilePtr ptp);
 
-    virtual void  enterEvent(QEnterEvent *event) override;
+    void setValue(double val);
+
+    bool blocked;
+
+    virtual void focusInEvent(QFocusEvent * event) override;
+    virtual void focusOutEvent(QFocusEvent * event) override;
+    virtual void wheelEvent(QWheelEvent * event) override;
+            void mousePressEvent(QMouseEvent *event) override;
+            bool eventFilter(QObject *watched, QEvent *event) override;
 
 protected:
     WeakPlacedTilePtr   tile;
     page_tiling_maker * parent;
 };
-
-#endif

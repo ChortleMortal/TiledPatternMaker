@@ -3,6 +3,11 @@
 
 FillData::FillData()
 {
+    init();
+}
+
+void FillData::init()
+{
     _set = false;
     minX = -3;
     minY = -3;

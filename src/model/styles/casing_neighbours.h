@@ -1,6 +1,4 @@
 #pragma once
-#ifndef CASING_NEIGHBOURS_H
-#define CASING_NEIGHBOURS_H
 
 #include "model/styles/casing_set.h"
 #include "model/styles/casing_side.h"
@@ -53,4 +51,3 @@ public:
 
     QVector<NeighbouringCasingPtr> casings;
 };
-#endif // CASING_NEIGHBOURS_H

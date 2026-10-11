@@ -18,6 +18,7 @@ ExtendedBoundary::ExtendedBoundary(uint nsides)
     sides    = nsides;
     scale    = 1.0;
     rotate   = 0.0;
+    tileScale= 1.0;
 }
 
 ExtendedBoundary::ExtendedBoundary(const ExtendedBoundary & other)
@@ -26,6 +27,7 @@ ExtendedBoundary::ExtendedBoundary(const ExtendedBoundary & other)
     sides    = other.sides;
     scale    = other.scale;
     rotate   = other.rotate;
+    tileScale= other.tileScale;
     boundary = other.boundary;
 }
 
@@ -78,23 +80,28 @@ bool ExtendedBoundary::equals(const ExtendedBoundary & other)
             && boundary   == other.boundary);
 }
 
-bool ExtendedBoundary::isUnity(MotifPtr motif)
+bool ExtendedBoundary::isUnity(Motif * motif)
 {
-    int tile_sides = motif->getTile()->numEdges();
-    if ( (sides == 1 || sides == tile_sides)
-        && Loose::equals(scale,1.0)
-        && Loose::zero(rotate))
-        return true;
-    else
+    if (sides != motif->getN())
         return false;
+    auto tile = motif->getTile();
+    if (tile && sides != tile->numPoints())
+        return false;
+    if (!Loose::equals(scale,1.0))
+        return false;
+    if (!Loose::zero(rotate))
+        return false;
+
+    return true;
 }
 
-void ExtendedBoundary::buildRadial()
+void ExtendedBoundary::buildRadial(TilePtr tile)
 {
-    radial = true;
+    radial    = true;
+    tileScale = tile->getScale();
     if (sides >= 3)
     {
-        Tile f2(sides,rotate,scale);
+        Tile f2(sides,rotate + tile->getRotation(),scale * tileScale);
         set(f2.getPolygon());
     }
     else
@@ -106,6 +113,6 @@ void ExtendedBoundary::buildRadial()
 void ExtendedBoundary::buildExplicit(TilePtr tile)
 {
     radial    = false;
-    sides      = tile->numEdges();
+    tileScale = 1.0;
     set(tile->getPolygon());
 }

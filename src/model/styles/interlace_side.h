@@ -1,6 +1,4 @@
 #pragma once
-#ifndef INTERLACE_SIDE_H
-#define INTERLACE_SIDE_H
 
 #include <QColor>
 #include "model/settings/tristate.h"
@@ -25,9 +23,9 @@ public:
     void    underSide1(const EdgePtr & edge, qreal width);
     void    underSide2(const EdgePtr & edge, qreal width);
 
-    bool    under()         { return _under.get() == Tristate::True; }
-    bool    over()          { return _under.get() == Tristate::False; }
-    bool    visited()       { return !(_under.get() == Tristate::Unknown);}
+    bool    under()         { return _under.get() == Tristate::eTristate::True; }
+    bool    over()          { return _under.get() == Tristate::eTristate::False; }
+    bool    visited()       { return !(_under.get() == Tristate::eTristate::Undefined);}
 
     Tristate    _under;
 
@@ -44,5 +42,3 @@ protected:
     QPointF calc_perp(QPointF pt,qreal width);
     qreal 	capGap(QPointF p, QPointF base, qreal gap);
 };
-
-#endif

@@ -1,66 +1,72 @@
 #pragma once
-#ifndef TILING_UNIT
-#define TILING_UNIT
 
 #include <QtGlobal>
 #include <QObject>
 
+#include "model/tilings/placed_tile.h"
 #include "sys/geometry/fill_region.h"
 
 typedef std::shared_ptr<class Tile>         TilePtr;
+typedef QVector<TilePtr>                    TileSet;
 typedef std::shared_ptr<class PlacedTile>   PlacedTilePtr;
-typedef QVector<PlacedTilePtr>              PlacedTiles;
-typedef QPair<TilePtr,PlacedTiles>          UnitPlacedTiles;
+typedef QPair<TilePtr,PlacedTileSet>        TileUnit;
+typedef QVector<TileUnit>                   TilingUnit;
 
-class TilingUnit
+/*
+ * The Tiling Unit contains both excluded=True and included=False Placed Tiles.
+ * Upstream from the Tiling maker, filled/flooded placed tiles are Undefine
+ */
+
+class TilingUnitController
 {
 public:
-    TilingUnit(Tiling * tiling);
+    TilingUnitController(Tiling * tiling);
 
-    bool        operator == (const TilingUnit &other) const;
-    bool        operator != (const TilingUnit & other) const { return !(*this == other); }
+    bool        operator == (const TilingUnitController &other) const;
+    bool        operator != (const TilingUnitController & other) const { return !(*this == other); }
 
-    TilingUnit  uniqueCopy();
-    bool        isEmpty() { return tunit.isEmpty(); }
+    // getters
 
-    void        replaceUnitData(TilingUnit & other);
-    void        addUnitData(TilingUnit & other);
+    const TilingUnit  & get()  { return tunit; }
+    PlacedTileSet       getIncluded() const;
+    PlacedTileSet       getWithExcluded()      const;
 
-    void        group(PlacedTiles & ptiles);
+    Placements          getPlacements(TilePtr tile, const QTransform & distortion = QTransform());                // no excludes
+    Placements          getPlacementsWithExcludes(Tile * tile);     // used only by system info tree
+    QTransform          getFirstPlacement(TilePtr tile, const QTransform & distortion = QTransform());
+    PlacedTileSet       getUniquePlacedTiles() const;
+    TileSet             getUniqueTiles() const;
+
+    TilingUnitController uniqueCopy();
+
+    // setters
 
     void        clearPlacedTiles();
-    void        removePlacedTile(PlacedTilePtr placedTile);
     void        addPlacedTile(const PlacedTilePtr pfm);
+    void        removePlacedTile(PlacedTilePtr placedTile);
 
+    void        addUnitData(TilingUnitController & other);
+    void        replaceUnitData(TilingUnitController & other);
+    void        removeExcludeds();
+
+    // info
+
+    bool        isEmpty() { return tunit.isEmpty(); }
     int         numIncluded() const;
     int         numExcluded() const;
     int         numAll()      const;
     int         numUnique()   const { return getUniqueTiles().count(); }
 
-    PlacedTiles getIncluded() const;
-    PlacedTiles getExcluded() const;
-    PlacedTiles getAll()      const;
+    int         numPlacements(TilePtr tile);
+    QString     info() const;
 
-    void        removeExcludeds();
-
-    const QVector<UnitPlacedTiles> & getUnitPlacedTiles() { return tunit; }
-
-    int                 numPlacements(TilePtr tile);
-    Placements          getPlacements(TilePtr tile);
-    QTransform          getFirstPlacement(TilePtr tile);
-    QVector<TilePtr>    getUniqueTiles() const;
-
-    QString             info() const;
-
-protected:
+    void        dump();
 
 private:
-    bool                containsTile(TilePtr fp);
-    PlacedTiles &       getPlacedTiles(TilePtr fp);
+    bool            containsTile(TilePtr fp);
+    PlacedTileSet & getPlacedTiles(TilePtr fp);
 
-    QVector<UnitPlacedTiles> tunit;      // this is the tiling unit
-    Tiling *                 tiling;     // parent
+    TilingUnit      tunit;      // this is the tiling unit
+    Tiling *        tiling;     // parent
 };
-
-#endif
 

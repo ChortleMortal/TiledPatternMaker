@@ -1,6 +1,4 @@
 #pragma once
-#ifndef PAGE_DEBUG_H
-#define PAGE_DEBUG_H
 
 class QGroupBox;
 class AQPushButton;
@@ -10,7 +8,11 @@ class QTabWidget;
 class FloatableTab;
 
 #include <QMap>
+#include <QComboBox>
+#include <QLabel>
+#include <QButtonGroup>
 #include "gui/panels/panel_page.h"
+#include "gui/viewers/layer.h"
 #include "sys/geometry/debug_map.h"
 #include "sys/qt/qtapplog.h"
 
@@ -75,11 +77,13 @@ private slots:
 
     void    slot_startPicker(bool checked);
 
+    void    slot_cycleLayersClicked(bool checked);
+    void    slot_cycleLayers();
+
 protected:
     void    examineMosaic();
     void    examineMosaicXML();
     void    reformatMosaicXML();
-    void    reformatOldTemplates();
     void    reformatTilingXML();
     void    reprocessMosaicXML();
     void    reprocessTilingXML();
@@ -100,8 +104,10 @@ protected:
     QGroupBox    * creatDebugMaps();
     QWidget      * creatDebugFlags();
     QGroupBox    * createMeasure();
+    QGroupBox    * createRenderings();
     QGroupBox    * createCleanse();
     QGroupBox    * createDebugView();
+    QGroupBox    * createCycleLayers();
 
     QComboBox    * debugTests;
 
@@ -130,6 +136,8 @@ private:
 
     bool           pick;
     QLabel       * colorTxt;
-};
 
-#endif
+    QGroupBox    * gbCycleLayers;
+    QButtonGroup   cycleGroup;
+    QList<Layer::Type> savedEnables;
+};

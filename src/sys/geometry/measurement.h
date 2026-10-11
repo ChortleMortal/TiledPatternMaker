@@ -1,6 +1,4 @@
 #pragma once
-#ifndef MEASUREMENT_H
-#define MEASUREMENT_H
 
 #include <QPointF>
 
@@ -32,5 +30,3 @@ private:
     QPointF wStart;
     QPointF wEnd;
 };
-
-#endif // MEASURE_H

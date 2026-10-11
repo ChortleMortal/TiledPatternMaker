@@ -1,6 +1,4 @@
 #pragma once
-#ifndef CROP_H
-#define CROP_H
 
 #include <QRectF>
 #include "sys/enums/eborder.h"
@@ -16,15 +14,16 @@ typedef std::shared_ptr<class Crop>     CropPtr;
 //
 //  Borders also use the crop class, but borders form a layer superimposed on top of prototype maps
 //
-//  Standalone crops are stored in Model Units
-//  Border Crops are stored in Screen Units because they are the frames of the canvas
-//  TODO - review whether crops should use screen units for borders
+//  Standalone crops and Border crops are both stored in Model Units.
+//  Legacy files (XML version < 17) had Border crops in Screen Units; these are
+//  converted to Model Units on load, see Border::convertCropToModelUnits().
 
 class Crop
 {
 public:
     Crop();
     Crop(const Crop & other);
+    Crop & operator=(const Crop & other);
 
     void         draw(QPainter * painter, QTransform t, bool active);
     void         clipPainter(QPainter * painter, QTransform transform);
@@ -55,10 +54,8 @@ public:
 
     void        setEmbed(bool embed) { _embed = embed; }
     void        setApply(bool apply) { _apply = apply; }
-    void        setClip(bool clip)   { _clip  = clip; }
     bool        getEmbed()           { return _embed; }
     bool        getApply()           { return _apply; }
-    bool        getClip()            { return _clip; }
 
     void        dump();
 
@@ -77,7 +74,4 @@ private:
 
     bool         _embed;
     bool         _apply;
-    bool         _clip;         // painter clip
 };
-
-#endif // CROP_H

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef THICK_EDITOR_H
-#define THICK_EDITOR_H
 
 #include "gui/model_editors/style_edit/colored_editor.h"
 
@@ -36,5 +34,3 @@ private:
     QComboBox        * join_style;
     QComboBox        * cap_style;
 };
-
-#endif

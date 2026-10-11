@@ -29,8 +29,8 @@ void OutlineCasing::init()
 {
     auto edge = wedge.lock();
 
-    auto n1 = owner->getNeighbouringCasings(edge->v1);
-    auto n2 = owner->getNeighbouringCasings(edge->v2);
+    CNeighboursPtr n1 = owner->getNeighbouringCasings(edge->v1);
+    CNeighboursPtr n2 = owner->getNeighbouringCasings(edge->v2);
 
     s1 = new CasingSide(this,SIDE_1,n1,edge->v1);
     s2 = new CasingSide(this,SIDE_2,n2,edge->v2);

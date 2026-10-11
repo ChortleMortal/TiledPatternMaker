@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Fri Dec 12 2025 16:07:14 -->
-<vector id="1" version="29">
+<!-- Written: Mon Aug 17 2026 13:02:47 -->
+<vector id="1" version="33">
 	<design>
 		<size>
 			<width>955</width>
@@ -25,6 +25,8 @@
 			<prototype id="3">
 				<app.Prototype>
 					<Tiling>InterlaceTest.v19</Tiling>
+					<Cleanse>c</Cleanse>
+					<Sensitivity>0.1</Sensitivity>
 					<entry>
 						<Tile id="4">
 							<regular>false</regular>
@@ -63,7 +65,7 @@
 			</prototype>
 		</style.Style>
 		<style.Colored>
-			<color hide="f">#ff1496d2</color>
+			<color hide="f">#781496d2</color>
 		</style.Colored>
 		<style.Thick>
 			<draw__outline>true</draw__outline>

@@ -6,14 +6,16 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QFile>
+#include <QDir>
 #include <QMultiMap>
 #include <QString>
+#include <QThread>
 
 #include "gui/panels/page_loaders.h"
 #include "gui/widgets/panel_misc.h"
 #include "gui/panels/panel_worker.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/dlg_listnameselect.h"
 #include "gui/widgets/dlg_rebase.h"
 #include "gui/widgets/dlg_rename.h"
@@ -22,20 +24,18 @@
 #include "legacy/design.h"
 #include "legacy/design_maker.h"
 #include "model/makers/mosaic_maker.h"
-#include "model/makers/tiling_maker.h"
 #include "model/mosaics/mosaic.h"
 #include "model/settings/configuration.h"
 #include "sys/engine/mosaic_bmp_generator.h"
 #include "sys/sys/fileservices.h"
 #include "sys/sys/load_unit.h"
 #include "sys/sys/pugixml.hpp"
+#include "sys/sys.h"
 #include "sys/tiledpatternmaker.h"
-
-#define LOADER_MAX_HEIGHT   580
 
 using namespace pugi;
 
-Q_DECLARE_METATYPE(eTILM_Event)
+Q_DECLARE_METATYPE(TilingMaker::Event)
 
 page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,PAGE_LOAD,"Load")
 {
@@ -52,7 +52,6 @@ page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,PAGE_LOAD,
     loaderLayout->addStretch();
 
     vbox->addLayout(loaderLayout);
-    vbox->addStretch();
 
     cbAutoLoadLast->setChecked(config->autoLoadLast);
     cbShowWithImages->setChecked(config->showWithBkgds);
@@ -103,6 +102,17 @@ page_loaders::~page_loaders()
 
         delete thread;
     }
+}
+
+void page_loaders::reloadPage()
+{
+    // Tiling
+    loadTilingsCombo();
+
+    // Mosaic
+    loadMosaicsCombo();
+
+    emit sig_setTilingUses();
 }
 
 QGroupBox * page_loaders::createGeneralColumn()
@@ -206,14 +216,12 @@ QGroupBox * page_loaders::createMosaicColumn()
 
     // list widget
     mosaicListWidget = new VersionedListWidget();
-    mosaicListWidget->setFixedHeight(LOADER_MAX_HEIGHT);
     mosaicListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
     QVBoxLayout * mosaicLayout = new QVBoxLayout;
     mosaicLayout->addLayout(hbox1);
     mosaicLayout->addLayout(hbox3);
     mosaicLayout->addLayout(hbox2);
-    mosaicLayout->addStretch();
     mosaicLayout->addWidget(mosaicListWidget);
 
     QGroupBox * mosaicGroup = new QGroupBox();
@@ -275,7 +283,6 @@ QGroupBox * page_loaders::createTilingColumn()
 
     // list widget
     tileListWidget = new VersionedListWidget();
-    tileListWidget->setFixedHeight(LOADER_MAX_HEIGHT);
     tileListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
     QVBoxLayout * tilingLayout = new QVBoxLayout;
@@ -315,6 +322,7 @@ void page_loaders::makeConnections()
     PanelWorker * worker = new PanelWorker();
     worker->moveToThread(thread);
 
+    connect(Sys::config,    &Configuration::sig_mediaPathsChanged,  this,   &page_loaders::reloadPage, Qt::QueuedConnection);
     connect(this,               &page_loaders::sig_sortTilings,     worker, &PanelWorker::sortTilings);
     connect(this,               &page_loaders::sig_sortMosaics,     worker, &PanelWorker::sortMosaics);
     connect(this,               &page_loaders::sig_setTilingUses,   worker, &PanelWorker::getTilingUses);
@@ -323,8 +331,8 @@ void page_loaders::makeConnections()
 
     thread->start();
 
-    connect(mosaicMaker,        &MosaicMaker::sig_mosaicWritten,    this,   &page_loaders::slot_newMosaic);
-    connect(tilingMaker,        &TilingMaker::sig_tilingWritten,    this,   &page_loaders::slot_newTiling);
+    connect(mosaicMaker,        &MosaicMaker::sig_mosaicWritten,    this,   &page_loaders::slot_mosaicWritten);
+    connect(tilingMaker,        &TilingMaker::sig_tilingWritten,    this,   &page_loaders::slot_tilingWritten);
     connect(mosaicMaker,        &MosaicMaker::sig_mosaicLoaded,     this,   &page_loaders::slot_mosaicLoaded);
     connect(tilingMaker,        &TilingMaker::sig_tilingLoaded,     this,   &page_loaders::slot_tilingLoaded);
     connect(designMaker,        &DesignMaker::sig_loadedDesign,     this,   &page_loaders::slot_loadedDesign);
@@ -541,6 +549,35 @@ void page_loaders::slot_newMosaic()
     emit sig_setTilingUses();
 }
 
+void page_loaders::slot_mosaicWritten(VersionedFile file)
+{
+    // the mosaic's file name/version may have changed on save, but its in-memory data
+    // did not - just refresh the list and re-highlight the (possibly renamed) file,
+    // don't touch the current view (see slot_mosaicLoaded for the genuine-reload case)
+    slot_newMosaic();
+
+    VersionedName name = file.getVersionedName();
+    mosaicListWidget->blockSignals(true);
+    if (mosaicListWidget->selectItemByName(name.get()))
+    {
+        selectedMosaicFile = file;
+    }
+    mosaicListWidget->blockSignals(false);
+}
+
+void page_loaders::slot_tilingWritten(VersionedFile file)
+{
+    slot_newTiling();
+
+    VersionedName name = file.getVersionedName();
+    tileListWidget->blockSignals(true);
+    if (tileListWidget->selectItemByName(name.get()))
+    {
+        selectedTilingFile = file;
+    }
+    tileListWidget->blockSignals(false);
+}
+
 void page_loaders::loadMosaic()
 {
     if (selectedMosaicFile.isEmpty())
@@ -548,11 +585,11 @@ void page_loaders::loadMosaic()
         return;
     }
 
-    MosaicPtr mosaic = mosaicMaker->loadMosaic(selectedMosaicFile);
+    MosaicPtr mosaic = mosaicMaker->load(selectedMosaicFile);
 
     if (!config->lockView)
     {
-       panel->delegateView(VIEW_MOSAIC,true);
+       panel->delegateView(Layer::Type::Mosaic,true);
     }
 
 #ifdef LEGACY_CONVERT_XML
@@ -574,7 +611,7 @@ void page_loaders::loadMosaic()
             if (rv == QMessageBox::Ok)
             {
                 // overwrite the file
-                tilingMaker->saveTiling(tiling,true);
+                tilingMaker->saveTiling(tiling,FileServices::getFile(tiling->getVName(),FILE_TILING));
             }
         }
     }
@@ -597,20 +634,22 @@ void page_loaders::loadMosaic()
 #endif
 }
 
-void page_loaders::loadTiling(eTILM_Event event)
+void page_loaders::loadTiling(TilingMaker::Event event)
 {
     if (selectedTilingFile.isEmpty())
     {
         return;
     }
 
-    if (event != TILM_RELOAD && !viewControl->isEnabled(VIEW_TILING_MAKER))
+    if (   event != TilingMaker::Event::Reload
+        && event != TilingMaker::Event::LoadReplace
+        && !viewControl->isEnabled(Layer::Type::TilingMaker))
     {
         // delegate the view
-        panel->delegateView(VIEW_TILING,true);
+        panel->delegateView(Layer::Type::Tiling,true);
     }
 
-    TilingPtr tiling = tilingMaker->loadTiling(selectedTilingFile,event);
+    tilingMaker->loadTiling(selectedTilingFile,event);
 
 #ifdef LEGACY_CONVERT_XML
     if (tiling->legacyModelConverted())
@@ -627,7 +666,7 @@ void page_loaders::loadTiling(eTILM_Event event)
         if (rv == QMessageBox::Ok)
         {
             // overwrite the file
-            tilingMaker->saveTiling(tiling,true);
+            tilingMaker->saveTiling(tiling,FileServices::getFile(tiling->getVName(),FILE_TILING));
         }
     }
 #endif
@@ -635,7 +674,7 @@ void page_loaders::loadTiling(eTILM_Event event)
 
 void page_loaders::loadTiling2()
 {
-    loadTiling(TILM_LOAD_SINGLE);
+    loadTiling(TilingMaker::Event::LoadSingle);
 }
 
 void page_loaders::loadShapes()
@@ -644,24 +683,24 @@ void page_loaders::loadShapes()
 
     if (!config->lockView)
     {
-       panel->delegateView(VIEW_LEGACY,true);
+       panel->delegateView(Layer::Type::LegacyDesign,true);
     }
     emit sig_reconstructView();
 }
 
 void page_loaders::slot_loadTiling()
 {
-    loadTiling(TILM_LOAD_SINGLE);
+    loadTiling(TilingMaker::Event::LoadSingle);
 }
 
 void page_loaders::slot_loadTilingReplace()
 {
-    loadTiling(TILM_LOAD_REPLACE);
+    loadTiling(TilingMaker::Event::LoadReplace);
 }
 
 void page_loaders::slot_loadTilingMulti()
 {
-    loadTiling(TILM_LOAD_MULTI);
+    loadTiling(TilingMaker::Event::LoadMulti);
 }
 
 void page_loaders::slot_mosaicLoaded(VersionedFile file)
@@ -680,10 +719,9 @@ void page_loaders::slot_mosaicLoaded(VersionedFile file)
     }
     mosaicListWidget->blockSignals(false);
 
-    if (viewControl->enabledGangCount() == 0)
+    if (viewControl->enabledGangCount() == 0 && !Sys::startupAutoloading)
     {
-        config->lockView = false;
-        panel->delegateView(VIEW_MOSAIC,true);
+        panel->userDelegateView(Layer::Type::Mosaic,true);
     }
 
     // update the tiling too
@@ -703,10 +741,9 @@ void page_loaders::slot_tilingLoaded(VersionedFile file)
     }
     tileListWidget->blockSignals(false);
 
-    if (viewControl->enabledGangCount() == 0)
+    if (viewControl->enabledGangCount() == 0 && !Sys::startupAutoloading)
     {
-        config->lockView = false;
-        panel->delegateView(VIEW_TILING,true);
+        panel->userDelegateView(Layer::Type::Tiling,true);
     }
 }
 
@@ -720,10 +757,9 @@ void page_loaders::slot_loadedDesign(eDesign design)
     }
     designListWidget->blockSignals(false);
 
-    if (viewControl->enabledGangCount() == 0)
+    if (viewControl->enabledGangCount() == 0 && !Sys::startupAutoloading)
     {
-        config->lockView = false;
-        panel->delegateView(VIEW_LEGACY,true);
+        panel->userDelegateView(Layer::Type::LegacyDesign,true);
     }
 }
 
@@ -878,7 +914,7 @@ void page_loaders::tilingClicked(QListWidgetItem *item)
 void page_loaders::slot_tilingActivated(QListWidgetItem * item)
 {
     Q_UNUSED(item)
-    loadTiling(TILM_LOAD_SINGLE);
+    loadTiling(TilingMaker::Event::LoadSingle);
 }
 
 void page_loaders::slot_tilingTextChanged(const QString & currentText)
@@ -899,7 +935,7 @@ void page_loaders::designClicked(QListWidgetItem * item)
     qDebug() << "page_loaders::designSelected";
     selectedDesign = static_cast<eDesign>(item->data(Qt::UserRole).toInt());
     emit sig_loadDesign(selectedDesign);
-    panel->delegateView(VIEW_LEGACY,true);
+    panel->delegateView(Layer::Type::LegacyDesign,true);
 }
 
 void page_loaders::slot_mosaicItemEnteredToolTip(QListWidgetItem * item)
@@ -1007,7 +1043,7 @@ void page_loaders::openXML()
 
     QStringList qsl;
     qsl << path.getPathedName();
-    QString cmd = config->xmlTool;
+    QString cmd = Sys::xmlTool;
     if (!QFile::exists(cmd))
     {
         QMessageBox box(this);
@@ -1017,7 +1053,27 @@ void page_loaders::openXML()
         return;
     }
     qDebug() << "starting"  << cmd  << qsl;
+
+#ifdef Q_OS_WINDOWS
     QProcess::startDetached(cmd,qsl);
+#else
+    QProcess *process = new QProcess(this);
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    env.remove("LD_LIBRARY_PATH");
+    env.remove("QT_PLUGIN_PATH");
+    env.remove("QML2_IMPORT_PATH");
+
+    process->setProgram(cmd);
+    process->setArguments(qsl);
+    process->setProcessEnvironment(env);
+
+    qint64 pid = 0;
+    bool ok = process->startDetached(&pid);   // <-- non-static, no cmd/args passed here
+    if (!ok)
+    {
+        qDebug() << "Failed to start" << cmd << process->errorString();
+    }
+#endif
 }
 
 #ifdef Q_OS_WINDOWS
@@ -1048,7 +1104,6 @@ void page_loaders::showXMLDir()
 void page_loaders::rebaseMosaic()
 {
     VersionedFile xfile  = selectedMosaicFile;
-    VersionedFile xdata  = FileServices::getFile(selectedMosaicFile.getVersionedName(),FILE_TEMPLATE);
     if (xfile.isEmpty())
     {
         QMessageBox box(this);
@@ -1097,8 +1152,6 @@ void page_loaders::rebaseMosaic()
     // this is the new file
     VersionedFile newXML = xfile;
     newXML.updateFromVersionedName(vname);
-    VersionedFile newDat = xdata;
-    newDat.updateFromVersionedName(vname);
 
     // purge other versions
     for (uint i= iNewVer; i < iOldVer; i++)
@@ -1118,23 +1171,6 @@ void page_loaders::rebaseMosaic()
         }
     }
 
-    for (uint i = iNewVer; i <iOldVer; i++)
-    {
-        QString aname;
-        if (i == 0)
-            aname = vname.getUnversioned();
-        else
-            aname = vname.getUnversioned() + ".v" + QString::number(i);
-
-        VersionedName vn(aname);
-
-        VersionedFile afile = FileServices::getFile(vn,FILE_TEMPLATE);
-        if (!afile.isEmpty())
-        {
-            QFile::remove(afile.getPathedName());
-        }
-    }
-
     // rename XML to new file
     QString from = xfile.getPathedName();
     QString to   = newXML.getPathedName();
@@ -1148,12 +1184,6 @@ void page_loaders::rebaseMosaic()
         box.exec();
         return;
     }
-
-    // rename template .dat to new file
-    from = xdata.getPathedName();
-    to   = newDat.getPathedName();
-    qDebug() << "copy from" << from << "to" << to;
-    QFile::rename(from,to);  // it is ok for this to fail
 
     // setup
     if (selectedMosaicFile.getVersionedName().get() == config->lastLoadedMosaic.get())
@@ -1193,7 +1223,6 @@ void page_loaders::renameMosaic()
 
     bool rv = false;
     VersionedFile oldXML = selectedMosaicFile;
-    VersionedFile oldDat = FileServices::getFile(selectedMosaicFile.getVersionedName(),FILE_TEMPLATE);
 
     if (oldXML.isEmpty())
     {
@@ -1203,7 +1232,6 @@ void page_loaders::renameMosaic()
     QString oldFileName = oldXML.getVersionedName().get();
 
     QString oldFile     = oldXML.getPathedName();
-    QString oldDatFile  = oldDat.getPathedName();
 
     if (!QFile::exists(oldFile))
     {
@@ -1217,11 +1245,7 @@ void page_loaders::renameMosaic()
     QString newFile = oldFile;
     newFile.replace(oldFileName ,newFileName);
 
-    QString newDatFile = oldDatFile;
-    newDatFile.replace(oldFileName ,newFileName);
-
     rv = QFile::rename(oldFile,newFile);
-    QFile::rename(oldDatFile,newDatFile);   // it is ok for this to fail
 
     slot_newMosaic();
 
@@ -1292,7 +1316,6 @@ void page_loaders::deleteMosaic()
     }
 
     VersionedFile mosaic = selectedMosaicFile;
-    VersionedFile data   = FileServices::getFile(selectedMosaicFile.getVersionedName(),FILE_TEMPLATE);
 
     if (mosaic.isEmpty())
     {
@@ -1312,7 +1335,6 @@ void page_loaders::deleteMosaic()
     }
 
     bool rv = QFile::remove(mosaic.getPathedName());
-    QFile::remove(data.getPathedName());     // it is ok for this to fail
 
     slot_newMosaic();
 
@@ -1376,7 +1398,7 @@ void page_loaders::genMosaicBMP()
 {
     VersionedFile mosaic = selectedMosaicFile;
     VersionedName name   = mosaic.getVersionedName();
-    QString path = Sys::config->rootImageDir + "snaps/";
+    QString path = Sys::snapsDir;
 
     MosaicBMPGenerator engine;
     engine.saveBitmap(name,path);
@@ -1414,7 +1436,7 @@ void page_loaders::openTiling()
 
     QStringList qsl;
     qsl << tiling.getPathedName();
-    QString cmd = config->xmlTool;
+    QString cmd = Sys::xmlTool;
     if (!QFile::exists(cmd))
     {
         QMessageBox box(this);
@@ -1424,7 +1446,27 @@ void page_loaders::openTiling()
         return;
     }
     qDebug() << "starting"  << cmd  << qsl;
+
+#ifdef Q_OS_WINDOWS
     QProcess::startDetached(cmd,qsl);
+#else
+    QProcess *process = new QProcess(this);
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    env.remove("LD_LIBRARY_PATH");
+    env.remove("QT_PLUGIN_PATH");
+    env.remove("QML2_IMPORT_PATH");
+
+    process->setProgram(cmd);
+    process->setArguments(qsl);
+    process->setProcessEnvironment(env);
+
+    qint64 pid = 0;
+    bool ok = process->startDetached(&pid);   // <-- non-static, no cmd/args passed here
+    if (!ok)
+    {
+        qDebug() << "Failed to start" << cmd << process->errorString();
+    }
+#endif
 }
 
 void page_loaders::rebaseTiling()
@@ -1772,11 +1814,11 @@ void  page_loaders::slot_whereTilingUsed()
         VersionedName name;
         name.set(dlg.newEdit->text());
         VersionedFile vf = FileServices::getFile(name,FILE_MOSAIC);
-        mosaicMaker->loadMosaic(vf);
+        mosaicMaker->load(vf);
 
         if (!config->lockView)
         {
-            panel->delegateView(VIEW_MOSAIC,true);
+            panel->delegateView(Layer::Type::Mosaic,true);
         }
         emit sig_reconstructView();
     }

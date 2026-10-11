@@ -1,6 +1,4 @@
 #pragma once
-#ifndef FILL_GROUP_H
-#define FILL_GROUP_H
 
 #include "model/styles/fill_color_maker.h"
 #include "model/styles/colorset.h"
@@ -30,6 +28,4 @@ public:
 private:
     FaceSet     facesToDo;
 };
-
-#endif
 

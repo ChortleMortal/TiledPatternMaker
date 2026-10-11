@@ -1,25 +1,23 @@
 #pragma once
-#ifndef XMLLOADER_H
-#define XMLLOADER_H
 
+#include "model/tilings/backgroundimage.h"
 #include <string>
+
 #include "gui/panels/page_debug.h"
-#include "model/mosaics/mosaic_manager.h"
 #include "model/mosaics/reader_base.h"
+#include "model/motifs/extender.h"
+#include "model/motifs/rosette2.h"
+#include "model/settings/filldata.h"
+#include "model/settings/distortion.h"
+#include "model/styles/colorset.h"
+#include "model/styles/filled.h"
 #include "sys/engine/mosaic_bmp_generator.h"
 #include "sys/enums/efilltype.h"
-#include "sys/sys/pugixml.hpp"
-#include "model/styles/colorset.h"
-#include "model/settings/filldata.h"
+#include "sys/enums/estyletype.h"
 #include "sys/geometry/circle.h"
 #include "sys/geometry/polygon.h"
 #include "sys/geometry/xform.h"
-#include "sys/enums/emotiftype.h"
-#include "sys/enums/estyletype.h"
-#include "sys/enums/eviewtype.h"
-#include "model/styles/filled.h"
-#include "model/motifs/extender.h"
-#include "model/motifs/rosette2.h"
+#include "sys/sys/pugixml.hpp"
 
 using std::shared_ptr;
 using std::weak_ptr;
@@ -32,7 +30,7 @@ typedef shared_ptr<class Edge>             EdgePtr;
 typedef shared_ptr<class Filled>           FillPtr;
 typedef shared_ptr<class Tile>             TilePtr;
 typedef shared_ptr<class Motif>            MotifPtr;
-typedef shared_ptr<class IrregularMotif>   IrregularPtr;
+typedef shared_ptr<class AdaptiveMotif>   IrregularPtr;
 typedef shared_ptr<class Map>              MapPtr;
 typedef shared_ptr<class Mosaic>           MosaicPtr;
 typedef shared_ptr<class Prototype>        ProtoPtr;
@@ -40,12 +38,13 @@ typedef shared_ptr<class Rosette>          RosettePtr;
 typedef shared_ptr<class Rosette2>         Rosette2Ptr;
 typedef shared_ptr<class Star>             StarPtr;
 typedef shared_ptr<class Star2>            Star2Ptr;
+typedef shared_ptr<class JeweledStar>      JeweledStarPtr;
 typedef shared_ptr<class Tiling>           TilingPtr;
 typedef shared_ptr<class Vertex>           VertexPtr;
-typedef shared_ptr<ReaderBase>       MRBasePtr;
+typedef shared_ptr<ReaderBase>             MRBasePtr;
 
 class TileReader;
-class IrregularMotif;
+class AdaptiveMotif;
 
 using std::string;
 using namespace pugi;
@@ -53,10 +52,11 @@ using namespace pugi;
 class MosaicReader
 {
 public:
-    MosaicReader(SystemViewController * vc);
+    MosaicReader(ViewController * vc);
 
     MosaicPtr readXML(VersionedFile xfile);
     QString   getFailMessage() { return _failMessage; }
+    QStringList getWarnings()  { return _warnings; }
 
     static QTransform getQTransform(QString txt);
 
@@ -82,15 +82,17 @@ protected:
     QSize   procViewSize(xml_node & node);
     QSize   procCanvasSize(xml_node & node, QSize &defaultSize);
     QColor  procBackgroundColor(xml_node & node);
-    void    procBorder(xml_node & node);
+    BorderPtr procBorder(xml_node & node);
+    void    raiseBorders();
     CropPtr processCrop(xml_node & node);
     CropPtr processOldCrop(xml_node & n);
     void    procFill(xml_node & node, bool isSingle);
+    void    procDistort(xml_node & node);
     qreal   procWidth(xml_node & node);
     qreal   procLength(xml_node & node);
 
     // styles
-    QPointF procesToolkitGeoLayer(xml_node & node, Xform & xf, eZLevel &zlevel);
+    void    procesToolkitGeoLayer(xml_node & node, Xform & xf, Layer::ZLevel & zlevel, QPointF & legacyCenter);
     void    processColorSet(xml_node & node, ColorSet & colorSet);
     void    processColorGroup(xml_node & node, ColorGroup & colorGroup);
     void    processsStyleThick(xml_node & node, eDrawOutline & draw_outline, qreal & width, qreal &outlineWidth, QColor &outlineColor, Qt::PenJoinStyle & pjs, Qt::PenCapStyle & pcs);
@@ -106,7 +108,7 @@ protected:
 
     // motifs
     void                getMotifCommon(xml_node & node, MotifPtr motif,int tile_sides);
-    IrregularPtr        getIrregularMotif(xml_node & node, int tile_sides, eMotifType type);
+    IrregularPtr        getIrregularMotif(xml_node & node, int tile_sides, Motif::Type type);
     StarPtr             getStar(xml_node & node, int tile_sides);
     Star2Ptr            getStar2(xml_node & node, int tile_sides);
     RosettePtr          getRosette(xml_node & node, int tile_sides);
@@ -114,12 +116,15 @@ protected:
 
     void                getStarCommon(    xml_node & node, int & n, qreal & d, int & s);
     void                getStar2Common(   xml_node & node, int & n, qreal & theta, int & s);
+    void                getJeweledStarCommon( xml_node & node, int & n, qreal & cuspDepth);
     void                getRosetteCommon( xml_node & node, int & n, qreal & q, int & s);
-    void                getRosette2Common(xml_node & node, int & n, qreal & x, qreal & y, qreal & k, int & s, uint & tipTypes, eTipMode & tipMode, bool & constrain);
+    void                getRosette2Common(xml_node & node, int & n, qreal & x, qreal & y, qreal & k, int & s, QList<TipType> & tipTypes, bool & constrain);
 
-    BkgdImagePtr    getBackgroundImage(xml_node & node);
+    BkgdRecord      getBkgdRecord(xml_node & node);
     void            getExtendedData(xml_node & node, ExtenderPtr ep);
     void            getExtendedBoundary(xml_node & node, ExtendedBoundary & eb);
+    uint            getStellation(xml_node & node);
+
     ProtoPtr        getPrototype(xml_node & node);
     MapPtr          getMap(xml_node & node);
     EdgePtr         getEdge(xml_node & node);
@@ -142,6 +147,7 @@ protected:
     void   setExplicitReference(xml_node & node, IrregularPtr ptr);
     void   setStarReference(xml_node & node, StarPtr ptr);
     void   setStar2Reference(xml_node & node, Star2Ptr ptr);
+    void   setJeweledStarReference(xml_node & node, JeweledStarPtr ptr);
     void   setRosetteReference(xml_node & node, RosettePtr ptr);
     void   setRosette2Reference(xml_node & node, Rosette2Ptr ptr);
     void   setMapReference(xml_node & node, MapPtr ptr);
@@ -154,6 +160,7 @@ protected:
     IrregularPtr    getExplicitReferencedPtr(xml_node & node);
     StarPtr         getStarReferencedPtr(xml_node & node);
     Star2Ptr        getStar2ReferencedPtr(xml_node & node);
+    JeweledStarPtr  getJeweledStarReferencedPtr(xml_node & node);
     RosettePtr      getRosetteReferencedPtr(xml_node & node);
     Rosette2Ptr     getRosette2ReferencedPtr(xml_node & node);
     MapPtr          getMapReferencedPtr(xml_node & node);
@@ -162,13 +169,14 @@ protected:
 
     QColor          processColor(xml_node & n);
     TPColor         processTPColor(xml_node & n);
-    void            procBorderPlain(xml_node & n);
-    void            procBorderTwoColor(xml_node & n);
-    void            procBorderBlocks(xml_node & n);
+    BorderPtr       procBorderPlain(xml_node & n);
+    BorderPtr       procBorderTwoColor(xml_node & n);
+    BorderPtr       procBorderBlocks(xml_node & n);
     bool            getAttributeTF(xml_node & node, const char_t *name);
     uint            getAttributeUint(xml_node & node, const char_t *name);
 
-    void            fixupIrregularTransform(DELPtr del);
+    void            fixupIrregularTransform(TileMotifPtr del);
+    void            fixupExtendedBoundary(TileMotifPtr del);
 
     [[noreturn]] void fail(QString a, QString b);
 
@@ -180,6 +188,7 @@ protected:
     QMap<int,IrregularPtr>  explicit_ids;
     QMap<int,StarPtr>       star_ids;
     QMap<int,Star2Ptr>      star2_ids;
+    QMap<int,JeweledStarPtr>jstar_ids;
     QMap<int,RosettePtr>    rosette_ids;
     QMap<int,Rosette2Ptr>   rosette2_ids;
     QMap<int,MapPtr>        map_ids;
@@ -189,30 +198,30 @@ protected:
     ProtoPtr                _prototype;
 
     QVector<TilingPtr>      _tilings;
+    QVector<Motif*>         _fixedExtendedBoundaries;
     VersionedFile           _xfile;
     QString                 _failMessage;
+    QStringList             _warnings;
 
-    QColor                  _background;
+    QColor                  _bkgdColor;
     QSize                   _viewSize;
     QSize                   _canvasSize;
-    BorderPtr               _border;
+    BorderPtr               _border;        // legacy top-level <border>
     CropPtr                 _crop;
     CropPtr                 _painterCrop;
     unsigned int            _version;
     FillData                _fillData;
+    Distortion              _distortion;
     uint                    _cleanseLevel;
     qreal                   _cleanseSensitivity;
-    BkgdImagePtr            _mosbip;
+    BkgdRecord              _mosRecord;
     ColorGroup              _tilingColorGroup;
     Xform                   _firstStyleXform;
 
-    bool                    _legacyCenterConverted;
     bool                    _debug;
 
     ReaderBase              mrbase;
 
 private:
-    SystemViewController * _vc;
+    ViewController * _vc;
 };
-
-#endif

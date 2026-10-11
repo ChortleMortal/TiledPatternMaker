@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLGTEXTEDIT_H
-#define DLGTEXTEDIT_H
 
 #include <QDialog>
 
@@ -44,14 +42,6 @@ protected:
     class QVBoxLayout * vbox;
 };
 
-// Used to pop up Map verification messags
-class DlgMapVerify : public DlgTextEdit
-{
-public:
-    DlgMapVerify(QString name, QWidget * parent = nullptr);
-    ~DlgMapVerify() {}
-};
-
 // Used to pop up information About this app
 class DlgAbout : public DlgTextEdit
 {
@@ -80,4 +70,3 @@ public:
     DlgKbdOpts(QWidget * parent = nullptr);
 
 };
-#endif // DLGTEXTEDIT_H

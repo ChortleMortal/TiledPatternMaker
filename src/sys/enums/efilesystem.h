@@ -1,6 +1,4 @@
 #pragma once
-#ifndef EFILESYSTEM_H
-#define EFILESYSTEM_H
 
 enum eFileType
 {
@@ -8,8 +6,7 @@ enum eFileType
     FILE_TILING,
     FILE_MAP,
     FILE_GIRIH,
-    FILE_TEMPLATE,       // mosaic template files are .dat files
-    FILE_TEMPLATE2       // .xml file
+    FILE_TEMPLATE        // map editor construction line templates
 };
 
 enum eLoadType
@@ -23,5 +20,3 @@ enum eLoadType
     ALL_MOS_EXCEPT_WL,
     ALL_TIL_EXCEPT_WL
 };
-
-#endif

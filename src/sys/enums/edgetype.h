@@ -1,6 +1,4 @@
 #pragma once
-#ifndef EDGETYPE_H
-#define EDGETYPE_H
 
 #include <QString>
 
@@ -36,5 +34,3 @@ enum eLSide
     EDGE_OUTER = 0,
     EDGE_INNER = 1
 };
-
-#endif // EDGETYPE_H

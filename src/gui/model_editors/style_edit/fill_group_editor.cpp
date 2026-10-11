@@ -20,13 +20,12 @@ FillGroupEditor::FillGroupEditor(FilledEditor *parent, FilledPtr style, New3Colo
     QPushButton * cpyBtn = new QPushButton("Copy Set");
     QPushButton * pstBtn = new QPushButton("Paste Set");
 
-    QHBoxLayout * hbox = new QHBoxLayout;
+    QHBoxLayout * hbox = parent->getButtonRow();
     hbox->addWidget(upBtn);
     hbox->addWidget(dwnBtn);
     hbox->addWidget(rptBtn);
     hbox->addWidget(cpyBtn);
     hbox->addWidget(pstBtn);
-    vbox->addLayout(hbox);
 
     connect(upBtn,  &QPushButton::clicked, this, &FillGroupEditor::up);
     connect(dwnBtn, &QPushButton::clicked, this, &FillGroupEditor::down);
@@ -35,6 +34,7 @@ FillGroupEditor::FillGroupEditor(FilledEditor *parent, FilledPtr style, New3Colo
     connect(pstBtn, &QPushButton::clicked, this, &FillGroupEditor::pasteSet);
 
     table = new AQTableWidget();
+    table->setCapHeightToPanel(true);
     table->verticalHeader()->setVisible(false);
     table->horizontalHeader()->setStretchLastSection(true);
     table->setColumnCount(8);
@@ -49,7 +49,6 @@ FillGroupEditor::FillGroupEditor(FilledEditor *parent, FilledPtr style, New3Colo
     //fillGroupTable->setColumnWidth(COL_BTN,70);
     table->setSelectionMode(QAbstractItemView::SingleSelection);
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
-    table->setMinimumHeight(501);
 
     QStringList qslH;
     qslH << "" << "Count" << "Sides" << "Area" << "Hide" << "Sel" << "Edit" << "Colors";
@@ -60,6 +59,7 @@ FillGroupEditor::FillGroupEditor(FilledEditor *parent, FilledPtr style, New3Colo
     connect(table,  &QTableWidget::cellClicked,       this, &FillGroupEditor::slot_click);
     connect(table,  &QTableWidget::cellDoubleClicked, this, &FillGroupEditor::slot_double_click);
 
+    table->adjustTableSize();
     vbox->addWidget(table);
 }
 
@@ -144,7 +144,10 @@ void FillGroupEditor::refresh()
         refreshRow(faceGroup[row],row);
     }
 
-    //table->adjustTableSize();
+    if (currentRows != neededRows)
+    {
+        table->adjustTableSize();
+    }
 }
 
 void FillGroupEditor::refreshRow(const FaceSetPtr & faceSet, int row)

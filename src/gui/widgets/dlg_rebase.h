@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLG_REBASE_H
-#define DLG_REBASE_H
 
 #include <QDialog>
 
@@ -12,5 +10,3 @@ public:
     class SpinSet * oldVersion;
     class SpinSet * newVersion;
 };
-
-#endif // DLG_REBASE_H

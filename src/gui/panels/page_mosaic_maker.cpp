@@ -2,27 +2,34 @@
 #include <QCheckBox>
 #include <QHeaderView>
 
+#include "gui/model_editors/style_edit/border_editor.h"
 #include "gui/model_editors/style_edit/colored_editor.h"
 #include "gui/model_editors/style_edit/emboss_editor.h"
 #include "gui/model_editors/style_edit/fill_editor.h"
 #include "gui/model_editors/style_edit/interlace_editor.h"
 #include "gui/model_editors/style_edit/style_editor.h"
 #include "gui/model_editors/style_edit/tile_colors_editor.h"
+#include "gui/panels/page_borders.h"
+#include "gui/panels/page_crop_maker.h"
 #include "gui/panels/page_mosaic_maker.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
+#include "gui/viewers/crop_maker_view.h"
 #include "gui/widgets/dlg_cleanse.h"
 #include "gui/widgets/layout_sliderset.h"
 #include "gui/widgets/panel_misc.h"
 #include "gui/widgets/smx_widget.h"
+#include "model/makers/crop_maker.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/tiling_maker.h"
+#include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/prototypes/prototype.h"
 #include "model/styles/style.h"
+#include "model/tilings/backgroundimage.h"
 #include "model/tilings/tiling.h"
+#include "sys/geometry/crop.h"
 #include "sys/geometry/map.h"
-#include "sys/geometry/transform.h"
 
 typedef std::weak_ptr<Mosaic> WeakMosaicPtr;
 
@@ -30,7 +37,7 @@ using std::make_shared;
 
 page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apanel,PAGE_MOSIAC_MAKER,"Mosaic Maker")
 {
-    setFixedWidth(PANEL_RHS_WIDTH-40);
+    setFixedWidth(PANEL_RHS_WIDTH);
 
     // top row
     QHBoxLayout * fillBox = createFillDataRow();
@@ -40,9 +47,8 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
     upBtn       = new QPushButton("Move Up");
     downBtn     = new QPushButton("MoveDown");
     dupBtn      = new QPushButton ("Duplicate");
-    chk_notrans = new QCheckBox("Hide Transform");
     chk_nolayer = new QCheckBox("Hide Layer Control");
-    chk_noaddr  = new QCheckBox("Hide Addr");
+    chk_noaddr  = new QCheckBox("Hide Address");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(delBtn);
@@ -54,7 +60,6 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
     hbox->addWidget(dupBtn);
     hbox->addStretch();
     hbox->addWidget(chk_nolayer);
-    hbox->addWidget(chk_notrans);
     hbox->addWidget(chk_noaddr);
 
     // third row - table
@@ -64,7 +69,7 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
     styleTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     styleTable->setFocusPolicy(Qt::StrongFocus);
     QStringList qslH;
-    qslH << "" << "Tiling" << "Style Type" << "Layer Control" << "Transform" << "Style Addr";
+    qslH << "" << "Tiling" << "Component Type" << "Layer Control" << "Info" << "Address";
     styleTable->setHorizontalHeaderLabels(qslH);
     styleTable->verticalHeader()->setVisible(false);
 
@@ -95,6 +100,13 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
             });
 
 
+    componentsBox = new QGroupBox("Mosaic Components");
+    AQVBoxLayout * componentsLayout = new AQVBoxLayout;
+    componentsLayout->addLayout(hbox);
+    componentsLayout->addSpacing(10);
+    componentsLayout->addWidget(styleTable);
+    componentsBox->setLayout(componentsLayout);
+
     // fourth row - style editor
     AQHBoxLayout * hbox2 = new AQHBoxLayout();
     StylePtr sp;
@@ -105,21 +117,24 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
     lowerWidget->setContentsMargins(0,0,0,0);
     lowerWidget->setLayout(hbox2);
 
+    styleEditorBox = new QGroupBox();
+    AQVBoxLayout * styleEditorLayout = new AQVBoxLayout;
+    styleEditorLayout->addWidget(lowerWidget);
+    styleEditorBox->setLayout(styleEditorLayout);
+
     QHBoxLayout * hbl = new QHBoxLayout();
     hbl->addLayout(buildDistortionsLayout());
     hbl->addStretch();
-    hbl->addLayout(createBackgroundInfo());
+    hbl->addWidget(pbClean);
 
     AQVBoxLayout * wvbox = new AQVBoxLayout;
     wvbox->addLayout(fillBox);
     wvbox->addSpacing(10);
-    wvbox->addLayout(hbox);
-    wvbox->addSpacing(10);
-    wvbox->addWidget(styleTable);
-    wvbox->addSpacing(15);
-    wvbox->addWidget(lowerWidget);
-    wvbox->addSpacing(10);
     wvbox->addLayout(hbl);
+    wvbox->addSpacing(10);
+    wvbox->addWidget(componentsBox);
+    wvbox->addSpacing(10);
+    wvbox->addWidget(styleEditorBox);
     wvbox->addStretch();
 
     vbox->addLayout(wvbox);
@@ -128,7 +143,6 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
     connect(upBtn,       &QPushButton::clicked, this, &page_mosaic_maker::slot_moveStyleUp);
     connect(downBtn,     &QPushButton::clicked, this, &page_mosaic_maker::slot_moveStyleDown);
     connect(dupBtn,      &QPushButton::clicked, this, &page_mosaic_maker::slot_duplicateStyle);
-    connect(chk_notrans, &QCheckBox::clicked,   this, &page_mosaic_maker::slot_notrans);
     connect(chk_nolayer, &QCheckBox::clicked,   this, &page_mosaic_maker::slot_nolayer);
     connect(chk_noaddr,  &QCheckBox::clicked,   this, &page_mosaic_maker::slot_noaddr);
 
@@ -151,8 +165,7 @@ QHBoxLayout * page_mosaic_maker::createFillDataRow()
     QPushButton * pbRender = new QPushButton("Render Styles");
     pbRender->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    pbClean       = new QPushButton("Cleanse");
-    cleanseStatus = new QLabel();
+    pbClean       = new QPushButton("Prototype Cleanse : OFF");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(chkSingle);
@@ -163,10 +176,6 @@ QHBoxLayout * page_mosaic_maker::createFillDataRow()
     hbox->addLayout(yRepMax);
     hbox->addSpacing(9);
     hbox->addWidget(pbRender);
-    hbox->addSpacing(9);
-    hbox->addWidget(pbClean);
-    hbox->addSpacing(7);
-    hbox->addWidget(cleanseStatus);
 
     connect(chkSingle,&QCheckBox::clicked,   this, &page_mosaic_maker::singleton_changed);
     connect(xRepMin, &SpinSet::valueChanged, this, &page_mosaic_maker::slot_set_reps);
@@ -179,20 +188,47 @@ QHBoxLayout * page_mosaic_maker::createFillDataRow()
     return hbox;
 }
 
-QHBoxLayout *page_mosaic_maker::createBackgroundInfo()
+void page_mosaic_maker::slot_gotoBackgrounds()
 {
-    pbExam  = new QPushButton("Background Image");  // label is overwritten by status
+    panel->setCurrentPage("Backgrounds");
+}
 
-    QHBoxLayout * hb1 = new QHBoxLayout();
-    hb1->addWidget(pbExam);
+void page_mosaic_maker::slot_gotoCropMaker()
+{
+    panel->setCurrentPage("Crop Maker");
+}
 
-    connect (pbExam, &QPushButton::pressed, this, [this] { panel->setCurrentPage("Backgrounds");} );
-    return hb1;
+void page_mosaic_maker::slot_gotoBorderMaker()
+{
+    auto border = std::dynamic_pointer_cast<Border>(getStyleRow(styleTable->currentRow()));
+    auto * pb   = dynamic_cast<page_borders*>(panel->getPage("Border Maker"));
+    if (border && pb)
+    {
+        pb->setCurrentBorder(border);
+    }
+    panel->setCurrentPage("Border Maker");
+}
+
+void page_mosaic_maker::slot_showMosaicCrop(bool checked)
+{
+    auto * pcm = dynamic_cast<page_crop_maker*>(panel->getPage("Crop Maker"));
+    if (pcm)
+        pcm->setShowMosaicCrop(checked);
+}
+
+void page_mosaic_maker::slot_showPainterCrop(bool checked)
+{
+    auto * pcm = dynamic_cast<page_crop_maker*>(panel->getPage("Crop Maker"));
+    if (pcm)
+        pcm->setShowPainterCrop(checked);
 }
 
 QHBoxLayout * page_mosaic_maker::buildDistortionsLayout()
 {
-    chkDistort = new QCheckBox("Distort Prototype ");
+    distortCombo = new AQComboBox();
+    distortCombo->addItem("No Distortion",     DISTORT_NONE);
+    distortCombo->addItem("Canvas Distortion", DISTORT_CANVAS);
+    distortCombo->addItem("Tile Distortion",   DISTORT_TILE);
 
     xBox = new DoubleSpinSet("X:",1.0,-9.99,9.99);
     xBox->setSingleStep(0.01);
@@ -201,10 +237,10 @@ QHBoxLayout * page_mosaic_maker::buildDistortionsLayout()
 
     connect(xBox, &DoubleSpinSet::valueChanged, this, &page_mosaic_maker::setDistortion);
     connect(yBox, &DoubleSpinSet::valueChanged, this, &page_mosaic_maker::setDistortion);
-    connect(chkDistort, &QCheckBox::clicked,    this, &page_mosaic_maker::enbDistortion);
+    connect(distortCombo, &QComboBox::currentIndexChanged, this, &page_mosaic_maker::setDistortion);
 
     QHBoxLayout * dist = new QHBoxLayout;
-    dist->addWidget(chkDistort);
+    dist->addWidget(distortCombo);
     dist->addLayout(xBox);
     dist->addSpacing(5);
     dist->addLayout(yBox);
@@ -217,7 +253,6 @@ void  page_mosaic_maker::onRefresh()
     static WeakMosaicPtr wmp;
 
     MosaicPtr mosaic = mosaicMaker->getMosaic();
-
     if (!mosaic)
         return;
 
@@ -225,7 +260,7 @@ void  page_mosaic_maker::onRefresh()
 
     int xMin,xMax,yMin,yMax;
     bool singleton;
-    const FillData & fd = mosaic->getCanvasSettings().getFillData();
+    const FillData & fd = mosaic->getMosaicCanvas()->getFillData();
     fd.get(singleton,xMin ,xMax,yMin,yMax);
 
     chkSingle->setChecked(singleton);
@@ -256,58 +291,54 @@ void  page_mosaic_maker::onRefresh()
 
     blockSignals(false);
 
-    if (mosaic->getBkgdImage())
-    {
-        pbExam->setText("Examine Background Image");
-    }
-    else
-    {
-        pbExam->setText("Add Background Image");
-    }
-
-    pbClean->setText("Cleanse : OFF");
-    cleanseStatus->setText(" ");
-
     ProtoPtr proto = getCurrentPrototype();
-    if (proto)
-    {
-        uint level = proto->getCleanseLevel();
-        if (level > 0)
-        {
-            pbClean->setText("Cleanse : ON ");
-            qreal sensitivity = proto->getCleanseSensitivity();
-            QString str = QString("0x%1 : %2").arg(QString::number(level,16)).arg(sensitivity);
-            cleanseStatus->setText(str);
-        }
+    bool cleanseOn = proto && proto->getCleanseLevel() > 0;
+    pbClean->setText(cleanseOn ? "Prototype Cleanse : ON " : "Prototype Cleanse : OFF");
 
-        chkDistort->setChecked(proto->getDistortionEnable());
-        QTransform t = proto->getDistortion();
-        xBox->setValue(Transform::scalex(t));
-        yBox->setValue(Transform::scaley(t));
-    }
-    else
-    {
-        chkDistort->setChecked(false);
-        xBox->setValue(0);
-        yBox->setValue(0);
-    }
+    eDistortionMode distortMode; qreal distortX,distortY;
+    mosaic->getMosaicCanvas()->getDistortion().get(distortMode,distortX,distortY);
+    distortCombo->select(distortMode);
+    xBox->setValue(distortX);
+    yBox->setValue(distortY);
 
     if (mosaic == wmp.lock())
     {
         // same mosaic as before
-        int row = 0;
         const StyleSet & sset = mosaic->getStyleSet();
-        for (auto & style : std::as_const(sset))
+        for (int row = 0; row < sset.size(); row++)
         {
-            QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANSFORM);
-            Xform xf = style->getModelXform();
-            item->setText(xf.info(8));
-
             QWidget * w = styleTable->cellWidget(row,STYLE_COL_LAYER_CONTROL);
             SMXWidget * smx = static_cast<SMXWidget*>(w);
             smx->refresh();
+        }
 
-            row++;
+        if (cbShowBkgd)
+        {
+            // background row is always the last row when present - same lookup as a style row's
+            int bkgdRow = styleTable->rowCount()-1;
+            QWidget * w = styleTable->cellWidget(bkgdRow,STYLE_COL_LAYER_CONTROL);
+            SMXWidget * smx = static_cast<SMXWidget*>(w);
+            smx->refresh();
+
+            // reflects enables that can also be changed elsewhere (LHS panel, Backgrounds page)
+            cbShowBkgd->blockSignals(true);
+            cbShowBkgd->setChecked(viewControl->isEnabled(Layer::Type::BkgdImage));
+            cbShowBkgd->blockSignals(false);
+        }
+
+        if (cbShowCrop)
+        {
+            // reflects show-state that can also be changed on the Crop Maker page
+            cbShowCrop->blockSignals(true);
+            cbShowCrop->setChecked(Sys::cropMakerView->getShowCrop(CM_MOSAIC));
+            cbShowCrop->blockSignals(false);
+        }
+
+        if (cbShowPainterCrop)
+        {
+            cbShowPainterCrop->blockSignals(true);
+            cbShowPainterCrop->setChecked(Sys::cropMakerView->getShowCrop(CM_PAINTER));
+            cbShowPainterCrop->blockSignals(false);
         }
 
         styleTable->resizeColumnsToContents();
@@ -335,6 +366,7 @@ void  page_mosaic_maker::reEnter()
 {
     displayStyles();
     displayStyleParams();
+    updateStyleButtons(styleTable->currentRow());
     lowerWidget->setFocus();
 }
 
@@ -345,6 +377,10 @@ void page_mosaic_maker::displayStyles()
     int sel = styleTable->currentRow();
     styleTable->clearContents();
     styleTable->setRowCount(0);
+    // clearContents() just deleted the old cell widgets
+    cbShowBkgd        = nullptr;
+    cbShowCrop        = nullptr;
+    cbShowPainterCrop = nullptr;
 
     int row = 0;
     MosaicPtr mosaic = mosaicMaker->getMosaic();
@@ -353,8 +389,11 @@ void page_mosaic_maker::displayStyles()
         const QVector<TilingPtr> & tilings = tilingMaker->getTilings();  // this is tilings to choose from not tilings used
 
         const StyleSet & sset = mosaic->getStyleSet();
-        for (auto & style : std::as_const(sset))
+        // the last style in the set is painted last (on top), so display it first - topmost visual layer at the top of the table
+        for (auto it = sset.crbegin(); it != sset.crend(); ++it)
         {
+            const StylePtr & style = *it;
+
             // build structure
             styleTable->setRowCount(row+1);
 
@@ -411,13 +450,6 @@ void page_mosaic_maker::displayStyles()
             styleTable->setItem(row,STYLE_COL_STYLE_ADDR,addrtxt);
             addrtxt->setData(Qt::UserRole,QVariant::fromValue(WeakStylePtr(style)));     // tiling name also stores Style address
 
-            // style transform
-            QTableWidgetItem * xftext = new QTableWidgetItem("Xform");
-            styleTable->setItem(row,STYLE_COL_TRANSFORM,xftext);
-            
-            Xform xf = style->getModelXform();
-            xftext->setText(xf.info(8));
-
             // layer control
             SMXWidget * smx = new SMXWidget(style.get(),true,false);
             styleTable->setCellWidget(row,STYLE_COL_LAYER_CONTROL,smx);
@@ -426,6 +458,54 @@ void page_mosaic_maker::displayStyles()
             connect(qcbStyle,  &QComboBox::currentIndexChanged, this,  [this,row] { styleChanged(row); });
             connect(qcbTiling, &QComboBox::currentIndexChanged, this,  [this,row] { tilingChanged(row); });
             connect(cbShow,    &QCheckBox::clicked,             this,  [this,row] (bool checked){ styleVisibilityChanged(row, checked); });
+
+            row++;
+        }
+
+        CropPtr crop = mosaic->getCrop();
+        if (crop)
+        {
+            QPushButton * btn = addInfoRow(row, "Mosaic Crop", crop->getContentString(), addr(crop.get()));
+            btn->setStyleSheet("text-align: left; padding-left: 5px;");
+            connect(btn, &QPushButton::clicked, this, &page_mosaic_maker::slot_gotoCropMaker);
+
+            cbShowCrop = new QCheckBox();
+            cbShowCrop->setChecked(Sys::cropMakerView->getShowCrop(CM_MOSAIC));
+            styleTable->setCellWidget(row,STYLE_COL_ENABLE,cbShowCrop);
+            connect(cbShowCrop, &QCheckBox::clicked, this, &page_mosaic_maker::slot_showMosaicCrop);
+
+            row++;
+        }
+
+        CropPtr painterCrop = mosaic->getPainterCrop();
+        if (painterCrop)
+        {
+            QPushButton * btn = addInfoRow(row, "Painter Crop", painterCrop->getContentString(), addr(painterCrop.get()));
+            btn->setStyleSheet("text-align: left; padding-left: 5px;");
+            connect(btn, &QPushButton::clicked, this, &page_mosaic_maker::slot_gotoCropMaker);
+
+            cbShowPainterCrop = new QCheckBox();
+            cbShowPainterCrop->setChecked(Sys::cropMakerView->getShowCrop(CM_PAINTER));
+            styleTable->setCellWidget(row,STYLE_COL_ENABLE,cbShowPainterCrop);
+            connect(cbShowPainterCrop, &QCheckBox::clicked, this, &page_mosaic_maker::slot_showPainterCrop);
+
+            row++;
+        }
+
+        // the one background image - it is what Save Mosaic writes
+        BkgdImagePtr bip = Sys::backgroundImage;
+        if (bip->isLoaded())
+        {
+            QPushButton * btn = addInfoRow(row, "Background Image", bip->getTitle(), addr(bip.get()));
+            connect(btn, &QPushButton::clicked, this, &page_mosaic_maker::slot_gotoBackgrounds);
+
+            cbShowBkgd = new QCheckBox();
+            cbShowBkgd->setChecked(viewControl->isEnabled(Layer::Type::BkgdImage));
+            styleTable->setCellWidget(row,STYLE_COL_ENABLE,cbShowBkgd);
+            connect(cbShowBkgd, &QCheckBox::clicked, this, [this](bool checked){ panel->userDelegateView(Layer::Type::BkgdImage,checked); });
+
+            SMXWidget * smx = new SMXWidget(bip.get(),true,false);
+            styleTable->setCellWidget(row,STYLE_COL_LAYER_CONTROL,smx);
 
             row++;
         }
@@ -455,6 +535,7 @@ void  page_mosaic_maker::slot_styleSelected(const QItemSelection &selected, cons
     qDebug() << "page_mosaic_maker::slot_styleSelected";
 
     displayStyleParams();
+    updateStyleButtons(styleTable->currentRow());
 }
 
 void page_mosaic_maker::displayStyleParams()
@@ -462,49 +543,59 @@ void page_mosaic_maker::displayStyleParams()
     int row = styleTable->currentRow();  // can be -1
     //qDebug() << "displayStyleParams row =" << row;
 
-    StylePtr style = getStyleIndex(row);
-    if (!style)
-        return;
+    StylePtr style = getStyleRow(row);
 
     if (currentEditor)
         currentEditor->onExit();
 
     // set current editor
     StyleEditor * newEditor = nullptr;
-    eStyleType stype = style->getStyleType();
 
-    switch (stype)
+    if (style)
     {
-    case STYLE_PLAIN:
-        newEditor = new ColoredEditor(style,stype);
-        break;
-    case STYLE_THICK:
-        newEditor = new ThickEditor(style,stype);
-        break;
-    case STYLE_FILLED:
-        newEditor = new FilledEditor(style,stype);
-        break;
-    case STYLE_EMBOSSED:
-        newEditor = new EmbossEditor(style,stype);
-        break;
-    case STYLE_INTERLACED:
-        newEditor = new InterlaceEditor(style,stype);
-        break;
-    case STYLE_OUTLINED:
-        newEditor = new ThickEditor(style,stype);
-        break;
-    case STYLE_SKETCHED:
-        newEditor = new ColoredEditor(style,stype);
-        break;
-    case STYLE_TILECOLORS:
-        newEditor = new TileColorsEditor(style,stype);
-        break;
-    case STYLE_BORDER:
-        newEditor = new StyleEditor(style,stype);  // does nothing
-        break;
-    case STYLE_NONE:
-        qCritical("unexpected style");
-        break;
+        eStyleType stype = style->getStyleType();
+
+        switch (stype)
+        {
+        case STYLE_PLAIN:
+            newEditor = new ColoredEditor(style,stype);
+            break;
+        case STYLE_THICK:
+            newEditor = new ThickEditor(style,stype);
+            break;
+        case STYLE_FILLED:
+            newEditor = new FilledEditor(style,stype);
+            break;
+        case STYLE_EMBOSSED:
+            newEditor = new EmbossEditor(style,stype);
+            break;
+        case STYLE_INTERLACED:
+            newEditor = new InterlaceEditor(style,stype);
+            break;
+        case STYLE_OUTLINED:
+            newEditor = new ThickEditor(style,stype);
+            break;
+        case STYLE_SKETCHED:
+            newEditor = new ColoredEditor(style,stype);
+            break;
+        case STYLE_TILECOLORS:
+            newEditor = new TileColorsEditor(style,stype);
+            break;
+        case STYLE_BORDER:
+        {
+            auto * borderEditor = new BorderEditor(style,stype);
+            connect(borderEditor, &BorderEditor::sig_editBorder, this, &page_mosaic_maker::slot_gotoBorderMaker);
+            newEditor = borderEditor;
+        }   break;
+        case STYLE_NONE:
+            qCritical("unexpected style");
+            break;
+        }
+    }
+    else
+    {
+        // Crop/Background info row - nothing to edit
+        newEditor = new StyleEditor(style,STYLE_NONE);
     }
 
     Q_ASSERT(newEditor);
@@ -515,6 +606,35 @@ void page_mosaic_maker::displayStyleParams()
 
     currentEditor = newEditor;
     currentEditor->onEnter();
+
+    styleEditorBox->setTitle(getRowLabel(row));
+}
+
+QString page_mosaic_maker::getRowLabel(int row)
+{
+    QWidget * w = styleTable->cellWidget(row,STYLE_COL_STYLE_TYPE);
+    if (auto * btn = qobject_cast<QPushButton*>(w))
+        return btn->text();
+    if (auto * cb = qobject_cast<QComboBox*>(w))
+        return cb->currentText();
+    return QString();
+}
+
+QPushButton * page_mosaic_maker::addInfoRow(int row, QString label, QString info, QString address)
+{
+    // a non-style info row (crop / background image) - label is a button navigating to its owning page
+    styleTable->setRowCount(row+1);
+
+    QPushButton * labelBtn = new QPushButton(label);
+    styleTable->setCellWidget(row,STYLE_COL_STYLE_TYPE,labelBtn);
+
+    QTableWidgetItem * infoItem = new QTableWidgetItem(info);
+    styleTable->setItem(row,STYLE_COL_INFO,infoItem);
+
+    QTableWidgetItem * addrItem = new QTableWidgetItem(address);
+    styleTable->setItem(row,STYLE_COL_STYLE_ADDR,addrItem);
+
+    return labelBtn;
 }
 
 void page_mosaic_maker::tilingChanged(int row)
@@ -588,19 +708,21 @@ StylePtr page_mosaic_maker::getStyleRow(int row)
     return sp;
 }
 
-StylePtr page_mosaic_maker::getStyleIndex(int index)
+void page_mosaic_maker::updateStyleButtons(int row)
 {
-    StylePtr sp;
+    // Move Up/Down/Duplicate act on styles - meaningless for the Crop/Painter
+    // Crop/Background Image info rows appended after the styles
     MosaicPtr mosaic = mosaicMaker->getMosaic();
-    if (mosaic)
-    {
-        const StyleSet & sset = mosaic->getStyleSet();
-        if ( index >= 0 && index < sset.size())
-        {
-            sp = sset[index];
-        }
-    }
-    return sp;
+    bool isStyleRow  = mosaic && row >= 0 && row < mosaic->getStyleSet().size();
+
+    upBtn->setEnabled(isStyleRow);
+    downBtn->setEnabled(isStyleRow);
+    dupBtn->setEnabled(isStyleRow);
+    // delBtn stays enabled on the info rows too - it deletes the crop/background they represent
+
+    // Cleanse operates on the style's prototype map - e.g. a Border style has no prototype
+    StylePtr style = getStyleRow(row);
+    pbClean->setEnabled(style && style->getPrototype());
 }
 
 void page_mosaic_maker::slot_deleteStyle()
@@ -608,11 +730,31 @@ void page_mosaic_maker::slot_deleteStyle()
     int row = styleTable->currentRow();
     if (row == -1) return;
 
-    StylePtr style = getStyleRow(row);
-
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if  (!mosaic) return;
-    mosaic->deleteStyle(style);
+
+    StylePtr style = getStyleRow(row);
+    if (style)
+    {
+        mosaic->deleteStyle(style);
+    }
+    else
+    {
+        // an info row (Mosaic Crop / Painter Crop / Background Image) - delete what it represents
+        QPushButton * labelBtn = qobject_cast<QPushButton*>(styleTable->cellWidget(row,STYLE_COL_STYLE_TYPE));
+        QString label = labelBtn ? labelBtn->text() : QString();
+
+        if (label == "Mosaic Crop")
+            mosaic->resetCrop();
+        else if (label == "Painter Crop")
+            mosaic->resetPainterCrop();
+        else if (label == "Background Image")
+        {
+            Sys::backgroundImage->unload();
+            mosaic->removeBkgdRecord();
+            emit sig_reconstructView();
+        }
+    }
 
     if (row > 0)
         row--;
@@ -637,10 +779,14 @@ void page_mosaic_maker::slot_moveStyleUp()
     int row = styleTable->currentRow();
     if (row == -1) return;
     StylePtr style = getStyleRow(row);
+    if (!style) return;    // row is a Crop/Background info row, not a style - button should be disabled
 
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if  (!mosaic) return;
-    mosaic->moveUp(style);
+
+    // the table shows the topmost-painted style first, so moving a row up in the table
+    // means painting it later, i.e. later in the style set
+    mosaic->moveDown(style);
     reEnter();
 
     emit sig_reconstructView();
@@ -656,17 +802,20 @@ void  page_mosaic_maker::slot_moveStyleDown()
     int row = styleTable->currentRow();
     if (row == -1) return;
     StylePtr style = getStyleRow(row);
+    if (!style) return;    // row is a Crop/Background info row, not a style - button should be disabled
 
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if  (!mosaic) return;
-    mosaic->moveDown(style);
+
+    // see slot_moveStyleUp() - the table order is reversed relative to the style set order
+    mosaic->moveUp(style);
 
     reEnter();
 
     emit sig_reconstructView();
 
-    int rows = styleTable->rowCount();
-    if (row < (rows-1))
+    int styleCount = mosaic->getStyleSet().size();
+    if (row < (styleCount-1))
         row++;
     styleTable->selectRow(row);
     styleTable->setFocus();
@@ -678,6 +827,8 @@ void  page_mosaic_maker::slot_duplicateStyle()
     if (row == -1) return;
 
     StylePtr style   = getStyleRow(row);
+    if (!style) return;    // row may be a Crop/Background info row, not a style
+
     StylePtr style2  = mosaicMaker->makeStyle(style, style->getStyleType());
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     mosaic->addStyle(style2);
@@ -698,8 +849,8 @@ void page_mosaic_maker::slot_set_reps()
     FillData fd;
     fd.set(chkSingle->isChecked(),xRepMin->value(), xRepMax->value(), yRepMin->value(), yRepMax->value());
 
-    CanvasSettings & cs = mosaic->getCanvasSettings();
-    cs.setFillData(fd);
+    Canvas * cs = mosaic->getMosaicCanvas();
+    cs->setFillData(fd);
 
     Sys::render(RENDER_RESET_PROTOTYPES);
 }
@@ -708,8 +859,10 @@ void page_mosaic_maker::slot_setCleanse()
 {
     StylePtr style = getStyleRow(styleTable->currentRow());
     if (!style) return;
+
     ProtoPtr proto = style->getPrototype();
     if (!proto) return;
+
     uint level     = proto->getCleanseLevel();
     qreal sens     = proto->getCleanseSensitivity();
     auto map       = proto->getExistingProtoMap();
@@ -744,12 +897,8 @@ void page_mosaic_maker::singleton_changed(bool checked)
     else
         fd.set(true,0,0,0,0);
 
-    MosaicPtr mosaic = mosaicMaker->getMosaic();
-    if (mosaic)
-    {
-        CanvasSettings & cs = mosaic->getCanvasSettings();
-        cs.setFillData(fd);
-    }
+    Canvas * cs = mosaicMaker->getMosaic()->getMosaicCanvas();
+    cs->setFillData(fd);
 
     Sys::render(RENDER_RESET_PROTOTYPES);
 }
@@ -759,51 +908,25 @@ void page_mosaic_maker::slot_noaddr(bool checked)
     styleTable->setColumnHidden(STYLE_COL_STYLE_ADDR,checked);
 }
 
-void page_mosaic_maker::slot_notrans(bool checked)
-{
-    styleTable->setColumnHidden(STYLE_COL_TRANSFORM,checked);
-}
-
 void page_mosaic_maker::slot_nolayer(bool checked)
 {
     styleTable->setColumnHidden(STYLE_COL_LAYER_CONTROL,checked);
 }
 void page_mosaic_maker::setDistortion()
 {
-    // distortion is used to force desings into a fixed space
-    // by defornming regular polygons by transforming the map
+    // distortion now bakes into the prototype map itself (Prototype::_buildPrototypeMap),
+    // not just the display - hence the RENDER_RESET_PROTOTYPES below
 
-    // distortion is applied to prototypes used by styles
+    MosaicPtr mosaic = mosaicMaker->getMosaic();
+    if (!mosaic) return;
 
-    ProtoPtr proto = getCurrentPrototype();
-    if (!proto) return;
+    Distortion d;
+    d.set(static_cast<eDistortionMode>(distortCombo->currentData().toInt()),xBox->value(),yBox->value());
 
-    qreal x = xBox->value();
-    qreal y = yBox->value();
-    QTransform t = QTransform::fromScale(x,y);
-    qDebug() << "scale x" << t.m11() << "y" << t.m22();
-    proto->setDistortion(t);
+    Canvas * cs = mosaic->getMosaicCanvas();
+    cs->setDistortion(d);
 
-    if (proto->getDistortionEnable())
-    {
-        auto mosaic = mosaicMaker->getMosaic();
-        mosaic->resetProtoMaps();   // really is wipeout
-        mosaic->resetStyleMaps();
-        emit sig_reconstructView();
-    }
-}
-
-void page_mosaic_maker::enbDistortion(bool checked)
-{
-    ProtoPtr proto = getCurrentPrototype();
-    if (!proto) return;
-
-    proto->enableDistortion(checked);
-
-    auto mosaic = mosaicMaker->getMosaic();
-    mosaic->resetProtoMaps();   // really is wipeout
-    mosaic->resetStyleMaps();
-    emit sig_reconstructView();
+    Sys::render(RENDER_RESET_PROTOTYPES);
 }
 
 ProtoPtr page_mosaic_maker::getCurrentPrototype()
@@ -814,7 +937,7 @@ ProtoPtr page_mosaic_maker::getCurrentPrototype()
     if (row >= 0)
     {
         //qDebug() << "displayStyleParams row =" << row;
-        StylePtr style = getStyleIndex(row);
+        StylePtr style = getStyleRow(row);
         if (style)
         {
             proto = style->getPrototype();

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef GEO_H
-#define GEO_H
 
 #include <QPointF>
 #include <QLineF>
@@ -44,7 +42,7 @@ public:
 
     static bool     intersectPoly(QLineF line, const QPolygonF &bounds, QPointF &intersect);
 
-    static QPointF  normalize(QPointF & pt);
+    static QPointF  normalize(QPointF  pt);
     static void     normalizeD(QPointF & pt);
 
     static qreal    dot(QPointF & pt, QPointF & other );
@@ -96,7 +94,7 @@ public:
     static int      findLineCircleIntersections(QPointF centre,                qreal radius,       QLineF   line, QPointF & intersection1, QPointF & intersection2);
 
     static bool     pointInCircle(QPointF pt, Circle c);
-    static bool     pointOnCircle(QPointF pt, Circle c, qreal tolerance = Sys::NEAR_TOL);
+    static bool     pointOnCircle(QPointF pt, Circle c, qreal tolerance = Loose::NEAR_TOL);
     static QPointF  calculateEndPoint(const QPointF& pt, qreal angle, qreal distance);
 
     static int      circleIntersects(Circle c1, Circle c2);
@@ -135,17 +133,16 @@ public:
 
     static bool rectContains(const QRectF &rect, QPointF p);
 
-    static bool isColinearAndTouching(const EdgePoly & ep1, const EdgePoly & ep2, qreal tolerance = Sys::NEAR_TOL);
-    static bool isColinearAndTouching(const QLineF & l1, const QLineF & l2, qreal tolerance = Sys::NEAR_TOL);
+    static bool isColinearAndTouching(const EdgePoly & ep1, const EdgePoly & ep2, qreal tolerance = Loose::NEAR_TOL);
+    static bool isColinearAndTouching(const QLineF & l1, const QLineF & l2, qreal tolerance = Loose::NEAR_TOL);
     static bool isColinear(const QLineF & l1, const QLineF & l2, qreal tolerance);
 
+    static QPointF  rotatePoint(QPointF fp, QPointF pt, qreal a);
 private:
     static int      findLineCircleIntersections(qreal cx, qreal cy, qreal radius, QPointF point1, QPointF point2, QPointF & intersection1, QPointF & intersection2);
     static int      circleIntersects(qreal x1, qreal y1, qreal x2,  qreal y2, qreal r1, qreal r2);
     static void     circleTouchPt(qreal x0, qreal x1, qreal & x3,  qreal & x4, qreal y0, qreal y1, qreal & y3, qreal & y4, qreal r0, qreal r1);
-    static QPointF  rotatePoint(QPointF fp, QPointF pt, qreal a);
     static qreal    acossafe(qreal x);
 };
-#endif
 
 

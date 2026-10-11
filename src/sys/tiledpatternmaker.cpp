@@ -10,6 +10,8 @@
  *
  */
 
+#include <QApplication>
+#include <QTimer>
 #include "sys/tiledpatternmaker.h"
 #include "gui/map_editor/map_editor.h"
 #include "gui/panels/panel_page_controller.h"
@@ -17,6 +19,7 @@
 #include "gui/top/splash_screen.h"
 #include "gui/top/split_screen.h"
 #include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "legacy/design_maker.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/tiling_maker.h"
@@ -40,7 +43,6 @@ using std::make_shared;
 #include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_reader.h"
 #include "sys/sys/versioning.h"
-#include "model/tilings/tiling_manager.h"
 #include "sys/sys/fileservices.h"
 #endif
 
@@ -77,29 +79,36 @@ void TiledPatternMaker::slot_start()
     qDebug() << "memory management test complete";
 #endif
 
-    Sys::controlPanel->show();
-    Sys::controlPanel->setWindowState((Sys::controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-    Sys::controlPanel->raise();
-    Sys::controlPanel->activateWindow();
-
     if (Sys::splitter)
     {
         int width = Sys::controlPanel->width();
         Sys::splitter->setLHSWidth(width);
     }
+    else
+    {
+        Sys::systemViewController->showView();
+        Sys::systemViewController->raiseView();
 
-    Sys::viewController->showView();
-    Sys::viewController->raiseView();
+        Qt::WindowStates state = Sys::controlPanel->windowState();
+        if (state & Qt::WindowMinimized)
+        {
+            state &= ~Qt::WindowMinimized;
+            Sys::controlPanel->setWindowState(state);
+        }
+        Sys::controlPanel->show();
+
+        QTimer::singleShot(0, []() { Sys::controlPanel->raise(); Sys::controlPanel->activateWindow();} );
+    }
 
     // move template files if necessary
     FileServices::relocateTemplateFiles();
 
     connect(this, &TiledPatternMaker::sig_floatPages,      Sys::controlPanel->getPageController(), &PanelPageController::slot_floatPages,Qt::QueuedConnection);
     connect(this, &TiledPatternMaker::sig_subAttachPage,   Sys::controlPanel->getPageController(), &PanelPageController::slot_subAttachPage,Qt::QueuedConnection);
-    connect(this, &TiledPatternMaker::sig_reconstructView, Sys::viewController, &SystemViewController::slot_reconstructView);
-    connect(this, &TiledPatternMaker::sig_primaryDisplay,  this,                &TiledPatternMaker::slot_bringToPrimaryScreen, Qt::QueuedConnection);
+    connect(this, &TiledPatternMaker::sig_reconstructView, Sys::systemViewController,              &ViewController::slot_reconstructView);
+    connect(this, &TiledPatternMaker::sig_primaryDisplay,  this,                                   &TiledPatternMaker::slot_bringToPrimaryScreen, Qt::QueuedConnection);
 
-    connect(Sys::sysview,       &SystemView::sig_close,     this, &TiledPatternMaker::slot_stop);
+    connect(Sys::systemViewController->getView(),       &SystemView::sig_close,     this, &TiledPatternMaker::slot_stop);
     connect(Sys::controlPanel,  &ControlPanel::sig_close,   this, &TiledPatternMaker::slot_stop);
     connect(Sys::mapEditor,     &MapEditor::sig_close,      this, &TiledPatternMaker::slot_stop);
     connect(Sys::tilingMaker,   &TilingMaker::sig_close,    this, &TiledPatternMaker::slot_stop);
@@ -116,6 +125,10 @@ void TiledPatternMaker::slot_start()
     // get started - kick off
     if (Sys::config->autoLoadLast)
     {
+        // the loaders' "nothing shown yet" fallback (enabledGangCount() == 0) must not
+        // preempt the session's restored layer selection below in reEnableViewers()
+        Sys::startupAutoloading = true;
+
         switch(Sys::config->lastLoadedType)
         {
         case LT_MOSAIC:
@@ -123,7 +136,7 @@ void TiledPatternMaker::slot_start()
             VersionedFile vfile = FileServices::getFile(Sys::config->lastLoadedMosaic,FILE_MOSAIC);
             if (!vfile.isEmpty())
             {
-                Sys::mosaicMaker->loadMosaic(vfile);
+                Sys::mosaicMaker->load(vfile);
             }
         }   break;
 
@@ -132,7 +145,7 @@ void TiledPatternMaker::slot_start()
             VersionedFile vfile = FileServices::getFile(Sys::config->lastLoadedTiling,FILE_TILING);
             if (!vfile.isEmpty())
             {
-                Sys::tilingMaker->loadTiling(vfile,TILM_LOAD_SINGLE);
+                Sys::tilingMaker->loadTiling(vfile,TilingMaker::Event::LoadSingle);
             }
         }   break;
 
@@ -148,11 +161,13 @@ void TiledPatternMaker::slot_start()
         case LT_UNDEFINED:
             break;
         }
+
+        Sys::startupAutoloading = false;
     }
 
     // re-eanble lock status after auto-loads are complete
     Sys::config->lockView = oldPanelLock;    // restore
-    emit sig_lockStatus();
+    Sys::controlPanel->reEnableViewers();
 
     emit sig_reconstructView();
 
@@ -162,9 +177,7 @@ void TiledPatternMaker::slot_start()
         emit sig_primaryDisplay();
     }
 
-    Sys::splash->remove();
-
-    qInfo() << "TiledPatternMaker::slot_start" << " - started";
+    Sys::systemViewController->splash_remove();
 }
 
 TiledPatternMaker::~TiledPatternMaker()
@@ -275,38 +288,82 @@ const QString darkColors[QPalette::NColorRoles] = {
 
     if (Sys::isDarkTheme)
     {
+        // Base colors
         palette.setColor(QPalette::Window,          QColor(53, 53, 53));
         palette.setColor(QPalette::WindowText,      Qt::white);
         palette.setColor(QPalette::Base,            QColor(25, 25, 25));
         palette.setColor(QPalette::AlternateBase,   QColor(53, 53, 53));
-        palette.setColor(QPalette::ToolTipBase,     Qt::black);
-        palette.setColor(QPalette::ToolTipText,     Qt::white);
         palette.setColor(QPalette::Text,            Qt::white);
+        palette.setColor(QPalette::BrightText,      Qt::red);
         palette.setColor(QPalette::Button,          QColor(53, 53, 53));
         palette.setColor(QPalette::ButtonText,      Qt::white);
-        palette.setColor(QPalette::BrightText,      Qt::red);
         palette.setColor(QPalette::Link,            QColor(42, 130, 218));
-      //palette.setColor(QPalette::Highlight,       QColor(0x777777));
-        palette.setColor(QPalette::Highlight,       Qt::yellow);
-        palette.setColor(QPalette::HighlightedText, Qt::red);
+        palette.setColor(QPalette::LinkVisited,     QColor(100, 80, 180));
+
+        // Tooltip
+        palette.setColor(QPalette::ToolTipBase,     QColor(42, 42, 42));
+        palette.setColor(QPalette::ToolTipText,     Qt::white);
+
+        // Highlight
+        palette.setColor(QPalette::Highlight,       Qt::yellow);    //QColor(42, 130, 218));
+        palette.setColor(QPalette::HighlightedText, Qt::red);       //Qt::white);
+
+        // Shading / borders
+        palette.setColor(QPalette::Light,           QColor(70, 70, 70));
+        palette.setColor(QPalette::Midlight,        QColor(65, 65, 65));
+        palette.setColor(QPalette::Mid,             QColor(40, 40, 40));
+        palette.setColor(QPalette::Dark,            QColor(35, 35, 35));
+        palette.setColor(QPalette::Shadow,          QColor(20, 20, 20));
+
+        // Disabled state
+        palette.setColor(QPalette::Disabled, QPalette::WindowText,      QColor(127, 127, 127));
+        palette.setColor(QPalette::Disabled, QPalette::Text,            QColor(127, 127, 127));
+        palette.setColor(QPalette::Disabled, QPalette::ButtonText,      QColor(127, 127, 127));
+        palette.setColor(QPalette::Disabled, QPalette::Highlight,       QColor(80, 80, 80));
+        palette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(127, 127, 127));
+        palette.setColor(QPalette::Disabled, QPalette::Base,            QColor(40, 40, 40));
+        palette.setColor(QPalette::Disabled, QPalette::Button,          QColor(40, 40, 40));
     }
     else
     {
         // reverse engineered
+        // Light theme (Fusion-based)
         palette.setColor(QPalette::Window,          QColor(0xf0f0f0));
         palette.setColor(QPalette::WindowText,      Qt::black);
         palette.setColor(QPalette::Base,            Qt::white);
         palette.setColor(QPalette::AlternateBase,   QColor(0xe9e7e3));
-        palette.setColor(QPalette::ToolTipBase,     QColor(0xffffdc));
-        palette.setColor(QPalette::ToolTipText,     Qt::black);
         palette.setColor(QPalette::Text,            Qt::black);
+        palette.setColor(QPalette::BrightText,      Qt::white);
         palette.setColor(QPalette::Button,          QColor(0xf0f0f0));
         palette.setColor(QPalette::ButtonText,      Qt::black);
-        palette.setColor(QPalette::BrightText,      Qt::white);
-      //palette.setColor(QPalette::Link,            QColor(0x0000ff));
-        palette.setColor(QPalette::Link,            QColor(0x258292));
-        palette.setColor(QPalette::Highlight,       Qt::yellow);
-        palette.setColor(QPalette::HighlightedText, Qt::red);
+
+        // Tooltip — keep the classic pale yellow, it's correct for light
+        palette.setColor(QPalette::ToolTipBase,     QColor(0xffffdc));
+        palette.setColor(QPalette::ToolTipText,     Qt::black);
+
+        // Links
+        palette.setColor(QPalette::Link,            QColor(0x0000cc));
+        palette.setColor(QPalette::LinkVisited,     QColor(0x551a8b));
+
+        // Highlight — replace yellow/red with something standard
+        palette.setColor(QPalette::Highlight,       Qt::yellow);        //QColor(0x0078d7));  // Windows-style blue
+        palette.setColor(QPalette::HighlightedText, Qt::red);           //Qt::white);
+
+        // Shading / borders (these give buttons and frames their 3D look)
+        palette.setColor(QPalette::Light,           Qt::white);
+        palette.setColor(QPalette::Midlight,        QColor(0xe3e3e3));
+        palette.setColor(QPalette::Mid,             QColor(0xa0a0a0));
+        palette.setColor(QPalette::Dark,            QColor(0xa0a0a0));
+        palette.setColor(QPalette::Shadow,          QColor(0x696969));
+
+        // Disabled group — very important for greyed-out widgets
+        palette.setColor(QPalette::Disabled, QPalette::WindowText,      QColor(0xa0a0a0));
+        palette.setColor(QPalette::Disabled, QPalette::Text,            QColor(0xa0a0a0));
+        palette.setColor(QPalette::Disabled, QPalette::ButtonText,      QColor(0xa0a0a0));
+        palette.setColor(QPalette::Disabled, QPalette::Highlight,       QColor(0xc0c0c0));
+        palette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(0xa0a0a0));
+        palette.setColor(QPalette::Disabled, QPalette::Base,            QColor(0xf0f0f0));
+        palette.setColor(QPalette::Disabled, QPalette::Button,          QColor(0xf0f0f0));
     }
 
     QApplication::setPalette(palette);
@@ -314,24 +371,8 @@ const QString darkColors[QPalette::NColorRoles] = {
 
 void TiledPatternMaker::slot_bringToPrimaryScreen()
 {
-    QScreen * primary = qApp->primaryScreen();
-
-    QWindow * wh = Sys::viewController->windowHandle();
-    if (wh)
-    {
-        wh->setScreen(primary);
-
-        Sys::viewController->move(primary->geometry().center() - Sys::viewController->viewRect().center());
-        Sys::viewController->setWindowState((Sys::viewController->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-        Sys::viewController->raiseView();  // for MacOS
-        Sys::viewController->activateWindow();  // for windows
-
-        Sys::controlPanel->move(primary->geometry().center() - Sys::viewController->viewRect().center());
-        Sys::controlPanel->setWindowState((Sys::controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-        Sys::controlPanel->raise();  // for MacOS
-        Sys::controlPanel->activateWindow();  // for windows
-    }
-
+    Sys::systemViewController->bringToPrimaryScreen();
+    Sys::controlPanel->bringToPrimaryScreen();
     emit sig_imageToPrimary();
 }
 
@@ -341,13 +382,10 @@ void TiledPatternMaker::testMemoryManagement()
     Sys::dumpRefs();
 
     // test tiling
-    TilingManager  * tm = new TilingManager;
     VersionedName vn("12-6-Trigon");
     VersionedFile vf = FileServices::getFile(vn, FILE_TILING);
-    TilingPtr tp = tm->loadTiling(vf,TILM_LOAD_FROM_MOSAIC);
-    Sys::dumpRefs();
-
-    delete tm;
+    QString failMsg;
+    TilingPtr tp = Sys::tilingMaker->readTiling(vf,failMsg);
     Sys::dumpRefs();
 
     tp.reset();

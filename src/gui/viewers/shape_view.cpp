@@ -1,8 +1,9 @@
 #include <QPainter>
 #include "gui/viewers/shape_view.h"
 #include "legacy/shapes.h"
+#include "sys/sys.h"
 
-LegacyShapeViewer::LegacyShapeViewer() : Layer(VIEW_LEGACY,PRIMARY,"ShapeViewer")
+LegacyShapeViewer::LegacyShapeViewer() : Layer(Type::LegacyDesign,Model::Primary,ZLevel::Standard_Z0,"ShapeViewer")
 {
     _antiAliasPolys  = true;
 }

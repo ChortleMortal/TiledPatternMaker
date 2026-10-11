@@ -15,17 +15,17 @@ bool Loose::equals(qreal a, qreal b, qreal tolerance)
 
 bool Loose::lessThan(qreal a, qreal b)
 {
-    return a < (b + Sys::TOL);
+    return a < (b + Loose::TOL);
 }
 
 bool Loose::greaterThan(qreal a, qreal b)
 {
-    return a > (b - Sys::TOL);
+    return a > (b - Loose::TOL);
 }
 
 bool Loose::equalsPt( QPointF a, QPointF b )
 {
-    return Geo::dist2(a, b ) < Sys::TOL;   // DAC - was TOL2
+    return Geo::dist2(a, b ) < Loose::TOL;   // DAC - was TOL2
 }
 
 bool Loose::Near( qreal a, qreal tolerance )
@@ -40,7 +40,7 @@ bool Loose::Near( QPointF a, QPointF b, qreal tolerance )
 
 bool Loose::zero( QPointF a )
 {
-    return Geo::mag2(a) < Sys::TOL2;
+    return Geo::mag2(a) < Loose::TOL2;
 }
 
 bool Loose::zero( qreal a, qreal tolerance)

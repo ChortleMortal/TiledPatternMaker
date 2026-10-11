@@ -1,5 +1,4 @@
-#ifndef IMAGEENGINE_H
-#define IMAGEENGINE_H
+#pragma once
 
 #include <QObject>
 #include <QKeyEvent>
@@ -24,7 +23,7 @@ public:
     void    compareBMPs(VersionedName & nameA,  VersionedName & nameB);
     void    compareBMPs(VersionedFile & fileA,  VersionedFile & fileB);
     void    compareBMPwithLoaded(VersionedName & name);
-    void    compareImages(QImage & imgA, QImage & imgB, VersionedFile & fileA, VersionedFile & fileB);
+    void    compareImages(QImage & imgA, QImage & imgB, VersionedFile & fileA, VersionedFile & fileB, bool popupResult = false);
     void    showBMP(VersionedName & name);
 
     static QPixmap createTransparentPixmap(QImage img);
@@ -83,6 +82,7 @@ private:
     void          viewPixmap            (QPixmap & pixmap,QString title);
     ImageWidget * popupPixmap     (const QPixmap & pixmap,QString title);
     ImageWidget * popupTransparentPixmap(QPixmap & pixmap,QString title);
+    ImageWidget * popupComparisonPixmaps(QImage & imgA, QImage & imgB, QImage & imgDiff, QString titleA, QString titleB);
 
     Configuration       * config;
     QTimer              * timer;
@@ -100,5 +100,3 @@ private:
 
     static qreal popupScale;
 };
-
-#endif // IMAGEENGINE_H

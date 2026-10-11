@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Mon Apr 17 2023 10:52:16 -->
-<vector id="1" version="14">
+<!-- Written: Mon May 25 2026 19:02:08 -->
+<vector id="1" version="33">
 	<designNotes>with inserts</designNotes>
 	<design>
 		<size>
@@ -15,20 +15,20 @@
 		<Fill singleton="f">-7,7,-8,7</Fill>
 	</design>
 	<style.Filled id="2">
+		<algorithm>3</algorithm>
 		<toolkit.GeoLayer>
-			<left__delta>253.72</left__delta>
-			<top__delta>-82.28</top__delta>
+			<left__delta>132.1428571428571</left__delta>
+			<top__delta>-553.5714285714294</top__delta>
 			<width__delta>0.2799999999999998</width__delta>
 			<theta__delta>2.094395102393195e-17</theta__delta>
-			<center>-4.013333333333333,-1.346666666666668</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype id="3">
 				<app.Prototype>
-					<string>Bird.v7</string>
+					<Tiling>Bird.v7</Tiling>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -41,7 +41,7 @@
 								<Curve convex="f">
 									<Point reference="7" />
 									<Point id="8">-2.74538414090221,0.160000000000001</Point>
-									<Center>-2.111409544686649,2.526025403784438</Center>
+									<Center>-5.111409544686646,0.7939745962155644</Center>
 								</Curve>
 								<Curve convex="t">
 									<Point reference="8" />
@@ -51,7 +51,7 @@
 								<Curve convex="f">
 									<Point reference="9" />
 									<Point id="10">0.7187174742355442,0.1599999999999997</Point>
-									<Center>-1.647307929548895,-0.47397459621556</Center>
+									<Center>1.352692070451104,-2.20602540378444</Center>
 								</Curve>
 								<Curve convex="t">
 									<Point reference="10" />
@@ -61,20 +61,18 @@
 								<Curve convex="f">
 									<Point reference="11" />
 									<Point reference="6" />
-									<Center>0.7187174742355449,1.427949192431122</Center>
+									<Center>0.7187174742355471,4.892050807568875</Center>
 								</Curve>
 							</edges>
-						</tile.Feature>
-						<IrregularNoMotif id="12" type="MOTIF_TYPE_IRREGULAR_NO_MAP">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<NoMotif id="12" type="No Motif (Empty)">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>10</n>
-						</IrregularNoMotif>
+						</NoMotif>
 					</entry>
 					<entry>
-						<tile.Feature id="13">
+						<Tile id="13">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -87,7 +85,7 @@
 								<Curve convex="f">
 									<Point reference="16" />
 									<Point id="17">-2.74538414090221,0.160000000000001</Point>
-									<Center>-2.111409544686649,2.526025403784438</Center>
+									<Center>-5.111409544686646,0.7939745962155644</Center>
 								</Curve>
 								<Curve convex="t">
 									<Point reference="17" />
@@ -97,7 +95,7 @@
 								<Curve convex="f">
 									<Point reference="18" />
 									<Point id="19">0.7187174742355442,0.1599999999999997</Point>
-									<Center>-1.647307929548895,-0.47397459621556</Center>
+									<Center>1.352692070451104,-2.20602540378444</Center>
 								</Curve>
 								<Curve convex="t">
 									<Point reference="19" />
@@ -107,20 +105,18 @@
 								<Curve convex="f">
 									<Point reference="20" />
 									<Point reference="15" />
-									<Center>0.7187174742355449,1.427949192431122</Center>
+									<Center>0.7187174742355471,4.892050807568875</Center>
 								</Curve>
 							</edges>
-						</tile.Feature>
-						<IrregularNoMotif id="21" type="MOTIF_TYPE_IRREGULAR_NO_MAP">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<NoMotif id="21" type="No Motif (Empty)">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>10</n>
-						</IrregularNoMotif>
+						</NoMotif>
 					</entry>
 					<entry>
-						<tile.Feature id="22">
+						<Tile id="22">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -150,72 +146,61 @@
 									<Point reference="24" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<ConnectStar id="30">
-							<child class="app.Star" id="31">
-								<boundarySides>6</boundarySides>
-								<boundaryScale>1</boundaryScale>
-								<figureScale>1</figureScale>
-								<r>0</r>
-								<n>6</n>
-								<d>2</d>
-								<s>1</s>
-							</child>
-							<s>1</s>
-						</ConnectStar>
-					</entry>
-					<entry>
-						<tile.Feature id="32">
-							<regular>true</regular>
-							<rotation>0</rotation>
-							<scale>1</scale>
-							<edges id="33">
-								<Line>
-									<Point id="34">1,0.5773502691896256</Point>
-									<Point id="35">7.070501591499379e-17,1.154700538379251</Point>
-								</Line>
-								<Line>
-									<Point reference="35" />
-									<Point id="36">-0.9999999999999998,0.5773502691896261</Point>
-								</Line>
-								<Line>
-									<Point reference="36" />
-									<Point id="37">-1,-0.5773502691896254</Point>
-								</Line>
-								<Line>
-									<Point reference="37" />
-									<Point id="38">-2.121150477449814e-16,-1.154700538379251</Point>
-								</Line>
-								<Line>
-									<Point reference="38" />
-									<Point id="39">0.9999999999999997,-0.5773502691896263</Point>
-								</Line>
-								<Line>
-									<Point reference="39" />
-									<Point reference="34" />
-								</Line>
-							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="40" type="MOTIF_TYPE_EXPLCIT_TILE">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<Star id="30">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>6</n>
-						</app.ExplicitFeature>
+							<Extender extRays="f" extTips2B="f" extTips2T="f" conRays="0" stellation="1" embedBound="f" embedTile="f" fitToTile="t">
+								<boundarySides>6</boundarySides>
+								<boundaryScale>1</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
+							<d>2</d>
+							<s>1</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="31">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="32">
+								<Line>
+									<Point id="33">1,0.5773502691896256</Point>
+									<Point id="34">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="34" />
+									<Point id="35">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="35" />
+									<Point id="36">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point id="37">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="37" />
+									<Point id="38">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="38" />
+									<Point reference="33" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="39" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 				</app.Prototype>
 			</prototype>
 		</style.Style>
-		<ColorBlacks>
-			<color hide="f">#ffa35807</color>
-			<color hide="f">#ff382310</color>
-			<color hide="f">#ff234b30</color>
-			<color hide="f">#ff1840b2</color>
-		</ColorBlacks>
-		<ColorWhites>
-			<color hide="f">#ffc2bcb0</color>
-		</ColorWhites>
 		<ColorGroup>
 			<Group hideSet="f">
 				<color hide="f">#ffc59c0c</color>
@@ -224,23 +209,21 @@
 				<color hide="f">#ffc2bcb0</color>
 			</Group>
 		</ColorGroup>
-		<style.Filled>
-			<draw__inside>false</draw__inside>
-			<draw__outside>true</draw__outside>
-			<algorithm>3</algorithm>
-		</style.Filled>
 	</style.Filled>
-	<style.TileColors id="41">
+	<style.TileColors id="40">
 		<toolkit.GeoLayer>
-			<left__delta>253.72</left__delta>
-			<top__delta>-82.28</top__delta>
+			<left__delta>132.1428571428571</left__delta>
+			<top__delta>-553.5714285714294</top__delta>
 			<width__delta>0.2799999999999998</width__delta>
 			<theta__delta>2.094395102393195e-17</theta__delta>
-			<center>-4.013333333333333,-1.346666666666668</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype reference="3" />
 		</style.Style>
+		<BkgdColors>#a35807,#234b30,#a35807,#234b30</BkgdColors>
+		<BkgdColors>#c2bcb0</BkgdColors>
+		<BkgdColors>#c2bcb0</BkgdColors>
+		<BkgdColors>#c2bcb0</BkgdColors>
 	</style.TileColors>
 </vector>

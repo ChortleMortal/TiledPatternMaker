@@ -1,5 +1,4 @@
-#ifndef MOSAIC_STEPPING_ENGINE_H
-#define MOSAIC_STEPPING_ENGINE_H
+#pragma once
 
 #include "sys/engine/stepping_engine.h"
 
@@ -19,8 +18,5 @@ public:
 protected:
     bool    mImmediate;
 };
-
-
-#endif
 
 

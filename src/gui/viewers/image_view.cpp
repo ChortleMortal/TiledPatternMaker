@@ -3,7 +3,8 @@
 #include <QMenu>
 
 #include "gui/viewers/image_view.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
+#include "sys/sys.h"
 
 #ifdef __linux__
 #include "model/settings/configuration.h"
@@ -11,10 +12,9 @@
 #endif
 
 // An ImageViewer (based on QObject) takes a QPixmap and is added to the View
-ImageViewer::ImageViewer() : LayerController(VIEW_BMP_IMAGE,PRIMARY,"Image Viewer")
+ImageViewer::ImageViewer() : LayerController(Type::BMPImage,Model::Primary,ZLevel::Image_Z1,"Image Viewer")
 {
-    setZLevel(IMAGE_ZLEVEL);
-    connect(this, &ImageViewer::sig_reconstructView, viewControl(),    &SystemViewController::slot_reconstructView);
+    connect(this, &ImageViewer::sig_reconstructView, viewControl(),    &ViewController::slot_reconstructView);
 }
 
 void ImageViewer::load(QPixmap & pm)

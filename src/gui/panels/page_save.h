@@ -1,7 +1,9 @@
 ﻿#pragma once
-#ifndef PAGE_SAVE_H
-#define PAGE_SAVE_H
 
+#include <QCheckBox>
+#include <QComboBox>
+#include <QLabel>
+#include <QTextEdit>
 #include "gui/panels/panel_page.h"
 
 typedef std::shared_ptr<class Tiling> TilingPtr;
@@ -36,7 +38,8 @@ protected:
     void createMosaicSave();
     void createTilingSave();
     bool saveTiling();
-    void savePixmap(QPixmap & pixmap, QString name);
+    bool askCleanseMaps(const QStringList & unverifiedMaps);
+    void saveImage(QImage & image, QString name);
     void selectTiling(TilingPtr tiling);
 
 private:
@@ -47,5 +50,6 @@ private:
     QTextEdit   * tile_desc;
     QLineEdit   * tile_author;
     QLabel      * requiresSave;
+    QCheckBox   * chkSaveBkgd;
+    QString       lastMosaicName;
 };
-#endif

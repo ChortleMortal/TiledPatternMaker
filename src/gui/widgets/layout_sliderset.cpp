@@ -11,35 +11,44 @@ AQSpinBox::AQSpinBox() : QSpinBox()
     blocked = false;
     setAlignment(Qt::AlignRight);
     setKeyboardTracking(false);
-
-    QPalette palette             = this->palette();
-    QPalette::ColorRole role    = backgroundRole();
-    QColor backgroundColor      = palette.color(role);
-    QString backgroundColorName = backgroundColor.name(QColor::HexRgb);
+    setFocusPolicy(Qt::StrongFocus);
 }
 
-void AQSpinBox::leaveEvent(QEvent *event)
+void AQSpinBox::focusInEvent(QFocusEvent *event)
 {
-    if (isReadOnly()) return;
-    blocked = false;
+    if (!isReadOnly())
+    {
+        blocked = true;
 
-    QString styleSheet = QString("background-color: %1;").arg(backgroundColorName);
-    setStyleSheet(styleSheet);
+        if (Sys::isDarkTheme)
+            setStyleSheet("background-color: #22b895");
+        else
+            setStyleSheet("background-color:yellow");
+    }
 
-    QSpinBox::leaveEvent(event);
+    QSpinBox::focusInEvent(event);
 }
 
-void  AQSpinBox::enterEvent(QEnterEvent *event)
+void AQSpinBox::focusOutEvent(QFocusEvent *event)
 {
-    if (isReadOnly()) return;
-    blocked = true;
+    if (!isReadOnly())
+    {
+        blocked = false;
+        setStyleSheet("");
+    }
 
-    if (Sys::isDarkTheme)
-        setStyleSheet("background-color: #22b895");
-    else
-        setStyleSheet("background-color:yellow");
+    QSpinBox::focusOutEvent(event);
+}
 
-    QSpinBox::enterEvent(event);
+void AQSpinBox::wheelEvent(QWheelEvent *event)
+{
+    if (!hasFocus())
+    {
+        event->ignore();
+        return;
+    }
+
+    QSpinBox::wheelEvent(event);
 }
 
 void AQSpinBox::setValue(int val)
@@ -52,44 +61,84 @@ void AQSpinBox::setValue(int val)
 }
 
 //
+// FullPrecisionDoubleSpinBox
+//
+
+FullPrecisionDoubleSpinBox::FullPrecisionDoubleSpinBox(QWidget *parent) : QDoubleSpinBox(parent)
+{
+    displayDecimals = 8;
+    setDecimals(16);    // stored precision; display uses displayDecimals
+}
+
+void FullPrecisionDoubleSpinBox::setDisplayDecimals(int val)
+{
+    displayDecimals = val;
+    setDecimals(decimals());    // refreshes text and size hint
+}
+
+QString FullPrecisionDoubleSpinBox::textFromValue(double val) const
+{
+    QString str = locale().toString(val, 'f', displayDecimals);
+    if (!isGroupSeparatorShown())
+        str.remove(locale().groupSeparator());
+    return str;
+}
+
+double FullPrecisionDoubleSpinBox::valueFromText(const QString & text) const
+{
+    // unedited display text maps back to the full-precision value
+    if (text == textFromValue(value()))
+        return value();
+    return QDoubleSpinBox::valueFromText(text);
+}
+
+//
 // AQDoubleSpinBox
 //
 
-AQDoubleSpinBox::AQDoubleSpinBox(QWidget *parent) : QDoubleSpinBox(parent)
+AQDoubleSpinBox::AQDoubleSpinBox(QWidget *parent) : FullPrecisionDoubleSpinBox(parent)
 {
     blocked = false;
-    setDecimals(8);
     setAlignment(Qt::AlignRight);
     setKeyboardTracking(false);
-
-    QPalette palette             = this->palette();
-    QPalette::ColorRole role    = backgroundRole();
-    QColor backgroundColor      = palette.color(role);
-    QString backgroundColorName = backgroundColor.name(QColor::HexRgb);
+    setFocusPolicy(Qt::StrongFocus);
 }
 
-void  AQDoubleSpinBox::leaveEvent(QEvent *event)
+void AQDoubleSpinBox::focusInEvent(QFocusEvent *event)
 {
-    if (isReadOnly()) return;
-    blocked = false;
+    if (!isReadOnly())
+    {
+        blocked = true;
 
-    QString styleSheet = QString("background-color: %1;").arg(backgroundColorName);
-    setStyleSheet(styleSheet);
+        if (Sys::isDarkTheme)
+            setStyleSheet("background-color: #22b895");
+        else
+            setStyleSheet("background-color:yellow");
+    }
 
-    QDoubleSpinBox::leaveEvent(event);
+    FullPrecisionDoubleSpinBox::focusInEvent(event);
 }
 
-void AQDoubleSpinBox::enterEvent(QEnterEvent *event)
+void AQDoubleSpinBox::focusOutEvent(QFocusEvent *event)
 {
-    if (isReadOnly()) return;
-    blocked = true;
+    if (!isReadOnly())
+    {
+        blocked = false;
+        setStyleSheet("");
+    }
 
-    if (Sys::isDarkTheme)
-        setStyleSheet("background-color: #22b895");
-    else
-        setStyleSheet("background-color:yellow");
+    FullPrecisionDoubleSpinBox::focusOutEvent(event);
+}
 
-    QDoubleSpinBox::enterEvent(event);
+void AQDoubleSpinBox::wheelEvent(QWheelEvent *event)
+{
+    if (!hasFocus())
+    {
+        event->ignore();
+        return;
+    }
+
+    FullPrecisionDoubleSpinBox::wheelEvent(event);
 }
 
 void AQDoubleSpinBox::setValue(double val)
@@ -97,7 +146,7 @@ void AQDoubleSpinBox::setValue(double val)
     if  (blocked) return;
 
     blockSignals(true);
-    QDoubleSpinBox::setValue(val);
+    FullPrecisionDoubleSpinBox::setValue(val);
     blockSignals(false);
 }
 
@@ -105,17 +154,34 @@ void AQDoubleSpinBox::setValue(double val)
 // SpinSet
 //
 
-SpinSet::SpinSet(QString txt, int val, int min, int max, bool nostretch)
+SpinSet::SpinSet(QString txt, int val, int min, int max, bool nostretch, bool labelRight, bool resetToDefaults)
 {
+    if (resetToDefaults)
+    {
+        setAlignment(Qt::Alignment());   // remove forced alignment
+        setSpacing(-1);                  // restore default spacing
+        setContentsMargins(-1, -1, -1, -1);
+    }
+
     label = new QLabel(txt);
 
     spin = new AQSpinBox();
     spin->setRange(min,max);
     spin->setValue(val);
 
-    addWidget(label);
-    addSpacing(4);
-    addWidget(spin);
+    if (labelRight)
+    {
+        addWidget(spin);
+        addSpacing(4);
+        addWidget(label);
+    }
+    else
+    {
+        addWidget(label);
+        addSpacing(4);
+        addWidget(spin);
+    }
+
     if (nostretch == false)
         addStretch();
 
@@ -320,7 +386,7 @@ void DoubleSliderSet::setRange(qreal min, qreal max)
 
 void DoubleSliderSet::setPrecision(int val)
 {
-    spin->setDecimals(val);
+    spin->setDisplayDecimals(val);
 }
 
 

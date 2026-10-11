@@ -1,6 +1,4 @@
 #pragma once
-#ifndef E_FILL_MODE_H
-#define E_FILL_MODE_H
 
 #include <QString>
 
@@ -13,5 +11,3 @@ enum eRepeatType
     REPEAT_DEFINED,
     REPEAT_MAX = REPEAT_DEFINED
 };
-
-#endif // EMOTIFTYPE_H

@@ -1,5 +1,5 @@
 
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/geo_graphics.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/mosaics/mosaic.h"
@@ -21,9 +21,20 @@ TileColors::TileColors(ProtoPtr proto) : Style(proto)
 
 TileColors::TileColors(StylePtr other) : Style(other)
 {
-    outlineEnb = false;
-    outlineColor = Qt::blue;
-    outlineWidth = 3;
+    std::shared_ptr<TileColors> tc = std::dynamic_pointer_cast<TileColors>(other);
+    if (tc)
+    {
+        outlineEnb   = tc->outlineEnb;
+        outlineColor = tc->outlineColor;
+        outlineWidth = tc->outlineWidth;
+        colorGroup   = tc->colorGroup;
+    }
+    else
+    {
+        outlineEnb   = false;
+        outlineColor = Qt::blue;
+        outlineWidth = 3;
+    }
 }
 
 TileColors::~TileColors()
@@ -73,16 +84,17 @@ void TileColors::createStyleRepresentation()
     TilingPtr tiling          = prototype->getTiling();
     QVector<TilePtr> uniques  = tiling->unit().getUniqueTiles();
 
-    FillRegion flood(tiling.get(),getPrototype()->getMosaic()->getCanvasSettings().getFillData());
+    FillRegion flood(tiling.get(),prototype->getCanvas()->getFillData());
     Placements placements = flood.getPlacements(Sys::config->repeatMode);
+    QTransform distortion = prototype->getCanvas()->getDistorionTransform();
     qDebug() << "num placements   =" << placements.size();
 
-    const PlacedTiles tilingUnit = tiling->unit().getIncluded();
-    qDebug() << "num placed tiles=" << tilingUnit.size();
+    const PlacedTileSet tileSet = tiling->unit().getIncluded();
+    qDebug() << "num placed tiles=" << tileSet.size();
 
-    for (const PlacedTilePtr & placedTile : tilingUnit)
+    for (const PlacedTilePtr & placedTile : tileSet)
     {
-        const EdgePoly   ep = placedTile->getPlacedEdgePoly();
+        const EdgePoly   ep = placedTile->getWorldEdgePoly(distortion);
         TilePtr tile        = placedTile->getTile();
 
         uint tileIndex      = uniques.indexOf(tile);

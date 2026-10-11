@@ -1,6 +1,4 @@
 #pragma once
-#ifndef BORDER_PLAIN_H
-#define BORDER_PLAIN_H
 
 #include "sys/geometry/crop.h"
 #include "model/borders/border.h"
@@ -28,6 +26,4 @@ public:
 
     MapPtr  bmap;
 };
-
-#endif
 

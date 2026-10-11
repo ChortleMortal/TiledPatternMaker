@@ -1,6 +1,4 @@
 ﻿#pragma once
-#ifndef PANEL_PAGES_WIDGET_H
-#define PANEL_PAGES_WIDGET_H
 
 #include <QWidget>
 
@@ -14,5 +12,3 @@ public:
 
     void setCurrentPage(panel_page * pp);
 };
-
-#endif

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef PANEL_MISC_H
-#define PANEL_MISC_H
 
 #include <QVBoxLayout>
 #include <QStackedWidget>
@@ -53,14 +51,25 @@ public:
     AQTableWidget(QWidget *parent = nullptr);
 
     void    adjustTableSize(int maxWidth = 0, int maxHeight = 0);
+    void    adjustTableHeight(int maxHeight = 0);
     void    selectRow(int row);
+
+    void    setCapHeightToPanel(bool cap) { capHeightToPanel = cap; }
+
+protected:
+    void    showEvent(QShowEvent * event) override;
 
 private:
     void    adjustTableWidth(int maxWidth = 0);
-    void    adjustTableHeight(int maxHeight = 0);
+    void    readjustTableSize();
+    int     getPanelSpaceHeight();
 
     int     getTableWidth(int maxWidth);
     int     getTableHeight(int maxHeight);
+
+    bool    capHeightToPanel  = false;
+    int     lastMaxWidth      = 0;
+    int     lastMaxHeight     = 0;
 };
 
 class AQLineEdit : public QLineEdit
@@ -115,6 +124,11 @@ public:
     BQPushButton(const QString &text, QWidget * parent = nullptr);
 };
 
+class CQPushButton : public QPushButton
+{
+public:
+    CQPushButton(const QString &text, QWidget * parent = nullptr);
+};
 
 class AQCheckBox : public QCheckBox
 {
@@ -158,4 +172,3 @@ protected:
 private:
     QTableWidget *table;
 };
-#endif // MISC_H

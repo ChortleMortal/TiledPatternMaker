@@ -1,6 +1,4 @@
 #pragma once
-#ifndef STYLE_H
-#define STYLE_H
 
 #include "gui/viewers/layer_controller.h"
 #include "sys/enums/estyletype.h"
@@ -35,7 +33,7 @@ public:
     // Creation.
     Style(const ProtoPtr & proto);
     Style(const StylePtr & other);
-    Style(eModelType modelType, QString name);
+    Style(Layer::Model model, QString name);
 
     virtual ~Style();
 
@@ -63,7 +61,8 @@ public:
             void        paintToSVG();
             void        triggerPaintSVG(QSvgGenerator * generator) { this->generator = generator; paintSVG = true; }
 
-    virtual void        dump() const = 0;
+    virtual void dump() const = 0;
+
             QString     getInfo() const;
             QString     getDescription() const;
     virtual QString     layerName() override { return LayerController::layerName() + "-" + getDescription(); }
@@ -89,4 +88,3 @@ private:
     bool        paintSVG;
     QSvgGenerator * generator;
 };
-#endif

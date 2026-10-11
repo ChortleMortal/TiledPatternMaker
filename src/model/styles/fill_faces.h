@@ -1,6 +1,4 @@
 #pragma once
-#ifndef FILL_FACES_H
-#define FILL_FACES_H
 
 #include "model/styles/fill_color_maker.h"
 #include "model/styles/colorset.h"
@@ -51,6 +49,4 @@ public:
     FaceColorList               faceColorList;
     ColorSet                    palette;
 };
-
-#endif
 

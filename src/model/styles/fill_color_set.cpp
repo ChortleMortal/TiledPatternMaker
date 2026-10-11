@@ -103,8 +103,7 @@ void New2Coloring::draw(GeoGraphics *gg)
 
 QString New2Coloring::sizeInfo()
 {
-    QString astring("TODO");
-    return astring;
+    return QString("Faces:%1 Colors:%2").arg(faceGroup.size()).arg(colorSet.size());
 }
 
 void New2Coloring::buildFaceGroup(DCELPtr dcel,FaceSet & facesToDo, FaceGroup & faceGroup)

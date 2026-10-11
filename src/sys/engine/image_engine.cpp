@@ -3,10 +3,11 @@
 #include <QThread>
 #include <QMessageBox>
 #include <QScreen>
+#include <QFile>
 
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/image_view.h"
 #include "gui/widgets/image_widget.h"
 #include "gui/widgets/memory_combo.h"
@@ -38,14 +39,15 @@ ImageEngine::ImageEngine()
     tilingStepper     = new TilingStepper(this);      // steps thru list and loads tiling
     pngStepper        = new PNGStepper(this);         // steps thru exisitsng pngs (with timer)
 
-    connect(this, &ImageEngine::sig_reconstructView, Sys::viewController, &SystemViewController::slot_reconstructView);
-    connect(this, &ImageEngine::sig_updateView,      Sys::viewController, &SystemViewController::slot_updateView);
+    connect(this, &ImageEngine::sig_reconstructView, Sys::systemViewController, &ViewController::slot_reconstructView);
+    connect(this, &ImageEngine::sig_updateView,      Sys::systemViewController, &ViewController::slot_updateView);
 
-    connect(this,         &ImageEngine::sig_ready,            this,   &ImageEngine::sig_next, Qt::QueuedConnection);
-    connect(timer,        &QTimer::timeout,                   this,   &ImageEngine::sig_tick);
-    connect(Sys::sysview, &SystemView::sig_stepperEnd,        this,   &ImageEngine::sig_end);
-    connect(Sys::sysview, &SystemView::sig_stepperPause,      this,   &ImageEngine::sig_pause);
-    connect(Sys::sysview, &SystemView::sig_stepperKey,        this,   &ImageEngine::slot_stepperKey);
+    connect(this,         &ImageEngine::sig_ready,   this,   &ImageEngine::sig_next, Qt::QueuedConnection);
+    connect(timer,        &QTimer::timeout,          this,   &ImageEngine::sig_tick);
+
+    connect(Sys::systemViewController->getView(), &SystemView::sig_stepperEnd,        this,   &ImageEngine::sig_end);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_stepperPause,      this,   &ImageEngine::sig_pause);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_stepperKey,        this,   &ImageEngine::slot_stepperKey);
 
     timer->start(1000);
 }
@@ -60,7 +62,7 @@ ImageEngine::~ImageEngine()
     delete pngStepper;
 }
 
-void ImageEngine::compareImages(QImage & imgA, QImage & imgB, VersionedFile & fileA, VersionedFile & fileB)
+void ImageEngine::compareImages(QImage & imgA, QImage & imgB, VersionedFile & fileA, VersionedFile & fileB, bool popupResult)
 {
     qDebug() << "imgA" << imgA;
     qDebug() << "imgB" << imgB;
@@ -142,36 +144,58 @@ void ImageEngine::compareImages(QImage & imgA, QImage & imgB, VersionedFile & fi
     int h = qMin(imgA.height(),imgB.height());
     QImage result(QSize(w,h),imgA.format());
 
+    bool hicon = config->highContrastDiffs;
     for(int i=0; i<h; i++)
     {
-        QRgb *rgbLeft   = reinterpret_cast<QRgb*>(imgA.scanLine(i));
-        QRgb *rgbRigth  = reinterpret_cast<QRgb*>(imgB.scanLine(i));
-        QRgb *rgbResult = reinterpret_cast<QRgb*>(result.scanLine(i));
-        for( int j=0; j<w; j++)
+        QRgb *rgbLeft    = reinterpret_cast<QRgb*>(imgA.scanLine(i));
+        QRgb *rgbRight   = reinterpret_cast<QRgb*>(imgB.scanLine(i));
+        QRgb *rgbResult  = reinterpret_cast<QRgb*>(result.scanLine(i));
+        for (int j = 0; j < w; j++)
         {
-            rgbResult[j] = rgbLeft[j]-rgbRigth[j];
+            if (hicon)
+            {
+                rgbResult[j] = rgbLeft[j]-rgbRight[j];
+            }
+            else
+            {
+                QRgb a = rgbLeft[j];
+                QRgb b = rgbRight[j];
+
+                int dr = qAbs(qRed(a)   - qRed(b));
+                int dg = qAbs(qGreen(a) - qGreen(b));
+                int db = qAbs(qBlue(a)  - qBlue(b));
+
+                rgbResult[j] = qRgba(dr, dg, db, 255);   // force opaque so the diff is visible
+            }
         }
     }
 
-    // display differences
-    QPixmap pixmap;
-    pixmap.convertFromImage(result,Qt::NoFormatConversion);
-
-    QString title = QString("Image Differences (%1) (%2)").arg(fileA.getPathedName()).arg(fileB.getPathedName());
-    if (config->compare_popup)
+    if (popupResult)
     {
-        if (config->compare_transparent)
-        {
-            currentImgWidget = popupTransparentPixmap(pixmap, title);
-        }
-        else
-        {
-            currentImgWidget = popupPixmap(pixmap, title);
-        }
+        currentImgWidget = popupComparisonPixmaps(imgA,imgB,result,fileA.getVersionedName().get(),fileB.getVersionedName().get());
     }
     else
     {
-        viewPixmap(pixmap,title);
+        // display differences
+        QPixmap pixmap;
+        pixmap.convertFromImage(result,Qt::NoFormatConversion);
+
+        QString title = QString("Image Differences (%1) (%2)").arg(fileA.getPathedName()).arg(fileB.getPathedName());
+        if (config->compare_popup)
+        {
+            if (config->compare_transparent)
+            {
+                currentImgWidget = popupTransparentPixmap(pixmap, title);
+            }
+            else
+            {
+                currentImgWidget = popupPixmap(pixmap, title);
+            }
+        }
+        else
+        {
+            viewPixmap(pixmap,title);
+        }
     }
 }
 
@@ -182,8 +206,8 @@ void ImageEngine::compareBMPs(VersionedName & nameA, VersionedName & nameB)
     emit sig_image0(nameA.get());      // sets page_debug status
     emit sig_image1(nameB.get());     // sets page_debug status
 
-    VersionedFile left( MemoryCombo::getTextFor("leftDir")  + "/" + nameA.get()  + ".bmp");
-    VersionedFile right(MemoryCombo::getTextFor("rightDir") + "/" + nameB.get() + ".bmp");
+    VersionedFile left( MemoryCombo::getTextFor("leftDir")  + "/" + nameA.get() + ".png");
+    VersionedFile right(MemoryCombo::getTextFor("rightDir") + "/" + nameB.get() + ".png");
 
     if (nameA.isEmpty())
     {
@@ -195,8 +219,21 @@ void ImageEngine::compareBMPs(VersionedName & nameA, VersionedName & nameB)
         return;
     }
 
-    QImage img_left(left.getPathedName());
-    QImage img_right(right.getPathedName());
+    QString leftFilename = left.getPathedName();
+    if (!QFile::exists(leftFilename))
+    {
+        leftFilename.replace(".png",".bmp");
+        left.setFromFullPathname(leftFilename);
+    }
+    QImage img_left(leftFilename);
+
+    QString rightFilename = right.getPathedName();
+    if (!QFile::exists(rightFilename))
+    {
+        rightFilename.replace(".png",".bmp");
+        right.setFromFullPathname(rightFilename);
+    }
+    QImage img_right(rightFilename);
 
     compareImages(img_left,img_right,left,right);
 }
@@ -212,23 +249,41 @@ void ImageEngine::compareBMPs(VersionedFile & fileA, VersionedFile & fileB)
         return;
     }
 
-    QImage img_left(fileA.getPathedName());
-    QImage img_right(fileB.getPathedName());
+    QString filenameA = fileA.getPathedName();
+    if (!QFile::exists(filenameA))
+    {
+        filenameA.replace(".png",".bmp");
+        fileA.setFromFullPathname(filenameA);
+    }
+    QImage img_left(filenameA);
+
+    QString filenameB = fileB.getPathedName();
+    if (!QFile::exists(filenameB))
+    {
+        filenameB.replace(".png",".bmp");
+        fileB.setFromFullPathname(filenameB);
+    }
+    QImage img_right(filenameB);
 
     compareImages(img_left,img_right,fileA,fileB);
 }
 
 void ImageEngine::compareBMPwithLoaded(VersionedName & name)
 {
-    QPixmap pixmap    = Sys::viewController->grabView();  // do this first
-    QImage  img_right = pixmap.toImage();
+    QImage img_right    = Sys::systemViewController->paintToImage();  // do this first
 
     closeAllImageViewers();
 
     emit sig_image0(name.get());      // sets page_debug status
 
-    VersionedFile fileA(MemoryCombo::getTextFor("leftDir") + "/" + name.get()  + ".bmp");
+    VersionedFile fileA(MemoryCombo::getTextFor("leftDir") + "/" + name.get()  + ".png");
 
+    QString leftFilename = fileA.getPathedName();
+    if (!QFile::exists(leftFilename))
+    {
+        leftFilename.replace(".png",".bmp");
+        fileA.setFromFullPathname(leftFilename);
+    }
     QImage img_left(fileA.getPathedName());
 
     VersionedFile fileB;
@@ -242,7 +297,13 @@ void ImageEngine::showBMP(VersionedName & name)
 {
     emit sig_image0(name.get());
 
-    VersionedFile file(MemoryCombo::getTextFor("leftDir")  + "/" + name.get()  + ".bmp");
+    VersionedFile file(MemoryCombo::getTextFor("leftDir")  + "/" + name.get()  + ".png");
+    QString filename = file.getPathedName();
+    if (!QFile::exists(filename))
+    {
+        filename.replace(".png",".bmp");
+        file.setFromFullPathname(filename);
+    }
     QPixmap pm;
     pm.load(file.getPathedName());
     if (config->compare_popup)
@@ -333,6 +394,9 @@ void ImageEngine::view_image(VersionedFile & file)
 {
     Q_ASSERT(!file.isEmpty());
 
+    QString filename = file.getPathedName();
+    Q_ASSERT(filename.contains(".png") || filename.contains(".bmp"));
+
     QPixmap pm;
     if (config->compare_popup)
     {
@@ -341,19 +405,19 @@ void ImageEngine::view_image(VersionedFile & file)
             Q_ASSERT(config->compare_transparent);
             if (config->compare_filterColor)
             {
-                pm = createTransparentPixmap(QImage(file.getPathedName()));
+                pm = createTransparentPixmap(QImage(filename));
             }
             else
             {
-                pm.load(file.getPathedName());
+                pm.load(filename);
             }
 
-            popupTransparentPixmap(pm,file.getPathedName());
+            popupTransparentPixmap(pm,filename);
         }
         else
         {
-            pm.load(file.getPathedName());
-            popupPixmap(pm,file.getPathedName());
+            pm.load(filename);
+            popupPixmap(pm,filename);
         }
     }
     else
@@ -361,11 +425,11 @@ void ImageEngine::view_image(VersionedFile & file)
         Q_ASSERT(!config->compare_popup);
         if (config->compare_filterColor)
         {
-            pm = createTransparentPixmap(QImage(file.getPathedName()));
+            pm = createTransparentPixmap(QImage(filename));
         }
         else
         {
-            pm.load(file.getPathedName());
+            pm.load(filename);
         }
 
         viewPixmap(pm,file.getVersionedName().get());
@@ -375,13 +439,13 @@ void ImageEngine::view_image(VersionedFile & file)
 void ImageEngine::viewPixmap(QPixmap& pixmap, QString title)
 {
     Sys::imageViewer->load(pixmap);
-    Sys::viewController->setWindowTitle(title);
-    Sys::viewController->setSize(pixmap.size());
+    Sys::systemViewController->setWindowTitle(title);
+    Sys::systemViewController->setTakerViewSize(pixmap.size());
 
-    if (!Sys::viewController->isEnabled(VIEW_BMP_IMAGE))
+    if (!Sys::systemViewController->isEnabled(Layer::Type::BMPImage))
     {
         Sys::controlPanel->deselectGangedViewers();
-        Sys::controlPanel->delegateView(VIEW_BMP_IMAGE,true);
+        Sys::controlPanel->delegateView(Layer::Type::BMPImage,true);
         emit sig_reconstructView();
     }
     else
@@ -421,7 +485,7 @@ ImageWidget *  ImageEngine::popupPixmap(const QPixmap & pixmap,QString title)
         connect(widget, &ImageWidget::sig_closed,       this,   &ImageEngine::slot_imageWidgetClosed);
         connect(this,   &ImageEngine::sig_closeAll,     widget, &ImageWidget::slot_closeMe);
 
-        QSettings s;
+        QSettings s = Sys::settings();;
         QPoint pos = s.value("imageWidgetPos").toPoint();
         QScreen *screen = QGuiApplication::primaryScreen();
         QRect r = screen->availableGeometry();
@@ -441,6 +505,32 @@ ImageWidget *  ImageEngine::popupPixmap(const QPixmap & pixmap,QString title)
 #endif
     widget->setWindowTitle(title);
     widget->setContentSize(pixmap.size());
+    widget->show();
+    return widget;
+}
+
+ImageWidget * ImageEngine::popupComparisonPixmaps(QImage & imgA, QImage & imgB, QImage & imgDiff, QString titleA, QString titleB)
+{
+    qDebug() << "popupComparisonPixmaps" << titleA << titleB;
+
+    ImageWidget * widget;
+    if (currentImgWidget)
+    {
+        currentImgWidget->slot_closeMe();
+        currentImgWidget = nullptr;
+    }
+
+    widget =  new ComparedImageWidget(imgA,imgB,imgDiff,titleA,titleB);
+
+    QSettings s = Sys::settings();;
+    QPoint pos = s.value("imageWidgetPos").toPoint();
+    QScreen *screen = QGuiApplication::primaryScreen();
+    QRect r = screen->availableGeometry();
+    if (r.contains(pos))
+    {
+        widget->move(pos);
+    }
+
     widget->show();
     return widget;
 }
@@ -470,7 +560,7 @@ ImageWidget * ImageEngine::popupTransparentPixmap(QPixmap & pixmap,QString title
         connect(widget, &ImageWidget::sig_closed,     this,   &ImageEngine::slot_imageWidgetClosed);
         connect(this,   &ImageEngine::sig_closeAll,   widget, &ImageWidget::slot_closeMe);
 
-        QSettings s;
+        QSettings s = Sys::settings();
         QPoint pos = s.value("imageWidgetPos").toPoint();
         QScreen *screen = QGuiApplication::primaryScreen();
         QRect r = screen->availableGeometry();
@@ -518,7 +608,7 @@ void ImageEngine::closeAllImageViewers(bool force)
         emit sig_closeAll();
     }
     Sys::imageViewer->unloadLayerContent();
-    Sys::controlPanel->delegateView(VIEW_BMP_IMAGE,false);
+    Sys::controlPanel->delegateView(Layer::Type::BMPImage,false);
     Sys::lastViewTitle.clear();
     Sys::controlPanel->slot_poll();
 }

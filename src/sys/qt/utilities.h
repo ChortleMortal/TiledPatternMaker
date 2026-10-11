@@ -1,6 +1,4 @@
 #pragma once
-#ifndef UTILITIES_H
-#define UTILITIES_H
 
 #include <QString>
 #include <QPointF>
@@ -16,5 +14,3 @@ public:
     static qreal    aspectRatio(QSize  sz) { return (qreal)sz.width()/(qreal)sz.height(); }
     static qreal    aspectRatio(QSizeF sz) { return        sz.width()/       sz.height(); }
 };
-
-#endif

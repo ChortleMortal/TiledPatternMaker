@@ -1,29 +1,23 @@
 #pragma once
-#ifndef MAP_EDITOR_MAP_LOADER_H
-#define MAP_EDITOR_MAP_LOADER_H
 
+#include "gui/map_editor/map_editor_maps.h"
 #include "model/mosaics/mosaic_reader.h"
-#include "sys/enums/emapeditor.h"
 
 class MapEditorMapLoader : private MosaicReader
 {
+    using MapType = MapEditorMap::MapType;
+
 public:
     MapEditorMapLoader();
     ~MapEditorMapLoader();
 
-    MapPtr              loadMosaicMap(VersionedFile xfile);
+    MapPtr          loadMosaicMap(VersionedFile xfile);
 
-    Xform               getXform ()     { return _xf; }
-    eMapEditorMapType   getType()       { return maptype; }
-    QSize               getViewSize()   { return _viewSize; }
-    BkgdImagePtr        getBackground() { return _mosbip; }
-
-protected:
-    BkgdImagePtr        getBackgroundImage(xml_node & node);
+    Xform           getXform ()     { return _xf; }
+    MapType         getType()       { return maptype; }
+    QSize           getViewSize()   { return _viewSize; }
 
 private:
-    Xform               _xf;
-    eMapEditorMapType   maptype;
+    Xform           _xf;
+    MapType         maptype;
 };
-
-#endif

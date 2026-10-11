@@ -1,6 +1,4 @@
 #pragma once
-#ifndef SHAPEVIEWER_H
-#define SHAPEVIEWER_H
 
 #include <QPainterPath>
 #include "gui/viewers/layer.h"
@@ -29,5 +27,3 @@ protected:
     QPen            ppPen;
     QBrush          ppBrush;
 };
-
-#endif // SHAPEVIEWER_H

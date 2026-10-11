@@ -16,3 +16,4 @@ Tangle Diamonds.v1
 Tangle Diamonds.v2
 Test05
 TestConnectedRosette
+TestConnectedRosette.v1

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TILING_MOUSEACTIONS_H
-#define TILING_MOUSEACTIONS_H
 
 #include <QString>
 #include <QPointF>
@@ -43,8 +41,8 @@ protected:
     QPointF                 wLastDrag;   // screen point
     PlacedTileSelectorPtr   selection;
     QColor                  drag_color;
-
-    TilingMaker       * tilingMaker;
+    bool                    cancel;
+    TilingMaker           * tilingMaker;
 
 private:
 };
@@ -71,7 +69,9 @@ private:
 class DrawTranslation : public TilingMouseAction
 {
 public:
-    DrawTranslation(PlacedTileSelectorPtr sel, QPointF spt , QPen apen);
+    // sel is the tile selector at the origin, or null if the origin came from a construction-line
+    // snap instead - originPt is the already-resolved origin point either way.
+    DrawTranslation(PlacedTileSelectorPtr sel, QPointF originPt, QPointF spt , QPen apen);
     void updateDragging( QPointF spt ) override;
     void draw( GeoGraphics* g2d ) override;
     void endDragging(QPointF spt) override;
@@ -91,10 +91,13 @@ public:
 
 protected:
     virtual bool snapTo(QPointF spt);
+    bool         snapToGrid(QPointF spt);
+    void         moveSelectionTo(QPointF toP);
     QTransform   matchLineSegment(QPointF p, QPointF q);
     QTransform   matchTwoSegments(QPointF p1, QPointF q1, QPointF p2, QPointF q2);
 
-    bool snapped;
+    bool    snapped;
+    QPointF startPoint;     // selected point before dragging
 };
 
 class JoinMidPoint : public JoinEdge
@@ -237,4 +240,51 @@ protected:
 
     QVector<QPointF> intersectPoints;
 };
-#endif
+
+// extends/shortens the nearer endpoint of an already-selected construction line by dragging -
+// the line's angle is preserved, only its length changes. A nearby snap candidate (tile vertex,
+// tile edge, another construction line's endpoint/midpoint) only snaps the length if it already
+// lies close to the fixed extension axis - snapping never bends the line off-angle.
+class TilingExtendConstructionLine : public TilingMouseAction
+{
+public:
+    enum class LengthSnapState { None, Near, Match };
+
+    TilingExtendConstructionLine(int lineIndex, int endpoint, QPointF spt);
+
+    void updateDragging(QPointF spt) override;
+    void endDragging( QPointF spt) override;
+    void draw(GeoGraphics * painter) override;
+
+protected:
+    QPointF newEndpoint(QPointF spt);
+
+    int             lineIndex;
+    int             endpoint;      // 0 = p1, 1 = p2
+    QLineF          originalLine;
+    QPointF         anchor;         // the endpoint NOT being dragged - fixed
+    QPointF         direction;      // unit vector anchor -> dragged endpoint, held fixed
+    QPointF         currentPt;
+    LengthSnapState snapState;
+};
+
+// moves one endpoint of an already-selected construction line freely - the other endpoint
+// stays put, so both angle and length change. Snaps to the same candidates as drawing a new line.
+class TilingMoveConstructionEndpoint : public TilingMouseAction
+{
+public:
+    TilingMoveConstructionEndpoint(int lineIndex, int endpoint, QPointF spt);
+
+    void updateDragging(QPointF spt) override;
+    void endDragging( QPointF spt) override;
+    void draw(GeoGraphics * painter) override;
+
+protected:
+    void moveTo(QPointF spt);
+
+    int             lineIndex;
+    int             endpoint;      // 0 = p1, 1 = p2
+    QLineF          originalLine;
+    QPointF         currentPt;
+    bool            snapped;
+};

@@ -1,12 +1,9 @@
-#ifdef __linux__
-#include <cfloat>
-#endif
-
 #include "gui/viewers/geo_graphics.h"
 #include "sys/geometry/arcdata.h"
 #include "sys/geometry/geo.h"
 #include "sys/geometry/neighbour_map.h"
 #include "sys/geometry/threads.h"
+#include "model/styles/casing.h"
 #include "model/styles/casing_neighbours.h"
 #include "model/styles/interlace.h"
 
@@ -252,7 +249,29 @@ void InterlaceSide::underSide1(const EdgePtr & edge, qreal width)
     else
     {
         Q_ASSERT(edge->isCurve());
-        mid = QLineF(inner, outer).center();
+        // The under strand's mid belongs where the two flanking casings'
+        // own inner boundaries meet - not this casing's own outer/inner
+        // chord (no geometric relationship to the vertex), and not the raw
+        // map vertex either (that's the full-width crossing point, not the
+        // tip of the notched under strand).
+        if (ba.before->isCurve() && ba.after->isCurve())
+        {
+            Casing * beforeCasing = cneighbours->getCasing(ba.before);
+            Casing * afterCasing  = cneighbours->getCasing(ba.after);
+            QPointF newMid;
+            if (Geo::getCircleCircleIsect(beforeCasing->outerCircle, afterCasing->outerCircle, mid, newMid))
+            {
+                mid = newMid;
+            }
+            else
+            {
+                mid = QLineF(inner, outer).center();
+            }
+        }
+        else
+        {
+            mid = QLineF(inner, outer).center();
+        }
     }
 
     shadow = true;
@@ -321,7 +340,25 @@ void InterlaceSide::underSide2(const EdgePtr & edge, qreal width)
     else
     {
         Q_ASSERT(edge->isCurve());
-        mid = QLineF(inner, outer).center();
+        // See the matching comment in underSide1.
+        if (ba.before->isCurve() && ba.after->isCurve())
+        {
+            Casing * beforeCasing = cneighbours->getCasing(ba.before);
+            Casing * afterCasing  = cneighbours->getCasing(ba.after);
+            QPointF newMid;
+            if (Geo::getCircleCircleIsect(beforeCasing->innerCircle, afterCasing->innerCircle, mid, newMid))
+            {
+                mid = newMid;
+            }
+            else
+            {
+                mid = QLineF(inner, outer).center();
+            }
+        }
+        else
+        {
+            mid = QLineF(inner, outer).center();
+        }
     }
 
     shadow = true;

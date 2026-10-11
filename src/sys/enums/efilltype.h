@@ -1,6 +1,4 @@
 #pragma once
-#ifndef EFILLTYPE_H
-#define EFILLTYPE_H
 
 #include <QString>
 
@@ -15,5 +13,3 @@ enum eFillType
     DEPRECATED_FILL_FACE_DIRECT  = 4,    // DEPRECATED
     FILL_FACE_DIRECT             = 5
 };
-
-#endif // EFILLTYPE_H

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef FILL_NEW1
-#define GFILL_NEW1
 
 #include "model/styles/fill_color_maker.h"
 #include "model/styles/colorset.h"
@@ -13,6 +11,7 @@ class New1Coloring : public ColorMaker
 public:
     New1Coloring(Filled * filled);
     New1Coloring(const New1Coloring & other);
+    New1Coloring& operator=(const New1Coloring & other);
 
     virtual QString sizeInfo() override;
 
@@ -37,6 +36,4 @@ public:
 private:
     FaceSet     facesToDo;
 };
-
-#endif
 

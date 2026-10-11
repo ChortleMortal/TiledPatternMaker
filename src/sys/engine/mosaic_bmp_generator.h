@@ -1,5 +1,4 @@
-#ifndef MOSAIC_BMP_GENERATOR_H
-#define MOSAIC_BMP_GENERATOR_H
+#pragma once
 
 #include "sys/sys/versioning.h"
 #include <QImage>
@@ -8,7 +7,7 @@
 typedef std::shared_ptr<class Tiling>        TilingPtr;
 typedef std::shared_ptr<class Mosaic>        MosaicPtr;
 
-class SystemViewController;
+class ViewController;
 
 class MosaicBMPGenerator
 {
@@ -24,7 +23,5 @@ protected:
     void        buildImage(MosaicPtr &mosaic, QImage &image);
 
 private:
-    class SystemViewController * bmpViewController;
+    class ViewController * bmpViewController;
 };
-
-#endif

@@ -3,28 +3,29 @@
 #include <QTextEdit>
 
 #include "gui/widgets/dlg_textedit.h"
-#include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "gui/panels/shortcuts.h"
+#include "sys/sys.h"
 
-void  Shortcuts::popup(eViewType view)
+void  Shortcuts::popup(Layer::Type type)
 {
-    DlgTextEdit * ted = new DlgTextEdit(Sys::sysview);
+    DlgTextEdit * ted = new DlgTextEdit((QWidget*)Sys::systemViewController->getView());
     ted->setWindowTitle("Shortcuts");
-    switch(view)
+    switch(type)
     {
-    case VIEW_LEGACY:
+    case Layer::Type::LegacyDesign:
         ted->setHtml(getLegacyShortcuts());
         break;
 
-    case VIEW_TILING_MAKER:
+    case Layer::Type::TilingMaker:
         ted->setHtml(getTilingMakerShortcuts());
         break;
 
-    case VIEW_MAP_EDITOR:
+    case Layer::Type::MapEditor:
         ted->setHtml(getMapEditorShortcuts());
         break;
 
-    case VIEW_MOSAIC:
+    case Layer::Type::Mosaic:
     default:
         ted->setHtml(getGeneralShortcuts());
         break;

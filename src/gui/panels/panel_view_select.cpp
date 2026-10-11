@@ -3,7 +3,7 @@
 #include "gui/widgets/panel_misc.h"
 #include "gui/panels/panel_view_select.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "model/settings/configuration.h"
 #include "sys/sys.h"
 #include "sys/tiledpatternmaker.h"
@@ -12,60 +12,49 @@ extern TiledPatternMaker * theApp;
 
 PanelViewSelect::PanelViewSelect()
 {
-    setTitle("Layer Enable");
+    setTitle("Layer Enables");
+    setStyleSheet("QGroupBox { border: none; margin-top: 1.2em; } QGroupBox::title { subcontrol-origin: margin; left: 0px; } QCheckBox { padding-left: 0px; }");
 
     config              = Sys::config;
-    viewController      = Sys::viewController;
+    viewController      = Sys::systemViewController;
 
     createGUI();
 
-    connect(this, &PanelViewSelect::sig_reconstructView, viewController, &SystemViewController::slot_reconstructView);
+    connect(this, &PanelViewSelect::sig_reconstructView, viewController, &ViewController::slot_reconstructView);
 }
 
 void PanelViewSelect::createGUI()
 {
     cbMosaicView         = new QCheckBox("Mosaic");
-    cbMosaicView->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
     cbPrototypeView      = new QCheckBox("Prototype");
-    cbPrototypeView->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
     cbMapEditor          = new QCheckBox("Map Editor");
-    cbMapEditor->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
     cbProtoMaker         = new QCheckBox("Motif Maker");
-    cbProtoMaker->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
     cbTilingView         = new QCheckBox("Tiling");
-    cbTilingView->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
     cbTilingMakerView    = new QCheckBox("Tiling Maker");
-    cbTilingMakerView->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
     cbRawDesignView      = new QCheckBox("Fixed Design");
-    cbRawDesignView->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
     cbBackgroundImage    = new QCheckBox("Bkgd Image");
-    cbBackgroundImage->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
-    cbBMPImage          = new QCheckBox("BMP Image");
-    cbBMPImage->setStyleSheet("QCheckBox {padding-left: 3px;}");
+    cbBMPImage           = new QCheckBox("Image Viewer");
 
     cbGrid               = new QCheckBox("Grid");
-    cbGrid->setStyleSheet("QCheckBox {padding-left: 3px;}");
+
+    cbConstructionLines  = new QCheckBox("C-Lines");
 
     cbDebug              = new QCheckBox("Debug");
-    cbDebug->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
-    cbCrop             = new QCheckBox("Crop");
-    cbCrop->setStyleSheet("QCheckBox {padding-left: 3px;}");
+    cbCrop               = new QCheckBox("Crop");
 
-    cbMultiSelect          = new QCheckBox("Multi Layer");
-    cbMultiSelect->setStyleSheet("QCheckBox {padding-left: 3px;}");
+    cbMultiSelect        = new QCheckBox("Multi Layer");
     cbMultiSelect->setChecked(config->multiView);
 
-    cbLockSelect           = new QCheckBox("Lock Layers");
-    cbLockSelect->setStyleSheet("QCheckBox {padding-left: 3px;}");
+    cbLockSelect         = new QCheckBox("Lock Layers");
     cbLockSelect->setChecked(config->lockView);
 
     AQVBoxLayout * avbox = new AQVBoxLayout();
@@ -84,6 +73,7 @@ void PanelViewSelect::createGUI()
     avbox->addWidget(cbBackgroundImage);
     avbox->addWidget(cbCrop);
     avbox->addWidget(cbGrid);
+    avbox->addWidget(cbConstructionLines);
     if (config->insightMode)
         avbox->addWidget(cbDebug);
     avbox->addSpacing(7);
@@ -93,21 +83,22 @@ void PanelViewSelect::createGUI()
     setLayout(avbox);
 
     // viewer group
-    viewerGroup.addButton(cbRawDesignView,      VIEW_LEGACY);
-    viewerGroup.addButton(cbMosaicView,         VIEW_MOSAIC);
-    viewerGroup.addButton(cbPrototypeView,      VIEW_PROTOTYPE);
-    viewerGroup.addButton(cbProtoMaker,         VIEW_MOTIF_MAKER);
-    viewerGroup.addButton(cbTilingView,         VIEW_TILING);
-    viewerGroup.addButton(cbTilingMakerView,    VIEW_TILING_MAKER);
+    viewerGroup.addButton(cbRawDesignView,      (int)Layer::Type::LegacyDesign);
+    viewerGroup.addButton(cbMosaicView,         (int)Layer::Type::Mosaic);
+    viewerGroup.addButton(cbPrototypeView,      (int)Layer::Type::Prototype);
+    viewerGroup.addButton(cbProtoMaker,         (int)Layer::Type::MotifMaker);
+    viewerGroup.addButton(cbTilingView,         (int)Layer::Type::Tiling);
+    viewerGroup.addButton(cbTilingMakerView,    (int)Layer::Type::TilingMaker);
     if (config->insightMode)
-        viewerGroup.addButton(cbMapEditor,      VIEW_MAP_EDITOR);
-    viewerGroup.addButton(cbBackgroundImage,    VIEW_BKGD_IMG);
-    viewerGroup.addButton(cbCrop,               VIEW_CROP);
+        viewerGroup.addButton(cbMapEditor,      (int)Layer::Type::MapEditor);
+    viewerGroup.addButton(cbBackgroundImage,    (int)Layer::Type::BkgdImage);
+    viewerGroup.addButton(cbCrop,               (int)Layer::Type::Crop);
     if (config->insightMode)
-        viewerGroup.addButton(cbBMPImage,       VIEW_BMP_IMAGE);
-    viewerGroup.addButton(cbGrid,               VIEW_GRID);
+        viewerGroup.addButton(cbBMPImage,       (int)Layer::Type::BMPImage);
+    viewerGroup.addButton(cbGrid,               (int)Layer::Type::Grid);
+    viewerGroup.addButton(cbConstructionLines,  (int)Layer::Type::ConstructionLines);
     if (config->insightMode)
-        viewerGroup.addButton(cbDebug,          VIEW_DEBUG);
+        viewerGroup.addButton(cbDebug,          (int)Layer::Type::DebugLayer);
 
     // this class handles the exclusivity, not the QButtonGroup,
     // because an exclusive button group cannot have no buttons enabled
@@ -116,49 +107,13 @@ void PanelViewSelect::createGUI()
     connect(&viewerGroup, &QButtonGroup::idToggled,           this, &PanelViewSelect::slot_Viewer_pressed);
     connect(cbLockSelect, &QCheckBox::clicked,                this, &PanelViewSelect::slot_lockViewClicked);
     connect(cbMultiSelect,&QCheckBox::clicked,                this, &PanelViewSelect::slot_multiSelect);
-    connect(theApp,       &TiledPatternMaker::sig_lockStatus, this, &PanelViewSelect::slot_lockStatusChanged);
-}
-
-void PanelViewSelect::restoreViewEnables()
-{
-    QSettings settings;
-    QList<int> loadedList = settings.value("viewEnables2").value<QList<int>>();
-    if (loadedList.isEmpty())
-    {
-        qDebug() <<"ViewEnables empty - defaulting to mosiac view";
-        loadedList.push_back(static_cast<int>(VIEW_MOSAIC));
-    }
-
-    for (auto i : std::as_const(loadedList))
-    {
-        eViewType vt = static_cast<eViewType>(i);
-        if (!config->insightMode)
-        {
-            switch (vt)
-            {
-            case VIEW_MAP_EDITOR:
-            case VIEW_GRID:
-            case VIEW_CROP:
-            case VIEW_DEBUG:
-                vt = VIEW_MOSAIC;
-                break;
-
-            default:
-                break;
-            }
-
-        }
-        else if (vt == VIEW_BMP_IMAGE)
-        {
-            continue;
-        }
-        selectViewer(vt);
-    }
 }
 
 // the front  door
-void  PanelViewSelect::selectViewer(eViewType vtype, bool enable)
+void  PanelViewSelect::selectViewer(Layer::Type vtype, bool enable)
 {
+    int type = (int)vtype;
+
     if (config->lockView)
     {
         return;
@@ -166,45 +121,37 @@ void  PanelViewSelect::selectViewer(eViewType vtype, bool enable)
 
     if (enable)
     {
-        if (!viewerGroup.button(vtype)->isChecked())
+        if (!viewerGroup.button(type)->isChecked())
         {
-            viewerGroup.button(vtype)->setChecked(true);
-            emit viewerGroup.idClicked(vtype);
+            viewerGroup.button(type)->setChecked(true);
+            emit viewerGroup.idClicked(type);
         }
         else
         {
-            slot_Viewer_pressed(vtype,true);
+            slot_Viewer_pressed(type,true);
         }
     }
     else
     {
-        if (viewerGroup.button(vtype)->isChecked())
+        if (viewerGroup.button(type)->isChecked())
         {
-            viewerGroup.button(vtype)->setChecked(false);
-            emit viewerGroup.idClicked(vtype);
+            viewerGroup.button(type)->setChecked(false);
+            emit viewerGroup.idClicked(type);
         }
         else
         {
-            slot_Viewer_pressed(vtype,false);
+            slot_Viewer_pressed(type,false);
         }
-    }
-}
-
-void PanelViewSelect::deselectGangedViewers()
-{
-    auto vec = Sys::viewController->getGangMembers();
-    for (auto & view : vec)
-    {
-        selectViewer(view,false);
     }
 }
 
 void  PanelViewSelect::slot_Viewer_pressed(int id, bool enable)
 {
-    eViewType viewType = static_cast<eViewType>(id);
-    qDebug().noquote() << sViewerType[viewType] << (enable ? "enabled" : "disabled");
+    qDebug().noquote() << sLayerType[id] << (enable ? "enabled" : "disabled");
 
-    if (Sys::viewController->isGangMember(viewType))
+    Layer::Type viewType = static_cast<Layer::Type>(id);
+
+    if (Sys::systemViewController->isGangMember(viewType))
     {
         // thse are the prime views
         // deal with exclusivity (the standard mode)
@@ -214,7 +161,7 @@ void  PanelViewSelect::slot_Viewer_pressed(int id, bool enable)
             {
                 // uncheck the last exclusive
                 viewerGroup.blockSignals(true);
-                viewerGroup.button(viewController->getMostRecentGangEnable())->setChecked(false);
+                viewerGroup.button((int)viewController->getMostRecentGangEnable())->setChecked(false);
                 viewerGroup.button(id)->setChecked(true);
                 viewerGroup.blockSignals(false);
             }
@@ -224,6 +171,25 @@ void  PanelViewSelect::slot_Viewer_pressed(int id, bool enable)
         {
             viewController->disableGang();
         }
+
+        if (viewerGroup.button(id)->isChecked() != enable)
+        {
+            // a gang member changed via something other than this checkbox's own click
+            // (e.g. userSelectViewer() called programmatically, or session restore in multi-layer
+            // mode, where the exclusivity block above is skipped) - keep the LHS checkbox in sync
+            viewerGroup.blockSignals(true);
+            viewerGroup.button(id)->setChecked(enable);
+            viewerGroup.blockSignals(false);
+        }
+    }
+    else if (viewerGroup.button(id)->isChecked() != enable)
+    {
+        // an overlay/additive layer changed via something other than this checkbox's own click
+        // (e.g. userSelectViewer() called from another page's checkbox, or session restore) -
+        // keep the LHS checkbox in sync
+        viewerGroup.blockSignals(true);
+        viewerGroup.button(id)->setChecked(enable);
+        viewerGroup.blockSignals(false);
     }
 
     viewController->viewEnable(viewType,enable);
@@ -236,10 +202,10 @@ void PanelViewSelect::slot_multiSelect(bool enb)
     if (!enb)
     {
         auto vbuttons          = viewerGroup.buttons();
-        eViewType lastSelected = viewController->getMostRecentGangEnable();
+        Layer::Type lastSelected = viewController->getMostRecentGangEnable();
         for (auto button : std::as_const(vbuttons))
         {
-            eViewType vtype = (eViewType)viewerGroup.id(button);
+            Layer::Type vtype = (Layer::Type)viewerGroup.id(button);
             if (vtype == lastSelected)
             {
                 continue;
@@ -258,12 +224,4 @@ void PanelViewSelect::slot_multiSelect(bool enb)
 void  PanelViewSelect::slot_lockViewClicked(bool enb)
 {
     config->lockView = enb;
-}
-
-void PanelViewSelect::slot_lockStatusChanged()
-{
-    cbLockSelect->blockSignals(true);
-    cbLockSelect->setChecked(config->lockView);
-    cbLockSelect->blockSignals(false);
-    restoreViewEnables();
 }

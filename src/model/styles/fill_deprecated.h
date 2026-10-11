@@ -1,6 +1,4 @@
 #pragma once
-#ifndef FILL_DEPRECATED_H
-#define FILL_DEPRECATED_H
 
 #include "model/styles/fill_color_maker.h"
 #include "model/styles/colorset.h"
@@ -44,5 +42,4 @@ private:
     QVector<int>    faceColorIndices;
     bool            converted;
 };
-#endif
 

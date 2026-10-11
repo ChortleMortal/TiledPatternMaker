@@ -14,8 +14,12 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QDate>
+#include <QDir>
+#include <QFile>
 #include <QFileInfo>
+#include <QLockFile>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QStyleHints>
 #include <QProcess>
 #include <QStyle>
@@ -31,6 +35,11 @@
 #if defined(Q_OS_WINDOWS)
 #include <windows.h>
 #include <psapi.h>
+#include <tlhelp32.h>
+#endif
+
+#if defined(Q_OS_LINUX)
+#include <unistd.h>
 #endif
 
 #define USE_LOG
@@ -39,39 +48,6 @@ TiledPatternMaker* theApp = nullptr;
 
 namespace
 {
-#if defined(Q_OS_WINDOWS)
-    struct WinMutexGuard
-    {
-        WinMutexGuard() noexcept = default; // ensure default-constructible
-
-        HANDLE handle = nullptr;
-
-        bool create(const wchar_t* name)
-        {
-            handle = CreateMutexW(NULL, TRUE, name);
-            return handle != nullptr;
-        }
-
-        bool alreadyExists() const
-        {
-            return (GetLastError() == ERROR_ALREADY_EXISTS);
-        }
-
-        ~WinMutexGuard()
-        {
-            if (handle)
-            {
-                ReleaseMutex(handle);
-                CloseHandle(handle);
-                handle = nullptr;
-            }
-        }
-
-        WinMutexGuard(const WinMutexGuard&) = delete;
-        WinMutexGuard& operator=(const WinMutexGuard&) = delete;
-    };
-#endif
-
 #if defined(Q_OS_WINDOWS)
     void stackInfo()
     {
@@ -136,11 +112,11 @@ namespace
         QDate cd = QDate::currentDate();
         qInfo().noquote() << QCoreApplication::applicationName() << ":" << "started" << cd.toString() << ct.toString() << "on" << QSysInfo::machineHostName();
 
-        qInfo().noquote() << "Version           :" << tpmVersion;
+        qInfo().noquote() << "Version           :" << TpmVersion::getVersion();
 #ifdef QT_DEBUG
-        qInfo().noquote() << "Build             : Debug" << QSysInfo::productType();
+        qInfo().noquote() << "Build             : Debug" << QSysInfo::productType()  << TpmVersion::getTimestamp();
 #else
-        qInfo().noquote() << "Build             : Release" << QSysInfo::productType();
+        qInfo().noquote() << "Build             : Release" << QSysInfo::productType()  << TpmVersion::getTimestamp();
 #endif
 
         if (Sys::config && Sys::config->insightMode)
@@ -154,14 +130,15 @@ namespace
         qInfo() << "MSC Version       :" << _MSC_VER;
         stackInfo();
 #endif
-
+#if defined(Q_OS_LINUX)
+        qInfo().noquote() << "Media Version     :" << LINUX_MEDIA_FILES_VERSION;
+#endif
         qInfo().noquote() << "App path          :" << qApp->applicationDirPath();
-        if (Sys::config)
-        {
-            qInfo().noquote() << "Local Media root  :" << Sys::config->getMediaRootLocal();
-            qInfo().noquote() << "App Media root    :" << Sys::config->getMediaRootAppdata();
-            qInfo().noquote() << "Media root        :" << Sys::config->getMediaRoot();
-        }
+        qInfo().noquote() << "Media root        :" << Sys::getRootMediaDir();
+        qInfo().noquote() << "Images root       :" << Sys::getRootImageDir();
+        qInfo().noquote() << "Log root          :" << Sys::getLogDir();
+        qInfo().noquote() << "Config store      :" << Sys::settings().fileName();
+
         qInfo().noquote() << "Design Dir        :" << Sys::rootMosaicDir;
         qInfo().noquote() << "App Font          :" << QApplication::font().toString();
         qInfo().noquote() << "App Style         :" << QApplication::style();
@@ -170,7 +147,7 @@ namespace
         const QFont font = qtAppLog::getTextEditor()->font();
         qInfo().noquote() << "Log font          :" << font.toString();
         qInfo().noquote() << "Platform          :" << QGuiApplication::platformName();
-
+        qInfo().noquote() << "App Instance      :" << Sys::appInstance;
         getGitInfo();
         if (!Sys::gitBranch.isEmpty())
             qInfo().noquote() << "git branch        :" << Sys::gitBranch;
@@ -185,16 +162,94 @@ namespace
         int ret = box.exec();
         if (ret == QMessageBox::Yes)
         {
-            QSettings s;
+            QSettings s = Sys::settings();
             s.clear();
             s.sync();
             qInfo() << "Registry settings cleared.";
         }
     }
+
+#if defined(Q_OS_WINDOWS)
+    bool launchedFromQtCreator()
+    {
+        DWORD pid = GetCurrentProcessId();
+        PROCESSENTRY32 pe;
+        pe.dwSize = sizeof(pe);
+
+        HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (snap == INVALID_HANDLE_VALUE)
+            return false;
+
+        DWORD parentPid = 0;
+        if (Process32First(snap, &pe))
+        {
+            do
+            {
+                if (pe.th32ProcessID == pid)
+                {
+                    parentPid = pe.th32ParentProcessID;
+                    break;
+                }
+            } while (Process32Next(snap, &pe));
+        }
+        CloseHandle(snap);
+
+        if (!parentPid)
+            return false;
+
+        HANDLE parent = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, parentPid);
+        if (!parent)
+            return false;
+
+        wchar_t name[MAX_PATH];
+        GetModuleBaseNameW(parent, nullptr, name, MAX_PATH);
+        CloseHandle(parent);
+
+        QString exe = QString::fromWCharArray(name).toLower();
+        return exe.contains("qtcreator")
+               || exe.contains("qtcreator_process_stub")
+               || exe.contains("gdb")
+               || exe.contains("lldb")
+               || exe.contains("cdb");
+    }
+#endif
+
+#if defined(Q_OS_LINUX)
+    bool launchedFromQtCreator()
+    {
+        // Qt Creator (or gdb/lldb when run under its debugger) is our direct
+        // parent process when launched from the IDE; a normal desktop/shell
+        // launch's parent is a shell, terminal, or init/session manager.
+        pid_t parentPid = getppid();
+        if (parentPid <= 0)
+            return false;
+
+        QFile commFile(QString("/proc/%1/comm").arg(parentPid));
+        if (!commFile.open(QIODevice::ReadOnly | QIODevice::Text))
+            return false;
+
+        QString name = QString::fromUtf8(commFile.readAll()).trimmed().toLower();
+        return name.contains("qtcreator")
+               || name.contains("gdb")
+               || name.contains("lldb");
+    }
+#endif
+
 } // anonymous namespace
 
 int main(int argc, char* argv[])
 {
+#ifdef Q_OS_LINUX
+    // Force XCB (X11/XWayland) backend to avoid a ~10s Wayland
+    // xdg-activation busy-cursor timeout on GNOME/Mutter.
+    // Only set it if the user/environment hasn't already specified
+    // a platform explicitly, so power users can still override.
+    if (!qEnvironmentVariableIsSet("QT_QPA_PLATFORM"))
+    {
+        qputenv("QT_QPA_PLATFORM", "xcb");
+    }
+#endif
+
     Sys::appInstance    = 0;
     bool noAutoLoad     = false;
     bool mapVerify      = false;
@@ -204,36 +259,57 @@ int main(int argc, char* argv[])
 
     init_legacy_designs();
 
+    // Cross-platform (Windows/Linux/macOS) second-instance detection, via an
+    // advisory lock file in the per-user cache dir. Lives for the whole
+    // process (across EXIT_CODE_REBOOT restarts of the QApplication below),
+    // so the lock is only released on real process exit.
+    QString lockDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    QDir().mkpath(lockDir);
+    QLockFile instanceLock(lockDir + "/TiledPatternMaker.lock");
+    instanceLock.setStaleLockTime(0); // long-lived resource: rely on liveness check, not a time cutoff
+    bool instanceLockAttempted = false;
+
     do
     {
         // Ensure QApplication is created before any QWidget-based objects (QMessageBox, etc.)
         QApplication app(argc, argv);
         QApplication::setStyle("Fusion");
-        QCoreApplication::setOrganizationName("DAC");
         QCoreApplication::setApplicationName("TiledPatternMaker");
 
-#if defined(Q_OS_WINDOWS)
-       WinMutexGuard instanceGuard;
-        const wchar_t* uniqueName = L"TiledPatternMaker";
-        if (!instanceGuard.create(uniqueName))
+#if defined(Q_OS_WINDOWS) || defined(Q_OS_LINUX)
+        if (launchedFromQtCreator())
         {
-            // Failed to create mutex; continue but log
-            qWarning() << "Failed to create single-instance mutex.";
+            // Note legacy code could be running at 0 or 1, but never 2
+            Sys::appInstance = 2;
         }
-        else if (instanceGuard.alreadyExists())
-        {
-            QMessageBox box;
-            box.setIcon(QMessageBox::Warning);
-            box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-            box.setText("Program already started. Start another?");
-            int ret = box.exec();
-            if (ret == QMessageBox::No)
-            {
-                return 1; // Exit program
-            }
-            Sys::appInstance = 1;
-        }
+        else
 #endif
+        if (!instanceLockAttempted)
+        {
+            // Only probe/create the lock once; later reboot-loop iterations
+            // keep whatever instance id was already established.
+            instanceLockAttempted = true;
+            if (!instanceLock.tryLock(100))
+            {
+                if (instanceLock.error() == QLockFile::LockFailedError)
+                {
+                    QMessageBox box;
+                    box.setIcon(QMessageBox::Warning);
+                    box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+                    box.setText("Program already started. Start another?");
+                    int ret = box.exec();
+                    if (ret == QMessageBox::No)
+                    {
+                        return 1; // Exit program
+                    }
+                    Sys::appInstance = 1;
+                }
+                else
+                {
+                    qWarning() << "Failed to create single-instance lock file:" << instanceLock.error();
+                }
+            }
+        }
 
         // Restore original startup keyboard-modifier behavior:
         // - Shift + Alt: clear registry/settings
@@ -264,10 +340,10 @@ int main(int argc, char* argv[])
         parser.setApplicationDescription("TiledPatternMaker");
         parser.addHelpOption();
         parser.addVersionOption();
-        QCommandLineOption firstBirthdayOpt(QStringList() << "first-birthday", "Reset all settings to default.");
-        QCommandLineOption noAutoOpt(QStringList() << "no-autoload", "Do not autoload last mosaic on startup.");
-        QCommandLineOption mapVerifyOpt(QStringList() << "map-verify", "Run map verification.");
-        QCommandLineOption loadOpt(QStringList() << "load", "Force load the specified mosaic.", "file");
+        QCommandLineOption firstBirthdayOpt(QStringList()  << "first-birthday",  "Reset all settings to default.");
+        QCommandLineOption noAutoOpt(QStringList()         << "no-autoload",     "Do not autoload last mosaic on startup.");
+        QCommandLineOption mapVerifyOpt(QStringList()      << "map-verify",      "Run map verification.");
+        QCommandLineOption loadOpt(QStringList()           << "load",            "Force load the specified mosaic.", "file");
         QCommandLineOption primaryDisplayOpt(QStringList() << "primary-display", "Force primary display output.");
         parser.addOption(firstBirthdayOpt);
         parser.addOption(noAutoOpt);
@@ -304,6 +380,9 @@ int main(int argc, char* argv[])
             primaryDisplay = true;
             qInfo().noquote() << "--primary-display";
         }
+
+        // restartApp() disables panel updates before rebooting
+        Sys::updatePanel = true;
 
         // load configuration (use RAII)
         auto config = std::make_unique<Configuration>();
@@ -353,23 +432,24 @@ int main(int argc, char* argv[])
         }
 #endif
 
+        // now that theme is established
+        config->loadBackgroundColors();
+
 #ifdef __linux__
         QFont afont = QApplication::font();
         afont.setPointSize(8);
         QApplication::setFont(afont);
 #endif
 
+        // start the log
         auto log = qtAppLog::getInstance();
         Sys::log = log;
 
 #ifdef USE_LOG
-        log->baseLogName = config->baseLogName;
-
         if (config->insightMode)
         {
             log->logToStdErr(config->logToStderr);
             log->logToDisk(config->logToDisk);
-            log->logToAppDir(config->logToAppDir);
             log->logToPanel(config->logToPanel);
             log->logLines(config->logNumberLines);
             log->logDebug(config->logDebug);
@@ -379,7 +459,6 @@ int main(int argc, char* argv[])
         {
             log->logToStdErr(true);
             log->logToDisk(true);
-            log->logToAppDir(false);
             log->logToPanel(false);
             log->logLines(false);
             log->logDebug(false);

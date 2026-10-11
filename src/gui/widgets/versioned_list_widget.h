@@ -1,6 +1,4 @@
 #pragma once
-#ifndef VERSIONED_LIST_WIDGET_H
-#define VERSIONED_LIST_WIDGET_H
 
 #include <QListWidget>
 #include "sys/sys/versioning.h"
@@ -34,5 +32,3 @@ public:
 
     void addItemList(VersionFileList & list);
 };
-
-#endif

@@ -33,8 +33,8 @@ void CasingSide::createSide1(const EdgePtr & edge,  qreal qwidth)
     {
     case 1:
         // this is an end (a flat end)
-        outer = mid - norp                                                                                                                               ;
-        inner = mid + norp;
+        outer = mid + norp                                                                                                                               ;
+        inner = mid - norp;
         break;
 
     case 2:

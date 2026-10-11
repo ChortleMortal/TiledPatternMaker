@@ -6,28 +6,29 @@
 // Kaplans constraint on Knee position which is only a partial truth
 // Also adds more vraiations
 
-#include <QDebug>
 #include "model/motifs/rosette2.h"
-#include "sys/geometry/geo.h"
-#include "sys/geometry/intersect.h"
-#include "sys/geometry/transform.h"
+#include "model/motifs/rosette.h"
 #include "model/tilings/tile.h"
+#include "sys/geometry/debug_map.h"
+#include "sys/geometry/geo.h"
+#include "sys/geometry/transform.h"
+#include "sys/sys/debugflags.h"
+#include <QDebug>
+
+const QString sTipType[] =
+{
+    "Repeat",
+    "Outward",
+    "Inward",
+    "Extended Inward",
+    "Outward Point",
+    "Outward to Boundary",
+    "Outward Point to Boundary"
+};
 
 typedef std::shared_ptr<Rosette2> Rosette2Ptr;
 
 using std::make_shared;
-
-Rosette2::Rosette2(const Motif & fig,  int nsides, qreal kneeX, qreal kneeY, int ss, qreal kk, bool c) : RadialMotif(fig, nsides)
-{
-    this->kneeX = kneeX;
-    this->kneeY = kneeY;
-    s           = ss;
-    k           = kk;
-    constrain   = c;
-    tipTypes    = TIP_TYPE2_OUTER;
-    setTipMode(TIP_MODE_REGULAR);
-    setMotifType(MOTIF_TYPE_ROSETTE2);
-}
 
 Rosette2::Rosette2(int nsides, qreal kneeX, qreal kneeY, int ss, qreal kk, bool c) : RadialMotif(nsides)
 {
@@ -36,9 +37,8 @@ Rosette2::Rosette2(int nsides, qreal kneeX, qreal kneeY, int ss, qreal kk, bool 
     s           = ss;
     k           = kk;
     constrain   = c;
-    tipTypes    = TIP_TYPE2_OUTER;
-    setTipMode(TIP_MODE_REGULAR);
-    setMotifType(MOTIF_TYPE_ROSETTE2);
+    initTipTypes();
+    setMotifType(Type::Rosette2);
 }
 
 Rosette2::Rosette2(const Rosette2 & other) : RadialMotif(other)
@@ -48,9 +48,67 @@ Rosette2::Rosette2(const Rosette2 & other) : RadialMotif(other)
     s           = other.s;
     k           = other.k;
     constrain   = other.constrain;
-    tipTypes    = other.tipTypes;
-    setTipMode(other.getTipMode());
-    setMotifType(MOTIF_TYPE_ROSETTE2);
+    initTipTypes();
+    setMotifType(Type::Rosette2);
+}
+
+Rosette2::Rosette2(const Motif & motif) : RadialMotif(motif)
+{
+    kneeX       = 0.35;
+    kneeY       = 0.25;
+    s           = 2;
+    k           = 0.0;
+    constrain   = false;
+    initTipTypes();
+    setMotifType(Type::Rosette2);
+}
+
+// same knee point and knee ray as the Rosette (s, inscribe, onPoint copied by RadialMotif)
+Rosette2::Rosette2(const Rosette & rosette) : RadialMotif(rosette)
+{
+    QLineF  keyLine = rosette.getKeyLine();
+    QPointF knee    = keyLine.p1();
+
+    Tile atile(getN());
+    xRange = 1.0;
+    yRange = atile.edgeLen() / 2.0;
+
+    kneeX       = (1.0 - knee.x()) / xRange;
+    kneeY       = knee.y() / yRange;
+
+    QPointF edgePt = Geo::perpPt(atile.getEdge(getN()-1), knee);
+    QLineF  kneeRay(edgePt, knee);
+    k           = kneeRay.angleTo(keyLine);
+    if (k > 180.0)
+        k -= 360.0;
+
+    constrain   = false;
+    initTipTypes();
+    setMotifType(Type::Rosette2);
+}
+
+TipType Rosette2::getTipType(int tip)
+{
+    return tipTypes[tip % tipTypes.size()];
+}
+
+bool Rosette2::hasTipsToMove()
+{
+    for (TipType tt : std::as_const(tipTypes))
+    {
+        if (isBoundaryTip(tt))
+            return true;
+    }
+    return false;
+}
+
+// fullRays are replicated from unitRays in LR pairs, so the pair index maps back to the unit tip type
+bool Rosette2::moveTipToBoundary(int rayIndex)
+{
+    if (unitTipTypes.isEmpty())
+        return false;
+
+    return isBoundaryTip(unitTipTypes[(rayIndex / 2) % unitTipTypes.size()]);
 }
 
 bool Rosette2::equals(const MotifPtr other)
@@ -71,8 +129,14 @@ bool Rosette2::equals(const MotifPtr other)
     if (s != otherp->s)
         return false;
 
-    if (tipTypes != otherp->tipTypes)
+    if (tipTypes.size() != otherp->tipTypes.size())
         return false;
+
+    for (int i = 0; i < tipTypes.size(); i++)
+    {
+        if (tipTypes[i] != otherp->tipTypes[i])
+            return false;
+    }
 
     if (!Motif::equals(other))
         return false;
@@ -80,29 +144,16 @@ bool Rosette2::equals(const MotifPtr other)
      return true;
 }
 
-bool Rosette2::pointOnLineLessThan(QPointF p1, QPointF p2)
-{
-    return  Geo::dist2(kneePt,p1) < Geo::dist2(kneePt,p2);
-}
-
 // kneeX is the %age of the distance to the center, so is always scaled by 1.0
 // kneey is the %age of half the edge width, so scaaling is depends on n (sides)
-void Rosette2::buildUnitMap()
+void Rosette2::buildUnitRays()
 {
-  //motifDebug = 0x15
-  //motifDebug = 0x04
-  //motifDebug = 0x05;
-    motifDebug = 0;
-
-    if (motifDebug > 0)
-    {
-        Sys::debugMapCreate->wipeout();
-    }
+    setMotifDebug(0x00);
 
     qDebug().noquote() << "Rosette2::buildUnit n:" << getN() << "x:" << kneeX << "y:" << kneeY << "s:" << s << "k" << k
-                       << "Tr:" << Transform::info(radialRotationTr) << "rot" << getMotifRotate() << "scale" << getMotifScale();
+                       << "Tr:" << Transform::info(getRadialTransform(1)) << "rot" << getMotifRotate() << "scale" << getMotifScale();
 
-    Tile atile(getN());
+    Tile atile(getN());     // not scaled or rotated
     xRange = 1.0;
     yRange = atile.edgeLen() /2.0;
 
@@ -130,134 +181,150 @@ void Rosette2::buildUnitMap()
 
     QPointF outerTip(1.0, 0.0);         // standard tip
 
-    if (motifDebug & 0x01)
+    if (getMotifDebug() & 0x01)
     {
         Sys::debugMapCreate->insertDebugMark(kneePt,"kneePt",Qt::red);
+        Sys::debugMapCreate->insertDebugMark(kneePtMirror,"kneePtMirror",Qt::red);
         Sys::debugMapCreate->insertDebugLine(ray,Qt::red);
-        Sys::debugMapCreate->insertDebugLine(rayMirror,Qt::blue);
+        Sys::debugMapCreate->insertDebugLine(rayMirror,Qt::green);
     }
 
-    UniqueQVector<QPointF> epoints;
-
-    epoints.push_back(kneePt);
+    RadialRay epoints;
+    epoints.addTip(kneePt);
 
     for (int idx = 0; idx <= getN(); idx++)
     {
-        rayMirror = radialRotationTr.map(rayMirror);
+        rayMirror = getRadialTransform(1).map(rayMirror);
 
         QPointF isect;
         if (ray.intersects(rayMirror,&isect) == QLineF::BoundedIntersection)
         {
-            epoints.push_back(isect);
+            epoints.addTail(isect);
         }
     }
 
-    std::sort(epoints.begin(), epoints.end(), [this] (QPointF a, QPointF b) { return pointOnLineLessThan(a, b); });
+    epoints.sort(kneePt);
 
     if (epoints.size() > (s+1))
     {
         epoints.resize(s+1);
     }
 
-    if (motifDebug & 0x04)
+    if (getMotifDebug() & 0x02)
     {
-        qDebug() << "epoints" << epoints;
-        int idx = 0;
-        for (auto & ept :  std::as_const(epoints))
-        {
-            Sys::debugMapCreate->insertDebugMark(ept,QString("pt%1").arg(idx++),Qt::red);
-        }
+        epoints.debug(1);
     }
 
-    // build the rays
-    raySet1.clear();
-    raySet2.clear();
-
+    // in the clockwise direction epoints are the right hand - and the mirror is the left hand
     QLineF  kneeLine(kneePt,kneePtMirror);
     QPointF innerTip = Geo::reflectPoint(outerTip,kneeLine);    // outer tip reflected over kneeLine
-    QTransform rotTr = getUnitRotationTransform();
 
-    if (getTipMode() == TIP_MODE_REGULAR)
+    // build the real unit rays
+    unitTipTypes.clear();
+    for (int i=0; i < tipTypes.size(); i++)
     {
-        // really only one should be selected
-        if (getTipTypes() & TIP_TYPE2_OUTER)
+        TipType tt = getTipType(i);
+        if (tt != TipType::REPEAT)
         {
-            buildRay(raySet1,outerTip,epoints);
-            raySet2 = raySet1;
-        }
-        else if (getTipTypes() & TIP_TYPE2_INNER)
-        {
-            buildRay(raySet1,innerTip,epoints);
-            raySet2 = raySet1;
-        }
-        else if (getTipTypes() & TIP_TYPE2_FLIPPED)
-        {
-            buildRay(raySet1,innerTip,epoints);
-
-            QTransform td = getDELTransform();
-            QLineF edge = atile.getEdge(getN()-1);
-            edge = td.map(edge);
-
-            QPointF ep2 = Geo::perpPt(edge,raySet1.ray1.pt(1));
-            raySet1.ray1.setPt(1,ep2);
-            QPointF ep3 = Geo::perpPt(edge,raySet1.ray2.pt(1));
-            raySet1.ray2.setPt(1,ep3);
-
-            raySet2 = raySet1;
-        }
-        raySet2.transform(rotTr);
-    }
-    else
-    {
-        Q_ASSERT(getTipMode() == TIP_MODE_ALTERNATE);
-        // really only two should be selected
-        int raysdone = 0;
-
-        if (getTipTypes() & TIP_TYPE2_OUTER)
-        {
-            buildRay(raySet1,outerTip,epoints);
-            raysdone++;
+            unitTipTypes.push_back(tt);     // each case below adds one LR pair
         }
 
-        if (getTipTypes() & TIP_TYPE2_INNER)
+        switch (tt)
         {
-            if (raysdone)
+        case TipType::OUTER:
+        case TipType::OUTER_TO_BOUNDARY:
+            buildUnitRays(outerTip,epoints,i);
+            break;
+
+        case TipType::INNER:
+            buildUnitRays(innerTip,epoints,i);
+            break;
+
+        case TipType::OUTER_POINT:
+        case TipType::OUTER_POINT_TO_BOUNDARY:
+        {
+            // point one-quarter along the knee line from the knee
+            RadialRay pointed;
+            pointed.set(epoints);
+            pointed.addTip(kneePt + 0.25 * (kneePtMirror - kneePt));
+            buildUnitRays(outerTip,pointed,i);
+        }   break;
+
+        case TipType::FLIPPED:
+        {
+            int index = buildUnitRays(innerTip,epoints,i);
+
+            // find the two isects
+            // Note motif may have different number of sides than containing tile
+            QPolygonF  poly = getTile()->getBasePoints();   // not scaled and rotated
+
+            RadialRay & rayL = unitRays[index];
+            QLineF lineL(rayL.pt(2),rayL.pt(1));
+            QPointF isectL;
+            Geo::intersectPoly(lineL,poly,isectL);
+
+            if (Sys::flags->flagged(SHOW_UNIT_RAYS))
             {
-                buildRay(raySet2,innerTip,epoints);
-                raysdone++;
+                Sys::debugMapMotif->insertDebugMark(rayL.pt(2),"L2");
+                Sys::debugMapMotif->insertDebugMark(rayL.pt(1),"L1");
+                Sys::debugMapMotif->insertDebugMark(isectL,"ISECT-L");
+            }
+
+            RadialRay & rayR = unitRays[index+1];
+            QLineF lineR(rayR.pt(2),rayR.pt(1));
+            QPointF isectR;
+            Geo::intersectPoly(lineR,poly,isectR);
+
+            if (Sys::flags->flagged(SHOW_UNIT_RAYS))
+            {
+                Sys::debugMapMotif->insertDebugMark(rayR.pt(2),"R2");
+                Sys::debugMapMotif->insertDebugMark(rayR.pt(1),"R1");
+                Sys::debugMapMotif->insertDebugMark(isectR,"ISECT-R");
+            }
+
+            // use the two shortest
+            QLineF lineL1(rayL.pt(1),isectL);
+            qreal lenL = lineL1.length();
+
+            QLineF lineR1(rayR.pt(1),isectR);
+            qreal lenR = lineR1.length();
+
+            if (Loose::equals(lenR,lenL))
+            {
+                rayL.setPt(1,isectL);
+                rayR.setPt(1,isectR);
+            }
+            else if (lenL < lenR)
+            {
+                rayL.setPt(1,isectL);
+                lineR1.setLength(lenL);
+                rayR.setPt(1,lineR1.p2());
             }
             else
             {
-                buildRay(raySet1,innerTip,epoints);
-                raysdone++;
+                rayR.setPt(1,isectR);
+                lineL1.setLength(lenR);
+                rayL.setPt(1,lineL1.p2());
             }
-        }
+        }   break;
 
-        if (getTipTypes() & TIP_TYPE2_FLIPPED)
-        {
-            if (raysdone == 1)
-            {
-                buildRay(raySet2,innerTip,epoints);
-
-                QTransform td = getDELTransform();
-                QLineF edge = atile.getEdge(getN()-1);
-                edge = td.map(edge);
-
-                QPointF ep2 = Geo::perpPt(edge,raySet2.ray1.pt(1));
-                raySet2.ray1.setPt(1,ep2);
-                QPointF ep3 = Geo::perpPt(edge,raySet2.ray2.pt(1));
-                raySet2.ray2.setPt(1,ep3);
-            }
-        }
-        raySet2.transform(rotTr);
+        case TipType::REPEAT:
+            break;
     }
+    }
+    if (getMotifDebug() & 0x08) unitRays.debug(0);
+
+    QTransform t1 = getMotifTransform();
+    unitRays.transform(t1);
+
+    if (getMotifDebug() & 0x10) unitRays.debug(0);
+    if (getMotifDebug() & 0x20) unitRays.debug(1);
 
     if (inscribe)
     {
         qreal circumradius = 1.0 / (cos(M_PI / (qreal)getN()));
         QTransform t = QTransform::fromScale(circumradius,circumradius);
-        raySet1.transform(t);
-        raySet2.transform(t);
+        unitRays.transform(t);
     }
 
     if (onPoint)
@@ -265,42 +332,47 @@ void Rosette2::buildUnitMap()
         qreal angle = 180.0/qreal(getN());
         QTransform t;
         t.rotate(angle);
-        raySet1.transform(t);
-        raySet2.transform(t);
+        unitRays.transform(t);
     }
 
-    if (motifDebug & 0x01) raySet1.debug();
+    if (getMotifDebug() & 0x40) unitRays.debug(0);
 }
 
-void  Rosette2::buildRay(RaySet &  set, QPointF tip, const QVector<QPointF> & epoints)
+int Rosette2::buildUnitRays(QPointF tip, const RadialRay & epoints, int side)
 {
-    set.ray1.set(epoints);
-    set.ray1.addTip(tip);
+    RadialRay rayR;
+    rayR.set(epoints);
+    rayR.addTip(tip);
 
-    set.ray2.addTip(tip);
-    for (auto pt : epoints)
+    RadialRay rayL;
+    for (const QPointF & pt : epoints.get())
     {
-        set.ray2.addTail(QPointF(pt.x(), -pt.y()));
+        rayL.addTail(QPointF(pt.x(), -pt.y()));
     }
+    rayL.addTip(tip);
 
-    if (motifDebug & 0x01) set.debug();
-    QTransform t = getDELTransform();
-    set.transform(t);
-    if (motifDebug & 0x01) set.debug();
+    QTransform t = getRadialTransform(side);
+    rayL.transform(t);
+    rayR.transform(t);
+
+    // clockwise
+    unitRays.add(rayL);
+    unitRays.add(rayR);
+
+    return unitRays.size() - 2;     // index of first ray added here
 }
 
 void Rosette2::calcConstraintLine()
 {
-    qreal   don         = get_don();
-    qreal   qr_outer    = 1.0 / qCos( M_PI * don );
+    qreal   qr_outer    = 1.0 / qCos( M_PI * don() );
     QPointF r_outer     = QPointF(0.0, qr_outer);
-    QPointF up_outer    = getArc( 0.5 * don ) * qr_outer;
+    QPointF up_outer    = getArc( 0.5 * don() ) * qr_outer;
     QPointF down_outer  = up_outer - r_outer;
     QPointF bisector    = down_outer * 0.5;
 
     constraint  = QLineF(bisector, up_outer);
 
-    if (motifDebug > 0x10)
+    if (getMotifDebug() > 0x80)
     {
         Sys::debugMapCreate->insertDebugLine(constraint,Qt::blue);
         Sys::debugMapCreate->insertDebugMark(up_outer,"up_outer",Qt::red);

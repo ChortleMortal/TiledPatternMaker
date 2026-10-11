@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QDate>
 
 #include "sys/qt/timers.h"
 
@@ -34,7 +35,7 @@ void TimerResults::add(VersionedName  name, int seconds)
 
 void TimerResults::dump()
 {
-    qInfo() << "=============================== RESULTS START";
+    qInfo() << "=============================== RESULTS START" << QDate::currentDate().toString() << "on" << QSysInfo::machineHostName();
     for (auto it = begin(); it != end(); it++)
     {
         qInfo() << it.key() << it.value();

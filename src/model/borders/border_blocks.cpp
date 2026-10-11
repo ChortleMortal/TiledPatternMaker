@@ -1,6 +1,7 @@
 #include <QPainter>
 
 #include "gui/model_editors/border_edit/mouse_edit_border.h"
+#include "gui/top//view_controller.h"
 #include "gui/viewers/geo_graphics.h"
 #include "model/borders/border_blocks.h"
 #include "model/motifs/tile_color_defs.h"
@@ -42,7 +43,7 @@ void BorderBlocks::createStyleRepresentation()
 
     if (getUseViewSize())
     {
-        setBorderSize(viewControl()->getCanvas().getViewSize());
+        setBorderSize(viewControl()->viewSize());
     }
 
     faces.clear();

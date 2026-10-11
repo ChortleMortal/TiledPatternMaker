@@ -1,6 +1,4 @@
 #pragma once
-#ifndef GEOGRAPHICS_H
-#define GEOGRAPHICS_H
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -68,6 +66,8 @@ public:
 
     void drawCircle(QPointF origin, int diameter, QPen pen, QBrush brush);
 
+    void drawAnchorGlyph(QPointF origin, qreal size, QColor color);
+
     void drawText(QPointF pos, QString txt);    // no pen
 
     QPainter *  getPainter() { return painter; }
@@ -88,5 +88,4 @@ private:
     QTransform         transform;
     QStack<QTransform> pushed;
 };
-#endif
 

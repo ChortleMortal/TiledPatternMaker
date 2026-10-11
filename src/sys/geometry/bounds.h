@@ -1,8 +1,6 @@
 #pragma once
-#ifndef BOUNDS_H
-#define BOUNDS_H
 
-#include <QtCore>
+#include <QtGlobal>
 
 #undef VARIABLE_BOUNDS
 
@@ -23,5 +21,3 @@ public:
     qreal top;
     qreal width;
 };
-
-#endif // BOUNDS_H

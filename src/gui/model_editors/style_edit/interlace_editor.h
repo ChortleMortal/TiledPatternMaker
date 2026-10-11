@@ -1,6 +1,4 @@
 #pragma once
-#ifndef INTERLACE_EDITOR_H
-#define INTERLACE_EDITOR_H
 
 #include "gui/model_editors/style_edit/thick_editor.h"
 
@@ -28,5 +26,3 @@ private:
     QCheckBox       * tipVert_checkbox;
     QCheckBox       * sunder_checkbox;      // start under
 };
-
-#endif

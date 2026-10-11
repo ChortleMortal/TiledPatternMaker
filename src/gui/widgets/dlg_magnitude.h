@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLG_MAGNITUDE_H
-#define DLG_MAGNITUDE_H
 
 #include <QDialog>
 
@@ -25,5 +23,3 @@ private:
     PlacedTileSelectorPtr    sel;
     EdgePtr                  edge;
 };
-
-#endif

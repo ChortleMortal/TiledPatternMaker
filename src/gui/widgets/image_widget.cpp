@@ -4,7 +4,7 @@
 #include <QSettings>
 
 #include "gui/widgets/image_widget.h"
-#include "gui/top/system_view_controller.h"
+//#include "gui/top/view_controller.h"
 #include "sys/engine/image_engine.h"
 #include "sys/sys.h"
 #include "sys/tiledpatternmaker.h"
@@ -45,7 +45,7 @@ QPixmap ImageWidget::removeAlphaChannel(const QPixmap &src)
 
 void ImageWidget::closeEvent(QCloseEvent * event)
 {
-    QSettings s;
+    QSettings s = Sys::settings();
     s.setValue("imageWidgetPos",pos());
 
     QLabel::closeEvent(event);
@@ -74,13 +74,12 @@ void ImageWidget::keyPressEvent(QKeyEvent * k)
 void ImageWidget::mouseMoveEvent(QMouseEvent *event)
 {
     Q_UNUSED(event);
-    QSettings s;
+    QSettings s = Sys::settings();
     s.setValue("imageWidgetPos",pos());
 }
 
 void ImageWidget::mousePressEvent(QMouseEvent *event)
 {
-    // FIXME - connect this
     QPoint pt;
     pt = event->position().toPoint();
 
@@ -101,12 +100,12 @@ void ImageWidget::slot_moveToPrimary()
 {
     QScreen * primary = qApp->primaryScreen();
 
-    QWindow * wh = Sys::viewController->windowHandle();
+    QWindow * wh = windowHandle();
     if (!wh)
     {
         return;
     }
-    move(primary->geometry().center() - Sys::viewController->viewRect().center());
+    move(primary->geometry().center());
     setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
     raise();  // for MacOS
     activateWindow();  // for windows
@@ -124,4 +123,58 @@ void ImageWidget::setPixmap(const QPixmap & pixmap, qreal scale)
     QLabel::setPixmap(pixmap.scaled((pixmap.size() * scale),Qt::KeepAspectRatio ,Qt::SmoothTransformation));
 }
 
+////////////////////////////////////////////////////////////////////////////////////////
+///
+///
+///
+////////////////////////////////////////////////////////////////////////////////////////
 
+ComparedImageWidget::ComparedImageWidget(QImage & imgA, QImage & imgB, QImage & imgDiff, QString titleA, QString titleB)
+{
+    pixA.convertFromImage(imgA,Qt::NoFormatConversion);
+    pixB.convertFromImage(imgB,Qt::NoFormatConversion);
+    pixDiff.convertFromImage(imgDiff,Qt::NoFormatConversion);
+    this->titleA = titleA;
+    this->titleB = titleB;
+
+    title   = QString("Image Differences (%1) (%2)").arg(titleA).arg(titleB);
+    kbdInfo = "C=compare P=ping-pong Q=quit   :   ";
+
+    setWindowTitle(kbdInfo+title);
+    setPixmap(pixDiff);
+    setContentSize(pixDiff.size());
+
+    isA = false;
+}
+
+void ComparedImageWidget::keyPressEvent(QKeyEvent *k)
+{
+    switch(k->key())
+    {
+    case 'Q':
+        close();
+        break;
+
+    case 'C':
+    {
+        setWindowTitle(kbdInfo+title);
+        setPixmap(pixDiff);
+        isA = false;
+    }   break;
+
+    case 'P':
+        if (!isA)
+        {
+            setWindowTitle(kbdInfo+titleA);
+            setPixmap(pixA);
+            isA = true;
+        }
+        else
+        {
+            setWindowTitle(kbdInfo+titleB);
+            setPixmap(pixB);
+            isA = false;
+        }
+        break;
+    }
+}

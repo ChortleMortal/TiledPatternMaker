@@ -59,6 +59,11 @@ void PageListWidget::refreshPages()
         {
             refreshPage(pdata.page);
         }
+        else if (pdata.page->hasFloatingTab() && !pdata.page->pageBlocked())
+        {
+            // page itself is unparented, so refresh only - showing it would open it as a window
+            pdata.page->onRefresh();
+        }
     }
 }
 
@@ -256,7 +261,6 @@ void PageListWidget::addSeparator()
 void PageListWidget::establishSize()
 {
     int rowCount = count() - separators;
-    //setFixedWidth(sizeHintForColumn(0) + (2 * frameWidth()));
     setFixedHeight((sizeHintForRow(0) * rowCount) + (10 * separators) + (2 * frameWidth()) + 5);   // 5 is a little pad
 }
 
@@ -284,7 +288,7 @@ PageData & PageListWidget::getPageData(panel_page * page)
         }
     }
 
-    qWarning() << "pagenot found - defaulting";
+    qWarning() << "page not found - defaulting";
     return pageData[0];
 }
 

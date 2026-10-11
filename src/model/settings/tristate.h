@@ -1,26 +1,22 @@
 #pragma once
-#ifndef TRISTATE_H
-#define TRISTATE_H
 
 class Tristate
 {
 public:
 
-    enum eTristate
+    enum class eTristate
     {
         False,
         True,
-        Unknown
+        Undefined
     };
 
-    Tristate() { state = eTristate::Unknown; }
+    Tristate() { state = eTristate::Undefined; }
 
     void        set(eTristate state) { this->state = state; }
-    void        reset() { state = eTristate::Unknown; }
+    void        reset() { state = eTristate::Undefined; }
     eTristate   get() { return state; }
 
 private:
     eTristate state;
 };
-
-#endif // TRISTATE_H

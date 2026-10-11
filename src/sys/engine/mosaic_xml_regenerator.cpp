@@ -1,12 +1,13 @@
 #include <QDebug>
 #include <QFile>
 #include <QPainter>
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/mosaics/mosaic_reader.h"
 #include "model/mosaics/mosaic_writer.h"
 #include "sys/engine/mosaic_xml_regenerator.h"
+#include "model/settings/configuration.h"
 #include "sys/sys/fileservices.h"
 #include "model/makers/mosaic_maker.h"
 /*
@@ -18,7 +19,7 @@
 MosaicXMLRegenerator::MosaicXMLRegenerator()
 {
     // using this local ViewController makes the engine thread-safe
-    bmpViewController = new SystemViewController;
+    bmpViewController = new ViewController;
     bmpViewController->disableAllViews();
 }
 
@@ -81,14 +82,8 @@ MosaicPtr MosaicXMLRegenerator::loadMosaic(VersionedName vname)
     mosaic->setName(vname);
 
     Q_ASSERT(!bmpViewController->isAttached());
+    bmpViewController->setCanvas(mosaic->getMosaicCanvas());
     mosaic->setViewController(bmpViewController);
-
-    // size view to mosaic
-    // this uses a view conroller which is not attached to the view
-    CanvasSettings csettings = mosaic->getCanvasSettings();
-
-    Canvas  & canvas = bmpViewController->getCanvas();
-    canvas.setCanvasSize(csettings.getCanvasSize());
 
     auto border = mosaic->getBorder();
     if (border)
@@ -112,8 +107,6 @@ MosaicPtr MosaicXMLRegenerator::loadMosaic(VersionedName vname)
             border->createStyleRepresentation();
         }
     }
-
-    bmpViewController->setBackgroundColor(VIEW_MOSAIC,csettings.getBackgroundColor());
 
     bmpViewController->setSelectedPrimaryLayer(mosaic->getFirstRegularStyle());
 

@@ -1,24 +1,27 @@
-#include "gui/map_editor/map_editor.h"
+#include <QMessageBox>
+#include <QRadioButton>
+#include <QTimer>
 #include "gui/panels/page_debug.h"
 #include "gui/panels/page_map_editor.h"
 #include "gui/panels/page_mosaic_maker.h"
 #include "gui/panels/page_motif_maker.h"
 #include "gui/panels/page_prototype_info.h"
 #include "gui/panels/page_tiling_maker.h"
+#include "gui/panels/panel_page_controller.h"
 #include "gui/panels/panel_pages_widget.h"
 #include "gui/panels/panel_view_select.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/split_screen.h"
 #include "gui/top/system_view.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/mouse_mode_widget.h"
 #include "legacy/design_maker.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/tiling_maker.h"
 #include "model/mosaics/mosaic.h"
 #include "model/settings/configuration.h"
+#include "model/styles/interlace.h"
 #include "model/tilings/tiling.h"
-#include "sys/enums/eviewtype.h"
 #include "sys/geometry/transform.h"
 #include "sys/qt/utilities.h"
 #include "sys/sys.h"
@@ -43,6 +46,7 @@ ControlPanel::ControlPanel()
     setContentsMargins(0,0,0,0);
 
     panelStatus = nullptr;
+    unwovenBox  = nullptr;
 }
 
 ControlPanel::~ControlPanel()
@@ -52,7 +56,7 @@ ControlPanel::~ControlPanel()
     if (!Sys::config->integratedScreen)
     {
         QPoint pt = pos();
-        QSettings s;
+        QSettings s = Sys::settings();
         s.setValue(QString("panelPos/%1").arg(Sys::appInstance), pt);
         qInfo() << "ControlPanel::~ControlPanel" << "pos" << pt;
     }
@@ -114,7 +118,7 @@ void ControlPanel::paintEvent(QPaintEvent *event)
         isShown = true;
         if (!Sys::config->integratedScreen)
         {
-            QSettings s;
+            QSettings s = Sys::settings();
             QPoint pt = s.value((QString("panelPos/%1").arg(Sys::appInstance))).toPoint();
             move(pt);
         }
@@ -128,11 +132,11 @@ void ControlPanel::setupGUI()
 
     // create the common top three lines
     QGroupBox * commonGroup = createTopGroup();
-    commonGroup->setFixedWidth(841);
+    commonGroup->setFixedWidth(PANEL_WIDTH);
     commonGroup->setContentsMargins(3,0,3,0);
 
     // LHS
-    QLabel * menuSelectLabel  = new QLabel("Menu Select");
+    QLabel * menuSelectLabel  = new QLabel("Menu Selection");
 
     PageListWidget * pageList = new PageListWidget(this);
     pageList->setContentsMargins(qm0);
@@ -151,7 +155,7 @@ void ControlPanel::setupGUI()
     Q_ASSERT(leftLayout->contentsMargins() == qm0);
 
     QWidget * leftWidget = new QWidget();
-    leftWidget->setMaximumWidth(117);
+    leftWidget->setMaximumWidth(PANEL_LHS_WIDTH);
     leftWidget->setLayout(leftLayout);
     Q_ASSERT(leftWidget->contentsMargins() == qm0);
 
@@ -168,11 +172,11 @@ void ControlPanel::setupGUI()
 
     QWidget * lowerWidget = new QWidget();
     lowerWidget->setContentsMargins(qm0);
-    lowerWidget->setFixedWidth(841);
+    lowerWidget->setFixedWidth(PANEL_WIDTH);
     lowerWidget->setLayout(lowerLayout);
 
     // this puts it all together
-    QVBoxLayout * paneLayout = new QVBoxLayout;
+    AQVBoxLayout * paneLayout = new AQVBoxLayout;
     paneLayout->setSizeConstraint(QLayout::SetFixedSize);
     paneLayout->addWidget(commonGroup);
     paneLayout->addWidget(lowerWidget);
@@ -181,11 +185,15 @@ void ControlPanel::setupGUI()
     this->setLayout(paneLayout);
 
     // connections
-    connect(this,   &ControlPanel::sig_reconstructView, Sys::viewController, &SystemViewController::slot_reconstructView);
+    connect(this,   &ControlPanel::sig_reconstructView, Sys::systemViewController, &ViewController::slot_reconstructView);
+    connect(Sys::mosaicMaker, &MosaicMaker::sig_messageBox, this, &ControlPanel::slot_messageBox);
+    connect(Sys::mosaicMaker, &MosaicMaker::sig_interlaceUnwoven, this, &ControlPanel::slot_interlaceUnwoven);
+    connect(Sys::tilingMaker, &TilingMaker::sig_messageBox, this, &ControlPanel::slot_messageBox);
 
     // populate pages
     pageController  = new PanelPageController(pageList,rhs);
     pageController->populatePages();                        // create the new pages
+    rhs->setFixedHeight(PANEL_RHS_HEIGHT);
     pageController->setCurrentPage(Sys::config->pageName); // this makes the first page selection
 }
 
@@ -262,7 +270,7 @@ QGroupBox * ControlPanel::createTopGroup()
     // connections
     connect(pbExit,             &QPushButton::clicked,    this,           &ControlPanel::slot_exit);
     connect(pbShowTiling,       &QPushButton::pressed,    this,           &ControlPanel::showTilingPressed);
-    connect(pbClearAll,         &QPushButton::pressed,    Sys::viewController, &SystemViewController::slot_unloadAll, Qt::QueuedConnection);
+    connect(pbClearAll,         &QPushButton::pressed,    Sys::systemViewController, &ViewController::slot_unloadAll, Qt::QueuedConnection);
     connect(pbShowMosaic,       &QPushButton::pressed,    this,           &ControlPanel::showMosaicPressed);
     connect(chkScaleToView,     &QCheckBox::clicked,      this,           &ControlPanel::slot_scaleToView);
     connect(&repeatRadioGroup,  &QButtonGroup::idClicked, this,           &ControlPanel::repeatChanged);
@@ -270,13 +278,13 @@ QGroupBox * ControlPanel::createTopGroup()
     if (Sys::config->insightMode)
     {
         // initial values
-        pbEnbDbgView->setChecked(Sys::viewController->isEnabled(VIEW_DEBUG));
+        pbEnbDbgView->setChecked(Sys::systemViewController->isEnabled(Layer::Type::DebugLayer));
         pbEnbDbgFlags->setChecked(Sys::flags->enabled());
 
         // connections
-        connect(pbUpdateView,   &QPushButton::clicked, Sys::viewController, &SystemViewController::slot_updateView);
-        connect(pbRefreshView,  &QPushButton::clicked, Sys::viewController, &SystemViewController::slot_reconstructView);
-        connect(pbRaise,        &QPushButton::clicked,  this, []    { Sys::viewController->raiseView();});
+        connect(pbUpdateView,   &QPushButton::clicked, Sys::systemViewController, &ViewController::slot_updateView);
+        connect(pbRefreshView,  &QPushButton::clicked, Sys::systemViewController, &ViewController::slot_reconstructView);
+        connect(pbRaise,        &QPushButton::clicked,  this, []    { Sys::systemViewController->raiseView();});
         connect(pbLogEvent,     &QPushButton::clicked,  this,       &ControlPanel::slot_logEvent);
         connect(pbSaveLog,      &QPushButton::clicked,  this,       &ControlPanel::sig_saveLog);
         connect(pbReload,       &QPushButton::clicked,  this,       &ControlPanel::slot_reload);
@@ -361,13 +369,13 @@ void ControlPanel::slot_poll()
 #if defined(Q_OS_WINDOWS)
     //Sys::sysview->testSize();
 #endif
-    if (Sys::config->insightMode && !Sys::updatePanel)
+    if (!Sys::updatePanel)
     {
         return;
     }
 
     // sync status background to view backgroun
-    QColor color = Sys::viewController->getViewBackgroundColor();
+    QColor color = Sys::systemViewController->getViewBackgroundColor();
     panelStatus->setBacgroundColor(color);
 
     // refresh visible pages
@@ -376,7 +384,7 @@ void ControlPanel::slot_poll()
     if (Sys::config->insightMode)
     {
         pbEnbDbgView->blockSignals(true);
-        pbEnbDbgView->setChecked(Sys::viewController->isEnabled(VIEW_DEBUG));
+        pbEnbDbgView->setChecked(Sys::systemViewController->isEnabled(Layer::Type::DebugLayer));
         pbEnbDbgView->blockSignals(false);
 
         pbEnbDbgFlags->blockSignals(true);
@@ -391,8 +399,8 @@ void ControlPanel::slot_poll()
 void ControlPanel::slot_raisePanel()
 {
     setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-    raise();
-    activateWindow();
+    raise();            // for MacOs
+    activateWindow();   // for Windows
 }
 
 void ControlPanel::changeEvent(QEvent *event)
@@ -404,7 +412,7 @@ void ControlPanel::changeEvent(QEvent *event)
     QWidget::changeEvent(event);
 }
 
-void  ControlPanel::slot_delegateView(eViewType vtype, bool delegate)
+void  ControlPanel::slot_delegateView(Layer::Type vtype, bool delegate)
 {
     delegateView(vtype,delegate);
 }
@@ -415,7 +423,7 @@ void ControlPanel::repeatChanged(int id)
 
     Sys::render(RENDER_RESET_PROTOTYPES);
 
-    if (Sys::viewController->isEnabled(VIEW_MAP_EDITOR))
+    if (Sys::systemViewController->isEnabled(Layer::Type::MapEditor))
     {
         emit sig_reload();
     }
@@ -458,14 +466,14 @@ void ControlPanel::slot_logEvent()
 {
     qInfo() << "** EVENT MARK **";
     Sys::dumpRefs();
-    const QVector<Layer*> & layers = Sys::viewController->getActiveLayers();
+    const QVector<Layer*> & layers = Sys::systemViewController->getActiveLayers();
     if (layers.size())
     {
         Layer * layer = layers.first();
         if (layer)
         {
-            auto vsize = Sys::viewController->viewSize();
-            auto csize = Sys::viewController->getCanvas().getCanvasSize();
+            auto vsize = Sys::systemViewController->viewSize();
+            auto csize = Sys::systemViewController->getCanvas()->getCanvasSize();
             qInfo().noquote() << "ViewSize" << vsize << "aspect ratio" <<  Utils::aspectRatio(vsize) << "CanvasSize" << csize << "aspect ratio" << Utils::aspectRatio(csize);
             qInfo().noquote() << layer->layerName() << "Canvas" << Transform::info(layer->getCanvasTransform());
             qInfo().noquote() << layer->layerName() << "Model " << Transform::info(layer->getModelTransform());
@@ -487,47 +495,44 @@ void ControlPanel::delegateViewByPage()
     page_prototype_info * ppi = dynamic_cast<page_prototype_info*>(currentPage);
     if (ppi)
     {
-        delegateView(VIEW_PROTOTYPE,true);
+        delegateView(Layer::Type::Prototype,true);
         return;
     }
 
     page_map_editor * pfe = dynamic_cast<page_map_editor*>(currentPage);
     if (pfe)
     {
-        delegateView(VIEW_MAP_EDITOR,true);
+        delegateView(Layer::Type::MapEditor,true);
         return;
     }
 
     page_motif_maker * pfm = dynamic_cast<page_motif_maker*>(currentPage);
     if (pfm)
     {
-        delegateView(VIEW_MOTIF_MAKER,true);
+        delegateView(Layer::Type::MotifMaker,true);
         return;
     }
 
     page_tiling_maker * ptm = dynamic_cast<page_tiling_maker*>(currentPage);
     if (ptm)
     {
-        delegateView(VIEW_TILING_MAKER,true);
+        delegateView(Layer::Type::TilingMaker,true);
         return;
     }
 
     page_mosaic_maker * psm = dynamic_cast<page_mosaic_maker*>(currentPage);
     if (psm)
     {
-        delegateView(VIEW_MOSAIC,true);
+        delegateView(Layer::Type::Mosaic,true);
         return;
     }
 }
 
 void ControlPanel::showMosaicPressed()
 {
-    delegateView(VIEW_MOSAIC,true);
+    delegateView(Layer::Type::Mosaic,true);
 
-    if (!Sys::config->insightMode)
-    {
-        Sys::viewController->raiseView();
-    }
+    Sys::systemViewController->raiseView();
 }
 
 void ControlPanel::showTilingPressed()
@@ -535,19 +540,16 @@ void ControlPanel::showTilingPressed()
     panel_page * currentPage = pageController->getCurrentPage();
 
     page_tiling_maker * ptm  = dynamic_cast<page_tiling_maker*>(currentPage);
-    if (ptm && Sys::viewController->isEnabled(VIEW_TILING))
+    if (ptm && Sys::systemViewController->isEnabled(Layer::Type::Tiling))
     {
-        delegateView(VIEW_TILING_MAKER,true);
+        delegateView(Layer::Type::TilingMaker,true);
     }
     else
     {
-        delegateView(VIEW_TILING,true);
+        delegateView(Layer::Type::Tiling,true);
     }
 
-    if (!Sys::config->insightMode)
-    {
-        Sys::viewController->raiseView();
-    }
+    Sys::systemViewController->raiseView();
 }
 
 void ControlPanel::slot_scaleToView(bool enb)
@@ -556,14 +558,67 @@ void ControlPanel::slot_scaleToView(bool enb)
 }
 
 // This is the way to delegate a view
-void ControlPanel::delegateView(eViewType vtype, bool delegate)
+void ControlPanel::delegateView(Layer::Type vtype, bool delegate)
 {
     viewSelect->selectViewer(vtype,delegate);
 }
 
+// for a checkbox click elsewhere that mirrors a layer enable - bypasses Lock Layers,
+// see PanelViewSelect::userSelectViewer()
+void ControlPanel::userDelegateView(Layer::Type vtype, bool delegate)
+{
+    viewSelect->userSelectViewer(vtype,delegate);
+}
+
 void ControlPanel::deselectGangedViewers()
 {
-    viewSelect->deselectGangedViewers();
+    auto vec = Sys::systemViewController->getGangMembers();
+    for (Layer::Type & vtype : vec)
+    {
+        delegateView(vtype,false);
+    }
+}
+
+void ControlPanel::reEnableViewers()
+{
+    // the Lock Layers checkbox was initialized while lockView was forced on during startup
+    // init/autoload (see TiledPatternMaker::slot_start()) - now that the real persisted value
+    // has been restored, bring the checkbox back in sync with it
+    viewSelect->syncLockCheckbox();
+
+    QSettings settings = Sys::settings();
+    QList<int> loadedList = settings.value("viewEnables2").value<QList<int>>();
+    if (loadedList.isEmpty())
+    {
+        qDebug() <<"ViewEnables empty - defaulting to mosiac view";
+        loadedList.push_back(static_cast<int>(Layer::Type::Mosaic));
+    }
+
+    for (auto i : std::as_const(loadedList))
+    {
+        Layer::Type vtype = static_cast<Layer::Type>(i);
+        if (!Sys::config->insightMode)
+        {
+            switch (vtype)
+            {
+            case Layer::Type::MapEditor:
+            case Layer::Type::Grid:
+            case Layer::Type::Crop:
+            case Layer::Type::DebugLayer:
+                vtype = Layer::Type::Mosaic;
+                break;
+
+            default:
+                break;
+            }
+
+        }
+        else if (vtype == Layer::Type::BMPImage)
+        {
+            continue;
+        }
+        userDelegateView(vtype,true);
+    }
 }
 
 void ControlPanel::getPanelInfo()
@@ -573,7 +628,7 @@ void ControlPanel::getPanelInfo()
 #else
     panelInfo = "Control Panel - Version ";
 #endif
-    panelInfo += tpmVersion;
+    panelInfo += TpmVersion::getVersion();
     if  (!Sys::gitBranch.isEmpty())
     {
         panelInfo += " [";
@@ -581,7 +636,7 @@ void ControlPanel::getPanelInfo()
         panelInfo += "]";
     }
     panelInfo  += "  ";
-    panelInfo  += Sys::config->rootMediaDir;
+    panelInfo  += Sys::getRootImageDir();
 }
 
 void ControlPanel::setWindowTitles()
@@ -589,7 +644,7 @@ void ControlPanel::setWindowTitles()
     // The view
     QString viewTitle;
 
-    if (!Sys::viewController->isEnabled(VIEW_LEGACY))
+    if (!Sys::systemViewController->isEnabled(Layer::Type::LegacyDesign))
     {
         // regular case
         QString sMosaic;
@@ -600,7 +655,7 @@ void ControlPanel::setWindowTitles()
         }
 
         QString sTiling;
-        auto tiling = Sys::tilingMaker->getSelected();
+        auto tiling = Sys::tilingMaker->getSelectedTiling();
         if (tiling)
         {
             sTiling = tiling->getVName().get();
@@ -640,7 +695,7 @@ void ControlPanel::setWindowTitles()
     {
         this->setWindowTitle(panelTitle);
         update();
-        Sys::viewController->setWindowTitle(viewTitle);
+        Sys::systemViewController->setWindowTitle(viewTitle);
         if (Sys::splitter)
         {
             Sys::splitter->setWindowTitle(panelTitle);
@@ -657,23 +712,100 @@ void ControlPanel::completePageSelection()
     adjustSize();
 }
 
-void ControlPanel::slot_messageBox(QString txt, QString txt2)
+void ControlPanel::closePages()
 {
+    pageController->closePages();
+}
+
+bool ControlPanel::isVisiblePage(panel_page * page)
+{
+    return pageController->isVisiblePage(page);
+}
+
+bool ControlPanel::isVisiblePage(ePanelPage page)
+{
+    return pageController->isVisiblePage(page);
+}
+
+void ControlPanel::setCurrentPage(QString name)
+{
+    pageController->setCurrentPage(name);
+}
+
+panel_page * ControlPanel::getCurrentPage()
+{
+    return pageController->getCurrentPage();
+}
+
+panel_page * ControlPanel::getPage(QString name)
+{
+    return pageController->getPage(name);
+}
+
+void ControlPanel::slot_reattachPage(panel_page * page)
+{
+    pageController->reAttachPage(page);
+}
+
+void ControlPanel::slot_messageBox(QString txt, QString txt2, QMessageBox::Icon icon, bool modal)
+{
+    qInfo() << "Message Box:" << txt << txt2;
     QMessageBox * box = new QMessageBox(this);
-    box->setIcon(QMessageBox::Information);
+    box->setIcon(icon);
     box->setAttribute(Qt::WA_DeleteOnClose, true);
     box->setText(txt);
     if (!txt2.isEmpty())
     {
         box->setInformativeText(txt2);
     }
-    box->show();
+    if (modal)
+        box->exec();
+    else
+    {
+        box->setModal(false);
+        box->setAttribute(Qt::WA_ShowWithoutActivating);
+        box->show();
+    }
+}
+
+void ControlPanel::slot_interlaceUnwoven()
+{
+    int unwoven = 0;
+    MosaicPtr mosaic = Sys::mosaicMaker->getMosaic();
+    if (mosaic)
+    {
+        for (const StylePtr & style : mosaic->getStyleSet())
+        {
+            if (style->getStyleType() == STYLE_INTERLACED)
+            {
+                unwoven += std::static_pointer_cast<Interlace>(style)->getUnwovenVertices();
+            }
+        }
+    }
+
+    if (unwoven == 0)
+    {
+        if (unwovenBox)
+            unwovenBox->hide();
+        return;
+    }
+
+    if (!unwovenBox)
+    {
+        unwovenBox = new QMessageBox(this);
+        unwovenBox->setIcon(QMessageBox::Warning);
+        unwovenBox->setInformativeText("The map may need cleansing, or a different cleanse sensitivity");
+        unwovenBox->setModal(false);
+        unwovenBox->setAttribute(Qt::WA_ShowWithoutActivating);
+    }
+    unwovenBox->setText(QString("Interlace: %1 vertices with more than 4 edges were not woven").arg(unwoven));
+    unwovenBox->show();
 }
 
 void  ControlPanel::slot_dbgViewClicked(bool checked)
 {
-    delegateView(VIEW_DEBUG,checked);
-    Sys::viewController->slot_reconstructView();
+    userDelegateView(Layer::Type::DebugLayer,checked);
+    Sys::systemViewController->slot_reconstructView();
 }
 
 void  ControlPanel::slot_dbgFlagsClicked(bool checked)
@@ -685,5 +817,13 @@ void  ControlPanel::slot_dbgFlagsClicked(bool checked)
         Sys::debugMapPaint->wipeout();
     }
     Sys::render(RENDER_RESET_ALL);
-    Sys::viewController->slot_updateView();
+    Sys::systemViewController->slot_updateView();
+}
+
+void ControlPanel::bringToPrimaryScreen()
+{
+    QScreen * primary = qApp->primaryScreen();
+
+    move(primary->geometry().center());
+    slot_raisePanel();
 }

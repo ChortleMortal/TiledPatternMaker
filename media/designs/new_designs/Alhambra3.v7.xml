@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Sun Jan 25 2026 21:08:35 -->
-<vector id="1" version="29">
+<!-- Written: Tue Aug 11 2026 18:19:24 -->
+<vector id="1" version="33">
 	<design>
 		<size>
 			<width>1330</width>
@@ -11,7 +11,7 @@
 		<background>
 			<color>#ffc2bcb0</color>
 		</background>
-		<Crop embed="t" apply="t" clip="f">
+		<Crop embed="t" apply="t">
 			<rect>
 				<X>-16.90341555873452</X>
 				<Y>-24.7467022057919</Y>
@@ -19,6 +19,14 @@
 				<height>50.21638182403571</height>
 			</rect>
 		</Crop>
+		<PainterCrop embed="f" apply="f">
+			<rect>
+				<X>-16.90341555873452</X>
+				<Y>-24.7467022057919</Y>
+				<width>26.4497722372367</width>
+				<height>50.21638182403571</height>
+			</rect>
+		</PainterCrop>
 		<Fill singleton="f">-1,2,-2,1</Fill>
 		<BackgroundImage name="IMG_1694-1ADJ.JPG">
 			<Scale>0.5237600236810447</Scale>
@@ -63,7 +71,7 @@
 								</Line>
 								<Line>
 									<Point reference="10" />
-									<Point id="11">-0.5664544973505212,0.8477590650225736</Point>
+									<Point id="11">-0.5664544973505212,0.8477590650225738</Point>
 								</Line>
 								<Line>
 									<Point reference="11" />
@@ -119,7 +127,7 @@
 							<y>0.58</y>
 							<k>0</k>
 							<s>3</s>
-							<tip>out</tip>
+							<TipTypes>outer</TipTypes>
 						</Rosette2>
 					</entry>
 					<entry>
@@ -327,7 +335,7 @@
 							<scale>1.23</scale>
 							<edges id="77">
 								<Line>
-									<Point id="78">1,1</Point>
+									<Point id="78">1,0.9999999999999998</Point>
 									<Point id="79">-0.9999999999999998,1</Point>
 								</Line>
 								<Line>
@@ -368,6 +376,7 @@
 		</style.Thick>
 	</style.Thick>
 	<style.Filled id="83">
+		<algorithm>3</algorithm>
 		<toolkit.GeoLayer>
 			<left__delta>-3.818542671400871</left__delta>
 			<top__delta>989.0025518928256</top__delta>
@@ -378,12 +387,6 @@
 		<style.Style>
 			<prototype reference="3" />
 		</style.Style>
-		<ColorBlacks>
-			<color hide="f">#ffffff00</color>
-		</ColorBlacks>
-		<ColorWhites>
-			<color hide="f">#ffffff00</color>
-		</ColorWhites>
 		<ColorGroup>
 			<Group hideSet="f">
 				<color hide="f">#ff405e76</color>
@@ -670,11 +673,6 @@
 				<color hide="f">#ffffff00</color>
 			</Group>
 		</ColorGroup>
-		<style.Filled>
-			<draw__inside>true</draw__inside>
-			<draw__outside>true</draw__outside>
-			<algorithm>3</algorithm>
-		</style.Filled>
 	</style.Filled>
 	<style.Border id="84">
 		<border type="2Color" shape="Rectangle" useViewSize="f">

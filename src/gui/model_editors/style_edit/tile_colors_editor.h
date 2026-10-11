@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TILE_COLOR_EDITOR_H
-#define TILE_COLOR_EDITOR_H
 
 #include <QObject>
 #include <QPointF>
@@ -80,4 +78,3 @@ private:
     QVector<wTilePtr>        uniqueTiles;
 
 };
-#endif

@@ -4,13 +4,13 @@
 //
 // The classic [n/d]s star construction.  See the paper for more details.
 
-#include <QtMath>
-#include <QDebug>
 #include "model/motifs/star.h"
-#include "sys/geometry/intersect.h"
-#include "sys/geometry/map.h"
 #include "model/tilings/tile.h"
-#include "gui/viewers/debug_view.h"
+#include "sys/geometry/debug_map.h"
+#include "sys/geometry/intersect.h"
+#include "sys/sys.h"
+#include <QDebug>
+#include <QtMath>
 
 typedef std::shared_ptr<Star> StarPtr;
 
@@ -20,21 +20,19 @@ Star::Star(int nsides, qreal dd, int ss) : RadialMotif(nsides)
 {
     d = clamp_d(dd);
     s = clamp_s(ss);
-    setMotifType(MOTIF_TYPE_STAR);
-}
-
-Star::Star(const Motif & fig,  int nsides, qreal dd, int ss) : RadialMotif(fig, nsides)
-{
-    d = clamp_d(dd);
-    s = clamp_s(ss);
-    setMotifType(MOTIF_TYPE_STAR);
+    setMotifType(Type::Star);
 }
 
 Star::Star(const Star & other) : RadialMotif(other)
 {
     d = other.d;
     s = other.s;
-    setMotifType(MOTIF_TYPE_STAR);
+    setMotifType(Type::Star);
+}
+
+Star::Star(const Motif & other) : RadialMotif(other)
+{
+    setMotifType(Type::Star);
 }
 
 bool Star::equals(const MotifPtr other)
@@ -55,10 +53,9 @@ bool Star::equals(const MotifPtr other)
     return true;
 }
 
-void Star::setN(int n)
+void Star::createTileAndMids()
 {
-    qDebug() << "Star::setN()" << n;
-    RadialMotif::setN(n);
+    int n = getN();
 
     tile        = make_shared<Tile>(n);
     auto corners = tile->getPoints();
@@ -106,28 +103,21 @@ int Star::clamp_s(int s)
 #endif
 }
 
-void Star::buildUnitMap()
+void Star::buildUnitRays()
 {
-    motifDebug    = 0x0;
-    if (motifDebug > 0)
+    setMotifDebug(0x0);
+    if (getMotifDebug() > 0)
     {
         Sys::debugMapCreate->wipeout();
     }
 
-    raySet1.clear();
-    raySet2.clear();
-
     if (getVersion() == 2)
         buildUnitV2();
     else
-        buildv1();
-
-    auto tr = getUnitRotationTransform();
-    raySet2 = raySet1;
-    raySet2.transform(tr);
+        buildUnitV1();
 }
 
-void Star::buildv1()
+void Star::buildUnitV1()
 {
     // int s    = number of intersects
     // qreal d  = angle (each integer is the next edge around the star)
@@ -141,35 +131,38 @@ void Star::buildv1()
 
     int outer_s = qMin(s, di - 1 );
 
-    if( dfrac < Sys::TOL )
+    if( dfrac < Loose::TOL )
     {
         dfrac = 0.0;
         d_is_int = true;
     }
-    else if( (1.0 - dfrac) < Sys::TOL )
+    else if( (1.0 - dfrac) < Loose::TOL )
     {
         dfrac = 0.0;
         di = int(did) + 1;
         d_is_int = true;
     }
 
-    QPointF a( 1.0, 0.0 );
-    raySet1.ray1.addTip(a);
-    raySet1.ray2.addTip(a);
+    RadialRay ray1;
+    RadialRay ray2;
 
-    QPointF b = getArc(d * don);
+    QPointF a( 1.0, 0.0 );
+    ray1.addTip(a);
+    ray2.addTip(a);
+
+    QPointF b = getArc(d * don());
     QLineF ab(a,b);
 
     for( int idx = 1; idx <= outer_s; ++idx )
     {
-        QPointF ar = getArc(  qreal(idx) * don );
-        QPointF br = getArc( (qreal(idx) - d) * don );
+        QPointF ar = getArc(  qreal(idx) * don() );
+        QPointF br = getArc( (qreal(idx) - d) * don() );
         QLineF arbr(ar,br);
         QPointF isect;
         if (ab.intersects(arbr,&isect) == QLineF::BoundedIntersection)
         {
-            raySet1.ray1.addTail(isect);
-            raySet1.ray2.addTail(QPointF(isect.x(),-isect.y()));
+            ray1.addTail(isect);
+            ray2.addTail(QPointF(isect.x(),-isect.y()));
         }
     }
 
@@ -177,31 +170,34 @@ void Star::buildv1()
     {
         if( d_is_int )
         {
-            QPointF midr = radialRotationTr.map(raySet1.ray1.getTail());
-            raySet1.ray1.addTail(midr);
-            raySet1.ray2.addTail(QPointF(midr.x(),-midr.y()));
+            QPointF midr = getRadialTransform(1).map(ray1.getTail());
+            ray1.addTail(midr);
+            ray2.addTail(QPointF(midr.x(),-midr.y()));
         }
         else
         {
-            QPointF ar = getArc( did * don );
-            QPointF br = getArc( -dfrac * don );
-            QPointF c  = getArc( d * don );
+            QPointF ar = getArc( did * don() );
+            QPointF br = getArc( -dfrac * don() );
+            QPointF c  = getArc( d * don() );
 
             QPointF isect;
             bool rv = Intersect::getIntersection(ar, br, a, c, isect);
             if (rv)
             {
-                raySet1.ray1.addTail(isect);
-                raySet1.ray2.addTail(QPointF(isect.x(),-isect.y()));
+                ray1.addTail(isect);
+                ray2.addTail(QPointF(isect.x(),-isect.y()));
             }
         }
     }
+
+    unitRays.add(ray1);
+    unitRays.add(ray2);
 
     if (inscribe)
     {
         qreal circumradius = 1.0 / (cos(M_PI / (qreal)getN()));
         QTransform t = QTransform::fromScale(circumradius,circumradius);
-        raySet1.transform(t);
+        unitRays.transform(t);
     }
 
     if (onPoint)
@@ -209,13 +205,13 @@ void Star::buildv1()
         qreal angle = 180.0/qreal(getN());
         QTransform t;
         t.rotate(angle);
-        raySet1.transform(t);
+        unitRays.transform(t);
     }
 
-    if (motifDebug & 0x01) raySet1.debug();
-    QTransform t = getDELTransform();
-    raySet1.transform(t);
-    if (motifDebug & 0x01) raySet1.debug();
+    if (getMotifDebug() & 0x01) unitRays.debug(0);
+    QTransform t = getMotifTransform();
+    unitRays.transform(t);
+    if (getMotifDebug() & 0x01) unitRays.debug(0);
 }
 
 void Star::buildUnitV2()
@@ -224,25 +220,30 @@ void Star::buildUnitV2()
     // qreal d  = angle (each integer is the next edge around the star)
     // qreal don = 1/n
 
+    createTileAndMids();
+
     qDebug() << "Star::buildV2"  << "n:" << getN() << "d:" << d << "s:" << s;
     //qDebug() << "mids" << mids;
 
     int  di       = qFloor(d);          // di is equivalent to the mids index, equivalent to the edge index;
     qreal dfrac   = d - qreal(di);
     bool d_is_int = false;
-    if (dfrac < Sys::TOL)
+    if (dfrac < Loose::TOL)
     {
         d_is_int = true;
     }
-    else if ((1.0 - dfrac) < Sys::TOL)
+    else if ((1.0 - dfrac) < Loose::TOL)
     {
         d_is_int = true;
         di++;
     }
 
+    RadialRay ray1;
+    RadialRay ray2;
+
     QPointF vt = mids[0];
-    raySet1.ray1.addTip(vt);
-    raySet1.ray2.addTip(vt);
+    ray1.addTip(vt);
+    ray2.addTip(vt);
 
     QLineF branchRay = getRay(0,d,1);
     for (int side = 1; side < di; ++side)
@@ -251,8 +252,8 @@ void Star::buildUnitV2()
         QPointF mid;
         if (branchRay.intersects(otherRay,&mid) == QLineF::BoundedIntersection)
         {
-            raySet1.ray1.addTail(mid);
-            raySet1.ray2.addTail(QPointF(mid.x(),-mid.y()));
+            ray1.addTail(mid);
+            ray2.addTail(QPointF(mid.x(),-mid.y()));
         }
     }
 
@@ -260,9 +261,9 @@ void Star::buildUnitV2()
     {
         if (d_is_int)
         {
-            QPointF midr = radialRotationTr.map(raySet1.ray1.getTail());
-            raySet1.ray1.addTail(midr);
-            raySet1.ray2.addTail(QPointF(midr.x(),-midr.y()));
+            QPointF midr = getRadialTransform(1).map(ray1.getTail());
+            ray1.addTail(midr);
+            ray2.addTail(QPointF(midr.x(),-midr.y()));
         }
         else
         {
@@ -272,17 +273,20 @@ void Star::buildUnitV2()
             bool rv = Intersect::getIntersection(arbr, mc,isect);
             if (rv)
             {
-                raySet1.ray1.addTail(isect);
-                raySet1.ray2.addTail(QPointF(isect.x(),-isect.y()));
+                ray1.addTail(isect);
+                ray2.addTail(QPointF(isect.x(),-isect.y()));
             }
         }
     }
+
+    unitRays.add(ray1);
+    unitRays.add(ray2);
 
     if (inscribe)
     {
         qreal circumradius = 1.0 / (cos(M_PI / (qreal)getN()));
         QTransform t = QTransform::fromScale(circumradius,circumradius);
-        raySet1.transform(t);
+        unitRays.transform(t);
     }
 
     if (onPoint)
@@ -290,13 +294,13 @@ void Star::buildUnitV2()
         qreal angle = 180.0/qreal(getN());
         QTransform t;
         t.rotate(angle);
-        raySet1.transform(t);
+        unitRays.transform(t);
     }
 
-    if (motifDebug & 0x01) raySet1.debug();
-    QTransform t = getDELTransform();
-    raySet1.transform(t);
-    if (motifDebug & 0x01) raySet1.debug();
+    if (getMotifDebug() & 0x01) unitRays.debug(0);
+    QTransform t = getMotifTransform();
+    unitRays.transform(t);
+    if (getMotifDebug() & 0x01) unitRays.debug(0);
 }
 
 QLineF Star::getRay(int side, qreal d, int sign)
@@ -321,11 +325,11 @@ QLineF Star::getRay(int side, qreal d, int sign)
         dfrac = d2 - qreal(di);
     }
 
-    if (dfrac < Sys::TOL)
+    if (dfrac < Loose::TOL)
     {
         dfrac = 0.0;
     }
-    else if ((1.0 - dfrac) < Sys::TOL)
+    else if ((1.0 - dfrac) < Loose::TOL)
     {
         dfrac    = 0.0;
         di++;

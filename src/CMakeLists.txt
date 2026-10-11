@@ -4,8 +4,6 @@ project(TiledPatternMaker LANGUAGES CXX)
 
 # Enable Qt features
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 # C++ standard
@@ -16,7 +14,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_UNITY_BUILD ON)
 
 # Try to find ccache (with fallback path hint)
-find_program(CCACHE_PROGRAM ccache  PATHS "C:/ProgramData/chocolatey/bin")
+if (WIN32)
+    find_program(CCACHE_PROGRAM ccache  PATHS "C:/ProgramData/chocolatey/bin")
+else()
+    find_program(CCACHE_PROGRAM ccache)
+endif()
+
+if(CCACHE_PROGRAM)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+endif()
 
 if(CCACHE_PROGRAM)
     message(STATUS "Using ccache: ${CCACHE_PROGRAM}")
@@ -26,19 +32,37 @@ else()
     message(WARNING "ccache not found, continuing without compiler cache.")
 endif()
 
+# Use mold linker if available — faster and far less memory-hungry than GNU ld
+find_program(MOLD_LINKER mold)
+if(MOLD_LINKER)
+    add_link_options(-fuse-ld=mold)
+    message(STATUS "Using mold linker")
+endif()
+
+# Give link jobs their own small pool so they don't all run concurrently
+#set_property(GLOBAL PROPERTY JOB_POOLS compile_pool=16 link_pool=2)
+#set(CMAKE_JOB_POOL_COMPILE compile_pool)
+#set(CMAKE_JOB_POOL_LINK link_pool)
+
 # Find Qt
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg Concurrent PrintSupport)
+qt_standard_project_setup()
 
 # Project sources
 set(PROJECT_SOURCES
+
     gui/map_editor/map_editor.cpp
     gui/map_editor/map_editor.h
     gui/map_editor/map_editor_db.cpp
     gui/map_editor/map_editor_db.h
+    gui/map_editor/map_editor_layer.cpp
+    gui/map_editor/map_editor_layer.h
     gui/map_editor/map_editor_map_loader.cpp
     gui/map_editor/map_editor_map_loader.h
     gui/map_editor/map_editor_map_writer.cpp
     gui/map_editor/map_editor_map_writer.h
+    gui/map_editor/map_editor_maps.cpp
+    gui/map_editor/map_editor_maps.h
     gui/map_editor/map_editor_mouseactions.cpp
     gui/map_editor/map_editor_mouseactions.h
     gui/map_editor/map_editor_selection.cpp
@@ -54,21 +78,27 @@ set(PROJECT_SOURCES
     gui/model_editors/crop_edit/mouse_edit_crop.cpp
     gui/model_editors/crop_edit/mouse_edit_crop.h
 
-    gui/model_editors/motif_edit/design_element_button.cpp
-    gui/model_editors/motif_edit/design_element_button.h
-    gui/model_editors/motif_edit/design_element_selector.cpp
-    gui/model_editors/motif_edit/design_element_selector.h
-    gui/model_editors/motif_edit/irregular_motif_editors.cpp
-    gui/model_editors/motif_edit/irregular_motif_editors.h
+    gui/model_editors/motif_edit/adaptive_motif_editors.cpp
+    gui/model_editors/motif_edit/adaptive_motif_editors.h
+    gui/model_editors/motif_edit/extender_editor.cpp
+    gui/model_editors/motif_edit/extender_editor.h
+    gui/model_editors/motif_edit/lower_third_editor.cpp
+    gui/model_editors/motif_edit/lower_third_editor.h
+    gui/model_editors/motif_edit/motif_editor.cpp
+    gui/model_editors/motif_edit/motif_editor.h
     gui/model_editors/motif_edit/motif_editor_widget.cpp
     gui/model_editors/motif_edit/motif_editor_widget.h
-    gui/model_editors/motif_edit/motif_editors.cpp
-    gui/model_editors/motif_edit/motif_editors.h
     gui/model_editors/motif_edit/motif_maker_widget.cpp
     gui/model_editors/motif_edit/motif_maker_widget.h
-    gui/model_editors/motif_edit/regular_motif_editors.cpp
-    gui/model_editors/motif_edit/regular_motif_editors.h
+    gui/model_editors/motif_edit/motif_type_selector.cpp
+    gui/model_editors/motif_edit/motif_type_selector.h
+    gui/model_editors/motif_edit/radial_motif_editors.cpp
+    gui/model_editors/motif_edit/radial_motif_editors.h
+    gui/model_editors/motif_edit/tile_motif_button.cpp
+    gui/model_editors/motif_edit/tile_motif_button.h
 
+    gui/model_editors/style_edit/border_editor.cpp
+    gui/model_editors/style_edit/border_editor.h
     gui/model_editors/style_edit/colored_editor.cpp
     gui/model_editors/style_edit/colored_editor.h
     gui/model_editors/style_edit/emboss_editor.cpp
@@ -103,6 +133,8 @@ set(PROJECT_SOURCES
     gui/panels/page_backgrounds.h
     gui/panels/page_borders.cpp
     gui/panels/page_borders.h
+    gui/panels/page_canvas_settings.cpp
+    gui/panels/page_canvas_settings.h
     gui/panels/page_crop_maker.cpp
     gui/panels/page_crop_maker.h
     gui/panels/page_debug.cpp
@@ -115,14 +147,14 @@ set(PROJECT_SOURCES
     gui/panels/page_layer_alignmentl.h
     gui/panels/page_layers.cpp
     gui/panels/page_layers.h
+    gui/panels/page_layers_tabs.cpp
+    gui/panels/page_layers_tabs.h
     gui/panels/page_loaders.cpp
     gui/panels/page_loaders.h
     gui/panels/page_log.cpp
     gui/panels/page_log.h
     gui/panels/page_map_editor.cpp
     gui/panels/page_map_editor.h
-    gui/panels/page_modelSettings.cpp
-    gui/panels/page_modelSettings.h
     gui/panels/page_mosaic_info.cpp
     gui/panels/page_mosaic_info.h
     gui/panels/page_mosaic_maker.cpp
@@ -164,11 +196,13 @@ set(PROJECT_SOURCES
     gui/top/split_screen.h
     gui/top/system_view.cpp
     gui/top/system_view.h
-    gui/top/system_view_accessor.cpp
-    gui/top/system_view_accessor.h
-    gui/top/system_view_controller.cpp
-    gui/top/system_view_controller.h
+    gui/top/view_accessor.cpp
+    gui/top/view_accessor.h
+    gui/top/view_controller.cpp
+    gui/top/view_controller.h
 
+    gui/viewers/construction_lines_view.cpp
+    gui/viewers/construction_lines_view.h
     gui/viewers/crop_maker_view.cpp
     gui/viewers/crop_maker_view.h
     gui/viewers/debug_view.cpp
@@ -178,8 +212,6 @@ set(PROJECT_SOURCES
     gui/viewers/grid_view.cpp
     gui/viewers/grid_view.h
     gui/viewers/image_view.cpp
-    gui/viewers/image_view.cpp
-    gui/viewers/image_view.h
     gui/viewers/image_view.h
     gui/viewers/layer.cpp
     gui/viewers/layer.h
@@ -226,8 +258,12 @@ set(PROJECT_SOURCES
     gui/widgets/dlg_rebase.h
     gui/widgets/dlg_rename.cpp
     gui/widgets/dlg_rename.h
+    gui/widgets/dlg_rosette_tips.cpp
+    gui/widgets/dlg_rosette_tips.h
     gui/widgets/dlg_savename.cpp
     gui/widgets/dlg_savename.h
+    gui/widgets/dlg_saveversion.cpp
+    gui/widgets/dlg_saveversion.h
     gui/widgets/dlg_textedit.cpp
     gui/widgets/dlg_textedit.h
     gui/widgets/dlg_trim.cpp
@@ -252,14 +288,14 @@ set(PROJECT_SOURCES
     gui/widgets/mouse_mode_widget.h
     gui/widgets/panel_misc.cpp
     gui/widgets/panel_misc.h
+    gui/widgets/position_widget.h
+    gui/widgets/position_widget.cpp
     gui/widgets/rounded_polygon.cpp
     gui/widgets/rounded_polygon.h
     gui/widgets/smx_widget.cpp
     gui/widgets/smx_widget.h
     gui/widgets/transparent_widget.cpp
     gui/widgets/transparent_widget.h
-    gui/widgets/version_dialog.cpp
-    gui/widgets/version_dialog.h
     gui/widgets/versioned_list_widget.cpp
     gui/widgets/versioned_list_widget.h
     gui/widgets/worklist_widget.cpp
@@ -282,16 +318,16 @@ set(PROJECT_SOURCES
     legacy/shapes.cpp
     legacy/shapes.h
 
-
-
-     model/makers/crop_maker.cpp
+    model/makers/crop_maker.cpp
     model/makers/crop_maker.h
     model/makers/mosaic_maker.cpp
     model/makers/mosaic_maker.h
-    model/makers/prototype_maker.cpp
-    model/makers/prototype_maker.h
-    model/makers/prototype_maker_data.cpp
-    model/makers/prototype_maker_data.h
+    model/makers/motif_maker.cpp
+    model/makers/motif_maker.h
+    model/makers/motif_view_data.cpp
+    model/makers/motif_view_data.h
+    model/makers/proto_view_data.cpp
+    model/makers/proto_view_data.h
     model/makers/tiling_maker.cpp
     model/makers/tiling_maker.h
 
@@ -308,8 +344,6 @@ set(PROJECT_SOURCES
     model/mosaics/legacy_loader.h
     model/mosaics/mosaic.cpp
     model/mosaics/mosaic.h
-    model/mosaics/mosaic_manager.cpp
-    model/mosaics/mosaic_manager.h
     model/mosaics/mosaic_reader.cpp
     model/mosaics/mosaic_reader.h
     model/mosaics/mosaic_writer.cpp
@@ -319,36 +353,41 @@ set(PROJECT_SOURCES
     model/mosaics/writer_base.cpp
     model/mosaics/writer_base.h
 
+    model/motifs/adaptive_extender.cpp
+    model/motifs/adaptive_extender.h
+    model/motifs/adaptive_girih.cpp
+    model/motifs/adaptive_girih.h
+    model/motifs/adaptive_girih_branches.cpp
+    model/motifs/adaptive_girih_branches.h
+    model/motifs/adaptive_hourglass.cpp
+    model/motifs/adaptive_hourglass.h
+    model/motifs/adaptive_inference.cpp
+    model/motifs/adaptive_inference.h
+    model/motifs/adaptive_intersect.cpp
+    model/motifs/adaptive_intersect.h
+    model/motifs/adaptive_motif.cpp
+    model/motifs/adaptive_motif.h
+    model/motifs/adaptive_rosette.cpp
+    model/motifs/adaptive_rosette.h
+    model/motifs/adaptive_star.cpp
+    model/motifs/adaptive_star.h
+    model/motifs/adaptive_star_branches.cpp
+    model/motifs/adaptive_star_branches.h
+    model/motifs/adaptive_tile.cpp
+    model/motifs/adaptive_tile.h
+    model/motifs/adaptive_tools.cpp
+    model/motifs/adaptive_tools.h
     model/motifs/explicit_map_motif.cpp
     model/motifs/explicit_map_motif.h
     model/motifs/extended_boundary.cpp
     model/motifs/extended_boundary.h
     model/motifs/extender.cpp
     model/motifs/extender.h
-    model/motifs/girih_motif.cpp
-    model/motifs/girih_motif.h
-    model/motifs/hourglass_motif.cpp
-    model/motifs/hourglass_motif.h
-    model/motifs/inferred_motif.cpp
-    model/motifs/inferred_motif.h
-    model/motifs/intersect_motif.cpp
-    model/motifs/intersect_motif.h
-    model/motifs/irregular_girih_branches.cpp
-    model/motifs/irregular_girih_branches.h
-    model/motifs/irregular_motif.cpp
-    model/motifs/irregular_motif.h
-    model/motifs/irregular_rosette.cpp
-    model/motifs/irregular_rosette.h
-    model/motifs/irregular_star.cpp
-    model/motifs/irregular_star.h
-    model/motifs/irregular_star_branches.cpp
-    model/motifs/irregular_star_branches.h
-    model/motifs/irregular_tools.cpp
-    model/motifs/irregular_tools.h
+
     model/motifs/motif.cpp
     model/motifs/motif.h
-    model/motifs/motif_connector.cpp
-    model/motifs/motif_connector.h
+    model/motifs/radial_extender.cpp
+    model/motifs/radial_extender.h
     model/motifs/radial_motif.cpp
     model/motifs/radial_motif.h
     model/motifs/radial_ray.cpp
@@ -362,22 +401,20 @@ set(PROJECT_SOURCES
     model/motifs/star2.cpp
     model/motifs/star2.h
     model/motifs/tile_color_defs.h
-    model/motifs/tile_motif.cpp
-    model/motifs/tile_motif.h
 
-    model/prototypes/design_element.cpp
-    model/prototypes/design_element.h
+    model/prototypes/tile_motif.cpp
+    model/prototypes/tile_motif.h
     model/prototypes/prototype.cpp
     model/prototypes/prototype.h
 
     model/settings/canvas.cpp
     model/settings/canvas.h
-    model/settings/canvas_settings.cpp
-    model/settings/canvas_settings.h
     model/settings/configuration.cpp
     model/settings/configuration.h
     model/settings/filldata.cpp
     model/settings/filldata.h
+    model/settings/distortion.cpp
+    model/settings/distortion.h
     model/settings/tristate.h
     model/settings/worklist.cpp
     model/settings/worklist.h
@@ -436,8 +473,8 @@ set(PROJECT_SOURCES
 
     model/tilings/backgroundimage.cpp
     model/tilings/backgroundimage.h
-    model/tilings//backgroundimage_perspective.cpp
-    model/tilings//backgroundimage_perspective.h
+    model/tilings/backgroundimage_perspective.cpp
+    model/tilings/backgroundimage_perspective.h
     model/tilings/placed_tile.cpp
     model/tilings/placed_tile.h
     model/tilings/tile.cpp
@@ -450,19 +487,19 @@ set(PROJECT_SOURCES
     model/tilings/tiling.h
     model/tilings/tiling_header.cpp
     model/tilings/tiling_header.h
-    model/tilings/tiling_manager.cpp
-    model/tilings/tiling_manager.h
     model/tilings/tiling_reader.cpp
     model/tilings/tiling_reader.h
     model/tilings/tiling_unit.cpp
-    model/tilings/tiling_unit.cpp
-    model/tilings/tiling_unit.h
     model/tilings/tiling_unit.h
     model/tilings/tiling_writer.cpp
     model/tilings/tiling_writer.h
 
     sys/engine/compare_bmp_engine.cpp
     sys/engine/compare_bmp_engine.h
+    sys/engine/compare_bmp_stepper.cpp
+    sys/engine/compare_bmp_stepper.h
+    sys/engine/convert_bmp_engine.cpp
+    sys/engine/convert_bmp_engine.h
     sys/engine/image_engine.cpp
     sys/engine/image_engine.h
     sys/engine/mosaic_bmp_generator.cpp
@@ -481,13 +518,10 @@ set(PROJECT_SOURCES
     sys/engine/tiling_stepper.h
     sys/engine/version_stepper.cpp
     sys/engine/version_stepper.h
-    sys/engine/compare_bmp_stepper.cpp
-    sys/engine/compare_bmp_stepper.h
     sys/engine/view_bmp_stepper.cpp
     sys/engine/view_bmp_stepper.h
 
-    sys/enums/ebkgdimage.cpp
-    sys/enums/ebkgdimage.h
+    sys/enums/eactivecanvas.h
     sys/enums/eborder.cpp
     sys/enums/eborder.h
     sys/enums/ecyclemode.h
@@ -501,21 +535,12 @@ set(PROJECT_SOURCES
     sys/enums/efilltype.cpp
     sys/enums/efilltype.h
     sys/enums/elogmode.h
-    sys/enums/emapeditor.cpp
-    sys/enums/emapeditor.h
-    sys/enums/emotiftype.cpp
-    sys/enums/emotiftype.h
     sys/enums/emousemode.h
     sys/enums/epanelpage.cpp
     sys/enums/epanelpage.h
     sys/enums/erender.h
-    sys/enums/estatemachineevent.cpp
-    sys/enums/estatemachineevent.h
     sys/enums/estyletype.h
-    sys/enums/etilingmaker.cpp
     sys/enums/etilingmaker.h
-    sys/enums/eviewtype.cpp
-    sys/enums/eviewtype.h
 
     sys/geometry/arcdata.cpp
     sys/geometry/arcdata.h
@@ -567,6 +592,7 @@ set(PROJECT_SOURCES
     sys/geometry/vertex.h
     sys/geometry/xform.cpp
     sys/geometry/xform.h
+
     sys/qt/qtapplog.cpp
     sys/qt/qtapplog.h
     sys/qt/timers.cpp
@@ -575,6 +601,7 @@ set(PROJECT_SOURCES
     sys/qt/unique_qvector.h
     sys/qt/utilities.cpp
     sys/qt/utilities.h
+
     sys/sys/debugflags.h
     sys/sys/debugflags.cpp
     sys/sys/fileservices.cpp
@@ -587,6 +614,7 @@ set(PROJECT_SOURCES
     sys/sys/signal_blocker.h
     sys/sys/versioning.cpp
     sys/sys/versioning.h
+
     sys/main.cpp
     sys/sys.cpp
     sys/sys.h
@@ -596,34 +624,38 @@ set(PROJECT_SOURCES
 )
 
 set (OTHER_FILES
+    manifest.xml
+    sys/version.cpp.in
     ../etc/windows/aliases.txt
-    ../etc/windows/binfo
-    ../etc/windows/branches
-    ../etc/windows/bstate
-    ../etc/windows/build-install.md
-    ../etc/windows/build-install-qt6.md
-    ../etc/windows/configure-local.bat
-    ../etc/windows/qt5.bat
-    ../etc/windows/qt6.bat
+    ../etc/TiledPatternMaker.nsi
     ../etc/linux/aliases.txt
     ../etc/linux/binfo
     ../etc/linux/branches
     ../etc/linux/bstate
-    ../etc/linux/build-install.md
     ../etc/linux/build-install-qt6.md
+    ../etc/linux/build-install.md
     ../etc/linux/configure-local
-    ../etc/TiledPatternMaker.nsi
     ../etc/models/Components.qmodel
-    ../etc/models/designeditor.qmodel
     ../etc/models/Designs.qmodel
+    ../etc/models/Viewers.qmodel
+    ../etc/models/designeditor.qmodel
     ../etc/models/figure_editors.qmodel
     ../etc/models/figures.qmodel
     ../etc/models/makers.qmodel
     ../etc/models/makers2.qmodel
     ../etc/models/mosaic.qmodel
+    ../etc/models/motifmaker.qmodel
     ../etc/models/shapes.qmodel
     ../etc/models/styles.qmodel
-    ../etc/models/Viewers.qmodel
+    ../etc/models/viewers2.qmodel
+    ../etc/windows/binfo
+    ../etc/windows/branches
+    ../etc/windows/bstate
+    ../etc/windows/build-install-qt6.md
+    ../etc/windows/build-install.md
+    ../etc/windows/configure-local.bat
+    ../etc/windows/qt5.bat
+    ../etc/windows/qt6.bat
     ../release-notes.txt
     txt/legacy.txt
     txt/mapeditor.txt
@@ -638,11 +670,13 @@ add_custom_target(Xtra-files SOURCES ${OTHER_FILES})
 qt_add_resources(PROJECT_SOURCES tpm.qrc)
 
 set(CMAKE_UNITY_BUILD ON)
+
 if(WIN32)
     qt_add_executable(TiledPatternMaker WIN32 ${PROJECT_SOURCES} icon.rc)   # don't delete the WIN32
     target_link_options(TiledPatternMaker PRIVATE /STACK:32000000)
 else()
     qt_add_executable(TiledPatternMaker ${PROJECT_SOURCES} icon.rc)
+    qt_import_plugins(TiledPatternMaker INCLUDE Qt6::QXcbIntegrationPlugin)
 endif()
 
 # Link Qt libraries
@@ -657,6 +691,30 @@ target_link_libraries(TiledPatternMaker PRIVATE
 # Optional: Unity batch size for better parallelism
 set_target_properties(TiledPatternMaker PROPERTIES UNITY_BUILD_BATCH_SIZE 8)
 
+# Build timestamp generation (update when any real source changes)
+set(VERSION_CPP ${CMAKE_CURRENT_BINARY_DIR}/version.cpp)
+set(VERSION_TMP ${CMAKE_CURRENT_BINARY_DIR}/version.tmp)
+
+add_custom_command(
+    OUTPUT ${VERSION_CPP}
+    COMMAND ${CMAKE_COMMAND}
+            -DOUT_FILE=${VERSION_TMP}
+            -DVERSION_IN_DIR=${CMAKE_CURRENT_SOURCE_DIR}/sys
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/sys/gen_version.cmake
+    COMMAND ${CMAKE_COMMAND} -E compare_files ${VERSION_TMP} ${VERSION_CPP} ||
+            ${CMAKE_COMMAND} -E copy ${VERSION_TMP} ${VERSION_CPP}
+    DEPENDS ${PROJECT_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/sys/version.cpp.in
+    COMMENT "Updating version.cpp only if timestamp changed"
+)
+
+add_custom_target(buildinfo_touch DEPENDS ${VERSION_CPP})
+add_dependencies(TiledPatternMaker buildinfo_touch)
+
+# Make sure the generated file is compiled
+target_sources(TiledPatternMaker PRIVATE ${VERSION_CPP})
+
+set_source_files_properties(${VERSION_CPP} PROPERTIES UNITY_BUILD OFF)
+
 message(STATUS "----------------------------------------")
 message(STATUS "Generator: ${CMAKE_GENERATOR}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
@@ -669,3 +727,28 @@ else()
     message(STATUS "ccache: NOT FOUND")
 endif()
 message(STATUS "----------------------------------------")
+
+# ---------------------------------------------------------------------------
+# Linux packaging (.deb via CPack) — has no effect on Windows/Mac builds
+# ---------------------------------------------------------------------------
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+
+    set_target_properties(TiledPatternMaker PROPERTIES OUTPUT_NAME "tiledpatternmaker")
+    install(TARGETS TiledPatternMaker       RUNTIME DESTINATION bin)
+    install(FILES tiledpatternmaker.desktop DESTINATION share/applications)
+    install(FILES tiledpatternmaker.png     DESTINATION share/icons/hicolor/256x256/apps)
+    install(DIRECTORY ../media/             DESTINATION share/tiledpatternmaker/media)
+    install(FILES manifest.xml              DESTINATION share/tiledpatternmaker/media)
+
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    set(CPACK_PACKAGE_NAME "tiledpatternmaker")
+    set(CPACK_PACKAGE_VERSION "4.3.0")
+    set(CPACK_PACKAGE_CONTACT "dcportal3@gmail.com")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "David  Casper <dcportal3@gmail.com>")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "graphics")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Design tool for Mosaic/Islamic geometric patterns")
+
+    include(CPack)
+
+endif()

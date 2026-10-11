@@ -1,8 +1,9 @@
-#include "gui/top/splash_screen.h"
+#include <algorithm>
+
 #include "model/makers/mosaic_maker.h"
 #include "model/mosaics/mosaic.h"
 #include "model/motifs/motif.h"
-#include "model/prototypes/design_element.h"
+#include "model/prototypes/tile_motif.h"
 #include "model/prototypes/prototype.h"
 #include "model/settings/configuration.h"
 #include "model/tilings/tile.h"
@@ -38,9 +39,7 @@ Prototype::Prototype(TilingPtr t, MosaicPtr m)
     _tiling         = t;
     wMosaic         = m;
     _protoMap       = make_shared<Map>("ProtoMap ");
-    viewController  = Sys::viewController;
     cleanseLevel    = 0;
-    distort         = false;
     cleanseSensitivity = 0;
     refs++;
 }
@@ -51,9 +50,7 @@ Prototype::Prototype(TilingPtr t)
     Q_ASSERT(t);
     _tiling         = t;
     _protoMap       = make_shared<Map>("ProtoMap ");
-    viewController  = Sys::viewController;
     cleanseLevel    = 0;
-    distort         = false;
     cleanseSensitivity = 0;
     refs++;
 }
@@ -62,9 +59,7 @@ Prototype::Prototype(MapPtr map)
 {
     // This is a special case used by the map editor where the map is already prepared
     _protoMap      = map;
-    viewController = Sys::viewController;
     cleanseLevel   = 0;
-    distort        = false;
     cleanseSensitivity = 0;
     refs++;
 }
@@ -84,13 +79,13 @@ bool Prototype::operator==(const Prototype & other)
     if (_tiling != other._tiling)
         return false;
 
-    if (_designElements.size() != other._designElements.size())
+    if (_tileMotifSet.size() != other._tileMotifSet.size())
         return false;
 
-    for (int i=0; i <  _designElements.size(); i++)
+    for (int i=0; i <  _tileMotifSet.size(); i++)
     {
-        DELPtr ele  = _designElements[i];
-        DELPtr eleo = other._designElements[i];
+        TileMotifPtr ele  = _tileMotifSet[i];
+        TileMotifPtr eleo = other._tileMotifSet[i];
 
         if (ele->getTile() != eleo->getTile())
             return  false;
@@ -101,39 +96,54 @@ bool Prototype::operator==(const Prototype & other)
     return  true;
 }
 
+bool Prototype::hasContent()
+{
+    return (_tileMotifSet.size() > 0) || !_protoMap->isEmpty();
+}
+
 void Prototype::wipeoutProtoMap()
 {
+    if (!_tiling)
+        return;     // tiling-less prototype: the map IS the prototype, nothing to rebuild it from
+
     _DCEL.reset();                  // dcel is subordinate so must be erased too.
+    _dcelFailed = false;
     _protoMap->clear();
     Q_ASSERT(_protoMap->isEmpty());
 }
 
-MapPtr Prototype::getProtoMap(bool splash)
+void Prototype::setProtoMap(MapPtr map)
+{
+    // map may be the same object, edited in place, so the dcel is always stale
+    _protoMap   = map;
+    _DCEL.reset();
+    _dcelFailed = false;
+}
+
+MapPtr Prototype::getProtoMap()
 {
     Q_ASSERT(_protoMap);
     if (_protoMap->isEmpty())
     {
-        _createProtoMap(splash);    // build on demnd
+        splashCreateProtoMap();    // build on demnd
     }
     return _protoMap;
 }
 
-void Prototype::_createProtoMap(bool splash)
+void Prototype::splashCreateProtoMap()
 {
     QMutexLocker locker(&protoMutex);
 
     Q_ASSERT(_protoMap);
     Q_ASSERT(_protoMap->isEmpty());
 
-    if (_designElements.size() == 0)
+    if (_tileMotifSet.size() == 0)
     {
         return;
     }
 
-    if (splash && viewController->splashCanPaint())
-    {
-        Sys::splash->display("Creating Prototype Map...");
-    }
+    if (!Sys::imgGeneratorInUse)
+        Sys::systemViewController->splash_display("Creating Prototype Map...");
 
     AQElapsedTimer timer;
 
@@ -141,18 +151,23 @@ void Prototype::_createProtoMap(bool splash)
     QString astring = QString("Constructing prototype map for tiling: %1").arg(_tiling->getVName().get());
     qDebug().noquote() << astring;
 
-    _createMap();
+    createProtoMap();
 
     qDebug().noquote() << "PROTOTYPE COMPLETED MAP:" << _protoMap->info();
     qDebug().noquote() << "Prototype construction" << timer.getElapsed() << "seconds";
 
-    if (splash && viewController->splashCanPaint())
-    {
-        Sys::splash->remove();
-    }
+    if (!Sys::imgGeneratorInUse)
+        Sys::systemViewController->splash_remove();
 }
 
-void Prototype::_createMap()
+Canvas * Prototype::getCanvas()
+{
+    MosaicPtr mosaic = wMosaic.lock();
+    Q_ASSERT(mosaic);
+    return mosaic->getMosaicCanvas();
+}
+
+void Prototype::createProtoMap()
 {
     Q_ASSERT(_tiling);
     Q_ASSERT(_protoMap->isEmpty());
@@ -162,34 +177,29 @@ void Prototype::_createMap()
     // this is where the locations for the replicated styles are put
     // each motif point is placed with a relative transform from the tiling when the map is constructed
 
-    MosaicPtr mosaic = wMosaic.lock();
-
-    FillData fillData;
-    if (mosaic)
-        fillData = mosaic->getCanvasSettings().getFillData();
-    else
-        fillData = _tiling->hdr().getCanvasSettings().getFillData();
-    FillRegion flood(_tiling.get(),fillData);
+    FillRegion flood(_tiling.get(),getCanvas()->getFillData());
     Placements fillPlacements = flood.getPlacements(Sys::config->repeatMode);
 
-    if (_designElements.size() == 1 && fillPlacements.size() == 1 && fillPlacements[0].isIdentity())
+    if (_tileMotifSet.size() == 1 && fillPlacements.size() == 1 && fillPlacements[0].isIdentity())
     {
-        auto tile = _designElements[0]->getTile();
+        auto tile = _tileMotifSet[0]->getTile();
         if (_tiling->unit().getPlacements(tile).size() == 0)
         {
             // This is a special edge case and seems a kludge, fighting the system.
             // With more thought a better implementation of this idea could be made
-            auto motif = _designElements[0]->getMotif();
+            auto motif = _tileMotifSet[0]->getMotif();
             _protoMap  = motif->getMotifMap();
             qDebug() << "PROTOTYPE is motif map";
         }
     }
 
-    if (_protoMap->isEmpty() && (_designElements.size() > 0))
+    if (_protoMap->isEmpty() && (_tileMotifSet.size() > 0))
     {
-        _buildMotifMaps();
+        buildMotifMaps();
 
+        //AQElapsedTimer timer2;
         _buildPrototypeMap(fillPlacements);
+        //qInfo().noquote() << "_buildPrototypeMap" << timer2.getElapsed() << "seconds";
 
         if (!_protoMap->isEmpty())
             qDebug() << "PROTOTYPE merged";
@@ -197,26 +207,27 @@ void Prototype::_createMap()
             qDebug() << "PROTOTYPE empty";
     }
 
-    if (distort && !distortionTransform.isIdentity())
-    {
-        qDebug() << "Prototype using distortion x" << distortionTransform.m11() << "y" << distortionTransform.m22();
-        _protoMap->transform(distortionTransform);
-    }
-
     if (_crop)
     {
+        // cropOutside() requires the map to already be split at the crop boundary (see
+        // cropOutside(QRectF) in map.cpp), so when both embed and apply are requested (the
+        // default for pre-embed/apply-attribute XML, see MosaicReader), embedCrop() only needs
+        // to be called once - calling it a second time on top of that isn't a no-op (mergeMap
+        // can't detect that a boundary segment is already represented by a chain of colinear
+        // fragments from the first pass) and would insert redundant overlapping edges.
         if (_crop->getCropType() == CROP_RECTANGLE)
         {
             const QRectF & rect = _crop->getRect();
             if (rect.isValid())
             {
-                if (_crop->getEmbed())
-                {
-                    _protoMap->embedCrop(rect);
-                }
                 if (_crop->getApply())
                 {
+                    _protoMap->embedCrop(rect);
                     _protoMap->cropOutside(rect);
+                }
+                else if (_crop->getEmbed())
+                {
+                    _protoMap->embedCrop(rect);
                 }
                 qDebug() << "Crop-rect merged";
             }
@@ -224,26 +235,28 @@ void Prototype::_createMap()
         else if (_crop->getCropType() == CROP_CIRCLE)
         {
             const Circle & circle = _crop->getCircle();
-            if (_crop->getEmbed())
-            {
-                _protoMap->embedCrop(circle);
-            }
             if (_crop->getApply())
             {
+                _protoMap->embedCrop(circle);
                 _protoMap->cropOutside(circle);
+            }
+            else if (_crop->getEmbed())
+            {
+                _protoMap->embedCrop(circle);
             }
             qDebug() << "Crop-circle merged";
         }
         else if (_crop->getCropType() == CROP_POLYGON)
         {
             QPolygonF poly = _crop->getAPolygon().get();
-            if (_crop->getEmbed())
-            {
-                _protoMap->embedCrop(poly);
-            }
             if (_crop->getApply())
             {
+                _protoMap->embedCrop(poly);
                 _protoMap->cropOutside(poly);
+            }
+            else if (_crop->getEmbed())
+            {
+                _protoMap->embedCrop(poly);
             }
             qDebug() << "Crop-poly merged";
         }
@@ -265,7 +278,7 @@ void Prototype::_createMap()
     mv.verifyAndFix(Sys::config->forceVerifyProtos);
 }
 
-void Prototype::_buildMotifMaps()
+void Prototype::buildMotifMaps()
 {
     // The InferredMotif type is dependant on its surrounding motifs.
     // So these need to be prepared before the prototype map
@@ -273,24 +286,23 @@ void Prototype::_buildMotifMaps()
 
     // pass 1 - build all motif maps
     int num_inferred = 0;
-    for (auto & del : _designElements)
+    for (TileMotifPtr & timo : _tileMotifSet)
     {
-        auto motif = del->getMotif();
-        if (motif->getMotifType() == MOTIF_TYPE_INFERRED)
+        MotifPtr motif = timo->getMotif();
+        if (motif->getMotifType() == Motif::Type::Inferred)
             num_inferred++;
-        motif->cleanExtenders();
-        motif->buildMotifMap();
+        motif->build();
     }
 
     // pass 2 - rebuild InferredMotifs
     for (int i=0; i < num_inferred; i++)
     {
-        for (const auto & del : std::as_const(_designElements))
+        for (const TileMotifPtr & timo : std::as_const(_tileMotifSet))
         {
-            auto motif = del->getMotif();
-            if (motif->getMotifType() == MOTIF_TYPE_INFERRED)
+            MotifPtr motif = timo->getMotif();
+            if (motif->getMotifType() == Motif::Type::Inferred)
             {
-                motif->buildMotifMap();
+                motif->build();
             }
         }
     }
@@ -298,14 +310,14 @@ void Prototype::_buildMotifMaps()
 
 void Prototype::_buildPrototypeMap(Placements & fillPlacements)
 {
-    for (auto & designElement : _designElements)
+    for (TileMotifPtr & timo : _tileMotifSet)
     {
-        TilePtr tile              = designElement->getTile();
-        Placements tilePlacements = _tiling->unit().getPlacements(tile);
+        TilePtr tile              = timo->getTile();
+        Placements tilePlacements = _tiling->unit().getPlacements(tile,getCanvas()->getDistorionTransform());
         if (!tilePlacements.size())
             tilePlacements.push_back(QTransform());   // dummy tilings have no placements
 
-        MotifPtr motif  = designElement->getMotif();
+        MotifPtr motif  = timo->getMotif();
         MapPtr motifMap = motif->getMotifMap();
         if (!motifMap)
         {
@@ -325,7 +337,7 @@ void Prototype::_buildPrototypeMap(Placements & fillPlacements)
 
 const DCELPtr & Prototype::getDCEL()
 {
-    if (!_DCEL)
+    if (!_DCEL && !_dcelFailed)
     {
         QMutexLocker locker(&dcelMutex);
 
@@ -336,15 +348,21 @@ const DCELPtr & Prototype::getDCEL()
             _DCEL = dcel;
             protomap->setDerivedDCEL(dcel);
         }
+        else
+        {
+            _dcelFailed = true;     // not retried until the proto map is wiped
+        }
     }
     return _DCEL;
 }
 
 void Prototype::replaceTiling(const TilingPtr & newTiling)
 {
-    // replace the tiles (keeping the motifs) where possible
-    // make sure every tile in the new tiling has a design element
-    // delete redundant design element
+    // replace the tiles (keeping the motifs) where possible:
+    //  1) exact geometric matches keep their existing TileMotif untouched
+    //  2) leftover old/new tiles are handed to pairModifiedTiles() - tiles that were
+    //     probably edited (moved/rescaled/rotated) rather than added or deleted outright
+    //  3) whatever's still unpaired after that is a real deletion or a real addition
 
     Q_ASSERT(newTiling);
     analyze(newTiling);
@@ -353,56 +371,132 @@ void Prototype::replaceTiling(const TilingPtr & newTiling)
 
     _protoMap->clear();
 
-    QVector<TilePtr>          unusedTiles;
-    QVector<DELPtr> usedElements;
+    const QVector<TilePtr> newTiles = newTiling->unit().getUniqueTiles();
 
-    // match elements to tiles
-    const QVector<TilePtr> uniqueTiles = newTiling->unit().getUniqueTiles();
-    for (auto & newTile : std::as_const(uniqueTiles))
+    // pass 1: exact matches
+    TileMotifSet     matchedTileMotifs;
+    QVector<TilePtr> unmatchedNewTiles;
+
+    for (const TilePtr & newTile : std::as_const(newTiles))
     {
-        bool used = false;
-        for (auto & del : std::as_const(_designElements))
+        bool matched = false;
+        for (const TileMotifPtr & timo : std::as_const(_tileMotifSet))
         {
-            if (usedElements.contains(del))
+            if (matchedTileMotifs.contains(timo))
             {
                 continue;
             }
-            if (newTile == del->getTile())
+            if (newTile->isBasicallyEqual(timo->getTile()))
             {
-                // replace
-                del->replaceTile(newTile);
-                usedElements.push_back(del);
-                used = true;
+                timo->exactReplaceTile(newTile);
+                matchedTileMotifs.push_back(timo);
+                matched = true;
                 break;
             }
         }
-        if (!used)
+        if (!matched)
         {
-            unusedTiles.push_back(newTile);
+            unmatchedNewTiles.push_back(newTile);
         }
     }
 
-    // remove unused elements
-    QVector<DELPtr> unusedElements;
-    for (const auto & element : std::as_const(_designElements))
+    QVector<TileMotifPtr> unmatchedOldTileMotifs;
+    for (const TileMotifPtr & timo : std::as_const(_tileMotifSet))
     {
-        if (!usedElements.contains(element))
+        if (!matchedTileMotifs.contains(timo))
         {
-            unusedElements.push_back(element);
+            unmatchedOldTileMotifs.push_back(timo);
         }
     }
 
-    for (const auto & element : std::as_const(unusedElements))
+    // pass 2: pair up likely-edited tiles among what's left
+    const QVector<QPair<TileMotifPtr,TilePtr>> modifiedPairs = pairModifiedTiles(unmatchedOldTileMotifs, unmatchedNewTiles);
+
+    QVector<TileMotifPtr> pairedOld;
+    QVector<TilePtr>      pairedNew;
+    for (const auto & pr : std::as_const(modifiedPairs))
     {
-        removeDesignElement(element);
+        pr.first->replaceModifiedTile(pr.second);
+        pairedOld.push_back(pr.first);
+        pairedNew.push_back(pr.second);
     }
 
-    // create new elements
-    for (const auto & tile : std::as_const(unusedTiles))
+    // pass 3: whatever's left is a real deletion or a real addition
+    for (const TileMotifPtr & timo : std::as_const(unmatchedOldTileMotifs))
     {
-        DELPtr del = make_shared<DesignElement>(newTiling,tile);
-        addDesignElement(del);
+        if (!pairedOld.contains(timo))
+        {
+            removeTileMotif(timo);
+        }
     }
+
+    for (const TilePtr & tile : std::as_const(unmatchedNewTiles))
+    {
+        if (!pairedNew.contains(tile))
+        {
+            TileMotifPtr timo = make_shared<TileMotif>(newTiling,tile);
+            addTileMotif(timo);
+        }
+    }
+}
+
+QVector<QPair<TileMotifPtr,TilePtr>> Prototype::pairModifiedTiles(const QVector<TileMotifPtr> & unmatchedOld, const QVector<TilePtr> & unmatchedNew)
+{
+    // greedy nearest-neighbor pairing by shape closeness. Same side count and
+    // regularity are required for a pair to even be a candidate - a triangle should
+    // never pair with a hexagon. Among candidates, the closest by scale/rotation wins.
+    // Whatever's left over (a genuine count mismatch, or no eligible candidate at all)
+    // falls through to replaceTiling()'s pass 3 as a real deletion/addition.
+    //
+    // This is greedy, not a true optimal assignment (Hungarian algorithm territory) -
+    // a bad early pick could in principle starve a better one later - but the tile
+    // counts involved here are always small enough (single digits) that greedy and
+    // optimal are indistinguishable in practice.
+
+    struct Candidate
+    {
+        int   oldIndex;
+        int   newIndex;
+        qreal distance;
+    };
+
+    QVector<Candidate> candidates;
+    for (int oi = 0; oi < unmatchedOld.size(); oi++)
+    {
+        TilePtr oldTile = unmatchedOld[oi]->getTile();
+        for (int ni = 0; ni < unmatchedNew.size(); ni++)
+        {
+            TilePtr newTile = unmatchedNew[ni];
+            if (oldTile->numEdges() != newTile->numEdges())
+                continue;
+            if (oldTile->isRegular() != newTile->isRegular())
+                continue;
+
+            qreal distance = qAbs(oldTile->getScale() - newTile->getScale()) + qAbs(oldTile->getRotation() - newTile->getRotation());
+            candidates.push_back({oi, ni, distance});
+        }
+    }
+
+    std::sort(candidates.begin(), candidates.end(), [](const Candidate & a, const Candidate & b)
+    {
+        return a.distance < b.distance;
+    });
+
+    QVector<bool> oldUsed(unmatchedOld.size(), false);
+    QVector<bool> newUsed(unmatchedNew.size(), false);
+    QVector<QPair<TileMotifPtr,TilePtr>> pairs;
+
+    for (const Candidate & c : std::as_const(candidates))
+    {
+        if (oldUsed[c.oldIndex] || newUsed[c.newIndex])
+            continue;
+
+        oldUsed[c.oldIndex] = true;
+        newUsed[c.newIndex] = true;
+        pairs.push_back(qMakePair(unmatchedOld[c.oldIndex], unmatchedNew[c.newIndex]));
+    }
+
+    return pairs;
 }
 
 void Prototype::exactReplaceTiling(const TilingPtr & newTiling)
@@ -412,83 +506,141 @@ void Prototype::exactReplaceTiling(const TilingPtr & newTiling)
 
     _protoMap->clear();
 
-    QVector<DELPtr> usedElements;
+    TileMotifSet usedElements;
 
     // match elements to tiles
     const QVector<TilePtr> uniqueTiles = newTiling->unit().getUniqueTiles();
-    for (auto & newTile : std::as_const(uniqueTiles))
+    for (const TilePtr & newTile : std::as_const(uniqueTiles))
     {
-        for (auto & del : std::as_const(_designElements))
+        for (const TileMotifPtr & timo : std::as_const(_tileMotifSet))
         {
-            if (usedElements.contains(del))
+            if (usedElements.contains(timo))
             {
                 continue;
             }
-            if (newTile == del->getTile())
+            if (*newTile == *timo->getTile())
             {
                 // replace
-                del->exactReplaceTile(newTile);
-                usedElements.push_back(del);
+                timo->exactReplaceTile(newTile);
+                usedElements.push_back(timo);
                 break;
             }
         }
     }
 }
 
+void Prototype::recreateFromTiling()
+{
+    // this handles additions and deletions of TileMotifs due to changes in TilingUnit
+
+    int count = 0;
+    QVector<TilePtr> uniqueTiles = _tiling->unit().getUniqueTiles();
+    for (const TilePtr & tile : std::as_const(uniqueTiles))
+    {
+        if (++count > MAX_UNIQUE_TILE_INDEX)
+            qWarning() << "Large number of unique tiles in tiling count:" << count;
+
+        bool found = false;
+        for (const TileMotifPtr & timo : std::as_const(getTileMotifs()))
+        {
+            if (timo->getTile() == tile)
+            {
+                found = true;
+                if (!timo->validMotifRegularity())
+                {
+                    // radial/adaptive family no longer matches the tile's regularity
+                    timo->recreateMotifWhenRgularityChanged();
+                }
+                else if (timo->getMotif()->getN() != tile->numEdges())
+                {
+                    // same family still fits, but the side count changed underneath it
+                    // (e.g. 8 sides -> 16, still regular) - keep the motif type, adapt N
+                    timo->recreateMotifFromChangedTile();
+                }
+                break;
+            }
+        }
+        if (!found)
+        {
+            // creates a default TileMotif
+            TileMotifPtr dep = make_shared<TileMotif>(_tiling,tile);
+            addTileMotif(dep);
+        }
+    }
+
+    TileMotifSet forDeletion;
+    PlacedTileSet tileSet = _tiling->unit().getIncluded();
+
+    for (const TileMotifPtr & timo : std::as_const(getTileMotifs()))
+    {
+        TilePtr tile = timo->getTile();
+        if (!uniqueTiles.contains(tile))
+        {
+            forDeletion.push_back(timo);
+        }
+    }
+
+    for (const TileMotifPtr & timo : forDeletion)
+    {
+        removeTileMotif(timo);
+    }
+
+    wipeoutProtoMap();
+}
+
 void Prototype::analyze(TilingPtr newTiling)
 {
     QVector<TilePtr> tiles = newTiling->unit().getUniqueTiles();
-    QString line = "elements: ";
-    for (const auto & designElement : std::as_const(_designElements))
+    QString line = "TileMotifs: ";
+    for (const TileMotifPtr & tm : std::as_const(_tileMotifSet))
     {
-        TilePtr tile = designElement->getTile();
+        TilePtr tile = tm->getTile();
         line += tile->summary();
     }
     qDebug().noquote() <<  line;
-    line = "tiles: ";
-    for (const auto & tile : std::as_const(tiles))
+    line = "Tiles: ";
+    for (const TilePtr & tile : std::as_const(tiles))
     {
         line += tile->summary();
     }
     qDebug().noquote() <<  line;
 }
 
-void Prototype::addDesignElement(const DELPtr & element )
+void Prototype::addTileMotif(const TileMotifPtr & tileMotif)
 {
-    _designElements.push_front(element);
+    _tileMotifSet.push_front(tileMotif);
 }
 
-void Prototype::removeDesignElement(const DELPtr & element)
+void Prototype::removeTileMotif(const TileMotifPtr & tileMotif)
 {
-    _designElements.removeAll(element);
+    _tileMotifSet.removeAll(tileMotif);
 }
 
 QString Prototype::info() const
 {
-    return QString("elements=%1 tiling=%2").arg(_designElements.size()).arg(_tiling->getVName().get());
+    return QString("elements=%1 tiling=%2").arg(_tileMotifSet.size()).arg(_tiling->getVName().get());
 }
 
-
-DELPtr Prototype::getDesignElement(int index)
+TileMotifPtr Prototype::getTileMotif(int index)
 {
-    if (index < _designElements.size())
+    if (index < _tileMotifSet.size())
     {
-        return _designElements[index];
+        return _tileMotifSet[index];
     }
 
-    //qDebug() << "Prototype::getDesignElement" << "- not found";
-    DELPtr del;
+    //qDebug() << "Prototype::getTileMotif" << "- not found";
+    TileMotifPtr del;
     return del;
 }
 
-bool  Prototype::containsDesignElement(DELPtr del)
+bool  Prototype::containsTileMotif(TileMotifPtr tileMotif)
 {
-    if (!del)
+    if (!tileMotif)
         return false;
 
-    for (auto & desel : std::as_const(_designElements))
+    for (const TileMotifPtr & timo : std::as_const(_tileMotifSet))
     {
-        if (desel == del)
+        if (timo == tileMotif)
         {
             return true;
         }
@@ -498,11 +650,11 @@ bool  Prototype::containsDesignElement(DELPtr del)
 
 TilePtr  Prototype::getTile(const MotifPtr & motif)
 {
-    for (const auto & designElement: std::as_const(_designElements))
+    for (const TileMotifPtr  & timo: std::as_const(_tileMotifSet))
     {
-        if (designElement->getMotif() == motif)
+        if (timo->getMotif() == motif)
         {
-            return designElement->getTile();
+            return timo->getTile();
         }
     }
 
@@ -513,11 +665,11 @@ TilePtr  Prototype::getTile(const MotifPtr & motif)
 
 MotifPtr Prototype::getMotif(const TilePtr & tile)
 {
-    for (const auto & designElement: std::as_const(_designElements))
+    for (const TileMotifPtr  & timo: std::as_const(_tileMotifSet))
     {
-        if (designElement->getTile() == tile)
+        if (timo->getTile() == tile)
         {
-            return designElement->getMotif();
+            return timo->getMotif();
         }
     }
 
@@ -529,9 +681,9 @@ MotifPtr Prototype::getMotif(const TilePtr & tile)
 QList<TilePtr> Prototype::getTiles()
 {
     QList<TilePtr> ql;
-    for (const auto & designElement: std::as_const(_designElements))
+    for (const TileMotifPtr & timo: std::as_const(_tileMotifSet))
     {
-        ql.append(designElement->getTile());
+        ql.append(timo->getTile());
     }
     return ql;
 }
@@ -550,17 +702,17 @@ void Prototype::resetCrop()
 
 void Prototype::walk()
 {
-    qDebug() << "num design elements=" << _designElements.size();
-    if (_designElements.size() == 0)
+    qDebug() << "num TileMotifs =" << _tileMotifSet.size();
+    if (_tileMotifSet.size() == 0)
     {
-        qWarning() << "There are no design elements in the prototype for tiling" << _tiling->getVName().get();
+        qWarning() << "There are no tile motifs in the prototype for tiling" << _tiling->getVName().get();
     }
 
-    qDebug() << "start Prototype walk.... num motifs=" << _designElements.size();
-    for (const auto & element : std::as_const(_designElements))
+    qDebug() << "start Prototype walk.... num motifs=" << _tileMotifSet.size();
+    for (const TileMotifPtr  & timo : std::as_const(_tileMotifSet))
     {
-        TilePtr tile = element->getTile();
-        MotifPtr  motif  = element->getMotif();
+        TilePtr tile   = timo->getTile();
+        MotifPtr motif = timo->getMotif();
         qDebug().noquote() << "motif:" << motif->getMotifDesc() << " tile:" << tile->summary();
     }
     qDebug() << "....end Prototype walk";
@@ -568,9 +720,9 @@ void Prototype::walk()
 
 void Prototype::dumpMotifs()
 {
-    for (const auto & element : std::as_const(_designElements))
+    for (const TileMotifPtr  & timo : std::as_const(_tileMotifSet))
     {
-        MotifPtr  motif  = element->getMotif();
+        MotifPtr  motif  = timo->getMotif();
         motif->dump();
     }
 }

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef ROSETTE_H
-#define ROSETTE_H
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -20,11 +18,13 @@ class Rosette : public RadialMotif
 {
 public:
     // n = points, q = tip angle, s=sides intersections
-    Rosette(const Motif & fig,  int n, qreal qq, int ss);
     Rosette(int n, qreal qq, int ss);
     Rosette(const Rosette & other);
+    Rosette(const Motif & other);
 
-    virtual void  buildUnitMap() override;
+    virtual void  buildUnitRays() override;
+
+    QLineF  getKeyLine() const;
 
     qreal   getQ() {return q;}
     int     getS() {return s;}
@@ -35,8 +35,8 @@ public:
 
     virtual QString getMotifDesc() override { return "Rosette";}
     virtual void    dump()         override { qDebug().noquote()  << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s
-                                   << ((getRadialConnector()) ? "has connector" : "no connector")
                                    << "extenders" << getExtenders().count() ; }
+    virtual int     maxVersions()  override { return 1; }
 
     bool    equals(const MotifPtr other) override;
 
@@ -45,6 +45,4 @@ protected:
     inline qreal   q_clamp(qreal q);
 
 };
-
-#endif
 

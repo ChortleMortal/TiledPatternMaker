@@ -1,6 +1,4 @@
 #pragma once
-#ifndef PAGE_MOSAIC_INFO_H
-#define PAGE_MOSAIC_INFO_H
 
 #include "gui/panels/panel_page.h"
 
@@ -27,5 +25,3 @@ protected:
 private:
     class AQTableWidget * motifTable;
 };
-
-#endif

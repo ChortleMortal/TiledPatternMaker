@@ -1,5 +1,4 @@
-#ifndef VERSION_STEPPING_ENGINE_H
-#define VERSION_STEPPING_ENGINE_H
+#pragma once
 
 #include <QImage>
 #include "sys/engine/stepping_engine.h"
@@ -41,7 +40,5 @@ protected:
     QComboBox   * versionsA;
     QComboBox   * versionsB;
 };
-
-#endif
 
 

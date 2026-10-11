@@ -1,6 +1,4 @@
 #pragma once
-#ifndef RADIAL_MOTIF_H
-#define RADIAL_MOTIF_H
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -23,52 +21,53 @@ class RadialMotif : public Motif
 public:
     virtual ~RadialMotif() {}
 
-    virtual void    resetMotifMap() override;
-            void    buildMotifMap() override final;
-
-    virtual MapPtr  getMotifMap()   override;  // Get a complete map from unit.
-
     QTransform      getMotifTransform() override;
-    QTransform      getDELTransform()   override;
 
-    virtual void    buildUnitMap() = 0;
+    void            build()          override final;
+    ExtenderPtr     createExtender() override final;
 
-    virtual void    setN(int n)     override;
-
-    virtual MapPtr  getUnitMap()  const         { return unitMap; }
-    virtual MapPtr  getUnitMap2() const         { return unitMap2; }
-    qreal           get_don()                   { return don; }
-    QTransform      getUnitRotationTransform()  {return radialRotationTr;}
-
-    RaySet &        getRaySet1()                { return raySet1; }
-    RaySet &        getRaySet2()                { return raySet2; }
-
-    static QPointF  getArc( qreal frac );       // Get the point frac of the way around the unit circle.
-
-    qreal           computeConnectScale();
+    RaySet &        getUnitRays()               { return unitRays; }
+    RaySet &        getFullRays()               { return fullRays; }
 
     void            setOnPoint(bool enb);
     void            setInscribe(bool enb);
     bool            getOnPoint()                { return onPoint; }
     bool            getInscribe()               { return inscribe; }
 
-    virtual QString getMotifDesc()   override   { return "RadialMotif"; }
-    virtual void    dump()           override   {};
+    inline qreal    don() const                 { return _don; }
+    qreal           getMotifFitScale();
+
+    // the extender moves (rather than adds) tips to its boundary for these rays
+    virtual bool    hasTipsToMove()                 { return false; }
+    virtual bool    moveTipToBoundary(int rayIndex) { Q_UNUSED(rayIndex); return false; }
 
 protected:
     RadialMotif(int n);
-    RadialMotif(const Motif & motif, int n);
-    RadialMotif(const RadialMotif & motif);
+    RadialMotif(const RadialMotif & radial);
+    RadialMotif(const Motif & motif);
 
-    virtual MapPtr  createUnitMapFromRays(RaySet & set);
+    virtual void    buildUnitRays() = 0;
+    virtual void    buildFullRays();        // replicates
+    virtual void    extend();
+    virtual void    embellish();
+    virtual void    buildMap();
 
-    void            setupRadialTransform();     // Transform for eachradial popint/branch
-    virtual void    replicate();
+    virtual void    setN(int n)     override;
+
+    void            set_don(qreal val)          { _don = val; }
+
+    QTransform      getRadialTransform(int side);
+
+    static QPointF  getArc( qreal frac );       // Get the point frac of the way around the unit circle.
+
+    virtual void    replicateRays();
+    void            showRays(RaySet & rays);
 
     // data
     qreal   d;      // used by star
     int     s;      // used by star + rosette
     qreal   q;      // used by rosette
+
     qreal   kneeX;  // used by rosette2
     qreal   kneeY;  // used by rosette2
     qreal   k;      // used by rosette2
@@ -76,15 +75,12 @@ protected:
     bool    onPoint;
 
     // generated
-    qreal       don;
-    QTransform  radialRotationTr;
-    MapPtr      unitMap;
-    MapPtr      unitMap2;
-    RaySet      raySet1;
-    RaySet      raySet2;
+    qreal       _don;
+    qreal       _unitAngle;
+    RaySet      unitRays;
+    RaySet      fullRays;
+    ExtenderPtr extender;
 };
 
 typedef std::shared_ptr<RadialMotif>    RadialMotifPtr;
-
-#endif
 

@@ -53,7 +53,7 @@ PlacedTileSelector::PlacedTileSelector(QPointF pt)
 PlacedTileSelector::PlacedTileSelector(PlacedTilePtr pfp)
 {
     this->pfp  = pfp;
-    pt = pfp->getPlacement().map(pfp->getTile()->getCenter()); // FIXME is this  right
+    pt = pfp->getPlacement().map(pfp->getTile()->getCenter());
 }
 
 PlacedTileSelector::PlacedTileSelector(PlacedTilePtr pfp, QPointF pt)
@@ -81,24 +81,24 @@ QLineF PlacedTileSelector::getModelLine()
     return edge->getLine();
 }
 
-QLineF PlacedTileSelector::getPlacedLine()
+QLineF PlacedTileSelector::getPlacedLine(bool distort)
 {
-    return pfp->getPlacement().map(edge->getLine());
+    return pfp->getWorldTransform(distort ? Sys::getActiveDistortion() : QTransform()).map(edge->getLine());
 }
 
-EdgePtr PlacedTileSelector::getPlacedEdge()
+EdgePtr PlacedTileSelector::getPlacedEdge(bool distort)
 {
-    return std::make_shared<Edge>(edge,pfp->getPlacement());
+    return std::make_shared<Edge>(edge,pfp->getWorldTransform(distort ? Sys::getActiveDistortion() : QTransform()));
 }
 
-QPointF PlacedTileSelector::getPlacedPoint()
+QPointF PlacedTileSelector::getPlacedPoint(bool distort)
 {
-    return pfp->getPlacement().map(pt);
+    return pfp->getWorldTransform(distort ? Sys::getActiveDistortion() : QTransform()).map(pt);
 }
 
-QPolygonF PlacedTileSelector::getPlacedPolygon()
+QPolygonF PlacedTileSelector::getPlacedPolygon(bool distort)
 {
-    return pfp->getPlacedPoints();
+    return pfp->getWorldPoints(distort ? Sys::getActiveDistortion() : QTransform());
 }
 
 QPolygonF PlacedTileSelector::getModelPolygon()

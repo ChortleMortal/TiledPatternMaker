@@ -7,18 +7,16 @@
 #include "model/makers/crop_maker.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/mosaics/mosaic.h"
-#include "model/mosaics/mosaic_manager.h"
 #include "model/styles/style.h"
 #include "sys/geometry/crop.h"
 
 using std::make_shared;
 
-CropMakerView::CropMakerView() : LayerController(VIEW_CROP,PRIMARY,"Crop Maker")
+CropMakerView::CropMakerView() : LayerController(Type::Crop,Model::Primary,ZLevel::Crop_Z11,"Crop Maker")
 {
     debugMouse  = false;
     cropMaker   = nullptr;
     makerType   = CM_UNDEFINED;
-    setZLevel(CROP_VIEW_ZLEVEL);
     connect(this, &CropMakerView::sig_delegateView, Sys::controlPanel, &ControlPanel::slot_delegateView);
 }
 
@@ -133,7 +131,7 @@ void CropMakerView::setShowCrop(eCropMaker maker, bool state)
 {
     if (maker == makerType)
     {
-        emit sig_delegateView(VIEW_CROP,state);     // thread safe
+        emit sig_delegateView(Layer::Type::Crop,state);     // thread safe
     }
 }
 
@@ -141,7 +139,7 @@ bool CropMakerView::getShowCrop(eCropMaker maker)
 {
     if (maker == makerType)
     {
-        return Sys::viewController->isEnabled(VIEW_CROP);
+        return Sys::systemViewController->isEnabled(Layer::Type::Crop);
     }
     else
     {
@@ -185,7 +183,7 @@ void CropMakerView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 {
     Q_UNUSED(btn);
 
-    if (!viewControl()->isEnabled(VIEW_CROP))
+    if (!viewControl()->isEnabled(Layer::Type::Crop))
         return;
 
     if (!cropMaker)
@@ -204,7 +202,7 @@ void CropMakerView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 
 void CropMakerView::slot_mouseDragged(QPointF spt)
 {
-    if (!viewControl()->isEnabled(VIEW_CROP)) return;
+    if (!viewControl()->isEnabled(Layer::Type::Crop)) return;
 
     setMousePos(spt);
 
@@ -220,7 +218,7 @@ void CropMakerView::slot_mouseDragged(QPointF spt)
 
 void CropMakerView::slot_mouseMoved(QPointF spt)
 {
-    if (!viewControl()->isEnabled(VIEW_CROP)) return;
+    if (!viewControl()->isEnabled(Layer::Type::Crop)) return;
 
     setMousePos(spt);
 
@@ -231,7 +229,7 @@ void CropMakerView::slot_mouseMoved(QPointF spt)
 
 void CropMakerView::slot_mouseReleased(QPointF spt)
 {
-    if (!viewControl()->isEnabled(VIEW_CROP)) return;
+    if (!viewControl()->isEnabled(Layer::Type::Crop)) return;
 
     setMousePos(spt);
 

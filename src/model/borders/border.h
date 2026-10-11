@@ -1,6 +1,4 @@
 #pragma once
-#ifndef BORDER_H
-#define BORDER_H
 
 #include "sys/geometry/crop.h"
 #include "model/styles/style.h"
@@ -23,6 +21,8 @@ public:
 
     virtual void        paint(QPainter *painter)    override;
     virtual void        draw(GeoGraphics * gg)      override  = 0 ;
+
+    virtual QTransform  getCanvasTransform()        override;
 
     virtual void        setModelXform(const Xform & xf, bool update, uint sigid) override;
 
@@ -83,12 +83,12 @@ protected:
     Mosaic *    parent;
 
 private:
+    bool        isEditable();
+
     bool        _requiresConversion;
     QPointF     mousePos;             // used by menu
     bool        debugMouse;
 
     BorderMouseActionPtr   mouse_interaction;    // used by menu
 };
-
-#endif
 

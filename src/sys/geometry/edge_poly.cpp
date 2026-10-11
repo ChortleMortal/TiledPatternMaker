@@ -7,6 +7,7 @@
 #include "sys/geometry/edge.h"
 #include "sys/geometry/edge_poly.h"
 #include "sys/geometry/geo.h"
+#include "sys/geometry/loose.h"
 #include "sys/geometry/vertex.h"
 
 using std::make_shared;
@@ -54,6 +55,11 @@ EdgePoly::EdgePoly(const EdgeSet & edgeSet)
     create(edgeSet);
 }
 
+EdgePoly::EdgePoly(const LineSet & lineSet, bool ordered)
+{
+    create(lineSet,ordered);
+}
+
 EdgePoly::EdgePoly(const QPolygonF &poly)
 {
     create(poly);
@@ -92,8 +98,15 @@ void EdgePoly::create(const EdgeSet & edgeSet)
     rotation = 0;
     scale    = 1.0;
     set(edgeSet);
-
 }
+
+void EdgePoly::create(const LineSet & lineSet, bool ordered)
+{
+    rotation = 0;
+    scale    = 1.0;
+    set(lineSet,ordered);
+}
+
 void EdgePoly::create(const QPolygonF & poly)
 {
     rotation = 0;
@@ -144,6 +157,66 @@ void EdgePoly::set(const EdgeSet & edgeSet)
 {
     base     = edgeSet;     // this is a straight copy
     compose();
+}
+
+void EdgePoly::set(const LineSet & lineSet, bool ordered)
+{
+    // the goal here is to make a QPolygonF
+    QPolygonF poly;
+
+    LineSet lines = lineSet;    // now not const
+
+    if (!ordered)
+    {
+        // create an ordered list first
+
+        // Start with the first line
+        QLineF current = lines.takeFirst();
+        poly << current.p1();
+        poly << current.p2();
+
+        QPointF tail = current.p2();
+
+        // Greedy chaining
+        while (!lines.isEmpty())
+        {
+            bool extended = false;
+
+            for (int i = 0; i < lines.size(); ++i)
+            {
+                const QLineF &ln = lines[i];
+
+                if (ln.p1() == tail)
+                {
+                    poly << ln.p2();
+                    tail = ln.p2();
+                    lines.removeAt(i);
+                    extended = true;
+                    break;
+                }
+                else if (ln.p2() == tail)
+                {
+                    poly << ln.p1();
+                    tail = ln.p1();
+                    lines.removeAt(i);
+                    extended = true;
+                    break;
+                }
+            }
+
+            if (!extended)
+                break; // cannot chain further
+        }
+    }
+    else
+    {
+        poly<< lines[0].p1();
+        for (int i = 0; i < lines.size(); ++i)
+        {
+            poly << lines[i].p2();
+        }
+    }
+    set(poly);
 }
 
 void EdgePoly::set(const QPolygonF & poly)
@@ -267,7 +340,7 @@ void EdgePoly::clear()
 void EdgePoly::compose()
 {
     // creates the vector from the base+scale+rot
-    QTransform t = QTransform::fromScale(scale,scale).rotate(rotation);
+    QTransform t = getEpolyTransform();
     recreate(base,epoly);
     Q_ASSERT(isCorrect());
     if (!t.isIdentity())
@@ -279,8 +352,8 @@ void EdgePoly::compose()
 
 void EdgePoly::decompose()
 {
-    QTransform t = QTransform::fromScale(scale,scale).rotate(rotation).inverted();
     recreate(epoly,base);
+    QTransform t = getEpolyTransform().inverted();   // pivot is unchanged by scale and rotation
     Q_ASSERT(isCorrect());
     if (!t.isIdentity())
     {
@@ -524,9 +597,25 @@ QLineF EdgePoly::getEdge(int edge)
     return e->getLine();
 }
 
-QTransform EdgePoly::getTransform()
+// scale and rotation around the base centroid
+QTransform EdgePoly::getEpolyTransform()
 {
-    return QTransform::fromScale(scale,scale).rotate(rotation);
+    QTransform t = QTransform::fromScale(scale,scale).rotate(rotation);
+    if (t.isIdentity())
+        return t;
+
+    QPointF c = pivot(getBasePoints());
+    return QTransform::fromTranslate(-c.x(),-c.y()) * t * QTransform::fromTranslate(c.x(),c.y());
+}
+
+// centroid, snapped to the origin when within tolerance (regular bases are centered there)
+QPointF EdgePoly::pivot(const QPolygonF & pts)
+{
+    if (pts.isEmpty())
+        return QPointF();
+
+    QPointF c = centroid(pts);
+    return Loose::zero(c) ? QPointF() : c;
 }
 
 qreal EdgePoly::getAngle(int edge)
@@ -699,37 +788,37 @@ QPointF EdgePoly::calcCenter()
 
 QPointF EdgePoly::calcIrregularCenter()
 {
+    return centroid(getPoints());
+}
+
+// area centroid of a polygon, or the vertex average when it has no area
+QPointF EdgePoly::centroid(const QPolygonF & pts)
+{
     double area = 0.0;
-    double x0   = 0.0; // Current vertex X
-    double y0   = 0.0; // Current vertex Y
-    double x1   = 0.0; // Next vertex X
-    double y1   = 0.0; // Next vertex Y
-    double a    = 0.0;  // Partial signed area
     double sumX = 0.0;
     double sumY = 0.0;
 
-    // For all vertices in a loop
-    const auto & vertices = getVertices();
-    Q_ASSERT(vertices.first()->pt != vertices.last()->pt);
-
-    VertexPtr prev = vertices.last();
-    for (const VertexPtr &  next : std::as_const(vertices))
+    QPointF prev = pts.last();
+    for (const QPointF & next : pts)
     {
-        x0 = prev->pt.x();
-        y0 = prev->pt.y();
-        x1 = next->pt.x();
-        y1 = next->pt.y();
-        a  = x0*y1 - x1*y0;
+        double a = prev.x()*next.y() - next.x()*prev.y();   // partial signed area
         area += a;
-        sumX += ((x0 + x1)*a);
-        sumY += ((y0 + y1)*a);
+        sumX += (prev.x() + next.x()) * a;
+        sumY += (prev.y() + next.y()) * a;
         prev = next;
+    }
+
+    if (Loose::zero(area))
+    {
+        QPointF accum;
+        for (const QPointF & pt : pts)
+            accum += pt;
+        return accum / static_cast<qreal>(pts.size());
     }
 
     area *= 0.5;
 
-    QPointF centroid(sumX,sumY);
-    centroid /= (6.0 * area);
-
-    return centroid;
+    QPointF c(sumX,sumY);
+    c /= (6.0 * area);
+    return c;
 }

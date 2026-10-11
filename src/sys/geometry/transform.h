@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TRANSFORM_H
-#define TRANSFORM_H
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -34,6 +32,4 @@ public:
     static QString writeInfo(QTransform t);
     static QString info(QTransform t, int decimals = 6);
 };
-
-#endif
 

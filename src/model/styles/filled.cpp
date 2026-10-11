@@ -27,11 +27,16 @@ Filled::Filled(const ProtoPtr & proto, eFillType algorithm ) : Style(proto),orig
 
 Filled::Filled(const StylePtr & other) : Style(other),original(this),new1(this),new2(this),new3(this),direct(this),deprecated(this)
 {
-    FilledPtr filled = std::dynamic_pointer_cast<Filled>(other);
-    if (filled)
+    FilledPtr ofilled = std::dynamic_pointer_cast<Filled>(other);
+    if (ofilled)
     {
-        setAlgorithm(filled->getAlgorithm());
-        initAlgorithmFrom(filled->getAlgorithm());   // sets initialised
+        setAlgorithm(ofilled->getAlgorithm());
+        initAlgorithmFrom(ofilled->getAlgorithm());   // sets initialised
+        original = ofilled->original;
+        new1     = ofilled->new1;
+        new2     = ofilled->new2;
+        new3     = ofilled->new3;
+        direct   = ofilled->direct;
     }
     else
     {

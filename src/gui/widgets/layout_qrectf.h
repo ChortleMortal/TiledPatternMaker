@@ -1,15 +1,14 @@
 #pragma once
-#ifndef LAYOUT_QRECTF_H
-#define LAYOUT_QRECTF_H
 
 #include "gui/widgets/layout_sliderset.h"
+#include "gui/widgets/position_widget.h"
 
 class LayoutQRectF : public QHBoxLayout
 {
     Q_OBJECT
 
 public:
-    LayoutQRectF(QString name, int decimals = 8, qreal singleStep = 1.0);
+    LayoutQRectF(QWidget *parent, QString name, int decimals = 8, qreal singleStep = 1.0);
     void init();
 
     void setWidth(qreal val) { width->setValue(val); }
@@ -27,12 +26,19 @@ public:
 signals:
     void    rectChanged();
 
+private slots:
+    void slot_adjust_pos();
+    void slot_pos(Pos pos);
+
 protected:
     DoubleSpinSet * width;
     DoubleSpinSet * height;
     DoubleSpinSet * X;
     DoubleSpinSet * Y;
+
+private:
     QString         name;
+    QWidget       * parent;
 };
 
 class LayoutQPointF : public QHBoxLayout
@@ -62,5 +68,3 @@ protected:
     DoubleSpinSet * Y;
     QString         name;
 };
-
-#endif // LAYOUT_TRANSFORM_H

@@ -7,9 +7,9 @@
 #include <QtMath>
 #include <QDebug>
 #include "model/motifs/star2.h"
-#include "sys/geometry/map.h"
 #include "model/tilings/tile.h"
-#include "gui/viewers/debug_view.h"
+#include "sys/geometry/debug_map.h"
+#include "sys/sys.h"
 
 typedef std::shared_ptr<Star2> Star2Ptr;
 
@@ -19,21 +19,21 @@ Star2::Star2(int nsides, qreal theta, int intersects) : RadialMotif(nsides)
 {
     this->theta = theta;
     s = intersects;
-    setMotifType(MOTIF_TYPE_STAR2);
-}
-
-Star2::Star2(const Motif & fig,  int nsides, qreal theta, int intersects) : RadialMotif(fig, nsides)
-{
-    this->theta = theta;
-    s = intersects;
-    setMotifType(MOTIF_TYPE_STAR2);
+    setMotifType(Type::Star2);
 }
 
 Star2::Star2(const Star2 & other) : RadialMotif(other)
 {
     theta = other.theta;
     s     = other.s;
-    setMotifType(MOTIF_TYPE_STAR2);
+    setMotifType(Type::Star2);
+}
+
+Star2::Star2(const Motif & motif) : RadialMotif(motif)
+{
+    this->theta = 60.0;
+    s = 1;
+    setMotifType(Type::Star2);
 }
 
 bool Star2::equals(const MotifPtr other)
@@ -54,14 +54,14 @@ bool Star2::equals(const MotifPtr other)
     return true;
 }
 
-void Star2::buildUnitMap()
+void Star2::buildUnitRays()
 {
     // int s = number of intersects, qreal theta  = angle
 
     //qDebug() << "Star2::buildUnitMap" << "n:" << getN() << "theta:" << theta << "intersects:" << s;
 
-    motifDebug = 0x0;
-    if (motifDebug > 0)
+    setMotifDebug(0x0);
+    if (getMotifDebug() > 0)
     {
         Sys::debugMapCreate->wipeout();
     }
@@ -70,13 +70,13 @@ void Star2::buildUnitMap()
     corners = tile.getPoints();
     mids    = tile.getMids();
 
-    raySet1.clear();
-    raySet2.clear();
+    RadialRay ray1;
+    RadialRay ray2;
 
     // tip
     QPointF pt = mids[getN()-1];
-    raySet1.ray1.addTip(pt);
-    raySet1.ray2.addTip(pt);
+    ray1.addTip(pt);
+    ray2.addTip(pt);
 
     QLineF branchRay = getRay(getN()-1,theta,false);
     for (int side = 0; side < s; ++side)
@@ -85,16 +85,19 @@ void Star2::buildUnitMap()
         QLineF otherRay = getRay(side,theta,true);
         if (branchRay.intersects(otherRay,&isect) == QLineF::BoundedIntersection)
         {
-            raySet1.ray1.addTail(isect);
-            raySet1.ray2.addTail(QPointF(isect.x(),-isect.y()));
+            ray1.addTail(QPointF(isect.x(),-isect.y()));
+            ray2.addTail(isect);
         }
     }
+
+    unitRays.add(ray1);
+    unitRays.add(ray2);
 
     if (inscribe)
     {
         qreal circumradius = 1.0 / (cos(M_PI / (qreal)getN()));
         QTransform t = QTransform::fromScale(circumradius,circumradius);
-        raySet1.transform(t);
+        unitRays.transform(t);
     }
 
     if (onPoint)
@@ -102,17 +105,13 @@ void Star2::buildUnitMap()
         qreal angle = 180.0/qreal(getN());
         QTransform t;
         t.rotate(angle);
-        raySet1.transform(t);
+        unitRays.transform(t);
     }
 
-    if (motifDebug & 0x01) raySet1.debug();
-    QTransform t = getDELTransform();
-    raySet1.transform(t);
-    if (motifDebug & 0x01) raySet1.debug();
-
-    auto tr = getUnitRotationTransform();
-    raySet2 = raySet1;
-    raySet2.transform(tr);
+    if (getMotifDebug() & 0x01) unitRays.debug(0);
+    QTransform t = getMotifTransform();
+    unitRays.transform(t);
+    if (getMotifDebug() & 0x01) unitRays.debug(0);
 }
 
 QLineF Star2::getRay(int side, qreal theta, bool sign)
@@ -124,7 +123,7 @@ QLineF Star2::getRay(int side, qreal theta, bool sign)
     qreal angle;
     QLineF branchRay(mids[side], corners[side]);
 
-    if (motifDebug & 0x02) Sys::debugMapCreate->insertDebugMark(mids[side],QString::number(side),Qt::red);
+    if (getMotifDebug() & 0x02) Sys::debugMapCreate->insertDebugMark(mids[side],QString::number(side),Qt::red);
 
     if (sign)
     {
@@ -142,7 +141,7 @@ QLineF Star2::getRay(int side, qreal theta, bool sign)
     len *= 100;
     branchRay.setLength(len);
 
-    if (motifDebug & 0x02) Sys::debugMapCreate->insertDebugLine(branchRay,Qt::blue);
+    if (getMotifDebug() & 0x02) Sys::debugMapCreate->insertDebugLine(branchRay,Qt::blue);
 
     return branchRay;
 }

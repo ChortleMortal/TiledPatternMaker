@@ -1,6 +1,4 @@
 #pragma once
-#ifndef PANELPAGECONTROLLER_H
-#define PANELPAGECONTROLLER_H
 
 #include "gui/panels/panel_page_list_widget.h"
 #include "gui/panels/panel_pages_widget.h"
@@ -42,5 +40,3 @@ private:
 
     volatile bool      updateLocked;
 };
-
-#endif // PANELPAGECONTROLLER_H

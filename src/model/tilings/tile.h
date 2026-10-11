@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TILE_H
-#define TILE_H
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -52,20 +50,21 @@ public:
 
     void        setRegular(bool enb);
     void        flipRegularity();
-    void        setN(uint n);
+    void        setN(int n);
 
     void        deltaRotation(qreal delta);
     void        deltaScale(qreal delta);
+    void        convertOriginPivot();
 
-    bool        isSimilar(const TilePtr other);
+    bool        isBasicallyEqual(const TilePtr other);
     bool        isRegular()         { return regular; }
 
     const EdgePoly& getEdgePoly() const { return *this;}
     EdgePoly&       getEdgePolyRW()     { return *this;}
 
     QPointF     getCenter();
-    QLineF      getEdge(uint side);
-    qreal       edgeLen(uint side = 0);
+    QLineF      getEdge(int side);
+    qreal       edgeLen(int side = 0);
 
     QString     toString() const;
     QString     toBaseString() const;
@@ -77,10 +76,8 @@ public:
 private:
     void        createRegularBase();
 
-    uint        n;              // sides
+    int         n;              // sides
     bool        regular;
 
     PreConvert  preconversion;     // stored when going from regular to irregular and vice versa
 };
-
-#endif

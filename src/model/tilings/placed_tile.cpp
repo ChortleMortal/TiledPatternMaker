@@ -11,7 +11,6 @@
 #include <QFile>
 #include <QDebug>
 
-#include "model/settings/configuration.h"
 #include "model/tilings/placed_tile.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tile_writer.h"
@@ -24,28 +23,16 @@
 
 using std::make_shared;
 
-PlacedTile::PlacedTile()
-{
-    clearViewState();
-    _show       = true;
-    _included   = true;
-}
+PlacedTile::PlacedTile() {}
+
 PlacedTile::PlacedTile(TilePtr tile, QTransform T)
 {
     this->tile  = tile;
-    this->placement     = T;
-    clearViewState();
-    _show       = true;
-    _included   = true;
-    //qDebug() << "setTransform1=" << Transform::toInfoString(T);
+    this->placement = T;
 }
 
 bool PlacedTile::operator == (const PlacedTile & other)
 {
-    if (_included != other._included)
-        return false;
-    if (_show != other._show)
-        return false;
     if (placement != other.placement)
         return false;
 
@@ -63,8 +50,7 @@ PlacedTilePtr PlacedTile::copy()
     pfp->girihShapeName  = girihShapeName;
     pfp->placement       = placement;
     pfp->tile            = tile->copy();
-    pfp->_show           = _show;
-    pfp->_included       = _included;
+    pfp->state           = state;
     return pfp;
 }
 
@@ -73,28 +59,27 @@ void PlacedTile::setPlacement(QTransform newT)
     //qDebug() << "setTransform3 before =" << Transform::toInfoString(T);
     placement = newT;
     //qDebug() << "setTransform3 after =" << Transform::toInfoString(T);
-    TilingPtr tiling = Sys::tilingMaker->getSelected();
+    TilingPtr tiling = Sys::tilingMaker->getSelectedTiling();
     tiling->setTilingViewChanged();
 }
 
 void PlacedTile::setTile(TilePtr tile)
 {
     this->tile = tile;
-    TilingPtr tiling = Sys::tilingMaker->getSelected();
+    TilingPtr tiling = Sys::tilingMaker->getSelectedTiling();
     tiling->setTilingViewChanged();
 }
 
 void PlacedTile::setShow(bool show)
 {
-    _show = show;
-    TilingPtr tiling = Sys::tilingMaker->getSelected();
+    state.show = show;
+    TilingPtr tiling = Sys::tilingMaker->getSelectedTiling();
     tiling->setTilingViewChanged();
 }
 
 bool PlacedTile::loadFromGirihShape(VersionedName vname)
 {
-    QString root     = Sys::config->rootMediaDir;
-    QString filename = root + "girih_shapes" + "/" + vname.get() + ".xml";
+    QString filename = Sys::girihDir + vname.get() + ".xml";
 
     xml_document doc;
     xml_parse_result result = doc.load_file(filename.toStdString().c_str());
@@ -142,7 +127,7 @@ bool PlacedTile::loadFromGirihShape(VersionedName vname)
     }
     girihShapeName = vname;
 
-    TilingPtr tiling = Sys::tilingMaker->getSelected();
+    TilingPtr tiling = Sys::tilingMaker->getSelectedTiling();
     if (tiling)
     {
         tiling->setTilingViewChanged();
@@ -160,22 +145,29 @@ QTransform PlacedTile::getPlacement()
     return placement;
 }
 
-QPolygonF  PlacedTile::getPlacedPoints()
+QTransform PlacedTile::getWorldTransform(const QTransform & distortion)
 {
-    return placement.map(tile->getPoints());
+    // distortion first, in the tile's own local frame, placement (position) last -
+    // this is what keeps the tile in situ (placing-then-distorting would scale every
+    // tile's position away from the distortion's fixed origin, sliding the whole
+    // tiling instead of warping tiles where they sit)
+    return distortion * placement;
 }
 
-EdgePoly PlacedTile::getPlacedEdgePoly()
+QPolygonF  PlacedTile::getWorldPoints(const QTransform & distortion)
+{
+    return getWorldTransform(distortion).map(tile->getPoints());
+}
+
+EdgePoly PlacedTile::getWorldEdgePoly(const QTransform & distortion)
 {
     const EdgePoly & ep = tile->getEdgePoly();
-    EdgePoly ep2        = ep.map(placement);
-    return ep2;
+    return ep.map(getWorldTransform(distortion));
 }
 
 bool PlacedTile::saveAsGirihShape(VersionedName vname)
 {
-    QString root     = Sys::config->rootMediaDir;
-    QString filename = root + "girih_shapes" + "/" + vname.get() + ".xml";
+    QString filename = Sys::girihDir + vname.get() + ".xml";
 
     VersionedFile xfile;
     xfile.setFromFullPathname(filename);
@@ -202,7 +194,7 @@ bool PlacedTile::saveAsGirihShape(VersionedName vname)
 
 void PlacedTile::saveGirihShape(QTextStream & ts, VersionedName vname)
 {
-    TileWriter fw;
+    TileWriter tileWriter;
 
     ts << "<?xml version=\"1.0\"?>" << endl;
 
@@ -215,9 +207,9 @@ void PlacedTile::saveGirihShape(QTextStream & ts, VersionedName vname)
     {
         QString str = QString("<Poly name=\"%1\">").arg(vname.get());
         ts << str << endl;
-        fw.setEdgePoly(ts,tile->getEdgePoly());
+        tileWriter.setEdgePoly(ts,tile->getEdgePoly());
     }
-    fw.setTransform(ts,placement);
+    tileWriter.setTransform(ts,placement);
     ts << "</Poly>" << endl;
 }
 
@@ -256,8 +248,65 @@ void PlacedTile::loadGirihShapeOld(xml_node & poly_node)
     tile = make_shared<Tile>(epoly);
 }
 
+QString PlacedTile::info()
+{
+    return tile->summary() + state.info();
+}
+
 void PlacedTile::dump()
 {
     qDebug().noquote() << tile->summary()  << Transform::info(placement);
     getTile()->dumpPts();
+}
+
+QString  PlacedTileState::info()
+{
+    QString astring;
+    QTextStream ts(&astring);
+    if (show)
+        ts << "show ";
+    if (overlapping)
+        ts << "overlapping ";
+    if (touching)
+        ts << "touching ";
+    switch(excluded.get())
+    {
+    case Tristate::eTristate::True:
+        ts << "state=excluded ";
+        break;
+    case Tristate::eTristate::False:
+        ts << "state=included ";
+        break;
+    case Tristate::eTristate::Undefined:
+        ts << "state=undefined ";
+        break;
+    }
+    if (unique)
+        ts << "unique ";
+    return astring;
+}
+
+QString PlacedTileSet::info()
+{
+    int undefined = 0;
+    int included  = 0;
+    int excluded  = 0;
+
+    for (PlacedTilePtr ptp : *this)
+    {
+        switch(ptp->getState().excluded.get())
+        {
+        case Tristate::eTristate::True:
+            excluded++;
+            break;
+        case Tristate::eTristate::False:
+            included++;
+            break;
+        case Tristate::eTristate::Undefined:
+            undefined++;
+            break;
+        }
+    }
+    QString s = QString("included=%1 excluded=%2 undefined=%3").arg(included).arg(excluded).arg(undefined);
+    return s;
 }

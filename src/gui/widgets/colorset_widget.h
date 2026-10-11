@@ -1,5 +1,4 @@
-#ifndef COLORSET_WIDGET_H
-#define COLORSET_WIDGET_H
+#pragma once
 
 #include <QWidget>
 
@@ -36,4 +35,3 @@ public:
     QButtonGroup * group;
     AQHBoxLayout * hbox;
 };
-#endif // COLORSET_WIDGET_H

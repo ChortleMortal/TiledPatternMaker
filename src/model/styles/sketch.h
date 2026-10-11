@@ -1,7 +1,6 @@
 #pragma once
-#ifndef SKETCH_H
-#define SKETCH_H
 
+#include <QRandomGenerator>
 #include "model/styles/plain.h"
 
 ////////////////////////////////////////////////////////////////////////////
@@ -25,6 +24,7 @@
 class Sketch : public Plain
 {
 protected:
+    QRandomGenerator rng;
 
 public:
     Sketch(ProtoPtr proto);
@@ -37,5 +37,4 @@ public:
     QString     getStyleDesc() const override { return "Sketched"; }
     void        dump()         const override { qDebug().noquote() << getStyleDesc() << colors.colorsString(); }
 };
-#endif
 

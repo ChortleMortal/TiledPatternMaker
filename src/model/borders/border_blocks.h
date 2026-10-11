@@ -1,6 +1,4 @@
 #pragma once
-#ifndef BORDER_BLOCKS_H
-#define BORDER_BLOCKS_H
 
 #include "sys/geometry/crop.h"
 #include "sys/geometry/faces.h"
@@ -28,6 +26,4 @@ private:
     int         cols;
     FaceSet     faces;
 };
-
-#endif
 

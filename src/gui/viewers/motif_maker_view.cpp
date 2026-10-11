@@ -1,23 +1,24 @@
-#include "gui/viewers/motif_maker_view.h"
-#include "sys/geometry/geo.h"
-#include "sys/geometry/map.h"
-#include "sys/geometry/debug_map.h"
-#include "sys/geometry/transform.h"
-#include "gui/model_editors/motif_edit/design_element_button.h"
 #include "gui/model_editors/motif_edit/motif_maker_widget.h"
-#include "model/prototypes/prototype.h"
-#include "model/makers/prototype_maker.h"
+#include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
+#include "gui/viewers/motif_maker_view.h"
+#include "model/makers/motif_maker.h"
 #include "model/mosaics/mosaic.h"
-#include "model/prototypes/design_element.h"
-#include "model/motifs/inferred_motif.h"
-#include "model/motifs/irregular_tools.h"
+#include "model/motifs/adaptive_inference.h"
+#include "model/motifs/adaptive_tools.h"
 #include "model/motifs/motif.h"
 #include "model/motifs/radial_motif.h"
+#include "model/prototypes/prototype.h"
+#include "model/prototypes/tile_motif.h"
 #include "model/settings/configuration.h"
 #include "model/tilings/placed_tile.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
-#include "gui/top/system_view_controller.h"
+#include "sys/geometry/debug_map.h"
+#include "sys/geometry/geo.h"
+#include "sys/geometry/map.h"
+#include "sys/geometry/transform.h"
+#include "sys/sys/debugflags.h"
 
 using std::make_shared;
 
@@ -27,26 +28,13 @@ using std::make_shared;
 ///
 ///////////////////////////////////////////////////////////////////////////
 
-MotifMakerView::MotifMakerView() : LayerController(VIEW_MOTIF_MAKER,DERIVED,"Motif Maker")
+MotifMakerView::MotifMakerView() : LayerController(Type::MotifMaker,Model::Derived,ZLevel::Standard_Z0,"Motif Maker")
 {
 }
 
 MotifMakerView::~MotifMakerView()
 {
     //qDebug() << "MotifView destructor";
-}
-
-QTransform MotifMakerView::getLayerTransform()
-{
-    DELPtr del = Sys::prototypeMaker->getSelectedDEL();
-
-    QTransform t;
-
-    if (Sys::config->motifMakerView == MOTIF_VIEW_SOLO && del)
-        t = DesignElementButton::resetViewport(-2,del,Sys::viewController->viewRect());
-    else
-        t  = LayerController::getLayerTransform();
-    return t;
 }
 
 void MotifMakerView::paint(QPainter *painter)
@@ -62,78 +50,73 @@ void MotifMakerView::paint(QPainter *painter)
 
     qreal lineWidth = Sys::config->motifViewWidth;
 
-    auto proto  = Sys::prototypeMaker->getSelectedPrototype();
+    auto proto  = Sys::motifMaker->motifData.getActivePrototype();
     if (!proto) return;
+
     auto tiling = proto->getTiling();
 
-    QTransform baseT = getLayerTransform();
+    baseT = getLayerTransform();
 
     // create design unit
-    DesignUnit  designUnit;
-
-    if (Sys::config->motifMakerView == MOTIF_VIEW_DESIGN_UNIT)
+    TileMotifSet  tileMotifSet;
+    if (Sys::config->motifMakerViewType == ViewType::All)
     {
-        designUnit = Sys::prototypeMaker->getAllDELs();
+        tileMotifSet = Sys::motifMaker->motifData.getTileMotifs();
     }
     else
     {
-        designUnit = Sys::prototypeMaker->getSelectedDELs(MVD_DELEM);
+        tileMotifSet = Sys::motifMaker->motifData.getVisibleTileMotifs();
     }
 
-    for (auto & del : designUnit)
+    for (TileMotifPtr & timo : tileMotifSet)
     {
-        auto motif  = del->getMotif();
-        auto tile   = del->getTile();
+        auto motif  = timo->getMotif();
+        auto tile   = timo->getTile();
 
-        QVector<QTransform> del_placements;
+        Placements placements;
 
-        switch (Sys::config->motifMakerView)
+        switch (Sys::config->motifMakerViewType)
         {
-        case MOTIF_VIEW_SOLO:
-            del_placements.push_back(QTransform());
+        case ViewType::Single:
+            placements.push_back(tiling->unit().getFirstPlacement(tile,proto->getCanvas()->getDistorionTransform()));
             break;
 
-        case MOTIF_VIEW_SELECTED:
-            del_placements.push_back(tiling->unit().getFirstPlacement(tile));
+        case ViewType::Multiple:
+            placements.push_back(tiling->unit().getFirstPlacement(tile,proto->getCanvas()->getDistorionTransform()));
             break;
 
-        case MOTIF_VIEW_DESIGN_UNIT:
-            del_placements = tiling->unit().getPlacements(tile);
+        case ViewType::All:
+            placements = tiling->unit().getPlacements(tile,proto->getCanvas()->getDistorionTransform());
+            break;
+
+        case ViewType::Undefined:
             break;
         }
 
-        for (auto & del_placement : del_placements)
+        for (QTransform & placement : placements)
         {
-            QTransform t = del_placement * baseT;   // order is critical
+            usedTransform = placement * baseT;   // order is critical
 
             QPointF center      = tile->getCenter();
-            QPointF tile_center = t.map(center);
-
-            if (Sys::config->motifMakerView == MOTIF_VIEW_SOLO)
-            {
-                QPointF diff_center = Sys::viewController->viewRect().center() - tile_center;
-                t = t * QTransform::fromTranslate(diff_center.x(),diff_center.y());
-            }
-
-            tile_center = t.map(center);
+            QPointF tile_center = usedTransform.map(center);
 
             // draw boundaries
             if (Sys::config->showTileBoundary)
             {
                 painter->setPen(QPen(Qt::magenta,lineWidth));
-                paintTileBoundary(painter,tile,t);
+                paintTileBoundary(painter,tile,usedTransform);
             }
 
             if (Sys::config->showMotifBoundary)
             {
                 painter->setPen(QPen(Qt::red,lineWidth));
-                paintMotifBoundary(painter,motif,t);
+                paintMotifBoundary(painter,motif,usedTransform);
             }
 
             if (Sys::config->showExtendedBoundary)
             {
                 painter->setPen(QPen(Qt::yellow,lineWidth));
-                paintExtendedBoundary(painter,motif,t);
+                paintExtendedBoundary(painter,motif,usedTransform);
             }
 
             // draw centres
@@ -161,7 +144,7 @@ void MotifMakerView::paint(QPainter *painter)
                     {
                         pt = tile->getCenter();
                     }
-                    pt = t.map(pt);
+                    pt = usedTransform.map(pt);
                     drawCenterSymbol(painter,pt,QColor(Qt::green),QColor(Qt::red));
                 }
             }
@@ -170,29 +153,49 @@ void MotifMakerView::paint(QPainter *painter)
             if (Sys::config->showMotif)
             {
                 painter->setPen(QPen(Qt::blue,lineWidth));
-                if (motif->isRadial())
-                {
-                    RadialPtr rp = std::dynamic_pointer_cast<RadialMotif>(motif);
-                    paintRadialMotifMap(painter,rp,t);
 
-                    if (Sys::highlightUnit)
+                MapPtr map = motif->getValidMotifMap();
+                if (map)
+                {
+                    paintMap(painter,map,usedTransform);
+
+                    if (Sys::flags->flagged(MOTIF_FLAG_2))
                     {
-                        MapPtr map = rp->getUnitMap();
-                        painter->save();
-                        painter->setPen(QPen(Qt::red, Sys::config->motifViewWidth +1.0));
-                        paintMap(painter,map,t);
-                        painter->restore();
+                        int idx = 0;
+                        for (auto & edge : map->getEdges())
+                        {
+                            Sys::debugMapPaint->insertDebugMark(baseT.map(edge->getMidPoint()), QString::number(idx++), Qt::darkGreen,true);
+                        }
                     }
                 }
-                else
+
+                if (motif->isRadial() && Sys::highlightUnit)
                 {
-                    paintExplicitMotifMap(painter, motif,t);
+                    RadialPtr rp = std::dynamic_pointer_cast<RadialMotif>(motif);
+                    map = make_shared<Map>("Unit map");
+                    auto & rays = rp->getUnitRays();
+                    for (auto & ray : rays.get())
+                    {
+                        map->mergeMap(ray.getMap());
+                    }
+
+                    qreal scale = rp->getMotifFitScale();
+                    if (!Loose::equals(scale,1.0))
+                    {
+                        QTransform t = QTransform::fromScale(scale,scale);
+                        map->transform(t);
+                    }
+
+                    painter->save();
+                    painter->setPen(QPen(Qt::red, Sys::config->motifViewWidth +1.0));
+                    paintMap(painter,map,usedTransform);
+                    painter->restore();
                 }
             }
 
-            if (motif->getMotifType() == MOTIF_TYPE_INFERRED)
+            if (motif->getMotifType() == Motif::Type::Inferred)
             {
-                auto exp = std::dynamic_pointer_cast<InferredMotif>(motif);
+                auto exp = std::dynamic_pointer_cast<AdaptiveInference>(motif);
                 if (exp->hasDebugContacts())
                 {
                     painter->save();
@@ -200,7 +203,7 @@ void MotifMakerView::paint(QPainter *painter)
                     for (auto & c : exp->getDebugContacts())
                     {
                         //painter->drawLine(baseT.map(c->other), baseT.map(c->position));
-                        painter->drawLine(t.map(c->other), t.map(c->position));
+                        painter->drawLine(usedTransform.map(c->other), usedTransform.map(c->position));
                     }
                     painter->restore();
                 }
@@ -249,7 +252,7 @@ void MotifMakerView::paintMotifBoundary(QPainter *painter, MotifPtr motif, QTran
     painter->drawPolygon(p);
     painter->setPen(QPen(Qt::blue,1));
     painter->setBrush(Qt::blue);
-    for (QPointF pt : p)
+    for (QPointF & pt : p)
     {
         painter->drawEllipse(pt,4.0,4.0);
     }
@@ -269,7 +272,7 @@ void MotifMakerView::paintExtendedBoundary(QPainter *painter, MotifPtr motif, QT
         }
         else
         {
-            qreal radius = eb.getScale() * Transform::scalex(tr);
+            qreal radius = eb.getRadius() * Transform::scalex(tr);
             painter->drawEllipse(tr.map(QPointF(0,0)),radius,radius);
         }
     }
@@ -287,55 +290,50 @@ void MotifMakerView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
     Q_UNUSED(spt);
     Q_UNUSED(btn);
 
-    // in multiView delegates the clicked motif
+    if (!viewControl()->isEnabled(Layer::Type::MotifMaker)) return;
 
-    if (Sys::config->motifMakerView == MOTIF_VIEW_SOLO)
+    // in multiView delegates the clicked motif
+    if (Sys::config->motifMakerViewType == ViewType::Single)
         return;
 
-    QPointF mpt = screenToModel(spt);
-
-    auto proto  = Sys::prototypeMaker->getSelectedPrototype();
+    auto proto  = Sys::motifMaker->motifData.getActivePrototype();
     if (!proto) return;
 
     auto tiling = proto->getTiling();
 
-    QVector<DELPtr> dels;
-    Placements                fillPlacements;
+    TileMotifSet    timos;
+    Placements      fillPlacements;
 
-    if (Sys::config->motifMakerView == MOTIF_VIEW_DESIGN_UNIT)
+    if (Sys::config->motifMakerViewType == ViewType::All)
     {
-        dels = Sys::prototypeMaker->getAllDELs();
-        FillData fillData = tiling->hdr().getCanvasSettings().getFillData();
+        timos = Sys::motifMaker->motifData.getTileMotifs();
+        FillData fillData = tiling->hdr().getTilingCanvas()->getFillData();
         FillRegion flood(tiling.get(),fillData);
         fillPlacements = flood.getPlacements(Sys::config->repeatMode);
     }
     else
     {
-        dels = Sys::prototypeMaker->getSelectedDELs(MVD_DELEM);
+        timos = Sys::motifMaker->motifData.getVisibleTileMotifs();
         fillPlacements.push_back(QTransform());
     }
 
-    for (auto & del : dels)
+    // this is what signals and slots are for - generating an emit
+    QPointF mpt = screenToModel(spt);
+    for (auto & timo : timos)
     {
-        auto tile   = del->getTile();
-        QPolygonF poly = tile->getPolygon();
+        auto tile             = timo->getTile();
+        QPolygonF poly        = tile->getPolygon();
+        Placements placements = tiling->unit().getPlacements(tile);
 
-        auto placements = tiling->unit().getPlacements(tile);
-
-        for (QTransform & placement : placements)
+        for (QTransform & t0 : placements)
         {
             for (QTransform & fplace : fillPlacements)
             {
-                QTransform t = fplace * placement;
+                QTransform t = fplace * t0;
                 auto poly2   = t.map(poly);
                 if (poly2.containsPoint(mpt,Qt::OddEvenFill))
                 {
-                    auto widget   = Sys::prototypeMaker->getWidget();
-                    auto btn      = widget->getButton(del);
-                    if (btn)
-                    {
-                        widget->delegate(btn,(Sys::config->motifMakerView == MOTIF_VIEW_SELECTED),true);
-                    }
+                    emit sig_delegateTileMotif(timo);
                     return;
                 }
             }
@@ -352,3 +350,122 @@ void MotifMakerView::slot_mouseReleased(QPointF spt)
 void MotifMakerView::slot_mouseDoublePressed(QPointF spt)
 { Q_UNUSED(spt); }
 
+void MotifMakerView::setDontAutoFit(bool checked)
+{
+    if (checked == dontAutoFit)
+        return;
+
+    if (checked && viewMode != ViewType::Single)
+        return;     // can only enter from Single mode
+
+    dontAutoFit = checked;
+    updateSessionState();
+}
+
+void MotifMakerView::setViewMode(ViewType newMode)
+{
+    if (viewMode == newMode)
+        return;
+
+    viewMode = newMode;
+    updateSessionState();
+}
+
+void MotifMakerView::setLayerEnabled(bool enb)
+{
+    if (enb == layerEnabled)
+        return;
+
+    layerEnabled = enb;
+    updateSessionState();
+}
+
+// single choke point: prepare fires once on entering the session, restore fires once on leaving it,
+// no matter which of viewMode/dontAutoFit/layerEnabled triggered the transition
+void MotifMakerView::updateSessionState()
+{
+    bool wanted = layerEnabled && (viewMode == ViewType::Single || dontAutoFit);
+    if (wanted == sessionActive)
+        return;
+
+    if (wanted)
+    {
+        //qDebug() << "save for restoration";
+        emit Sys::systemViewController->getView()->sig_prepare();
+        sessionActive = true;
+
+        if (!dontAutoFit)
+        {
+            // fit fresh to whatever's currently delegated - a plain prepare leaves everyone
+            // wherever they happened to be, which is stale the moment the session (re)starts
+            TileMotifPtr timo = Sys::motifMaker->motifData.getDelegatedTileMotif();
+            if (timo)
+                enlarge(timo);
+        }
+        else
+        {
+            // resume the frozen fit rather than leaving everyone at the just-restored baseline
+            emit Sys::systemViewController->getView()->sig_enlarge(Sys::nextSigid(),lastFit);
+        }
+    }
+    else
+    {
+        //qDebug() << "restore";
+        emit Sys::systemViewController->getView()->sig_restore(Sys::nextSigid());
+        sessionActive = false;
+    }
+}
+
+void MotifMakerView::enlarge(TileMotifPtr timo)
+{
+    Xform xf;
+    if (getFitXform(xf,timo))
+    {
+        //qDebug() << "ENLARGE";
+        lastFit = xf;
+        emit Sys::systemViewController->getView()->sig_enlarge(Sys::nextSigid(),xf);
+    }
+}
+
+bool MotifMakerView::getFitXform(Xform & xf, TileMotifPtr timo, qreal margin)
+{
+    if (!sessionActive || dontAutoFit)
+        return false;
+
+    // Computes the model Xform (scale + translate, no rotation) that fits modelBBox into the
+    // current view, with some breathing room. Caller applies it via setModelXform().
+
+    QRectF boundingRect = timo->boundingRect();
+    if (boundingRect.width() <= 0 || boundingRect.height() <= 0)
+        return false;
+
+    auto proto  = Sys::motifMaker->motifData.getActivePrototype();
+    auto tiling = proto->getTiling();
+    QRectF baseRect = tiling->unit().getFirstPlacement(timo->getTile()).mapRect(boundingRect);
+    baseRect = getCanvasTransform().mapRect(baseRect);
+
+    QSizeF d = baseRect.size();
+    d *= margin;
+    if (d.width() <= 0 || d.height() <= 0)
+        return false;
+
+    QRect viewRect = viewControl()->getViewRect();
+
+    qreal xscale = viewRect.width()  / d.width();
+    qreal yscale = viewRect.height() / d.height();
+    qreal scale  = qMin(xscale,yscale);
+
+    QPointF targetTranslate = QPointF(viewRect.center()) - baseRect.center() * scale;
+
+    // getModelTransform() scales/rotates about (canvasCenter - xf.translate), which makes the
+    // effective screen-space contribution of xf.translate equal to xf.translate * xf.scale -
+    // see how slot_moveX/moveY (layer_controller.cpp) divide by scale before adding, for the
+    // same reason. Back that out here so the requested translate lands exactly.
+    QPointF canvasCenter = viewControl()->getCanvas()->getCenter();
+    QPointF translate    = (targetTranslate - canvasCenter * (1.0 - scale)) / scale;
+
+    xf.setScale(scale);
+    xf.setTranslate(translate);
+
+    return true;
+}

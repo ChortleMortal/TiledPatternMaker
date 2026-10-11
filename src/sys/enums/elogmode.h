@@ -1,6 +1,4 @@
 #pragma once
-#ifndef ELOGMODE_H
-#define ELOGMODE_H
 
 enum eLogTimer
 {
@@ -8,5 +6,3 @@ enum eLogTimer
     LOGT_INTERVAL,
     LOGT_ELAPSED,
 };
-
-#endif

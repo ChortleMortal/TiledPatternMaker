@@ -25,7 +25,6 @@ QVector<sTrapMsg> qtAppLog::_trappedMsgs;
 
 bool qtAppLog::_logToStderr = true;
 bool qtAppLog::_logToDisk   = true;
-bool qtAppLog::_logToAppDir = false;
 bool qtAppLog::_logToPanel  = true;
 bool qtAppLog::_logLines    = false;
 bool qtAppLog::_logDebug    = false;
@@ -66,9 +65,20 @@ void qtAppLog::releaseInstance()
 
 qtAppLog::qtAppLog()
 {
-    ted = std::make_shared<QTextEdit>();
+    QFont fixedFont("JetBrains Mono", 10);   // explicit family + size, decoupled from system UI font
+    fixedFont.setStyleStrategy(
+        static_cast<QFont::StyleStrategy>(QFont::PreferAntialias | QFont::NoSubpixelAntialias)
+        );
+    fixedFont.setWeight(QFont::Medium);
 
-    const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    if (QFontInfo(fixedFont).family() != "JetBrains Mono")
+    {
+        fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont); // fallback if not installed
+        fixedFont.setPointSize(10);
+        fixedFont.setWeight(QFont::Medium);
+    }
+
+    ted = std::make_shared<QTextEdit>();
     ted->setFont(fixedFont);
 
     ted->setMinimumHeight(690);
@@ -93,23 +103,25 @@ qtAppLog::~qtAppLog()
     }
 }
 
+
 void qtAppLog:: init()
 {
     originalHandler = qInstallMessageHandler(&crashMessageOutput);
+    create();
+}
 
-#if defined(Q_OS_WINDOWS)
-    QString root = qApp->applicationDirPath();
-    QStringList rootpath = root.split("/");
-    if (!_logToAppDir)
-    {
-        _logDir  = rootpath[0] + "/logs/";
-    }
-    else
-    {
-        _logDir = Sys::config->getMediaRoot();
-        _logDir.replace("/media", "/logs/");
+void qtAppLog:: reinit()
+{
+    qInfo() << "Closing log";
+    mLogFile.close();
+    mLogFile2.close();
+    create();
+    qInfo() << "Log opened";
+}
 
-    }
+void qtAppLog:: create()
+{
+    _logDir = Sys::getLogDir();
     QDir adir(_logDir);
     if (!adir.exists())
     {
@@ -121,38 +133,17 @@ void qtAppLog:: init()
             return;
         }
     }
-#else
-    _logDir = QDir::homePath() + "/logs/";
-    QDir adir(_logDir);
-    if (!adir.exists())
-    {
-        if (!adir.mkpath(_logDir))
-        {
-            QMessageBox box;
-            box.setText(QString("Failed to create logfile directory: %1").arg(_logDir));
-            box.exec();
-            return;
-        }
-    }
-#endif
+
+    QString logName;
 
 #ifdef QT_DEBUG
-    currentLogName = _logDir + baseLogName + "D.txt";
-#if defined(Q_OS_WINDOWS)
-    if (Sys::appInstance == 1)
-    {
-        currentLogName = _logDir + baseLogName + "D1.txt";
-    }
-#endif
+    logName = "tiledPatternMakerD" + QString::number(Sys::appInstance) + ".txt";
 #else
-    currentLogName = _logDir + baseLogName + "R.txt";
-#if defined(Q_OS_WINDOWS)
-    if (Sys::appInstance == 1)
-    {
-        currentLogName = _logDir + baseLogName + "R1.txt";
-    }
+    logName = "tiledPatternMakerR" + QString::number(Sys::appInstance) + ".txt";
 #endif
-#endif
+    Sys::logName = logName;
+
+    currentLogName = _logDir + logName;
 
     // open the main log file
     mLogFile.setFileName(currentLogName);
@@ -345,7 +336,8 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
             break;
         case QtWarningMsg:
             if (Sys::isDarkTheme)
-                ted->setTextColor(Qt::red);
+               //ted->setTextColor(Qt::red);
+                ted->setTextColor(0xE06C75);
             else
                 ted->setTextColor(Qt::darkRed);
             break;

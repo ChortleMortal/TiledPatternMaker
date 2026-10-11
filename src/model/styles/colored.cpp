@@ -16,7 +16,7 @@ Colored::Colored(const StylePtr & other) : Style(other)
     std::shared_ptr<Colored> otherColored = std::dynamic_pointer_cast<Colored>(other);
     if (otherColored)
     {
-        colors.setColors(otherColored->colors);
+        colors = otherColored->colors;
     }
     else
     {

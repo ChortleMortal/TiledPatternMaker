@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TILE_COLOR_H
-#define TILE_COLOR_H
 
 #include <QColor>
 #include <QDebug>
@@ -55,5 +53,4 @@ protected:
 private:
     QVector<ColoredPlacement> _coloredPlacements;   // calculated - color for each placed tile
 };
-#endif
 

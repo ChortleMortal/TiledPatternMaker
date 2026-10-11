@@ -1,6 +1,4 @@
 #pragma once
-#ifndef CROP_VIEW_H
-#define CROP_VIEW_H
 
 #include "gui/viewers/layer_controller.h"
 #include "model/makers/crop_maker.h"
@@ -38,7 +36,7 @@ public:
     virtual const Xform &   getModelXform() override;
 
 signals:
-    void    sig_delegateView(eViewType vt, bool delegate);
+    void    sig_delegateView(Layer::Type vt, bool delegate);
 
 public slots:
     void slot_mousePressed(QPointF spt, Qt::MouseButton btn) override;
@@ -61,5 +59,3 @@ private:
     eCropMaker         makerType;
     const Xform        unityXf;
 };
-
-#endif

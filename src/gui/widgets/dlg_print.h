@@ -1,5 +1,4 @@
-#ifndef DLG_PRINT_H
-#define DLG_PRINT_H
+#pragma once
 
 #include <QObject>
 #include <QPrinter>
@@ -23,5 +22,3 @@ private:
     QPrintPreviewWidget * previewWidget;
     QTimer * timer;
 };
-
-#endif // DLG_PRINT_H

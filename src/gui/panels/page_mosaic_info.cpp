@@ -3,7 +3,7 @@
 #include "model/makers/mosaic_maker.h"
 #include "model/prototypes/prototype.h"
 #include "model/makers/tiling_maker.h"
-#include "model/prototypes/design_element.h"
+#include "model/prototypes/tile_motif.h"
 #include "model/mosaics/mosaic.h"
 #include "model/motifs/motif.h"
 #include "gui/top/controlpanel.h"
@@ -30,7 +30,7 @@ page_mosaic_info:: page_mosaic_info(ControlPanel *panel)  : panel_page(panel,PAG
 
     connect(tilingMaker,   &TilingMaker::sig_tilingLoaded,      this,   &page_mosaic_info::onEnter);
     connect(mosaicMaker,   &MosaicMaker::sig_mosaicLoaded,      this,   &page_mosaic_info::onEnter);
-    connect(viewControl,   &SystemViewController::sig_unloaded, this,   &page_mosaic_info::onEnter);
+    connect(viewControl,   &ViewController::sig_unloaded, this,   &page_mosaic_info::onEnter);
 }
 
 void  page_mosaic_info::onEnter()
@@ -84,7 +84,7 @@ void page_mosaic_info::showMotifsFromStyles()
                     motifTable->setItem(row,COL_TILING_NAME,item);
                 }
 
-                QVector<DELPtr>  dels = pp->getDesignElements();
+                QVector<TileMotifPtr>  dels = pp->getTileMotifs();
                 for (auto & del : dels)
                 {
                     MotifPtr motif = del->getMotif();

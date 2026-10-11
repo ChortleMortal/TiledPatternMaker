@@ -1,6 +1,4 @@
 #pragma once
-#ifndef FILLREGION_H
-#define FILLREGION_H
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -54,5 +52,3 @@ private:
 
     Placements  transforms;
 };
-
-#endif

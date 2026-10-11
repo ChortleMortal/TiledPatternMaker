@@ -1,6 +1,4 @@
 #pragma once
-#ifndef INTERSECT_H
-#define INTERSECT_H
 
 #include <QPointF>
 #include <QLineF>
@@ -28,6 +26,4 @@ protected:
     // Coerce the point to be null if not on both segments.
     static bool stayOnSegments(QPointF ip );
 };
-
-#endif
 

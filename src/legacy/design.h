@@ -1,10 +1,8 @@
 #pragma once
-#ifndef DESIGN_H
-#define DESIGN_H
 
 #include <QObject>
 #include "sys/enums/edesign.h"
-#include "model/settings/canvas_settings.h"
+#include "model/settings/canvas.h"
 
 class Configuration;
 
@@ -25,8 +23,7 @@ public:
 
     QString         getTitle() { return title; }
 
-    CanvasSettings &  getDesignInfo() { return settings; }
-    void            setDesignInfo(const CanvasSettings & ms) { settings = ms; }
+    Canvas *        getDesignCanvas() { return &canvas; }
 
     void            setStartTile(QPointF pt) { _startTile = pt;  }
     QPointF         getStartTile()           { return _startTile; }
@@ -100,9 +97,6 @@ protected:
 
     bool            visible;
     
-    CanvasSettings  settings;
+    Canvas           canvas;
     QPointF         _startTile;
 };
-
-
-#endif // DESIGN_H

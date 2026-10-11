@@ -7,13 +7,13 @@
 #include <QMessageBox>
 #include <QtConcurrentMap>
 #include <QFuture>
+#include <QProcess>
 
 #include "gui/panels/page_image_tools.h"
 #include "gui/widgets/panel_misc.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/splash_screen.h"
 #include "gui/top/system_view.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/dlg_wlist_create.h"
 #include "gui/widgets/image_widget.h"
 #include "gui/widgets/layout_sliderset.h"
@@ -22,9 +22,9 @@
 #include "model/makers/mosaic_maker.h"
 #include "model/makers/tiling_maker.h"
 #include "model/mosaics/mosaic.h"
-#include "model/mosaics/mosaic_manager.h"
 #include "model/settings/configuration.h"
 #include "sys/engine/compare_bmp_engine.h"
+#include "sys/engine/convert_bmp_engine.h"
 #include "sys/engine/image_engine.h"
 #include "sys/engine/mosaic_bmp_generator.h"
 #include "sys/engine/mosaic_stepper.h"
@@ -42,8 +42,6 @@
 #include "sys/sys/debugflags.h"
 #include "sys/sys/fileservices.h"
 #include "sys/tiledpatternmaker.h"
-#include "sys/tiledpatternmaker.h"
-#include "sys/tiledpatternmaker.h"
 
 using Qt::endl;
 
@@ -52,7 +50,7 @@ VersionList page_image_tools::comparisonList;
 
 page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_IMAGE_TOOLS,"Image Tools")
 {
-    generatorType     = ACT_GEN_MOSAIC_BMP;     // default
+    generatorType     = ACT_GEN_MOSAIC_PNG;     // default
     created           = false;
     logDebug          = false;
     etimer            = new AQElapsedTimer(false);
@@ -75,6 +73,8 @@ page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,
 
     vbox->addLayout(grid);
     vbox->addStretch();
+
+    connect(Sys::config,&Configuration::sig_mediaPathsChanged,this, &page_image_tools::onEnter, Qt::QueuedConnection);
 
     connect(&engine,    &ImageEngine::sig_compareResult,   this, &page_image_tools::slot_compareResult);
     connect(&engine,    &ImageEngine::cycle_sig_workList,  this, &page_image_tools::slot_firstDirChanged,  Qt::QueuedConnection);
@@ -141,69 +141,73 @@ int  page_image_tools::createImageSelectionBox(int row)
 int  page_image_tools::createCycleGenBox(int row)
 {
     // title row
-    QLabel * l1 = new  QLabel("Generate BMPs :");
+    QLabel * l1 = new  QLabel("Generate PNGs :");
     l1->setStyleSheet("font-weight : bold");
 
     QCheckBox   * chkMultiThread  = new QCheckBox("Multi-thread");
     chkMultiThread->setChecked(config->multithreadedGeneration);
 
-    QHBoxLayout * hb0 = new QHBoxLayout();
-    hb0->addWidget(l1);
-    hb0->addStretch();
-
-    grid->addLayout(hb0,row,0,1,2);
-    grid->addWidget(chkMultiThread,row,2);
-    row++;
-
     // second row
     QPushButton  * saveDirBtn  = new QPushButton("Dir");
     saveDirBtn->setMaximumWidth(51);
 
-    directoryCombo             = new DirMemoryCombo("DirCombo");
-    directoryCombo->initialise();
-    QString text = Sys::getSysBMPDirectory();
-    directoryCombo->setCurrentText(text);
+    generateDirectoryCombo     = new MemoryCombo("DirCombo");
+    QString text = createImageGenerationDirectoryName();
+    generateDirectoryCombo->setCurrentText(text);
 
-    QFontMetrics fm(directoryCombo->font());
+    QFontMetrics fm(generateDirectoryCombo->font());
     auto rect = fm.boundingRect(text);
     int width = rect.width() + 7;
     if (width < 161)
     {
         width = 161;
     }
-    directoryCombo->setFixedWidth(width);    // this width seems to set th whole page width
+    generateDirectoryCombo->setFixedWidth(width);    // this width seems to set th whole page width
 
-    QCheckBox   * includeBkgds    = new QCheckBox("Include Background Images");
-    includeBkgds->setChecked(config->includeBkgdGeneration);
+    QCheckBox   * chkIncludeBkgds      = new QCheckBox("Include Background Images");
+    chkIncludeBkgds->setChecked(config->includeBkgdGeneration);
 
-    QCheckBox    * skip        = new QCheckBox("Skip Existing");
-    skip->setFixedWidth(97);
-    skip->setChecked(config->skipExisting);
+    QCheckBox    * chkSkip             = new QCheckBox("Skip Existing");
+    chkSkip->setFixedWidth(97);
+    chkSkip->setChecked(config->skipExisting);
 
-    generateBMPsBtn            = new QPushButton("Generate BMPs");
-    generateBMPsBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+    QPushButton * generatePNGsBtn =  new QPushButton("Generate PNGs");
+    generatePNGsBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+
+    QPushButton * convertBMPsBtn =  new QPushButton("Convert BMPs to PNGs");
 
     // generation
+    QHBoxLayout * hb0 = new QHBoxLayout();
+    hb0->addWidget(l1);
+    hb0->addStretch();
+    hb0->addWidget(chkIncludeBkgds);
+    hb0->addWidget(chkSkip);
+
     QHBoxLayout * hb1 = new QHBoxLayout;
     hb1->addWidget(saveDirBtn,row);
-    hb1->addWidget(directoryCombo);
+    hb1->addWidget(generateDirectoryCombo);
+    hb1->addSpacing(7);
+    hb1->addWidget(convertBMPsBtn);
     hb1->addStretch();
-    hb1->addWidget(includeBkgds);
-    hb1->addWidget(skip);
+
+    grid->addLayout(hb0,row,0,1,2);
+    grid->addWidget(chkMultiThread,row,2);
+    row++;
 
     grid->addLayout(hb1,row,0,1,2);
-    grid->addWidget(generateBMPsBtn,row,2);
+    grid->addWidget(generatePNGsBtn,row,2);
     row++;
 
     // separator
     addHSeparator(row);
     row++;
 
-    connect(includeBkgds,    &QCheckBox::clicked,       this,  [this](bool checked) { config->includeBkgdGeneration = checked; });
+    connect(chkIncludeBkgds, &QCheckBox::clicked,       this,  [this](bool checked) { config->includeBkgdGeneration = checked; });
     connect(chkMultiThread,  &QCheckBox::clicked,       this,  [this](bool checked) { config->multithreadedGeneration = checked; });
-    connect(generateBMPsBtn, &QPushButton::clicked,     this,  &page_image_tools::slot_genBMPs);
+    connect(generatePNGsBtn, &QPushButton::clicked,     this,  &page_image_tools::slot_genPNGs);
+    connect(convertBMPsBtn,  &QPushButton::clicked,     this,  &page_image_tools::slot_convertBMPs);
     connect(saveDirBtn,      &QPushButton::clicked,     this,  &page_image_tools::slot_opendir);
-    connect(skip,            &QCheckBox::clicked,       this,  &page_image_tools::slot_skipExisting);
+    connect(chkSkip,         &QCheckBox::clicked,       this,  &page_image_tools::slot_skipExisting);
 
     return row;
 }
@@ -304,15 +308,15 @@ int page_image_tools::createCompareOptionsBox(int row)
     popupScale->setDecimals(1);
 
     QCheckBox   * transparent    = new QCheckBox("Transparent");
-    QPushButton * colorEdit      = new QPushButton("Set Filter Color");
+    QPushButton * colorEdit      = new QPushButton("Set");
     colorLabel                   = new QLabel();
     colorLabel->setFixedWidth(51);
     QCheckBox  * chkUseFilter    = new QCheckBox("Use Filter Color");
+    QCheckBox  * chkHicon        = new QCheckBox("HiCon Diffs");
 
     QHBoxLayout * hbox4 = new QHBoxLayout();
     hbox4->addWidget(rInPlace);
 
-    hbox4->addStretch();
     hbox4->addWidget(rPopup);
     hbox4->addLayout(popupScale);
     hbox4->addSpacing(5);
@@ -321,7 +325,7 @@ int page_image_tools::createCompareOptionsBox(int row)
     hbox4->addWidget(colorLabel);
     hbox4->addSpacing(3);
     hbox4->addWidget(colorEdit);
-    hbox4->addStretch();
+    hbox4->addWidget(chkHicon);
 
     grid->addLayout(hbox4,row,0,1,3);
     row++;
@@ -335,10 +339,12 @@ int page_image_tools::createCompareOptionsBox(int row)
     else
         rInPlace->setChecked(true);
     chkUseFilter->setChecked(config->compare_filterColor);
+    chkHicon->setChecked(config->highContrastDiffs);
 
     connect(colorEdit,              &QPushButton::clicked,  this,   &page_image_tools::slot_colorEdit);
     connect(chkUseFilter,           &QCheckBox::clicked,    this,   &page_image_tools::slot_useFilter);
     connect(transparent,            &QCheckBox::clicked,    this,   &page_image_tools::slot_transparentClicked);
+    connect(chkHicon,               &QCheckBox::clicked,    this,   [this](bool checked) { config->highContrastDiffs = checked; } );
     connect(rPopup,                 &QRadioButton::clicked, this,   &page_image_tools::slot_popupClicked);
     connect(rInPlace,               &QRadioButton::clicked, this,   &page_image_tools::slot_inPlaceClicked);
     connect(popupScale,       &DoubleSpinSet::valueChanged, this,   [this](qreal val) { engine.setPopupScale(val); } );
@@ -433,10 +439,13 @@ int page_image_tools::createCompareImagesBox(int row)
     addHSeparator(row);
     row++;
 
-    firstDir->initialise();
-    loadCombo(firstBMPCompareCombo,firstDir->getCurrentText());
-    secondDir->initialise();
-    loadCombo(secondBMPCompareCombo,secondDir->getCurrentText());
+    QString fdir = firstDir->getCurrentText();
+    if (!fdir.isEmpty())
+        loadCombo(firstBMPCompareCombo,fdir);
+
+    QString sdir = secondDir->getCurrentText();
+    if (!sdir.isEmpty())
+        loadCombo(secondBMPCompareCombo,sdir);
 
     useCompareWL->setChecked(config->use_workListForCompare);
 
@@ -517,16 +526,16 @@ int page_image_tools::createCompareVersionsBox(int row)
     hbox4->addWidget(versionsB);
 
     grid->addLayout(hbox,row,0,1,2);
-    grid->addWidget(chkLock,row,2);
     row++;
 
     grid->addWidget(viewImageBtn3,row,0);
     grid->addLayout(hbox2,row,1);
+    grid->addWidget(compareVerBMP,row,2);
     row++;
 
     grid->addWidget(viewImageBtn4,row,0);
     grid->addLayout(hbox4,row,1);
-    grid->addWidget(compareVerBMP,row,2);
+    grid->addWidget(chkLock,row,2);
     row++;
 
     addHSeparator(row);
@@ -586,9 +595,6 @@ int page_image_tools::createViewImageBox(int row)
     grid->addWidget(selectImgBtn2,row,2);
     row++;
 
-    viewFileCombo1->initialise();
-    viewFileCombo2->initialise();
-
     QVariant variant = config->transparentColor;
     QString colcode  = variant.toString();
     colorLabel->setStyleSheet("QLabel { background-color : "+colcode+" ; border : 1px solid black; }");
@@ -639,7 +645,7 @@ void page_image_tools::onExit()
 {
     clearPageStatus();
     viewControl->clearLayout();   // removes any cycler pngs
-    Sys::viewController->showView();
+    Sys::systemViewController->showView();
 }
 
 void  page_image_tools::onRefresh()
@@ -1139,7 +1145,7 @@ void page_image_tools::slot_viewImageLeft()
         return;
     }
     config->BMPCompare0 = name.get();
-    VersionedFile file(firstDir->getCurrentText() + "/" + name.get() + ".bmp");
+    VersionedFile file(firstDir->getCurrentText() + "/" + name.get() + ".png");
     viewImage(file);
 }
 
@@ -1149,8 +1155,8 @@ void page_image_tools::slot_viewImageRight()
 
     if (compareLoaded2nd->isChecked())
     {
-        panel->delegateView(VIEW_BMP_IMAGE,false);
-        panel->delegateView(VIEW_MOSAIC,true);
+        panel->delegateView(Layer::Type::BMPImage,false);
+        panel->delegateView(Layer::Type::Mosaic,true);
         emit sig_reconstructView();
     }
     else
@@ -1166,7 +1172,7 @@ void page_image_tools::slot_viewImageRight()
         }
 
         config->BMPCompare1 = name.get();
-        VersionedFile file(secondDir->getCurrentText() + "/" + name.get() + ".bmp");
+        VersionedFile file(secondDir->getCurrentText() + "/" + name.get() + ".png");
         viewImage(file);
     }
 }
@@ -1220,7 +1226,7 @@ void page_image_tools::loadCombo(QComboBox * combo, QString dir)
     QStringList names;
     if (!config->use_workListForCompare)
     {
-        names = FileServices::getDirBMPFiles(dir).getNames();
+        names = FileServices::getDirImageFiles(dir).getNames();
     }
     else
     {
@@ -1290,24 +1296,24 @@ void page_image_tools::slot_loadSecond()
     if (config->imageType == IMAGE_MOSAICS)
     {
         VersionedFile vf = FileServices::getFile(vn,FILE_MOSAIC);
-        mosaicMaker->loadMosaic(vf);
+        mosaicMaker->load(vf);
     }
     else
     {
         VersionedFile vf = FileServices::getFile(vn,FILE_TILING);
-        tilingMaker->loadTiling(vf,TILM_LOAD_SINGLE);
+        tilingMaker->loadTiling(vf,TilingMaker::Event::LoadSingle);
     }
 }
 
 void page_image_tools::slot_viewSecond()
 {
     engine.closeAllImageViewers();
-    panel->delegateView(VIEW_MOSAIC,true);
+    panel->delegateView(Layer::Type::Mosaic,true);
 }
 
 void page_image_tools::slot_opendir()
 {
-    QString old = Sys::getBMPPath(generatorType);
+    QString old = getGenerateImagePath(generatorType);
     QString dir = QFileDialog::getExistingDirectory(this, tr("Select Image Directory"),
                                                     old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
@@ -1330,11 +1336,11 @@ void page_image_tools::slot_opendir()
 #endif
         qDebug() << "Image dir" << dir;
 
-        directoryCombo->setCurrentText(dir);    // this sets Sys:: too
+        generateDirectoryCombo->setCurrentText(dir);    // this sets Sys:: too
     }
 
 #ifdef Q_OS_WINDOWS
-    QString path = Sys::getBMPPath(generatorType);
+    QString path = getGenerateImagePath(generatorType);
     qDebug() <<  "Path:" << path;
 
     QString path2 = QDir::toNativeSeparators(path);
@@ -1355,15 +1361,15 @@ void page_image_tools::slot_replaceBMP()
     VersionedName vn(name);
     VersionedFile vf = FileServices::getFile(vn,FILE_MOSAIC);
     bool rv = false;
-    MosaicPtr mosaic = mosaicMaker->loadMosaic(vf);
+    MosaicPtr mosaic = mosaicMaker->load(vf);
     if (mosaic)
     {
-        QPixmap pixmap = Sys::viewController->grabView();
+        QImage image   = Sys::systemViewController->paintToImage();
         QString path   = secondDir->getCurrentText();
-        QString file   = path + "/" + name + ".bmp";
+        QString file   = path + "/" + name + ".png";
         qDebug() << "saving" << file;
 
-        rv = pixmap.save(file);
+        rv = image.save(file);
     }
     if (rv)
     {
@@ -1483,7 +1489,7 @@ void page_image_tools::slot_selectImage1()
     auto filename = viewFileCombo1->getCurrentText();
     if (filename.isEmpty())
     {
-        dir = config->rootMediaDir;
+        dir = Sys::getRootImageDir();
     }
     else
     {
@@ -1509,7 +1515,7 @@ void page_image_tools::slot_selectImage2()
     auto filename = viewFileCombo2->getCurrentText();
     if (filename.isEmpty())
     {
-        dir = config->rootMediaDir;
+        dir = Sys::getRootImageDir();
     }
     else
     {
@@ -1545,7 +1551,7 @@ void page_image_tools::slot_viewImage3()
     QString name = versionsA->currentText();
     VersionedName vn(name);
     VersionedFile vf = FileServices::getFile(vn,FILE_MOSAIC);
-    auto mosaic = mosaicMaker->loadMosaic(vf);
+    auto mosaic = mosaicMaker->load(vf);
 
     if (mosaic)
     {
@@ -1560,7 +1566,7 @@ void page_image_tools::slot_viewImage4()
     QString name = versionsB->currentText();
     VersionedName vn(name);
     VersionedFile vf = FileServices::getFile(vn,FILE_MOSAIC);
-    auto mosaic = mosaicMaker->loadMosaic(vf);
+    auto mosaic = mosaicMaker->load(vf);
 
     if (mosaic)
     {
@@ -1599,7 +1605,7 @@ void page_image_tools::slot_compareSelectedBMPs()
     }
     else
     {
-        if (!viewControl->isEnabled(VIEW_MOSAIC))
+        if (!viewControl->isEnabled(Layer::Type::Mosaic))
         {
             QMessageBox box(this);
             box.setIcon(QMessageBox::Warning);
@@ -1615,9 +1621,9 @@ void page_image_tools::slot_compareSelectedBMPs()
 void  page_image_tools::slot_compareDiffVerBMPs()
 {
     if (config->imageType == IMAGE_TILINGS)
-        panel->delegateView(VIEW_TILING,true);
+        panel->delegateView(Layer::Type::Tiling,true);
     else
-        panel->delegateView(VIEW_MOSAIC,true);
+        panel->delegateView(Layer::Type::Mosaic,true);
 
     engine.verStepper->compareVersions();
 }
@@ -1645,9 +1651,9 @@ void  page_image_tools::slot_cycleVersions()
     chkLock->setChecked(true);
 
     if (config->imageType == IMAGE_TILINGS)
-        panel->delegateView(VIEW_TILING,true);
+        panel->delegateView(Layer::Type::Tiling,true);
     else
-        panel->delegateView(VIEW_MOSAIC,true);
+        panel->delegateView(Layer::Type::Mosaic,true);
 
     engine.verStepper->loadVersionCombos();
     engine.verStepper->begin();
@@ -1669,7 +1675,7 @@ void page_image_tools::slot_startStepping()
     {
         pageStatusString = "Press P to Pause/unPause - press Q to Quit";
         setPageStatus();
-        panel->delegateView(VIEW_MOSAIC,true);
+        panel->delegateView(Layer::Type::Mosaic,true);
         engine.mosaicStepper->setImmediat((config->cycleInterval == 0));
         engine.mosaicStepper->begin();
     }
@@ -1678,7 +1684,7 @@ void page_image_tools::slot_startStepping()
         Q_ASSERT(config->imageType == IMAGE_TILINGS);
         pageStatusString = "Press P to Pause/unPause - press Q to Quit";
         setPageStatus();
-        panel->delegateView(VIEW_TILING,true);
+        panel->delegateView(Layer::Type::Tiling,true);
         engine.tilingStepper->begin();
     }
 }
@@ -1747,10 +1753,11 @@ void page_image_tools::slot_startCompareCycle()
         }
         else
         {
-            Sys::viewController->activateWindow();
-            int X = Sys::viewController->viewWidth() / 2;
-            int Y = Sys::viewController->viewHeight() / 2;
-            QPoint globalCenter = Sys::viewController->mapToGlobal(QPoint(X,Y));
+            Sys::systemViewController->activateWindow();
+            QRect r = Sys::systemViewController->getViewRect();
+            int X   = r.width() / 2;
+            int Y   = r.height() / 2;
+            QPoint globalCenter = Sys::systemViewController->mapToGlobal(QPoint(X,Y));
             QCursor::setPos(globalCenter.x(), globalCenter.y());
         }
     }
@@ -1796,7 +1803,7 @@ bool takeAction(sAction action)
 
     if (Sys::imgGeneratorInUse)
     {
-        if (action.type ==  ACT_GEN_MOSAIC_BMP)
+        if (action.type ==  ACT_GEN_MOSAIC_PNG)
         {
             AQElapsedTimer et;
             et.start();
@@ -1804,7 +1811,7 @@ bool takeAction(sAction action)
             rv = engine.saveBitmap(action.name,action.path);
             action.timer->add(action.name,et.getElapsedSeconds());
         }
-        else if (action.type == ACT_GEN_TILING_BMP)
+        else if (action.type == ACT_GEN_TILING_PNG)
         {
             TilingBMPGenerator engine;
             rv = engine.saveBitmap(action.name,action.path);
@@ -1818,6 +1825,11 @@ bool takeAction(sAction action)
         {
             MosaicXMLRegenerator engine;
             rv = engine.regemerateXML(action.name);
+        }
+        else if (action.type == ACT_CONVERT_BMPS)
+        {
+            ConvertBMPEngine engine;
+            rv = engine.convertToPNG(action.path);
         }
     }
     else
@@ -1844,21 +1856,27 @@ void page_image_tools::processActionList(QList<sAction> &actions)
     else
     {
         Q_ASSERT(Sys::imgGeneratorInUse);
+        Sys::systemViewController->splash_display("Generating images...");   // keeps the splash up for the whole run
         for (const auto & action : std::as_const(actions))
         {
             QString astring = "Processing : " + action.name.get();
-            Sys::splash->display(astring,true);
+            Sys::systemViewController->splash_display(astring);
+            Sys::controlPanel->overridePagelStatus(astring);
+
             takeAction(action);
-            Sys::splash->remove(true);
+            Sys::systemViewController->splash_remove();
+            Sys::controlPanel->restorePageStatus();
+
         }
+        Sys::systemViewController->splash_remove();
 
         Sys::imgGeneratorInUse = false;
         log->logDebug(logDebug);
 
-        if (generatorType == ACT_GEN_MOSAIC_BMP)
-            panel->delegateView(VIEW_MOSAIC,true);
-        else if (generatorType == ACT_GEN_TILING_BMP)
-            panel->delegateView(VIEW_TILING,true);
+        if (generatorType == ACT_GEN_MOSAIC_PNG)
+            panel->delegateView(Layer::Type::Mosaic,true);
+        else if (generatorType == ACT_GEN_TILING_PNG)
+            panel->delegateView(Layer::Type::Tiling,true);
 
         QString str = QString("Pocesses took %1 seconds").arg(etimer->getElapsed().trimmed());
         QString str2 =        "Cycle complete";
@@ -1885,22 +1903,22 @@ void page_image_tools::slot_engineComplete()
     QString str = QString("Concurrent processes took %1 seconds").arg(etimer->getElapsed().trimmed());
     QString str2 =        "Cycle complete";
 
-    Sys::splash->remove();
+    Sys::systemViewController->splash_remove();
 
     switch(generatorType)
     {
-    case ACT_GEN_MOSAIC_BMP:
-        panel->delegateView(VIEW_MOSAIC,true);
+    case ACT_GEN_MOSAIC_PNG:
+        panel->delegateView(Layer::Type::Mosaic,true);
         timerResults.dump();
         break;
 
-    case ACT_GEN_TILING_BMP:
-        panel->delegateView(VIEW_TILING,true);
+    case ACT_GEN_TILING_PNG:
+        panel->delegateView(Layer::Type::Tiling,true);
         break;
 
     case ACT_GEN_COMPARE_WLIST:
     {
-        Sys::viewController->appSuspendPaint(false);
+        Sys::systemViewController->appSuspendPaint(false);
         auto size = comparisonList.count();
         if (size)
         {
@@ -1911,6 +1929,7 @@ void page_image_tools::slot_engineComplete()
     }   break;
 
     case ACT_REGEN_MOSAIC_XML:
+    case ACT_CONVERT_BMPS:
         break;  // nothing to do
     }
 
@@ -1928,7 +1947,8 @@ void page_image_tools::slot_engineProgress(int val)
 {
     float perc = (qreal(val) / qreal(totalEngineImages)) * 100.0;
     QString txt = QString("%1% files processed (%2 out of %3)").arg(floor(perc)).arg(val).arg(totalEngineImages);
-    Sys::splash->replace(txt,true);
+    Sys::systemViewController->splash_replace(txt);
+    Sys::controlPanel->overridePagelStatus(txt);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1958,14 +1978,14 @@ void page_image_tools::saveMosaicBitmaps()
         files = FileServices::getMosaicNames(id);
     }
 
-    QString pixmapPath  = Sys::getBMPPath(generatorType);
+    QString pixmapPath  = getGenerateImagePath(generatorType);
 
     QList<sAction> actions;
     for (const VersionedName & name : std::as_const(files))
     {
         if (config->skipExisting)
         {
-            QString file = pixmapPath + "/" + name.get() + ".bmp";
+            QString file = pixmapPath + "/" + name.get() + ".png";
             QFile afile(file);
             if (afile.exists())
             {
@@ -1974,13 +1994,47 @@ void page_image_tools::saveMosaicBitmaps()
         }
 
         sAction action;
-        action.type  = ACT_GEN_MOSAIC_BMP;
+        action.type  = ACT_GEN_MOSAIC_PNG;
         action.name  = name;
         action.path  = pixmapPath;
         action.timer = &timerResults;
         actions.push_back(action);
     }
 
+    processActionList(actions);
+}
+
+void page_image_tools::convertBMPBitmaps()
+{
+    qInfo() << "saveMosaicBitmaps";
+
+    QString dir = Sys::getRootImageDir();
+
+    QString idir = QFileDialog::getExistingDirectory(this, tr("Select Image Directory"),
+                                                    dir, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    if (idir.isEmpty())
+    {
+        qInfo() << "directory not specified";
+        return;
+    }
+
+    etimer->start();
+
+    QList<sAction> actions;
+
+    VersionFileList vfl = FileServices::getDirImageFiles(idir);
+    for (VersionedFile & vf : vfl)
+    {
+        QString filename = vf.getPathedName();
+        if (filename.contains(".bmp"))
+        {
+            sAction action;
+            action.type  = ACT_CONVERT_BMPS ;
+            action.path  = filename;
+            actions.push_back(action);
+        }
+    }
     processActionList(actions);
 }
 
@@ -2013,14 +2067,14 @@ void page_image_tools::saveTilingBitmaps()
 
     auto id            = config->imageFileFilter;
     VersionList files  = FileServices::getTilingNames(id);
-    QString pixmapPath = Sys::getBMPPath(generatorType);
+    QString pixmapPath = getGenerateImagePath(generatorType);
 
     QList<sAction> actions;
     for (const VersionedName & name : std::as_const(files))
     {
         if (config->skipExisting)
         {
-            QString file = pixmapPath + "/" + name.get() + ".bmp";
+            QString file = pixmapPath + "/" + name.get() + ".png";
             QFile afile(file);
             if (afile.exists())
             {
@@ -2029,7 +2083,7 @@ void page_image_tools::saveTilingBitmaps()
         }
 
         sAction action;
-        action.type = ACT_GEN_TILING_BMP;
+        action.type = ACT_GEN_TILING_PNG;
         action.name = name;
         action.path = pixmapPath;
         actions.push_back(action);
@@ -2060,7 +2114,7 @@ void page_image_tools::createComparedWorklist()
     }
     else
     {
-        QStringList names = FileServices::getDirBMPFiles(MemoryCombo::getTextFor("leftDir")).getNames();
+        QStringList names = FileServices::getDirImageFiles(MemoryCombo::getTextFor("leftDir")).getNames();
         imgList.setNames(names);
     }
 
@@ -2069,8 +2123,8 @@ void page_image_tools::createComparedWorklist()
     QList<sAction> actions;
     for (const auto & name : std::as_const(imgList))
     {
-        QString pathLeft  = MemoryCombo::getTextFor("leftDir")  + "/" + name.get()  + ".bmp";
-        QString pathRight = MemoryCombo::getTextFor("rightDir") + "/" + name.get() + ".bmp";
+        QString pathLeft  = MemoryCombo::getTextFor("leftDir")  + "/" + name.get() + ".png";
+        QString pathRight = MemoryCombo::getTextFor("rightDir") + "/" + name.get() + ".png";
 
         sAction action;
         action.type  = ACT_GEN_COMPARE_WLIST;
@@ -2089,20 +2143,25 @@ void page_image_tools::createComparedWorklist()
     }
 }
 
-void page_image_tools::slot_genBMPs()
+void page_image_tools::slot_genPNGs()
 {
-    qDebug() << Sys::getWorkingBMPDirectory();
-
     Sys::flags->enable(false); // turn off debug
 
     if (config->imageType == IMAGE_MOSAICS)
-        generatorType = ACT_GEN_MOSAIC_BMP;
+        generatorType = ACT_GEN_MOSAIC_PNG;
     else
-        generatorType = ACT_GEN_TILING_BMP;
+        generatorType = ACT_GEN_TILING_PNG;
 
     setupActions();
 
-    secondDir->setCurrentText(Sys::getBMPPath(generatorType));
+    secondDir->setCurrentText(getGenerateImagePath(generatorType));
+}
+
+void page_image_tools::slot_convertBMPs()
+{
+    generatorType = ACT_CONVERT_BMPS;
+
+    setupActions();
 }
 
 void page_image_tools::slot_regenMosaicXML()
@@ -2137,37 +2196,37 @@ void page_image_tools::setupActions()
         // this is a cancel
         watcher.cancel();
         qInfo() << "Generate Mosaic bitmaps  Cancelled: waiting to finish";
-        Sys::splash->remove();
-        Sys::splash->display("CANCELLED - waiting to finish");
+        Sys::systemViewController->splash_remove();
+        Sys::systemViewController->splash_display("CANCELLED - waiting to finish");
 
         watcher.waitForFinished();
 
         Sys::localCycle        = false;
         Sys::imgGeneratorInUse = false;
         qInfo() << "Generate Mosaic bitmaps : Finished";
-        Sys::splash->remove();
-        Sys::splash->display("CANCELLED - Finished");
+        Sys::systemViewController->splash_remove();
+        Sys::systemViewController->splash_display("CANCELLED - Finished");
 
         return;
     }
 
-    panel->delegateView(VIEW_DEBUG,false);
+    panel->delegateView(Layer::Type::DebugLayer,false);
 
-    if (generatorType == ACT_GEN_MOSAIC_BMP)
+    if (generatorType == ACT_GEN_MOSAIC_PNG)
     {
         Q_ASSERT(!Sys::imgGeneratorInUse);
         Sys::imgGeneratorInUse = true;
         Sys::localCycle        = true;
-        Sys::viewController->disableAllViews();
+        Sys::systemViewController->disableAllViews();
         emit sig_reconstructView();
         saveMosaicBitmaps();
     }
-    else if (generatorType == ACT_GEN_TILING_BMP)
+    else if (generatorType == ACT_GEN_TILING_PNG)
     {
         Q_ASSERT(!Sys::imgGeneratorInUse);
         Sys::imgGeneratorInUse = true;
         Sys::localCycle        = true;
-        Sys::viewController->disableAllViews();
+        Sys::systemViewController->disableAllViews();
         emit sig_reconstructView();
         saveTilingBitmaps();
     }
@@ -2176,7 +2235,7 @@ void page_image_tools::setupActions()
         Q_ASSERT(!Sys::imgGeneratorInUse);
         Sys::imgGeneratorInUse = true;
         Sys::localCycle        = true;
-        Sys::viewController->appSuspendPaint(true);
+        Sys::systemViewController->appSuspendPaint(true);
         createComparedWorklist();
     }
     else if (generatorType == ACT_REGEN_MOSAIC_XML)
@@ -2184,9 +2243,16 @@ void page_image_tools::setupActions()
         Q_ASSERT(!Sys::imgGeneratorInUse);
         Sys::imgGeneratorInUse = true;
         Sys::localCycle        = true;
-        Sys::viewController->disableAllViews();
+        Sys::systemViewController->disableAllViews();
         emit sig_reconstructView();
         regenerateMosaicXML();
+    }
+    else if (generatorType == ACT_CONVERT_BMPS)
+    {
+        Q_ASSERT(!Sys::imgGeneratorInUse);
+        Sys::imgGeneratorInUse = true;
+        Sys::localCycle        = true;
+        convertBMPBitmaps();
     }
 }
 
@@ -2229,18 +2295,32 @@ void page_image_tools::loadFileFilterCombo()
     imageFilterCombo->setCurrentIndex(index);
 }
 
-bool page_image_tools::viewImage(VersionedFile &file)
+bool page_image_tools::viewImage(VersionedFile file)
 {
     imageCompareResult->setText("");
 
-    QPixmap pixmap(file.getPathedName());
+    QString filename = file.getPathedName();
+
+    QPixmap pixmap(filename);
     if (pixmap.isNull())
     {
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Warning);
-        box.setText("Image not found or not valid");
-        box.exec();
-        return false;
+        if (filename.contains(".png"))
+        {
+            filename.replace(".png",".bmp");
+            QPixmap pixmap(filename);
+            if (pixmap.isNull())
+            {
+                QMessageBox box(this);
+                box.setIcon(QMessageBox::Warning);
+                box.setText("Image not found or not valid");
+                box.exec();
+                return false;
+            }
+            else
+            {
+                file.setFromFullPathname(filename);
+            }
+        }
     }
 
     engine.view_image(file);
@@ -2253,3 +2333,55 @@ void page_image_tools::addToComparisonWorklist(VersionedName name)
     comparisonList.add(name);
 }
 
+QString page_image_tools::createImageGenerationDirectoryName()
+{
+    QString dirname;
+
+    QDateTime d = QDateTime::currentDateTime();
+
+    dirname = d.toString("yyyy-MM-dd");
+    if (!Sys::gitBranch.isEmpty())
+    {
+        dirname = dirname + "-" + Sys::gitBranch;
+    }
+    else if (!Sys::gitSha.isEmpty())
+    {
+        dirname = dirname + "-" + Sys::gitSha;
+    }
+    return dirname;
+}
+
+QString page_image_tools::getGenerateImagePath(eActionType generatorType)
+{
+    QString subdir;
+    switch (config->repeatMode)
+    {
+    case REPEAT_SINGLE:
+        subdir = "single/";
+        break;
+    case REPEAT_PACK:
+        subdir = "pack/";
+        break;
+    case REPEAT_DEFINED:
+        subdir = "defined/";
+        break;
+    }
+
+    QString path = Sys::getRootImageDir();
+    QString dir  = generateDirectoryCombo->currentText();  // live edit-box content, not the last-committed item
+
+    if (generatorType == ACT_GEN_TILING_PNG)
+        path += "tilings/" + subdir + dir;
+    else
+        path += subdir + dir;
+
+    QDir adir(path);
+    if (!adir.exists())
+    {
+        if (!adir.mkpath(path))
+        {
+            qFatal("could not make path");
+        }
+    }
+    return path;
+}

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef EMOUSEMODE_H
-#define EMOUSEMODE_H
 
 enum eMouseMode
 {
@@ -9,5 +7,3 @@ enum eMouseMode
     MOUSE_MODE_ROTATE       = 0x02,
     MOUSE_MODE_SCALE        = 0x04,
 };
-
-#endif // EMOUSEMODE_H

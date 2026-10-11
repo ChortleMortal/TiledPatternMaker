@@ -1,6 +1,4 @@
 #pragma once
-#ifndef STYLE_COLOR_FILL_GROUP_H
-#define STYLE_COLOR_FILL_GROUP_H
 
 #include "gui/model_editors/style_edit/fill_editor.h"
 #include "gui/model_editors/style_edit/style_editor.h"
@@ -60,4 +58,3 @@ private:
 
     New3Coloring  * new3cm;
 };
-#endif

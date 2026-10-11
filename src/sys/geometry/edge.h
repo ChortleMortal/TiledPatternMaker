@@ -1,6 +1,4 @@
 #pragma once
-#ifndef EDGE_H
-#define EDGE_H
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -80,9 +78,9 @@ public:
     qreal     getRadius();
     bool      pointWithinArc(QPointF pt)  { return arcData.pointWithinArc(pt); }
 
-    bool      isTrivial(qreal tolerance = Sys::TOL);
-    bool      isColinearAndTouching(const EdgePtr & e, qreal tolerance = Sys::NEAR_TOL);
-    bool      isColinear(const EdgePtr & e, qreal tolerance = Sys::NEAR_TOL);
+    bool      isTrivial(qreal tolerance = Loose::TOL);
+    bool      isColinearAndTouching(const EdgePtr & e, qreal tolerance = Loose::NEAR_TOL);
+    bool      isColinear(const EdgePtr & e, qreal tolerance = Loose::NEAR_TOL);
 
     bool      contains(const VertexPtr & v);
     bool      contains(const QPointF & p);
@@ -126,6 +124,3 @@ private:
     eEdgeType       _type;
     ArcData         arcData;
 };
-
-#endif
-

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef SLIDERSET_H
-#define SLIDERSET_H
 
 #include <QSpinBox>
 #include <QSlider>
@@ -15,33 +13,46 @@ class AQSpinBox : public QSpinBox
 public:
     AQSpinBox();
 
-    void         leaveEvent(QEvent *event) override;
-    virtual void enterEvent(QEnterEvent *event) override;
+    virtual void focusInEvent(QFocusEvent *event) override;
+    virtual void focusOutEvent(QFocusEvent *event) override;
+    virtual void wheelEvent(QWheelEvent *event) override;
 
     void setValue(int val);
 
     bool blocked;
-
-private:
-    QString backgroundColorName;
 };
 
-class AQDoubleSpinBox : public QDoubleSpinBox
+// stores values at full precision; only the display is rounded
+class FullPrecisionDoubleSpinBox : public QDoubleSpinBox
+{
+    Q_OBJECT
+
+public:
+    FullPrecisionDoubleSpinBox(QWidget * parent = nullptr);
+
+    virtual QString textFromValue(double val) const override;
+    virtual double  valueFromText(const QString & text) const override;
+
+    void setDisplayDecimals(int val);
+
+private:
+    int displayDecimals;
+};
+
+class AQDoubleSpinBox : public FullPrecisionDoubleSpinBox
 {
     Q_OBJECT
 
 public:
     AQDoubleSpinBox(QWidget * parent = nullptr);
 
-    void         leaveEvent(QEvent *event) override;
-    virtual void enterEvent(QEnterEvent *event) override;
+    virtual void focusInEvent(QFocusEvent *event) override;
+    virtual void focusOutEvent(QFocusEvent *event) override;
+    virtual void wheelEvent(QWheelEvent *event) override;
 
     void setValue(double val);
 
     bool blocked;
-
-private:
-    QString backgroundColorName;
 };
 
 class SpinSet: public AQHBoxLayout
@@ -49,7 +60,7 @@ class SpinSet: public AQHBoxLayout
     Q_OBJECT
 
 public:
-    SpinSet(QString txt, int val, int min, int max, bool nostretch = false);
+    SpinSet(QString txt, int val, int min, int max, bool nostretch = false, bool labelRight = false, bool resetToDefaults = false);
     void    setValue(int val);
     void    setReadOnly(bool val)   { spin->setReadOnly(val); }
     void    setDisabled(bool val)   { spin->setDisabled(val); }
@@ -75,11 +86,12 @@ public:
     void    setLabel(QString txt)    { label->setText(txt); }
     void    setValue(qreal val);
     qreal   value()                  { return spin->value(); }
-    void    setDecimals(int val)     { spin->setDecimals(val); }
+    void    setDecimals(int val)     { spin->setDisplayDecimals(val); }
     void    setReadOnly(bool val)    { spin->setReadOnly(val); }
-    void    setPrecision(int val)    { spin->setDecimals(val); }
+    void    setPrecision(int val)    { spin->setDisplayDecimals(val); }
     void    setSingleStep(qreal val) { spin->setSingleStep(val); }
     qreal   getSingleStep()          { return spin->singleStep(); }
+    void    setEnabled(bool enb)     { label->setEnabled(enb); spin->setEnabled(enb); }
 
 signals:
     void    valueChanged(qreal val);
@@ -148,4 +160,3 @@ private:
     QSlider        * slider;
     AQDoubleSpinBox * spin;
 };
-#endif // SLIDERSET_H

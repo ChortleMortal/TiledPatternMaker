@@ -140,7 +140,7 @@ FacePtr FaceSet::findByCenter(QPointF pt) const
 {
     for (auto & fp : std::as_const(*this))
     {
-        if (pt == fp->center())
+        if (Loose::equalsPt(pt, fp->center()))
             return fp;
     }
 

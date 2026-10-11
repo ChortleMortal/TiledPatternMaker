@@ -1,6 +1,4 @@
 #pragma once
-#ifndef VIEWERSERVICES_H
-#define VIEWERSERVICES_H
 
 #include <QBrush>
 
@@ -14,6 +12,5 @@ class ViewerServices
 public:
     static void  drawTile(GeoGraphics * gg, TilePtr tile, QBrush brush, QPen pen);
     static void  drawMotif (GeoGraphics * gg, MotifPtr motif, QPen pen);
+    static void  drawExtendedBoundary(GeoGraphics * gg, MotifPtr motif, QPen pen);
 };
-
-#endif

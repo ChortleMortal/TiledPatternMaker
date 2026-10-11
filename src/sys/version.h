@@ -1,8 +1,14 @@
 #pragma once
-#ifndef VERSION_H
-#define VERSION_H
+
 #include <QString>
 
-static const QString tpmVersion("4.2 ");
+#define LINUX_MEDIA_FILES_VERSION 6
 
-#endif
+class TpmVersion
+{
+public:
+    static QString getVersion();
+    static QString getTimestamp();
+};
+
+

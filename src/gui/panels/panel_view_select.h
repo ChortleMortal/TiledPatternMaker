@@ -1,13 +1,12 @@
-#ifndef PANELVIEWSELECT_H
-#define PANELVIEWSELECT_H
+#pragma once
 
 #include <QGroupBox>
 #include <QButtonGroup>
-#include "sys/enums/eviewtype.h"
+#include <QCheckBox>
+#include "gui/viewers/layer.h"
+#include "model/settings/configuration.h"
 
-class QCheckBox;
-class Configuration;
-class SystemViewController;
+class ViewController;
 class ControlPanel;
 
 class PanelViewSelect : public QGroupBox
@@ -17,20 +16,23 @@ class PanelViewSelect : public QGroupBox
 public:
     explicit PanelViewSelect();
 
-    void    selectViewer(eViewType vtype, bool enable = true);
-    void    deselectGangedViewers();
+    void    selectViewer(Layer::Type vtype, bool enable);
+    void    syncLockCheckbox()    { cbLockSelect->setChecked(config->lockView); }
+
+    // for checkboxes elsewhere (e.g. page_mosaic_maker, page_backgrounds, page_grid, page_debug) that
+    // mirror one of these layer enables - a direct user click, so unlike selectViewer() it is not
+    // subject to Lock Layers, which is only meant to stop automatic/programmatic view switching
+    void    userSelectViewer(Layer::Type vtype, bool enable)    { slot_Viewer_pressed((int)vtype, enable); }
 
 protected slots:
     void    slot_Viewer_pressed(int id, bool enable);
-
     void    slot_lockViewClicked(bool enb);
     void    slot_multiSelect(bool enb);
-    void    slot_lockStatusChanged();
 
 signals:
     void    sig_reconstructView();
 
-protected:
+private:
     void    createGUI();
     void    restoreViewEnables();
 
@@ -44,6 +46,7 @@ protected:
     QCheckBox   * cbBackgroundImage;
     QCheckBox   * cbBMPImage;
     QCheckBox   * cbGrid;
+    QCheckBox   * cbConstructionLines;
     QCheckBox   * cbDebug;
     QCheckBox   * cbCrop;
 
@@ -52,11 +55,8 @@ protected:
 
     QButtonGroup  viewerGroup;
 
-private:
-    eViewType     soloType;
+    Layer::Type      soloType;
 
     Configuration  * config;
-    SystemViewController * viewController;
+    ViewController * viewController;
 };
-
-#endif // PANELVIEWSELECT_H

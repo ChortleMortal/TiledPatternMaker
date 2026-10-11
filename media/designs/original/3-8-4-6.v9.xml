@@ -1,0 +1,514 @@
+<?xml version="1.0"?>
+<!-- Written: Sun Sep 20 2026 14:09:39 -->
+<vector id="1" version="35">
+	<designNotes>Uses explicit infer, uses one filled style with two colors, removes redundant interlace.</designNotes>
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-1,1,-1,0</Fill>
+	</design>
+	<style.Interlace id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>3-8-4-6</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.4142135623730951</Point>
+									<Point id="7">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="14">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<q>0</q>
+							<s>3</s>
+						</Rosette>
+					</entry>
+					<entry>
+						<Tile id="15">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="16">
+								<Line>
+									<Point id="17">-1.449489742783176,11.97469149468814</Point>
+									<Point id="18">-3.181540550352011,8.974691494688157</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">0.1645246645991763,8.078116022520113</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">1.896575472168054,5.078116022520113</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">1,1.732050807568877</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">3.449489742783178,4.181540550352053</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">6.913591357920932,4.181540550352053</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">9.363081100704111,1.732050807568875</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">11.09513190827299,4.732050807568875</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">7.749066693321759,5.628626279736925</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point id="27">6.017015885752889,8.628626279736919</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">6.913591357920945,11.97469149468814</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">4.464101615137764,9.525201751904966</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point id="30">1.000000000000002,9.525201751904966</Point>
+								</Line>
+								<Line>
+									<Point reference="30" />
+									<Point reference="17" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularInfer id="31" type="Explicit Map Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>14</n>
+							<cropToTile>f</cropToTile>
+						</IrregularInfer>
+					</entry>
+					<entry>
+						<Tile id="32">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="33">
+								<Line>
+									<Point id="34">1,1.732050807568877</Point>
+									<Point id="35">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="35" />
+									<Point id="36">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point reference="34" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularInfer id="37" type="Explicit Map Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<cropToTile>f</cropToTile>
+						</IrregularInfer>
+					</entry>
+					<entry>
+						<Tile id="38">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="39">
+								<Line>
+									<Point id="40">1,0.5773502691896256</Point>
+									<Point id="41">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="41" />
+									<Point id="42">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="42" />
+									<Point id="43">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="43" />
+									<Point id="44">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="44" />
+									<Point id="45">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="45" />
+									<Point reference="40" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="46">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<q>0</q>
+							<s>2</s>
+						</Rosette>
+					</entry>
+					<entry>
+						<Tile id="47">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="48">
+								<Line>
+									<Point id="49">1,0.9999999999999998</Point>
+									<Point id="50">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="50" />
+									<Point id="51">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="51" />
+									<Point id="52">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="52" />
+									<Point reference="49" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularInfer id="53" type="Explicit Map Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<cropToTile>f</cropToTile>
+						</IrregularInfer>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.2</width>
+			<join>bevel</join>
+			<cap>square</cap>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0.2</gap>
+			<shadow>0.1765625</shadow>
+			<includeTipVerts>false</includeTipVerts>
+			<startUnder>false</startUnder>
+		</style.Interlace>
+	</style.Interlace>
+	<style.Outline id="54">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff333333</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.4</width>
+			<join>bevel</join>
+			<cap>square</cap>
+		</style.Thick>
+	</style.Outline>
+	<style.Filled id="55">
+		<algorithm>0</algorithm>
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<draw__inside>true</draw__inside>
+		<draw__outside>true</draw__outside>
+		<ColorBlacks>
+			<color hide="f">#ff00cccc</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ffff9900</color>
+		</ColorWhites>
+	</style.Filled>
+	<style.Filled id="56">
+		<algorithm>1</algorithm>
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<draw__inside>true</draw__inside>
+		<draw__outside>true</draw__outside>
+		<ColorBlacks>
+			<color hide="f">#ff55ff7f</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ffffaaff</color>
+		</ColorWhites>
+	</style.Filled>
+	<style.Filled id="57">
+		<algorithm>2</algorithm>
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorWhites>
+			<color hide="f">#ffff0000</color>
+			<color hide="f">#ff00aa00</color>
+			<color hide="f">#ff5555ff</color>
+			<color hide="f">#ffffff00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="f">#ff55aaff</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="f">#ff55aaff</color>
+			<color hide="f">#ffff0000</color>
+			<color hide="f">#ffa35807</color>
+			<color hide="f">#ff5555ff</color>
+			<color hide="f">#ff234b30</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="f">#ffffff00</color>
+		</ColorWhites>
+	</style.Filled>
+	<style.Filled id="58">
+		<algorithm>3</algorithm>
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ffff0000</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ff00aa00</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ff5555ff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+			</Group>
+			<Group hideSet="t">
+				<color hide="f">#ffffff00</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ff55aaff</color>
+			</Group>
+			<Group hideSet="t">
+				<color hide="f">#ffffff00</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ff55aaff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffff0000</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffa35807</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ff5555ff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ff234b30</color>
+			</Group>
+			<Group hideSet="t">
+				<color hide="f">#ffffff00</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+			</Group>
+		</ColorGroup>
+	</style.Filled>
+	<style.Filled id="59">
+		<algorithm>5</algorithm>
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorWhites>
+			<color hide="f">#ffff0000</color>
+			<color hide="f">#ff00aa00</color>
+			<color hide="f">#ff5555ff</color>
+			<color hide="f">#ffffff00</color>
+			<color hide="f">#ffffff00</color>
+			<color hide="f">#ff55aaff</color>
+			<color hide="f">#ffffff00</color>
+			<color hide="f">#ff55aaff</color>
+			<color hide="f">#ffff0000</color>
+			<color hide="f">#ffa35807</color>
+			<color hide="f">#ff5555ff</color>
+			<color hide="f">#ff234b30</color>
+			<color hide="f">#ffffff00</color>
+			<color hide="f">#ffffff00</color>
+		</ColorWhites>
+		<FaceMap>
+			<Face>-5.542257558865013,-5.278194381479269,9</Face>
+			<Face>5.181540550352054,-3.055604481586462,9</Face>
+			<Face>-4.118572515969253,7.133576852315539,9</Face>
+			<Face>-1.799921641040839,7.438833031033069,9</Face>
+			<Face>9.71351299896177,6.26790927122397,9</Face>
+			<Face>1.327158902378739,-5.003150908939701,2</Face>
+			<Face>-1.79992164104084,-7.438833031033063,9</Face>
+			<Face>3.020901900798262,-2.160638649553793,9</Face>
+			<Face>5.181540550352055,-1.360023205165817e-15,1</Face>
+			<Face>7.342179199905849,2.160638649553791,9</Face>
+			<Face>-9.61908359018728,-7.190279137679894,5</Face>
+			<Face>-3.9286320588038,-5.513923200107335,3</Face>
+			<Face>-8.511709855459534e-16,-5.921189464667501e-16,11</Face>
+			<Face>-1.062968034382798,-1.841114642372625,9</Face>
+			<Face>-6.208099125654589,-7.190279137679914,5</Face>
+			<Face>-2.370659013944614,-2.815434729588443,3</Face>
+			<Face>0.05546082979542766,6.015147988137316,9</Face>
+			<Face>-1.252908491548259,-3.460768294580824,3</Face>
+			<Face>-2.59077027517603,4.487345747344085,1</Face>
+			<Face>-3.617347727939285,-3.149483963716309,3</Face>
+			<Face>-7.913591357920942,5.856426454897701e-15,0</Face>
+			<Face>-7.913591357920943,3.975733293870781,2</Face>
+			<Face>-4.996435237298354,-1.352222130151186,2</Face>
+			<Face>-7.913591357920939,5.971977006705846,0</Face>
+			<Face>3.669276334919616,3.650928778788514,2</Face>
+			<Face>-6.208099125654583,7.190279137679923,5</Face>
+			<Face>-4.118572515969261,-7.133576852315533,9</Face>
+			<Face>3.669276334919611,-3.650928778788511,2</Face>
+			<Face>-7.913591357920944,-3.975733293870769,2</Face>
+			<Face>-1.564192822412774,-5.82520753097185,3</Face>
+			<Face>1.058234322636094,1.832915613118952,5</Face>
+			<Face>5.181540550352056,3.055604481586462,9</Face>
+			<Face>7.858130528125526,-7.69159431411973,9</Face>
+			<Face>-7.913591357920943,-5.97197700670582,0</Face>
+			<Face>0.3607170085129535,-3.69649711320889,9</Face>
+			<Face>-4.99643523729836,1.352222130151189,2</Face>
+			<Face>-1.062968034382799,1.841114642372626,9</Face>
+			<Face>-2.59077027517603,-4.487345747344079,1</Face>
+			<Face>9.128679477584294,3.867382647775608,0</Face>
+			<Face>-10.5901813356944,-2.959543506550832,9</Face>
+			<Face>-10.28492515697687,5.278194381479268,9</Face>
+			<Face>3.956795678960463,-6.853371151128528,0</Face>
+			<Face>-10.59018133569439,2.959543506550852,9</Face>
+			<Face>8.237145031938514,-1.998401444325282e-15,9</Face>
+			<Face>-5.542257558865015,5.278194381479276,9</Face>
+			<Face>-5.237001380147488,2.959543506550852,9</Face>
+			<Face>-4.262681292931667,-4.267234486112664,3</Face>
+			<Face>7.399881710124153,4.865504504193134,2</Face>
+			<Face>-2.810881536407446,-6.159256765099717,3</Face>
+			<Face>1.327158902378741,5.003150908939701,2</Face>
+			<Face>9.713512998961788,-6.267909271223985,9</Face>
+			<Face>1.058234322636094,-1.832915613118952,5</Face>
+			<Face>0.360717008512955,3.696497113208892,9</Face>
+			<Face>9.331013956359365,-1.781231983188877,5</Face>
+			<Face>7.858130528125508,7.691594314119722,9</Face>
+			<Face>2.125936068765593,-1.480297366166875e-15,9</Face>
+			<Face>9.128679477584257,-3.867382647775619,0</Face>
+			<Face>7.342179199905845,-2.160638649553793,9</Face>
+			<Face>-3.381618909311219,-1.535858463655096,9</Face>
+			<Face>-5.237001380147485,-2.959543506550848,9</Face>
+			<Face>-9.619083590187284,7.190279137679925,5</Face>
+			<Face>9.331013956359383,1.781231983188883,5</Face>
+			<Face>-10.28492515697688,-5.278194381479251,9</Face>
+			<Face>0.05546082979542496,-6.015147988137312,9</Face>
+			<Face>7.399881710124148,-4.865504504193138,2</Face>
+			<Face>-2.116468645272191,4.070817756958907e-16,5</Face>
+			<Face>3.956795678960477,6.853371151128532,0</Face>
+			<Face>-3.381618909311222,1.535858463655099,9</Face>
+			<Face>3.020901900798263,2.160638649553792,9</Face>
+		</FaceMap>
+	</style.Filled>
+</vector>

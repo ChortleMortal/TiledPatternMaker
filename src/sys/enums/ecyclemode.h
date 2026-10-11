@@ -1,6 +1,4 @@
 #pragma once
-#ifndef ECYCLEMODE_H
-#define ECYCLEMODE_H
 
 #include <QString>
 
@@ -15,10 +13,9 @@ enum eImageType
 
 enum eActionType
 {
-    ACT_GEN_MOSAIC_BMP,
-    ACT_GEN_TILING_BMP,
+    ACT_GEN_MOSAIC_PNG,
+    ACT_GEN_TILING_PNG,
     ACT_GEN_COMPARE_WLIST,
-    ACT_REGEN_MOSAIC_XML
+    ACT_REGEN_MOSAIC_XML,
+    ACT_CONVERT_BMPS
 };
-
-#endif // ECYCLEMODE_H

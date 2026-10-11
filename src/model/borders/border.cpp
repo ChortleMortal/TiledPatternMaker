@@ -1,8 +1,11 @@
 #include <QPainter>
+#include <QApplication>
 
 #include "gui/model_editors/border_edit/mouse_edit_border.h"
+#include "gui/panels/page_borders.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/crop_maker_view.h"
 #include "gui/viewers/geo_graphics.h"
 #include "model/borders/border.h"
@@ -18,7 +21,7 @@
  *     but when locked to view size, content is (or shoulde be) adjusted as the view size changes
  */
 
-Border::Border(Mosaic * parent) : Style (PRIMARY,"Border")
+Border::Border(Mosaic * parent) : Style (Layer::Model::Derived,"Border")
 {
     this->parent          = parent;
     borderType            = BORDER_NONE;
@@ -28,14 +31,14 @@ Border::Border(Mosaic * parent) : Style (PRIMARY,"Border")
     debugMouse            = false;
     setUseViewSize(false);
 
-    setZLevel(BORDER_ZLEVEL);
+    setZLevel(Layer::ZLevel::Standard_Z0);
     setClipable(false);
 
-    connect(Sys::sysview, &SystemView::sig_viewSizeChanged, this, &Border::viewResized);
-    connect(Sys::sysview, &SystemView::sig_viewMoved,       this, &Border::viewMoved);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_viewSizeChanged, this, &Border::viewResized);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_viewMoved,       this, &Border::viewMoved);
 }
 
-Border::Border(Mosaic *parent, const Crop & crop) : Style(PRIMARY, "Border"), Crop(crop)
+Border::Border(Mosaic *parent, const Crop & crop) : Style(Layer::Model::Primary, "Border"), Crop(crop)
 {
     this->parent          = parent;
     borderType            = BORDER_NONE;
@@ -45,11 +48,11 @@ Border::Border(Mosaic *parent, const Crop & crop) : Style(PRIMARY, "Border"), Cr
     debugMouse            = false;
     setUseViewSize(false);
 
-    setZLevel(BORDER_ZLEVEL);
+    setZLevel(Layer::ZLevel::Standard_Z0);
     setClipable(false);
 
-    connect(Sys::sysview, &SystemView::sig_viewSizeChanged, this, &Border::viewResized);
-    connect(Sys::sysview, &SystemView::sig_viewMoved,       this, &Border::viewMoved);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_viewSizeChanged, this, &Border::viewResized);
+    connect(Sys::systemViewController->getView(), &SystemView::sig_viewMoved,       this, &Border::viewMoved);
 }
 
 void Border::setModelXform(const Xform & xf, bool update, uint sigid)
@@ -82,6 +85,25 @@ void Border::paint(QPainter *painter)
         getMouseInteraction()->draw(painter,mousePos);
         painter->restore();
     }
+    else if (Sys::bm_editBorder && viewControl() == Sys::systemViewController && isEditable())
+    {
+        Crop::draw(painter,getLayerTransform(),true);
+    }
+}
+
+// the Border Maker is showing and this is its current border
+bool Border::isEditable()
+{
+    if (!Sys::controlPanel->isVisiblePage(PAGE_BORDER_MAKER))
+        return false;
+    auto * pb = dynamic_cast<page_borders*>(Sys::controlPanel->getPage("Border Maker"));
+    return (pb && pb->getCurrentBorder().get() == this);
+}
+
+QTransform Border::getCanvasTransform()
+{
+    // borders are not warped by canvas distortion, unlike the design content they surround
+    return viewControl()->getCanvas()->getUndistortedTransform();
 }
 
 void Border::viewMoved()
@@ -89,6 +111,7 @@ void Border::viewMoved()
     if (getUseViewSize())
     {
         resetStyleRepresentation();
+        createStyleRepresentation();
     }
 }
 
@@ -103,10 +126,7 @@ void Border::viewResized(QSize oldSize, QSize newSize)
 void Border::setUseViewSize(bool use)
 {
     _useViewSize = use;
-    if (use)
-    {
-        resetStyleRepresentation();
-    }
+    resetStyleRepresentation();
 }
 
 void Border::setBorderSize(QSize viewSize)
@@ -165,11 +185,11 @@ void Border::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 {
     Q_UNUSED(btn);
 
-    if (!viewControl()->isEnabled(VIEW_MOSAIC))
+    if (!viewControl()->isEnabled(Layer::Type::Mosaic))
         return;
     if (Sys::cropMakerView->getShowCrop(CM_MOSAIC))
         return;
-    if (!Sys::controlPanel->isVisiblePage(PAGE_BORDER_MAKER))
+    if (!isEditable())
         return;
 
     setMousePos(spt);
@@ -182,7 +202,7 @@ void Border::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 
 void Border::slot_mouseDragged(QPointF spt)
 {
-    if (!viewControl()->isEnabled(VIEW_MOSAIC))
+    if (!viewControl()->isEnabled(Layer::Type::Mosaic))
         return;
 
     if (Sys::cropMakerView->getShowCrop(CM_MOSAIC))
@@ -202,7 +222,7 @@ void Border::slot_mouseDragged(QPointF spt)
 
 void Border::slot_mouseMoved(QPointF spt)
 {
-    if (!viewControl()->isEnabled(VIEW_MOSAIC))
+    if (!viewControl()->isEnabled(Layer::Type::Mosaic))
         return;
     if (Sys::cropMakerView->getShowCrop(CM_MOSAIC))
         return;
@@ -214,7 +234,7 @@ void Border::slot_mouseMoved(QPointF spt)
 
 void Border::slot_mouseReleased(QPointF spt)
 {
-    if (!viewControl()->isEnabled(VIEW_MOSAIC))
+    if (!viewControl()->isEnabled(Layer::Type::Mosaic))
         return;
     if (Sys::cropMakerView->getShowCrop(CM_MOSAIC))
         return;
@@ -229,6 +249,7 @@ void Border::slot_mouseReleased(QPointF spt)
         mma->endDragging(mousePos);
         resetMouseInteraction();
         resetStyleRepresentation();
+        createStyleRepresentation();
         forceRedraw();
     }
 }

@@ -1,10 +1,8 @@
 #pragma once
-#ifndef MAP_EDITOR_MAP_WRITER
-#define MAP_EDITOR_MAP_WRITER
 
 #include "model/mosaics/mosaic_writer.h"
 
-class MapEditorDb;
+class MapEditor;
 
 class MapEditorMapWriter : private MosaicWriter
 {
@@ -14,7 +12,9 @@ public:
     MapEditorMapWriter();
     ~MapEditorMapWriter();
 
-    bool writeXML(VersionedFile xfile, MapEditorDb * db);
+    bool writeXML(VersionedFile xfile, MapEditor *editor);
+
+    using MosaicWriter::setCleanseMaps;
+    using MosaicWriter::getUnverifiedMaps;
 };
 
-#endif

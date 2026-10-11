@@ -1,6 +1,4 @@
 #pragma once
-#ifndef AQELAPSEDTIMER_H
-#define AQELAPSEDTIMER_H
 
 #include <QElapsedTimer>
 #include <QMultiMap>
@@ -16,10 +14,6 @@ public:
     QString getElapsed();
     int     getElapsedSeconds();
 };
-
-#endif // AQELAPSEDTIMER_H
-
-
 
 class TimerResults : public QMultiMap<int,QString>
 {

@@ -52,18 +52,18 @@ DlgCleanse::DlgCleanse(MapPtr map, uint level, qreal sensitivity, QWidget * pare
     vbox->addWidget(status1);
     vbox->addWidget(status2);
 
-    QPushButton * anlBtn = new QPushButton("Analyse");
-    QPushButton * clnBtn = new QPushButton("Cleanse");
-    QPushButton * clrBtn = new QPushButton("Clear");
-    QPushButton * canBtn = new QPushButton("Quit");
-    QPushButton * okBtn  = new QPushButton("Apply");
+    QPushButton * analyse    = new QPushButton("Analyse");
+    QPushButton * cleanseBtn = new QPushButton("Cleanse");
+    QPushButton * clearBtn   = new QPushButton("Clear");
+    QPushButton * cancelBtn  = new QPushButton("Cancel");
+    QPushButton * okBtn      = new QPushButton("OK");
 
     QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addWidget(anlBtn);
-    hbox->addWidget(clnBtn);
-    hbox->addWidget(clrBtn);
+    hbox->addWidget(analyse);
+    hbox->addWidget(cleanseBtn);
+    hbox->addWidget(clearBtn);
     hbox->addStretch();
-    hbox->addWidget(canBtn);
+    hbox->addWidget(cancelBtn);
     hbox->addWidget(okBtn);
 
     vbox->addSpacing(13);
@@ -71,11 +71,11 @@ DlgCleanse::DlgCleanse(MapPtr map, uint level, qreal sensitivity, QWidget * pare
 
     setLayout(vbox);
 
-    connect(canBtn, &QPushButton::clicked, this, &QDialog::reject);
-    connect(okBtn,  &QPushButton::clicked, this, &QDialog::accept);
-    connect(anlBtn, &QPushButton::clicked, this, &DlgCleanse::slot_analyse);
-    connect(clnBtn, &QPushButton::clicked, this, &DlgCleanse::slot_cleanse);
-    connect(clrBtn, &QPushButton::clicked, this, [this] { toCheckboxes(0);});
+    connect(analyse,    &QPushButton::clicked, this, &DlgCleanse::slot_analyse);
+    connect(cleanseBtn, &QPushButton::clicked, this, &DlgCleanse::slot_cleanse);
+    connect(clearBtn,   &QPushButton::clicked, this, [this] { toCheckboxes(0);});
+    connect(cancelBtn,  &QPushButton::clicked, this, &QDialog::reject);
+    connect(okBtn,      &QPushButton::clicked, this, &QDialog::accept);
 
     toCheckboxes(level);
 

@@ -25,6 +25,12 @@ bool CompareBMPStepper::begin()
 
     imgList_it = imgList.begin();
 
+    if (imgList_it == imgList.end())
+    {
+        end();
+        return false;
+    }
+
     VersionedName name = *imgList_it;
     parent->compareBMPs(name,name);
 

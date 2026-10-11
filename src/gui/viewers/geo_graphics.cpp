@@ -233,6 +233,46 @@ void GeoGraphics::drawCircle( QPointF origin, int diameter, QPen pen, QBrush bru
     painter->restore();
 }
 
+// small fixed-size anchor (ship's anchor) glyph, drawn in screen space centered on origin
+void GeoGraphics::drawAnchorGlyph(QPointF origin, qreal size, QColor color)
+{
+    QPointF pt = transform.map(origin);
+
+    painter->save();
+    painter->translate(pt);
+
+    QPen pen(color, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    painter->setPen(pen);
+    painter->setBrush(Qt::NoBrush);
+
+    qreal ringR     = size * 0.22;
+    qreal ringCy    = -size * 0.62;
+    qreal shankTop  = ringCy + ringR;
+    qreal shankBot  =  size * 0.55;
+    qreal stockY    = -size * 0.28;
+    qreal stockHw   =  size * 0.32;
+    qreal flukeOutX =  size * 0.5;
+    qreal flukeY    =  size * 0.28;
+
+    // ring
+    painter->drawEllipse(QPointF(0, ringCy), ringR, ringR);
+
+    // shank
+    painter->drawLine(QPointF(0, shankTop), QPointF(0, shankBot));
+
+    // stock (crossbar)
+    painter->drawLine(QPointF(-stockHw, stockY), QPointF(stockHw, stockY));
+
+    // flukes (curved arms)
+    QPainterPath flukes;
+    flukes.moveTo(-flukeOutX, flukeY);
+    flukes.quadTo(QPointF(-flukeOutX * 0.6, shankBot + size * 0.12), QPointF(0, shankBot));
+    flukes.quadTo(QPointF( flukeOutX * 0.6, shankBot + size * 0.12), QPointF(flukeOutX, flukeY));
+    painter->drawPath(flukes);
+
+    painter->restore();
+}
+
 QTransform GeoGraphics::getTransform()
 {
     return transform;

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef EXTENDEDBOUNDARY_H
-#define EXTENDEDBOUNDARY_H
 
 #include <QPolygonF>
 #include <QDebug>
@@ -21,12 +19,13 @@ public:
         sides    = rhs.sides;
         scale    = rhs.scale;
         rotate   = rhs.rotate;
+        tileScale= rhs.tileScale;
         boundary = rhs.boundary;
         return *this;}
 
     const QPolygonF getPoly() const;
 
-    void  buildRadial();
+    void  buildRadial(TilePtr tile);
     void  buildExplicit(TilePtr tile);
 
     void  setRadial(bool radial)    { this->radial = radial; }
@@ -36,6 +35,7 @@ public:
 
     void  setScale(qreal scale)     { this->scale = scale; }
     qreal getScale()    const       { return scale; }
+    qreal getRadius()   const       { return scale * tileScale; }
 
     void  setRotate(qreal rotate)   { this->rotate = rotate; }
     qreal getRotate()    const      { return rotate; }
@@ -44,7 +44,7 @@ public:
 
     bool equals(const ExtendedBoundary & other);
     bool isCircle() const { return sides <= 2; }
-    bool isUnity(MotifPtr motif);
+    bool isUnity(Motif *motif);
 
 protected:
     void set(const QPolygonF & p);
@@ -53,9 +53,8 @@ private:
     int   sides;
     qreal scale;
     qreal rotate;
+    qreal tileScale;
     bool  radial;
 
     QPolygonF boundary;
 };
-
-#endif // EXTENDEDBOUNDARY_H

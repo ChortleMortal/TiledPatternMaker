@@ -11,11 +11,10 @@
  * ViewControl adds a border as a layer
  */
 
-LegacyBorder::LegacyBorder() : Layer(VIEW_LEGACY,PRIMARY,"Border")
+LegacyBorder::LegacyBorder() : Layer(Type::LegacyDesign,Model::Primary,ZLevel::Border_Z10,"Border")
 {
     borderType  = BORDER_NONE;
 
-    setZLevel(BORDER_ZLEVEL);
     sp = std::make_shared<ShapeFactory>(2.0);
     addSubLayer(sp);
 }

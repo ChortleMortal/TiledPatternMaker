@@ -13,14 +13,13 @@
 // tricky later.  But it's more tractable than computing overlays of
 // DCELs.
 
-#include <QMessageBox>
 #include <QDebug>
+#include <QSet>
 
 #include "sys/geometry/map_verifier.h"
 #include "sys/qt/qtapplog.h"
 #include "model/settings/configuration.h"
-#include "gui/widgets/dlg_textedit.h"
-#include "gui/top/controlpanel.h"
+#include "model/makers/mosaic_maker.h"
 #include "sys/geometry/neighbours.h"
 #include "sys/geometry/neighbour_map.h"
 #include "sys/geometry/vertex.h"
@@ -61,7 +60,7 @@ bool MapVerifier::verify(bool force)
     return (errors.size() == 0);
 }
 
-bool MapVerifier::verifyAndFix(bool force, bool confirm)
+bool MapVerifier::verifyAndFix(bool force)
 {
     if (!Sys::config->verifyMaps && !force)
     {
@@ -71,19 +70,6 @@ bool MapVerifier::verifyAndFix(bool force, bool confirm)
     QVector<eMapError> errors = _verify();
     if (errors.size())
     {
-        if (confirm)
-        {
-            QMessageBox box(Sys::controlPanel);
-            box.setIcon(QMessageBox::Warning);
-            box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-            box.setText("XML Writer: Map verify failed\n\nProceed to cleanse ?");
-            int ret = box.exec();
-            if (ret == QMessageBox::No)
-            {
-                return true;
-            }
-        }
-
         uint options = 0;
         if (errors.contains(MAP_EMPTY))
         {
@@ -121,12 +107,9 @@ bool MapVerifier::verifyAndFix(bool force, bool confirm)
         {
             QString msg = "Map verify failed after cleanse";
             qWarning().noquote() << msg;
-            if (Sys::config->verifyPopup)
+            if (Sys::config->verifyPopup && Sys::isGuiThread())
             {
-                QMessageBox box(Sys::controlPanel);
-                box.setIcon(QMessageBox::Warning);
-                box.setText(msg);
-                box.exec();
+                emit Sys::mosaicMaker->sig_messageBox(msg,QString(),QMessageBox::Warning,false);
             }
             return false;
         }
@@ -196,11 +179,14 @@ windup:
     {
         qWarning().noquote() << "Verify ERROR" << map->mname << "did NOT verify!"  <<  "Vertices:" << map->vertices.size() << "Edges:" << map->edges.size();
 
-        if (Sys::config->verifyPopup)
+        if (Sys::config->verifyPopup && Sys::isGuiThread())
         {
-            DlgMapVerify dlg(map->mname,Sys::controlPanel);
-            dlg.set(qtAppLog::getTrap());
-            dlg.exec();
+            QStringList lines;
+            for (const sTrapMsg & stm : qtAppLog::getTrap())
+            {
+                lines << stm.msg;
+            }
+            emit Sys::mosaicMaker->sig_messageBox(QString("Map verify problem with: %1").arg(map->mname),lines.join("\n"),QMessageBox::Warning,false);
         }
     }
     else
@@ -221,6 +207,18 @@ windup:
 
 void MapVerifier::verifyEdges()
 {
+    // Built once and reused for every edge below - this is a pure read-only
+    // check (verify never mutates the map), so a single upfront build is
+    // always valid. Previously a fresh NeighbourMap (itself an O(E) scan)
+    // was constructed inside this loop on every iteration, making the whole
+    // function O(E^2) - the dominant cost on any map with more than a few
+    // hundred edges.
+    NeighbourMap nmap(map);
+
+    QSet<Vertex*> knownVertices;
+    for (const auto & v : std::as_const(map->vertices))
+        knownVertices.insert(v.get());
+
     for (const auto & edge : std::as_const(map->edges))
     {
         VertexPtr v1 = edge->v1;
@@ -254,18 +252,16 @@ void MapVerifier::verifyEdges()
 
         // Make sure that for every edge, the edge's endpoints
         // are know vertices in the map.
-        if (!map->vertices.contains(v1))
+        if (!knownVertices.contains(v1.get()))
         {
             qWarning() << "edge" << map->edgeIndex(edge) << "V1 not in vertex list.";
             errors.push_back(EDGE_VERTEX_UNKNOWN);
         }
-        if (!map->vertices.contains(v2))
+        if (!knownVertices.contains(v2.get()))
         {
             qWarning() << "edge" << map->edgeIndex(edge) << "V2 not in vertex list.";
             errors.push_back(EDGE_VERTEX_UNKNOWN);
         }
-
-        NeighbourMap nmap(map);
 
         // make sure the edge is the only connection between the two endpoints
         //qDebug() << "   V1";
@@ -329,6 +325,13 @@ void MapVerifier::verifyNeighbours(NeighbourMap * nMap)
         return;
     }
 
+    // Built once, checked O(1) per neighbour below instead of the O(E) scan
+    // map->edges.contains(edge) would do on every one of the E*avg_degree
+    // neighbour visits this function makes.
+    QSet<Edge*> knownEdges;
+    for (const auto & e : std::as_const(map->edges))
+        knownEdges.insert(e.get());
+
     // Make sure the vertices each have a neighbour and all neighbours are good
     for (const auto & vertex : std::as_const(map->vertices))
     {
@@ -368,7 +371,7 @@ void MapVerifier::verifyNeighbours(NeighbourMap * nMap)
                 qWarning() << "vertex" << map->vertexIndex(vertex) << "not found in neighbouring edges";
                 errors.push_back(NEIGHBOUR_BAD);
             }
-            if (!map->edges.contains(edge))
+            if (!knownEdges.contains(edge.get()))
             {
                 qWarning() << "Unknown edge" << map->edgeIndex(edge) <<  "in neigbours list";
                 errors.push_back(NEIGHBOUR_BAD);

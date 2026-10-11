@@ -1,5 +1,4 @@
-#ifndef PAGE_LODERS_WORKER_H
-#define PAGE_LODERS_WORKER_H
+#pragma once
 
 #include "sys/sys/versioning.h"
 #include <QObject>
@@ -28,5 +27,3 @@ protected:
     VersionFileList findMosaicsWithBkgds(VersionFileList &files);
 private:
 };
-
-#endif

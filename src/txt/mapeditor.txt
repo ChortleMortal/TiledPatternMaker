@@ -9,6 +9,11 @@ Modes:
     F3 : Create map lines
             Click on an exisiting map line
     F4 : Draw construction lines
+            Left-click and drag to draw a line
+            Right-click a line to select it
+            Left-drag a selected line's endpoint to move it
+            Right-drag a selected line's endpoint to extend/shorten it
+            Right-click a selected line to delete it
     F5 : Draw construction circles
             Right-click to create circle
             Left-click inside circle and drag to move circle
@@ -16,5 +21,5 @@ Modes:
     F6 : Split edge in middle
     F7 : Extend line at start (p1) by clicking on it and dragging
     F8 : Extend line at end (p2) by clicking on it and dragging
-    F5 : Delete selected line or point
+    F9 : Delete selected line or point
 </pre>

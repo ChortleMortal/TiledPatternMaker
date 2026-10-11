@@ -1,20 +1,15 @@
 #pragma once
-#ifndef PANELPAGE_H
-#define PANELPAGE_H
 
 #include <QString>
-#include <QtWidgets>
+#include <QWidget>
+#include <QVBoxLayout>
 
 #include "sys/enums/epanelpage.h"
 #include "gui/panels/panel_page_list_widget.h"
 
-#if defined(Q_OS_WINDOWS)
-#define PANEL_RHS_WIDTH 740
-#else
-#define PANEL_RHS_WIDTH 760
-#endif
-
 extern class TiledPatternMaker * theApp;
+
+class FloatableTab;
 
 class panel_page : public QWidget
 {
@@ -50,6 +45,9 @@ public:
     bool            wasFloated();
     bool            wasSubAttached();
 
+    void            registerTab(FloatableTab * tab) { floatableTabs.push_back(tab); }
+    bool            hasFloatingTab();
+
     QString         addr(const void * address);
     QString         addr(void * address);
 
@@ -74,10 +72,10 @@ protected:
     class ControlPanel      * panel;
     class Configuration     * config;
     class TilingMaker       * tilingMaker;
-    class PrototypeMaker    * prototypeMaker;
+    class MotifMaker        * motifMaker;
     class MosaicMaker       * mosaicMaker;
     class DesignMaker       * designMaker;
-    class SystemViewController  * viewControl;
+    class ViewController  * viewControl;
 
     ePanelPage                pageType;
     bool                      refresh;
@@ -90,6 +88,5 @@ private:
     ePageState                pageState;
     bool                      newlySelected;
     int                       blockCount;
+    QVector<FloatableTab*>    floatableTabs;
 };
-
-#endif

@@ -69,8 +69,6 @@ void CasingNeighbours::doUnders()
 {
     //qDebug() << "CasingNeighbours::doUnders";
 
-    Q_ASSERT(casings.size() == 4);
-
     for (const NeighbouringCasingPtr & nc : std::as_const(casings))
     {
         Casing * casing        = nc->casing;
@@ -94,8 +92,6 @@ void CasingNeighbours::doUnders()
 // second
 void CasingNeighbours::doOvers()
 {
-    Q_ASSERT(casings.size() == 4);
-
     for (const NeighbouringCasingPtr & nc : std::as_const(casings))
     {
         Casing * casing           = nc->casing;

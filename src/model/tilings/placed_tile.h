@@ -1,7 +1,4 @@
 #pragma once
-#include "sys/sys/versioning.h"
-#ifndef PLACED_TILE
-#define PLACED_TILE
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -17,23 +14,34 @@
 #include <QString>
 #include <QTransform>
 #include <QTextStream>
-#include "sys/sys/pugixml.hpp"
+
+#include "model/settings/tristate.h"
 #include "sys/geometry/edge_poly.h"
+#include "sys/sys/pugixml.hpp"
+#include "sys/sys/versioning.h"
 
 typedef std::shared_ptr<class PlacedTile>   PlacedTilePtr;
 typedef std::shared_ptr<class Tile>         TilePtr;
 
 class Tiling;
 
+class PlacedTileState
+{
+public:
+    PlacedTileState() { initState();}
+
+    void initState()  { show = true; overlapping = false; touching = false; unique = false;}
+    QString  info();
+
+    bool            show;  // used by tiling maker
+    bool            overlapping;
+    bool            touching;
+    Tristate        excluded;
+    bool            unique;
+};
+
 class PlacedTile
 {
-    enum eTileState
-    {
-        UNDEFINED   = 0x00,
-        TOUCHING    = 0x01,
-        OVERLAPPING = 0x02,
-    };
-
 public:
     PlacedTile();
     PlacedTile(TilePtr tile, QTransform T);
@@ -53,26 +61,31 @@ public:
     void            setShow(bool show);
     bool            loadFromGirihShape(VersionedName vname);
 
-    EdgePoly        getPlacedEdgePoly();
-    QPolygonF       getPlacedPoints();
+    QTransform      getWorldTransform(const QTransform & distortion = QTransform());
+    EdgePoly        getWorldEdgePoly(const QTransform & distortion = QTransform());
+    QPolygonF       getWorldPoints(const QTransform & distortion = QTransform());
 
-    bool            isIncluded() { return _included; }
-    void            include()    { _included = true; }
-    void            exclude()    { _included = false; }
+    PlacedTileState & getState() { return state; }
+
+    // the tiling unit just contains True and False
+    // when fill/flooded the addtional are Undefined
+    bool            isExcluded()    { return state.excluded.get() == Tristate::eTristate::True; }
+    bool            isIncluded()    { return state.excluded.get() == Tristate::eTristate::False; }
+    bool            isTouching()    { return state.touching; }
+    bool            isOverlapping() { return state.overlapping; }
+    bool            isUnique()      { return state.unique; }
+
+    void            include()       { state.excluded.set(Tristate::eTristate::False); }
+    void            exclude()       { state.excluded.set(Tristate::eTristate::True); }
+    bool            show()          { return state.show; }
 
     bool            saveAsGirihShape(VersionedName vname);
     bool            isGirihShape()      { return !girihShapeName.isEmpty(); }
     VersionedName   getGirihShapeName() { return girihShapeName; }
+    void            setGirihShapeName(VersionedName vname) { girihShapeName = vname; }
 
-    bool show()             { return _show; }
-
-    void clearViewState()   { _viewState  = UNDEFINED; }
-    void setOverlapping()   { _viewState |= OVERLAPPING; }
-    void setTouching()      { _viewState |= TOUCHING; }
-    bool isOverlapping()    { return (_viewState & OVERLAPPING); }
-    bool isTouching()       { return (_viewState & TOUCHING); }
-
-    void dump();
+    void            dump();
+    QString         info();
 
 protected:
     void saveGirihShape(QTextStream & out, VersionedName vname);
@@ -84,8 +97,11 @@ private:
     TilePtr         tile;
     QTransform      placement;
     VersionedName   girihShapeName;
-    bool            _show;  // used by tiling maker
-    uint            _viewState;
-    bool            _included;
+    PlacedTileState state;
 };
-#endif
+
+class PlacedTileSet : public QVector<PlacedTilePtr>
+{
+public:
+    QString info();
+};

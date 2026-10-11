@@ -1,6 +1,4 @@
 ﻿#pragma once
-#ifndef PLAIN_H
-#define PLAIN_H
 
 #include "model/styles/colored.h"
 
@@ -31,5 +29,4 @@ public:
     QString            getStyleDesc() const override {return "Plain";}
     virtual void       dump()         const override { qDebug().noquote() << getStyleDesc() << colors.colorsString(); }
 };
-#endif
 

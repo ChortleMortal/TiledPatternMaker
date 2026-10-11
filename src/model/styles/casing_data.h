@@ -1,6 +1,4 @@
 #pragma once
-#ifndef CASING_DATA_H
-#define CASING_DATA_H
 
 #include <QPointF>
 #include <QDebug>
@@ -51,4 +49,3 @@ public:
             qDebug() << edgeIndex << "side2  inner changed" <<  inner[1] << other.inner[1];
     }
 };
-#endif

@@ -4,30 +4,6 @@
 
 //////////////////////////////////////////////////////////////////
 ///
-///  DirMemoryCombo
-///
-//////////////////////////////////////////////////////////////////
-
-DirMemoryCombo::DirMemoryCombo(QString name) : MemoryCombo(name)
-{
-    connect(this, &QComboBox::editTextChanged, this, &DirMemoryCombo::slot_text_Changed);
-}
-
-void DirMemoryCombo::slot_text_Changed(QString txt)
-{
-    qDebug() << "DMC" << txt;
-    Sys::setWorkingBMPDirectory(txt);
-    QComboBox::setItemText(QComboBox::currentIndex(),txt);
-}
-
-void DirMemoryCombo::setCurrentText(const QString text)
-{
-    MemoryCombo::setCurrentText(text);
-    Sys::setWorkingBMPDirectory(text);
-}
-
-//////////////////////////////////////////////////////////////////
-///
 ///  MemoryCombo
 ///
 //////////////////////////////////////////////////////////////////
@@ -38,6 +14,8 @@ MemoryCombo::MemoryCombo(QString name)
     setEditable(true);
     setDuplicatesEnabled(false);
     setMaxCount(10);
+
+    initialise();
 }
 
 MemoryCombo::~MemoryCombo()
@@ -51,7 +29,7 @@ void MemoryCombo::initialise()
     clear(); // erase the combo
 
     unsigned int index =0;
-    QSettings s;
+    QSettings s = Sys::settings();
     QStringList itemList = s.value(name,"").toStringList();
     for (auto & file : std::as_const(itemList))
     {
@@ -66,9 +44,12 @@ void MemoryCombo::initialise()
 
 QString MemoryCombo::getTextFor(QString name)
 {
-    QSettings s;
+    QSettings s = Sys::settings();
     QStringList itemList = s.value(name,"").toStringList();
-    return itemList[0];
+    if (!itemList.isEmpty())
+        return itemList[0];
+    else
+        return QString();
 }
 
 QString MemoryCombo::getCurrentText()
@@ -168,6 +149,6 @@ QStringList MemoryCombo::getItems()
 void MemoryCombo::persistItems()
 {
     QStringList items = getItems();
-    QSettings s;
+    QSettings s = Sys::settings();
     s.setValue(name,items);
 }

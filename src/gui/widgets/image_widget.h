@@ -1,6 +1,4 @@
 #pragma once
-#ifndef IMAGE_WIDGET_H
-#define IMAGE_WIDGET_H
 
 #include <QLabel>
 #include <QMouseEvent>
@@ -38,12 +36,33 @@ public slots:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
-    void keyPressEvent(QKeyEvent *k) override;
-
-
+    virtual void keyPressEvent(QKeyEvent *k) override;
 
 private:
     QPixmap _pixmap;
 };
 
-#endif
+
+class ComparedImageWidget : public ImageWidget
+{
+    Q_OBJECT
+
+public:
+    ComparedImageWidget(QImage & imgA, QImage & imgB, QImage & imgDiff, QString titleA, QString titleB);
+
+    virtual QString gettypename()  override { return "comp"; }
+
+protected:
+    virtual void keyPressEvent(QKeyEvent *k) override;
+
+private:
+    QPixmap pixA;
+    QPixmap pixB;
+    QPixmap pixDiff;
+    QString titleA;
+    QString titleB;
+
+    bool isA;
+    QString title;
+    QString kbdInfo;
+};

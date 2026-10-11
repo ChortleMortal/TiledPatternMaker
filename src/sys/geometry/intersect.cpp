@@ -39,16 +39,16 @@ bool Intersect::getTrueIntersection(QPointF p1, QPointF q1, QPointF p2, QPointF 
         qreal s = isect.x();
         qreal t = isect.y();
 
-        if( s < Sys::TOL )
+        if( s < Loose::TOL )
         {
-            if( (t < Sys::TOL) || ((1.0-t) < Sys::TOL) )
+            if( (t < Loose::TOL) || ((1.0-t) < Loose::TOL) )
             {
                 return false;
             }
         }
-        else if( (1.0-s) < Sys::TOL )
+        else if( (1.0-s) < Loose::TOL )
         {
-            if( (t < Sys::TOL) || ((1.0-t) < Sys::TOL) )
+            if( (t < Loose::TOL) || ((1.0-t) < Loose::TOL) )
             {
                 return false;
             }
@@ -114,11 +114,11 @@ bool Intersect::stayOnSegments(QPointF ip)
         return false;
 
     qreal is = ip.x();
-    if( (is < -Sys::TOL) || (is > (1.0 + Sys::TOL)) )
+    if( (is < -Loose::TOL) || (is > (1.0 + Loose::TOL)) )
         return false;
 
     qreal it = ip.y();
-    if( (it < -Sys::TOL) || (it > (1.0 + Sys::TOL)) )
+    if( (it < -Loose::TOL) || (it > (1.0 + Loose::TOL)) )
         return false;
 
     return true;

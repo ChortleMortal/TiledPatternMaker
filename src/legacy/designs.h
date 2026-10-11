@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TPM_DESIGN_H
-#define TPM_DESIGN_H
 
 #include "legacy/design.h"
 
@@ -126,5 +124,3 @@ public:
     void init() override;
     bool build() override;
 };
-
-#endif //TPM_DESIGN_H

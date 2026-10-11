@@ -1,4 +1,6 @@
 #include <QDebug>
+
+#include "gui/top/view_controller.h"
 #include "gui/viewers/geo_graphics.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/styles/casing_neighbours.h"
@@ -27,10 +29,10 @@ Outline::Outline(const ProtoPtr &proto) : Thick (proto)
     outline_width   = 0.03;
     join_style      = Qt::BevelJoin;
     cap_style       = Qt::SquareCap;
-    styled         = false;
+    styled          = false;
 
-        connect(Sys::flags, &DebugFlags::sig_dbgChanged, this, &Outline::slot_dbgChanged);
-        connect(Sys::flags, &DebugFlags::sig_dbgTrigger, this, &Outline::slot_dbgTrigger);
+    connect(Sys::flags, &DebugFlags::sig_dbgChanged, this, &Outline::slot_dbgChanged);
+    connect(Sys::flags, &DebugFlags::sig_dbgTrigger, this, &Outline::slot_dbgTrigger);
 }
 
 Outline::Outline(const StylePtr & other) : Thick(other)
@@ -44,8 +46,8 @@ Outline::Outline(const StylePtr & other) : Thick(other)
     }
     styled = false;
 
-        connect(Sys::flags, &DebugFlags::sig_dbgChanged, this, &Outline::slot_dbgChanged,Qt::QueuedConnection);
-        connect(Sys::flags, &DebugFlags::sig_dbgTrigger, this, &Outline::slot_dbgTrigger);
+    connect(Sys::flags, &DebugFlags::sig_dbgChanged, this, &Outline::slot_dbgChanged,Qt::QueuedConnection);
+    connect(Sys::flags, &DebugFlags::sig_dbgTrigger, this, &Outline::slot_dbgTrigger);
 }
 
 Outline::~Outline()
@@ -134,6 +136,8 @@ void Outline::draw(GeoGraphics *gg)
     if (!styled)
         return;
 
+    int index = Sys::flags->getDbgIndex();
+
     for (int i=0; i < casings.size(); i++)
     {
         auto & casing = casings[i];
@@ -182,6 +186,13 @@ void Outline::draw(GeoGraphics *gg)
             pen.setCapStyle(cap_style);
             casing->drawOutline(gg,pen);
         }
+
+        if (Sys::flags->flagged(HIGHLIGHT_SELECTED) && casing->edgeIndex == index)
+        {
+            QPen p2(Qt::red,3,Qt::SolidLine, cap_style, join_style);
+            casing->fillCasing(gg,p2);
+            casing->drawOutline(gg,p2);
+        }
     }
 
     if (Sys::flags->flagged(OUTLINE_DBG))
@@ -218,13 +229,13 @@ void Outline::slot_dbgChanged(eDbgType type)
     switch(type)
     {
     case FLAG_REPAINT:
-        Sys::viewController->slot_updateView();
+        Sys::systemViewController->slot_updateView();
         break;
 
     case FLAG_CREATE_STYLE:
         resetStyleRepresentation();
         createStyleRepresentation();
-        Sys::viewController->slot_updateView();
+        Sys::systemViewController->slot_updateView();
         break;
 
     default:
@@ -248,7 +259,7 @@ void Outline::slot_dbgTrigger(int val)
             OutlineCasingPtr ocp = std::dynamic_pointer_cast<OutlineCasing>(casing);
             ocp->alignCurvedEdgeSide1(casings);
             ocp->alignCurvedEdgeSide2(casings);
-            Sys::viewController->slot_updateView();
+            Sys::systemViewController->slot_updateView();
         }
     }
 }

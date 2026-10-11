@@ -11,9 +11,9 @@
 // of being parameterizable at a high level.
 
 #include "model/motifs/motif.h"
-#include "sys/geometry/edge.h"
-#include "sys/geometry/map.h"
 #include "model/tilings/tile.h"
+#include "sys/geometry/map.h"
+#include "sys/geometry/map_cleanser.h"
 
 using std::make_shared;
 
@@ -28,61 +28,79 @@ int Motif::refs = 0;
 Motif::Motif()
 {
     refs++;
-    motifType     = MOTIF_TYPE_UNDEFINED;
+    motifType     = Type::Undefined;
     motifScale    = 1.0;
     motifRotate   = 0.0;
     _n            = 10;
-    version       = 1;          // default
-    motifDebug    = 0;
+    _motifVersion = 1;          // default
+    _motifDebug   = 0;
     cleanseVal    = 0;
     sensitivity   = 1e-2;
 }
 
-Motif::Motif(const Motif & other) : enable_shared_from_this()
+Motif::Motif(const Motif & other)
 {
     refs++;
 
     motifType         = other.motifType;
     motifRotate       = other.motifRotate;
     motifScale        = other.motifScale;
+    cleanseVal        = other.cleanseVal;
+    sensitivity       = other.sensitivity;
+
     _tile             = other._tile;
     _n                = other._n;
     _motifBoundary    = other._motifBoundary;
-    _extenders        = other._extenders;
-    version           = other.version;
-    motifDebug        = other.motifDebug;
-    cleanseVal        = other.cleanseVal;
-    sensitivity       = other.sensitivity;
-    if (other.getRadialConnector())
-    {
-        addRadialConnector();
-    }
-}
-
-Motif::Motif(MotifPtr other)
-{
-    refs++;
-
-    motifType         = other->motifType;
-    motifRotate       = other->motifRotate;
-    motifScale        = other->motifScale;
-    _tile             = other->_tile;
-    _n                = other->_n;
-    _motifBoundary    = other->_motifBoundary;
-    _extenders        = other->_extenders;
-    version           = other->version;
-    motifDebug        = other->motifDebug;
-    sensitivity       = other->sensitivity;
-    if (other->getRadialConnector())
-    {
-        addRadialConnector();
-    }
+    _motifVersion     = other._motifVersion;
+    _motifDebug       = other._motifDebug;
+    // extenders are not handled here
 }
 
 Motif::~Motif()
 {
     //qDebug() << "Figure destructor" << this;
     refs--;
+}
+
+void Motif::resetMotifMap()
+{
+    motifMap.reset();
+}
+
+bool Motif::hasValidMotifMap()
+{
+    return (motifMap && !motifMap->isEmpty());
+}
+
+// Get a complete map from unit.
+MapPtr Motif::getMotifMap()
+{
+    //qDebug() << "Motif::getMap";
+    if (!motifMap || motifMap->isEmpty())
+    {
+        build();
+    }
+    return motifMap;
+}
+
+MapPtr Motif::getValidMotifMap()
+{
+    return (hasValidMotifMap()) ? motifMap : nullptr;
+}
+
+MapPtr Motif::getExistingMotifMap()
+{
+    return motifMap;
+}
+
+// called at the end of build() by all motif types
+void Motif::cleanseMotifMap()
+{
+    if (cleanseVal > 0 && motifMap && !motifMap->isEmpty())
+    {
+        MapCleanser mc(motifMap);
+        mc.cleanse(cleanseVal,sensitivity);
+    }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -105,7 +123,7 @@ bool Motif::equals(const  MotifPtr other)
         return false;
 
     uint index = 0;
-    for (const auto & extender : _extenders)
+    for (auto & extender : _extenders)
     {
         if (!extender->equals(other->getExtender(index++)))
             return false;
@@ -118,15 +136,15 @@ bool Motif::isIrregular() const
 {
     switch (motifType)
     {
-    case MOTIF_TYPE_EXPLICIT_MAP:
-    case MOTIF_TYPE_INFERRED:
-    case MOTIF_TYPE_IRREGULAR_ROSETTE:
-    case MOTIF_TYPE_HOURGLASS:
-    case MOTIF_TYPE_INTERSECT:
-    case MOTIF_TYPE_GIRIH:
-    case MOTIF_TYPE_IRREGULAR_STAR:
-    case MOTIF_TYPE_EXPLCIT_TILE:
-    case MOTIF_TYPE_IRREGULAR_NO_MAP:
+    case Type::MapMotif:
+    case Type::Inferred:
+    case Type::AdaptiveRosette:
+    case Type::Hourglass:
+    case Type::Intersect:
+    case Type::Girih:
+    case Type::AdaptiveStar:
+    case Type::ExplicitTile:
+    case Type::NoMapMotif:
         return true;
     default:
         return false;
@@ -137,49 +155,25 @@ bool Motif::isRadial() const
 {
     switch (motifType)
     {
-    case MOTIF_TYPE_RADIAL:
-    case MOTIF_TYPE_ROSETTE:
-    case MOTIF_TYPE_ROSETTE2:
-    case MOTIF_TYPE_STAR:
-    case MOTIF_TYPE_STAR2:
+    case Type::Radial:
+    case Type::Rosette:
+    case Type::Rosette2:
+    case Type::Star:
+    case Type::Star2:
         return true;
     default:
         return false;
     }
 }
 
-ExtenderPtr Motif:: addExtender()
+void Motif::addExtender(ExtenderPtr ep)
 {
-    ExtenderPtr extender = make_shared<Extender>(shared_from_this());
-    _extenders.push_back(extender);
-    return extender;
+    _extenders.push_back(ep);
 }
 
-void  Motif::deleteExtender(ExtenderPtr extender)
+void Motif::deleteExtender(ExtenderPtr extender)
 {
     _extenders.removeAll(extender);
-}
-
-void Motif::cleanExtenders()
-{
-    int sz = _extenders.size();
-    QVector<ExtenderPtr> nullExtenders;
-    for (const ExtenderPtr & ep : std::as_const(_extenders))
-    {
-        if (ep->isUnity())
-        {
-            nullExtenders.push_back(ep);
-        }
-    }
-    for (const ExtenderPtr & ep : nullExtenders)
-    {
-        _extenders.removeAll(ep);
-    }
-    int sz2 = _extenders.size();
-    if (sz2 != sz)
-    {
-        qDebug() << "Extenders: before=" << sz << "after=" << sz2;
-    }
 }
 
 ExtenderPtr Motif::getExtender(uint i)
@@ -193,16 +187,6 @@ ExtenderPtr Motif::getExtender(uint i)
     }
 }
 
-ConnectPtr Motif::addConnector()
-{
-    ConnectPtr cp;
-    if (isRadial())
-    {
-        cp =  addRadialConnector();
-    }
-    return cp;
-}
-
 int Motif::modulo(int i, int sz)
 {
     if (i >= 0)
@@ -211,7 +195,29 @@ int Motif::modulo(int i, int sz)
         return (sz >= 0 ? sz : -sz) - 1 + (i + 1) % sz;
 }
 
+const QString sMotifType[] =
+    {
+        "Undefined Motif",
+        "Radial Motif",
+        "Rosette Motif",
+        "Rosette2 Motif",
 
+        "Star Motif",
+        "Star2 Motif",
+        "Jeweled Star Motif",
+
+        "Explicit Map Motif",
+        "Adaptive Inferred Motif",
+        "Adaptive Rosette Motif",
+        "Adaptive Hourglass Motif",
+
+        "Adaptive Intersect Motif",
+        "Adaptive Girih Motif",
+        "Adaptive Star Motif",
+
+        "Explicit Tile Motif",
+        "No Motif (Empty)"
+};
 
 ///////////////////////////////////////////////////////////
 ///

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TPM_LAYER_CONTROLLER_H
-#define TPM_LAYER_CONTROLLER_H
 
 #include <QPen>
 #include "gui/viewers/layer.h"
@@ -12,7 +10,7 @@ class LayerController : public Layer
     Q_OBJECT
 
 public:
-    LayerController(eViewType viewType,eModelType modelType, QString name);
+    LayerController(Layer::Type viewType, Layer::Model model, ZLevel level, QString name);
     LayerController(const LayerController & other);
     LayerController(LayerCtrlPtr other);
     virtual ~LayerController();
@@ -35,6 +33,10 @@ public slots:
     virtual void slot_moveX(uint sigid, qreal amount);
     virtual void slot_moveY(uint sigid, qreal amount);
 
+    virtual void slot_prepare();
+    virtual void slot_enlarge(uint sigid, Xform xf);
+    virtual void slot_restore(uint sigid);
+
     void slot_breakaway(Layer * l, bool set);
     void slot_lock(Layer * l, bool set);
     void slot_solo(Layer * l, bool set);
@@ -44,6 +46,5 @@ protected:
     void connectSignals();
 
 private:
+    Xform preEnlargeCopy;
 };
-
-#endif

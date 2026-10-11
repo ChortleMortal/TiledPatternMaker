@@ -1,5 +1,4 @@
-#ifndef VIEW_BMP_STEPPER_H
-#define VIEW_BMP_STEPPER_H
+#pragma once
 
 #include "sys/engine/stepping_engine.h"
 #include "sys/sys/versioning.h"
@@ -22,7 +21,5 @@ protected:
     VersionList                      imgList;
     QVector<VersionedName>::iterator imgList_it;
 };
-
-#endif
 
 

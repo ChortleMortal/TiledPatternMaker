@@ -1,11 +1,12 @@
 ﻿#pragma once
-#ifndef PAGE_BORDERS_H
-#define PAGE_BORDERS_H
 
+#include <QGroupBox>
+#include <QStackedLayout>
 #include "gui/panels/panel_page.h"
 #include "gui/widgets/layout_qrectf.h"
 
 class AQComboBox;
+class AQPushButton;
 class ClickableLabel;
 class SMXWidget;
 
@@ -81,10 +82,15 @@ public:
     page_borders(ControlPanel * apanel);
 
     void onRefresh()        override;
-    void onEnter()          override {}
+    void onEnter()          override;
     void onExit()           override;
 
+    void        setCurrentBorder(BorderPtr bp) { currentBorder = bp; }
+    BorderPtr   getCurrentBorder();
+
 public slots:
+    void slot_borderSelected(int index);
+    void slot_editBorder(bool checked);
     void slot_removeBorder();
     void slot_loadFromCrop();
     void slot_loadFromPainterCrop();
@@ -106,11 +112,12 @@ public slots:
 
 protected:
     void        createBorder();
+    void        refreshBorderSelect(BorderPtr border);
+    QVector<BorderPtr> getBorders();
     void        displayRectShape(BorderPtr bp);
     void        refreshBorderType(BorderPtr border);
     void        refreshBorderCrop(BorderPtr border);
 
-    BorderPtr   getMosaicBorder();
 
     QWidget   * createBorderTypeWidget();
     QWidget   * createUndefinedShapeWidget();
@@ -125,6 +132,7 @@ private:
     TwoColorControl * controlTwoColors;
     BlockControl    * controlBlocks;
 
+    QComboBox       *  borderSelect;
     AQComboBox      *  borderTypes;
     AQComboBox      *  cropTypes;
 
@@ -144,8 +152,9 @@ private:
     LayoutQPointF   * centre;
 
     QCheckBox       * chkUseViewSize;
+    AQPushButton    * btnEdit;
 
     SMXWidget       * smxWidget;
-};
 
-#endif
+    std::weak_ptr<Border> currentBorder;
+};

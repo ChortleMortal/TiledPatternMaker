@@ -68,7 +68,7 @@ void page_layer_algnment::populateLayers()
     layerTable->clearContents();
     layerTable->setRowCount(0);
 
-    const QVector<Layer *> active = Sys::viewController->getActiveLayers();
+    const QVector<Layer *> active = Sys::systemViewController->getActiveLayers();
 
     auto pri = viewControl->getSelectedPrimaryLayer();
 
@@ -103,13 +103,16 @@ void page_layer_algnment::populateLayers()
     layer = (Layer*)Sys::tilingMakerView.get();
     if (layer) populateLayer(layer,row++,active.contains(layer),false);
 
-    layer = (Layer*)Sys::getBackgroundImageFromSource().get();
+    layer = (Layer*)Sys::backgroundImage.get();
     if (layer) populateLayer(layer,row++,active.contains(layer),false);
 
     layer = (Layer*)Sys::cropMakerView.get();
     if (layer) populateLayer(layer,row++,active.contains(layer),false);
 
     layer = (Layer*)Sys::gridViewer.get();
+    if (layer) populateLayer(layer,row++,active.contains(layer),false);
+
+    layer = (Layer*)Sys::constructionLinesView.get();
     if (layer) populateLayer(layer,row++,active.contains(layer),false);
 
     if (Sys::config->insightMode)
@@ -129,7 +132,7 @@ void page_layer_algnment::populateLayer(Layer * layer, int row, bool active, boo
 {
     layerTable->setRowCount(layerTable->rowCount() + 1);
     QTableWidgetItem * twi = new QTableWidgetItem(layer->layerName());
-    twi->setTextAlignment(Qt::AlignCenter);
+    twi->setTextAlignment(Qt::AlignLeft);
     QVariant var(QVariant::fromValue(static_cast<void*>(layer)));
     twi->setData(Qt::UserRole,var);
     layerTable->setItem(row,LAYER_NAME,twi);
@@ -209,6 +212,7 @@ void page_layer_algnment::populateLayer(Layer * layer, int row, bool active, boo
     if (primary)
     {
         twi->setForeground(Qt::red);
+        twi->setBackground(Qt::yellow);
     }
     layerTable->setItem(row,LAYER_MODEL_XFORM,twi);
 }

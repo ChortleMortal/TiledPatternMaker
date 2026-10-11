@@ -1,6 +1,4 @@
 #pragma once
-#ifndef LOAD_UNIT_H
-#define LOAD_UNIT_H
 
 #include <QElapsedTimer>
 #include "sys/sys/versioning.h"
@@ -41,5 +39,3 @@ private:
     eLoadUnitState  loadState;
     VersionedFile   loadFile;
 };
-
-#endif // LOAD_UNIT_H

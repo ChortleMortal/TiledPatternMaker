@@ -1,6 +1,4 @@
 #pragma once
-#ifndef FILLDATA_H
-#define FILLDATA_H
 
 class FillData
 {
@@ -12,6 +10,7 @@ public:
     bool operator==(const FillData & other) const;
     bool operator != (const FillData & other) const { return !(*this == other); }
 
+    void init();
     bool isSet() const { return _set; }
     void set(bool singleton, int minX, int minY, int maxX, int maxY);
     void get(bool & singleton, int & minX, int & maxX, int & minY, int & maxY) const;
@@ -26,8 +25,6 @@ protected:
     int maxX;
     int maxY;
 };
-
-#endif // FILLDATA_H
 
 
 

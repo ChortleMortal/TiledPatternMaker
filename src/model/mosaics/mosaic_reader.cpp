@@ -1,7 +1,6 @@
-#include <QMessageBox>
 
 #include "gui/top/controlpanel.h"   // required
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "model/borders/border_plain.h"
 #include "model/borders/border_2color.h"
 #include "model/borders/border_blocks.h"
@@ -11,22 +10,23 @@
 #include "model/mosaics/reader_base.h"
 #include "model/motifs/explicit_map_motif.h"
 #include "model/motifs/extender.h"
-#include "model/motifs/girih_motif.h"
-#include "model/motifs/hourglass_motif.h"
-#include "model/motifs/inferred_motif.h"
-#include "model/motifs/intersect_motif.h"
-#include "model/motifs/irregular_motif.h"
-#include "model/motifs/irregular_rosette.h"
-#include "model/motifs/irregular_star.h"
+#include "model/motifs/adaptive_girih.h"
+#include "model/motifs/adaptive_hourglass.h"
+#include "model/motifs/adaptive_inference.h"
+#include "model/motifs/adaptive_intersect.h"
+#include "model/motifs/adaptive_motif.h"
+#include "model/motifs/adaptive_rosette.h"
+#include "model/motifs/adaptive_star.h"
 #include "model/motifs/motif.h"
 #include "model/motifs/rosette.h"
 #include "model/motifs/rosette2.h"
 #include "model/motifs/star.h"
 #include "model/motifs/star2.h"
-#include "model/motifs/tile_motif.h"
-#include "model/prototypes/design_element.h"
+#include "model/motifs/adaptive_tile.h"
+#include "model/prototypes/tile_motif.h"
 #include "model/prototypes/prototype.h"
-#include "model/settings/canvas_settings.h"
+#include "model/settings/canvas.h"
+#include "model/settings/configuration.h"
 #include "model/styles/emboss.h"
 #include "model/styles/interlace.h"
 #include "model/styles/outline.h"
@@ -38,7 +38,6 @@
 #include "model/tilings/tile.h"
 #include "model/tilings/tile_reader.h"
 #include "model/tilings/tiling.h"
-#include "model/tilings/tiling_manager.h"
 #include "model/tilings/tiling_reader.h"
 #include "model/tilings/tiling_writer.h"
 #include "sys/geometry/loose.h"
@@ -50,18 +49,17 @@
 
 using std::make_shared;
 
-MosaicReader::MosaicReader(SystemViewController * vc)
+MosaicReader::MosaicReader(ViewController * vc)
 {
     _vc           = vc;
 
     // defaults
-    _background   = QColor(Qt::white);
+    _bkgdColor    = QColor(Qt::white);
     _viewSize     = QSize(Sys::DEFAULT_WIDTH, Sys::DEFAULT_HEIGHT);
     _version      = 0;
     _debug        = false;
     _cleanseLevel = 0;
     _cleanseSensitivity = -1;
-    _legacyCenterConverted = false;
 }
 
 // called by page loader and by BMPEngine
@@ -87,10 +85,14 @@ MosaicPtr MosaicReader::readXML(VersionedFile xfile)
         // load the Mosaic
         _mosaic = make_shared<Mosaic>();
         _mosaic->setName(xfile.getVersionedName());
+        // each style wires up its own viewController as it's parsed below;
+        // whether this mosaic's canvas becomes the active one is a separate,
+        // explicit decision made by the caller (the state machine, or a
+        // headless generator) - not this reader's
+
         parseXML(doc);
 
         correctMotifScaleandRotation();
-        _mosaic->setLegacyModelConverted(_legacyCenterConverted);
 
         Sys::dumpRefs();
 
@@ -124,6 +126,8 @@ void MosaicReader::parseXML(xml_document & doc)
                 QString str = attr.value();
                 _version = str.toUInt();
             }
+            qInfo() << "Mosaic XML version =" << _version;
+
             if (_version > 0 || node.child("design"))
             {
                 processVector(node);
@@ -152,7 +156,7 @@ void MosaicReader::correctMotifScaleandRotation()
 
     for (auto & proto : _mosaic->getPrototypes())
     {
-        for (const auto & del : std::as_const(proto->getDesignElements()))
+        for (const auto & del : std::as_const(proto->getTileMotifs()))
         {
             auto tile  = del->getTile();
             auto motif = del->getMotif();
@@ -217,7 +221,10 @@ void MosaicReader::processVector(xml_node & node)
         else if (str == "style.TileColors")
             processTileColors(n);
         else if (str == "style.Border")
-            continue;
+        {
+            if (_version >= 23)
+                processBorder(n);
+        }
         else
             fail("Unexpected", str.c_str());
     }
@@ -251,36 +258,43 @@ void MosaicReader::processVector(xml_node & node)
         else if (str == "style.TileColors")
             continue;
         else if (str == "style.Border")
-            processBorder(n);
+        {
+            if (_version < 23)
+                processBorder(n);       // needs _firstStyleXform
+        }
         else
             fail("Unexpected", str.c_str());
     }
     if (_debug) qDebug() << "end vector";
 
-    CanvasSettings cs;
-    cs.setBackgroundColor(_background);
-    cs.setViewSize(_viewSize);
-    cs.setCanvasSize(_canvasSize);
+    Q_ASSERT(_mosaic);
+    Canvas * canvas = _mosaic->getMosaicCanvas();
+
+    Q_ASSERT(canvas);
+    canvas->setViewSize(_viewSize);
+    canvas->setCanvasSize(_canvasSize);
+
+    _mosaic->setBkgdColor(_bkgdColor);
 
     // Canvas Settings fill data defaults to FillData defaults, loader can  override these
     if (_fillData.isSet())
     {
         if (_debug) qDebug() << "Using Mosaic FiilData";
-        cs.setFillData(_fillData);
+        canvas->setFillData(_fillData);
     }
     else if (_tilings.size() > 0)
     {
         if (_debug) qDebug() << "Using Tiling FiilData";
-        FillData fdt =  getFirstTiling()->hdr().getCanvasSettings().getFillData();
+        FillData fdt =  getFirstTiling()->hdr().getTilingCanvas()->getFillData();
         if (fdt.isSet())
         {
-            cs.setFillData(fdt);
+            canvas->setFillData(fdt);
         }
         else
         {
             FillData fd;    // default
             fd.setLegacyDefaults();
-            cs.setFillData(fd);
+            canvas->setFillData(fd);
         }
     }
     else
@@ -288,24 +302,38 @@ void MosaicReader::processVector(xml_node & node)
         if (_debug) qDebug() << "Using Default FiilData";
         FillData fd;
         fd.setLegacyDefaults();
-        cs.setFillData(fd);
+        canvas->setFillData(fd);
     }
 
-    _mosaic->setCanvasSettings(cs);
-
-    if (_mosbip)
+    // Canvas distortion defaults to off, loader (or the tiling) can override this
+    if (_distortion.isSet())
     {
-        _mosaic->setBkgdImage(_mosbip);
+        if (_debug) qDebug() << "Using Mosaic Distortion";
+        canvas->setDistortion(_distortion);
+    }
+    else if (_tilings.size() > 0)
+    {
+        Distortion dt = getFirstTiling()->hdr().getTilingCanvas()->getDistortion();
+        if (dt.isSet())
+        {
+            if (_debug) qDebug() << "Using Tiling Distortion";
+            canvas->setDistortion(dt);
+        }
+    }
+
+    if (!_mosRecord.isEmpty())
+    {
+        _mosaic->setBkgdRecord(_mosRecord);
     }
 
     if (_border)
     {
-        if (_version < 17)
-        {
-            // convert legacy borders which were built using screen units
-            _border->setRequiresConversion(true);
-        }
         _mosaic->addStyle(_border);
+    }
+
+    if (_version < 38)
+    {
+        raiseBorders();
     }
 
     if (_crop)
@@ -348,20 +376,16 @@ void MosaicReader::processDesign(xml_node & node)
         }
         else if (str == "size")
         {
-            _viewSize = procViewSize(n);
-            _canvasSize = procCanvasSize(n,_viewSize);
-
-            Canvas & canvas = _vc->getCanvas();
-            canvas.setCanvasSize(_canvasSize);
-            canvas.dump();
+            _viewSize   = procViewSize(n);
+            _canvasSize = procCanvasSize(n,_viewSize);  // defaults to viee size if not set
         }
         else if (str == "background")
         {
-            _background = procBackgroundColor(n);
+            _bkgdColor = procBackgroundColor(n);
         }
         else if (str == "border")
         {
-            procBorder(n);
+            _border = procBorder(n);
         }
         else if (str == "Crop")
         {
@@ -391,9 +415,13 @@ void MosaicReader::processDesign(xml_node & node)
             }
             procFill(n,isSingle);
         }
+        else if (str == "Distort")
+        {
+            procDistort(n);
+        }
         else if (str == "BackgroundImage")
         {
-            _mosbip = getBackgroundImage(n);
+            _mosRecord = getBkgdRecord(n);
         }
         else if (str == "Cleanse")
         {
@@ -413,88 +441,42 @@ void MosaicReader::processDesign(xml_node & node)
     }
 }
 
-BkgdImagePtr MosaicReader::getBackgroundImage(xml_node & node)
+BkgdRecord MosaicReader::getBkgdRecord(xml_node & node)
 {
-    xml_attribute attr = node.attribute("name");
-    QString name       = attr.value();
-
-    BkgdImagePtr bip = std::make_shared<BackgroundImage>();
-    bool loaded = bip->load(name);
-    if (!loaded)
-    {
-        bip.reset();
-        return bip;
-    }
-
-    Xform xf;
+    BkgdRecord rec;
+    rec.name = node.attribute("name").value();
 
     xml_node n = node.child("Scale");
     if (n)
-    {
-        QString str = n.child_value();
-        xf.setScale(str.toDouble());
-    }
+        rec.xf.setScale(QString(n.child_value()).toDouble());
 
     n = node.child("Rot");
     if (n)
-    {
-        QString str = n.child_value();
-        xf.setRotateRadians(str.toDouble());
-    }
+        rec.xf.setRotateRadians(QString(n.child_value()).toDouble());
 
     n = node.child("X");
     if (n)
-    {
-        QString str= n.child_value();
-        xf.setTranslateX(str.toDouble());
-    }
+        rec.xf.setTranslateX(QString(n.child_value()).toDouble());
 
     n = node.child("Y");
     if (n)
-    {
-        QString str = n.child_value();
-        xf.setTranslateY(str.toDouble());
-    }
+        rec.xf.setTranslateY(QString(n.child_value()).toDouble());
 
-    QPointF legacyCenter;
     n = node.child("Center");
-    if (n)
+    if (n && _version < 29)
     {
         // depracted
-        QString str = n.child_value();
-        QStringList qsl = str.split(",");
-        qreal x = qsl[0].toDouble();
-        qreal y = qsl[1].toDouble();
-        legacyCenter = QPointF(x,y);
+        QStringList qsl = QString(n.child_value()).split(",");
+        rec.legacyCenter    = QPointF(qsl[0].toDouble(),qsl[1].toDouble());
+        rec.hasLegacyCenter = true;
     }
+    qDebug().noquote() << "mosaic background image xform:" << rec.xf.info();
 
-    bip->setModelXform(xf,false,Sys::nextSigid());
-
-    if (_version < 29)
-    {
-        if (bip->correctLegacyLayer(legacyCenter))
-            _legacyCenterConverted = true;
-
-    }
-    qDebug().noquote() << "mosaic background image xform:" << xf.info();
-
-    n= node.child("Perspective");
-    bool usePerspective = false;
+    n = node.child("Perspective");
     if (n)
-    {
-        QString str = n.child_value();
-        QTransform t = getQTransform(str);
+        rec.perspective = getQTransform(n.child_value());
 
-        if (!t.isIdentity())
-        {
-            bip->setAdjustedTransform(t);
-            bip->createAdjustedImage();
-            usePerspective = true;
-        }
-    }
-    bip->setUseAdjusted(usePerspective);
-    bip->createPixmap();
-    return bip;
+    return rec;
 }
 
 void MosaicReader::processThick(xml_node & node)
@@ -508,7 +490,7 @@ void MosaicReader::processThick(xml_node & node)
     QColor       outlineColor = Qt::black;
     ProtoPtr     proto;
     Xform        xf;
-    eZLevel      zlevel       = STANDARD_ZLEVEL;
+    Layer::ZLevel zlevel      = Layer::ZLevel::Standard_Z0;
     QPointF      legacyCenter;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -517,7 +499,7 @@ void MosaicReader::processThick(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
+            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -546,9 +528,8 @@ void MosaicReader::processThick(xml_node & node)
 
     if (_version < 29)
     {
+        thick->setLegacyCenter(legacyCenter);
         qInfo() << "legacy correction for tiling" << _xfile.getVersionedName().get() << legacyCenter;
-        if (thick->correctLegacyLayer(legacyCenter))
-            _legacyCenterConverted = true;
     }
 
     if (_debug) qDebug().noquote() << "XmlServices created Style(Thick)" << thick->getInfo();
@@ -572,7 +553,7 @@ void MosaicReader::processInterlace(xml_node & node)
     QColor       outlineColor    = Qt::black;
     qreal        gap             = 0.0;
     qreal        shadow          = 0.0;
-    eZLevel      zlevel       = STANDARD_ZLEVEL;
+    Layer::ZLevel zlevel         = Layer::ZLevel::Standard_Z0;
     Xform        xf;
     QPointF      legacyCenter;
 
@@ -582,7 +563,7 @@ void MosaicReader::processInterlace(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
+            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -617,9 +598,7 @@ void MosaicReader::processInterlace(xml_node & node)
 
     if (_version < 29)
     {
-        qInfo() << "legacy correction for" << _xfile.getVersionedName().get();
-        if (interlace->correctLegacyLayer(legacyCenter))
-            _legacyCenterConverted = true;
+		interlace->setLegacyCenter(legacyCenter);
     }
 
     if (_debug) qDebug().noquote() << "XmlServices created Style(Interlace)" << interlace->getInfo();
@@ -638,7 +617,7 @@ void MosaicReader::processOutline(xml_node & node)
     Qt::PenCapStyle pcs       = Qt::SquareCap;
     qreal        outlineWidth = 0.03;
     QColor       outlineColor = Qt::black;
-    eZLevel      zlevel       = STANDARD_ZLEVEL;
+    Layer::ZLevel zlevel      = Layer::ZLevel::Standard_Z0;
     ProtoPtr     proto;
     Xform        xf;
     QPointF      legacyCenter;
@@ -649,7 +628,7 @@ void MosaicReader::processOutline(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
+            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -678,9 +657,7 @@ void MosaicReader::processOutline(xml_node & node)
 
      if (_version < 29)
     {
-        qInfo() << "legacy correction for" << _xfile.getVersionedName().get();
-        if (outline->correctLegacyLayer(legacyCenter))
-            _legacyCenterConverted = true;
+        outline->setLegacyCenter(legacyCenter);
     }
 
     if (_debug) qDebug().noquote() << "XmlServices created Style(Outline)" << outline->getInfo();
@@ -693,7 +670,7 @@ void MosaicReader::processOutline(xml_node & node)
 void MosaicReader::processFilled(xml_node & node)
 {
     bool         oldFormat      = false;
-    eZLevel      zlevel         = STANDARD_ZLEVEL;
+    Layer::ZLevel      zlevel         = Layer::ZLevel::Standard_Z0;
     eFillType    l_algorithm    = FILL_ORIGINAL;
     bool         l_draw_inside  = false;
     bool         l_draw_outside = true;
@@ -709,7 +686,7 @@ void MosaicReader::processFilled(xml_node & node)
 
         if (str == "toolkit.GeoLayer")
         {
-            legacyCenter = procesToolkitGeoLayer(n,l_xf,zlevel);
+            procesToolkitGeoLayer(n,l_xf,zlevel,legacyCenter);
         }
         else if (str == "style.Style")
         {
@@ -747,9 +724,8 @@ void MosaicReader::processFilled(xml_node & node)
 
     if (_version < 29)
     {
+        filled->setLegacyCenter(legacyCenter);
         qInfo() << "legacy correction for" << _xfile.getVersionedName().get();
-        if (filled->correctLegacyLayer(legacyCenter))
-            _legacyCenterConverted = true;
     }
 
     switch (l_algorithm)
@@ -911,7 +887,7 @@ void MosaicReader::processPlain(xml_node & node)
     ColorSet     colorset;
     ProtoPtr     proto;
     Xform        xf;
-    eZLevel      zlevel = STANDARD_ZLEVEL;
+    Layer::ZLevel zlevel = Layer::ZLevel::Standard_Z0;
     QPointF      legacyCenter;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -920,7 +896,7 @@ void MosaicReader::processPlain(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
+            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -937,9 +913,8 @@ void MosaicReader::processPlain(xml_node & node)
 
     if (_version < 29)
     {
+        plain->setLegacyCenter(legacyCenter);
         qInfo() << "legacy correction for" << _xfile.getVersionedName().get();
-        if (plain->correctLegacyLayer(legacyCenter))
-            _legacyCenterConverted = true;
     }
 
     if (_debug) qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
@@ -954,7 +929,7 @@ void MosaicReader::processSketch(xml_node & node)
     ColorSet     colorset;
     ProtoPtr     proto;
     Xform        xf;
-    eZLevel      zlevel = STANDARD_ZLEVEL;
+    Layer::ZLevel      zlevel = Layer::ZLevel::Standard_Z0;
     QPointF      legacyCenter;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -963,7 +938,7 @@ void MosaicReader::processSketch(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
+            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -980,9 +955,8 @@ void MosaicReader::processSketch(xml_node & node)
 
      if (_version < 29)
     {
+        sketch->setLegacyCenter(legacyCenter);
         qInfo() << "legacy correction for" << _xfile.getVersionedName().get();
-        if (sketch->correctLegacyLayer(legacyCenter))
-            _legacyCenterConverted = true;
     }
 
     if (_debug) qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
@@ -1002,7 +976,7 @@ void MosaicReader::processEmboss(xml_node & node)
     qreal        outlineWidth = 0.03;
     QColor       outlineColor = Qt::black;
     qreal        angle        = 0.0;
-    eZLevel      zlevel       = STANDARD_ZLEVEL;
+    Layer::ZLevel zlevel      = Layer::ZLevel::Standard_Z0;
     ProtoPtr     proto;
     Xform        xf;
     QPointF      legacyCenter;
@@ -1013,7 +987,7 @@ void MosaicReader::processEmboss(xml_node & node)
         if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
+            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
         else if (str == "style.Style")
             processStylePrototype(n,proto);
         else if (str == "style.Colored")
@@ -1045,9 +1019,8 @@ void MosaicReader::processEmboss(xml_node & node)
 
     if (_version < 29)
     {
+        emboss->setLegacyCenter(legacyCenter);
         qInfo() << "legacy correction for" << _xfile.getVersionedName().get();
-        if (emboss->correctLegacyLayer(legacyCenter))
-            _legacyCenterConverted = true;
     }
 
     if (_debug) qDebug().noquote() << "XmlServices created Style(Emboss)" << emboss->getInfo();
@@ -1059,13 +1032,13 @@ void MosaicReader::processEmboss(xml_node & node)
 
 void MosaicReader::processTileColors(xml_node & node)
 {
-    ProtoPtr     proto;
-    Xform        xf;
-    bool         outline = false;
-    int          width   = 3;
-    eZLevel      zlevel  = STANDARD_ZLEVEL;
-    QColor       color   = Qt::white;
-    QPointF      legacyCenter;
+    ProtoPtr      proto;
+    Xform         xf;
+    bool          outline = false;
+    int           width   = 3;
+    Layer::ZLevel zlevel  = Layer::ZLevel::Standard_Z0;
+    QColor        color   = Qt::white;
+    QPointF       legacyCenter;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -1074,7 +1047,7 @@ void MosaicReader::processTileColors(xml_node & node)
 
         if (str == "toolkit.GeoLayer")
         {
-            legacyCenter = procesToolkitGeoLayer(n,xf,zlevel);
+            procesToolkitGeoLayer(n,xf,zlevel,legacyCenter);
         }
         else if (str == "style.Style")
         {
@@ -1110,7 +1083,7 @@ void MosaicReader::processTileColors(xml_node & node)
     tileColors->setViewController(_vc);
 
     tileColors->setColorGroup(_tilingColorGroup);
-    qInfo() << _xfile.getVersionedName().get()
+    qDebug() << _xfile.getVersionedName().get()
             <<  "tiling color group size="
             << _tilingColorGroup.size()
             << "mosaic version" << _version;
@@ -1126,9 +1099,8 @@ void MosaicReader::processTileColors(xml_node & node)
 
     if (_version < 29)
     {
+        tileColors->setLegacyCenter(legacyCenter);
         qInfo() << "legacy correction for" << _xfile.getVersionedName().get();
-        if (tileColors->correctLegacyLayer(legacyCenter))
-            _legacyCenterConverted = true;
     }
 
     if (_debug) qDebug().noquote() << "XmlServices created Style(TileColors)" << tileColors->getInfo();
@@ -1138,13 +1110,38 @@ void MosaicReader::processTileColors(xml_node & node)
     if (_debug) qDebug() << "end TileColors";
 }
 
+// borders were on top by z-level, now by style order
+void MosaicReader::raiseBorders()
+{
+    QVector<BorderPtr> raised;
+    for (const StylePtr & style : _mosaic->getStyleSet())
+    {
+        BorderPtr border = std::dynamic_pointer_cast<Border>(style);
+        if (border && border->getZLevel() > Layer::ZLevel::Standard_Z0)
+        {
+            raised.push_back(border);
+        }
+    }
+
+    for (BorderPtr & border : raised)
+    {
+        _mosaic->deleteStyle(border);
+        border->setZLevel(Layer::ZLevel::Standard_Z0);
+        _mosaic->addStyleOnTop(border);
+    }
+}
+
 void MosaicReader::processBorder(xml_node & node)
 {
     xml_node n = node.child("border");
-    procBorder(n);
+    BorderPtr border = procBorder(n);
+    if (border)
+    {
+        _mosaic->addStyle(border);
+    }
 }
 
-QPointF MosaicReader::procesToolkitGeoLayer(xml_node & node, Xform & xf, eZLevel & zlevel)
+void MosaicReader::procesToolkitGeoLayer(xml_node & node, Xform & xf, Layer::ZLevel & zlevel, QPointF & legacyCenter)
 {
     QString val;
     qreal   fval;
@@ -1192,7 +1189,6 @@ QPointF MosaicReader::procesToolkitGeoLayer(xml_node & node, Xform & xf, eZLevel
         xf.setRotateRadians(fval);
     }
 
-    QPointF legacyCenter;
     n = node.child("center");
     if (n)
     {
@@ -1204,16 +1200,14 @@ QPointF MosaicReader::procesToolkitGeoLayer(xml_node & node, Xform & xf, eZLevel
         legacyCenter    = QPointF(x,y);
         // this use of center was bogus
         // to correct legacy XML this center is converted
-        // and appled to the model transfrom translate
+        // and appled to the model transfrom translation
     }
     n = node.child("Z");
     if (n)
     {
         val          = n.child_value();
-        zlevel       = (eZLevel)val.toInt();
+        zlevel       = (Layer::ZLevel)val.toInt();
     }
-
-    return legacyCenter;
 }
 
 void MosaicReader::processStylePrototype(xml_node & node, ProtoPtr & proto)
@@ -1442,6 +1436,29 @@ void MosaicReader::processsStyleEmboss(xml_node & node, qreal & angle)
     angle =  str.toDouble();
 }
 
+uint MosaicReader::getStellation(xml_node & node)
+{
+    uint rv = 0;
+    if (_version < 33)
+    {
+        bool connectMotifs = getAttributeTF(node,"connectMotifs");
+        if (connectMotifs)
+        {
+            rv = 1;
+        }
+    }
+    else
+    {
+        xml_attribute att = node.attribute("stellation");
+        if (att)
+        {
+            QString str(att.value());
+            rv =  str.toUInt();
+        }
+    }
+    return rv;
+}
+
 void MosaicReader::getExtendedData(xml_node & node, ExtenderPtr ep)
 {
     if (_version >= 22)
@@ -1451,25 +1468,40 @@ void MosaicReader::getExtendedData(xml_node & node, ExtenderPtr ep)
         bool extendBoundaryToTile    = getAttributeTF(node,"extTips2T");
         bool embedBound              = getAttributeTF(node,"embedBound");
         bool embedTile               = getAttributeTF(node,"embedTile");
+        uint stellation              = getStellation(node);
 
         ep->setExtendRays(extendRays);
         ep->setExtendTipsToBound(extTipsToBoundary);
         ep->setExtendTipsToTile(extendBoundaryToTile);
         ep->setEmbedBoundary(embedBound);
         ep->setEmbedTile(embedTile);
+        ep->setStellate(stellation);
+        if (stellation > 0)
+        {
+            if (_version < 33)
+            {
+                Motif * parent = ep->getParent();
+                RadialMotif * radial = static_cast<RadialMotif*>(parent);
+                radial->setOnPoint(true);
+                ep->setFitToTile(true);
+            }
+            else
+            {
+                bool fitToTile = getAttributeTF(node,"fitToTile");
+                ep->setFitToTile(fitToTile);
+            }
+        }
 
         if (_version >= 25)
         {
-            uint connectBoundaryVertices = getAttributeUint(node,"conRays");
-            ep->setConnectRays(connectBoundaryVertices);
+            uint iConRays = getAttributeUint(node,"conRays");
+            ep->setConnectRays(iConRays);
         }
         else
         {
             bool connectBoundaryVertices = getAttributeTF(node,"conRays");
-            uint crays = 0;
             if (connectBoundaryVertices)
-                crays = 1;
-            ep->setConnectRays(crays);
+                ep->setConnectRays(1);
         }
     }
     else
@@ -1481,10 +1513,8 @@ void MosaicReader::getExtendedData(xml_node & node, ExtenderPtr ep)
         ep->setExtendTipsToBound(extendFreeVertices);
 
         bool connectBoundaryVertices = getAttributeTF(node,"connectBoundaryVertices");
-        uint crays = 0;
         if (connectBoundaryVertices)
-            crays = 1;
-        ep->setConnectRays(crays);
+            ep->setConnectRays(1);
     }
 }
 
@@ -1628,6 +1658,19 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
     xml_node protonode = node.child("app.Prototype");
     if (_debug) qDebug().noquote() << protonode.name();
 
+    xml_node emnode = protonode.child("ExplicitMap");
+    if (emnode)
+    {
+        // tiling-less prototype: the map IS the prototype (Map Editor "convert to fixed map")
+        MapPtr explicitMap = getMap(emnode);
+        ProtoPtr proto = make_shared<Prototype>(explicitMap);
+        proto->setMosaic(_mosaic);
+        setProtoReference(node,proto);
+        _prototype = proto;
+        if (_debug) qDebug() << "Proto created (explicit map)";
+        return proto;
+    }
+
     // load tiling from its XML file by name
     bool localTiling = false;     // indicates whether there is an associated tiling
     TilingPtr loadedTiling;
@@ -1652,15 +1695,15 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
             if (loadedTiling)
             {
                 _tilings.push_back(loadedTiling);
-                if (!_mosbip)
+                if (_mosRecord.isEmpty())
                 {
-                    // use tiling bip since there is no mosaic bip
-                    _mosbip = loadedTiling->getBkgdImage();
+                    // use tiling background since there is no mosaic background
+                    _mosRecord = loadedTiling->getBkgdRecord();
                 }
                 if (loadedTiling->getVersion() < 8)
                 {
                     _tilingColorGroup = loadedTiling->legacyTileColors();
-                    qInfo() << _xfile.getVersionedName().get()
+                    qDebug() << _xfile.getVersionedName().get()
                             <<  "tiling color group size="
                             << _tilingColorGroup.size()
                             << "tiling version" << loadedTiling->getVersion()
@@ -1692,20 +1735,6 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
     ProtoPtr proto = make_shared<Prototype>(loadedTiling,_mosaic);
     setProtoReference(node,proto);
 
-    xml_node dnode = protonode.child("Distort");
-    if (dnode)
-    {
-
-        bool bStatus;
-        QString str = dnode.child_value("scalex");
-        qreal valx = str.toDouble(&bStatus);
-        str = dnode.child_value("scaley");
-        qreal valy = str.toDouble(&bStatus);
-        QTransform t = QTransform::fromScale(valx,valy);
-        proto->setDistortion(t);
-        proto->enableDistortion(true);
-    }
-
     xml_node cnode = protonode.child("Cleanse");
     if (cnode)
     {
@@ -1729,7 +1758,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
     QVector<TilePtr> usedTiles;
     TileReader tr(&mrbase);
 
-    // each mosaic "entry" is a design element
+    // each mosaic "entry" is a TileMotif
     int del = 0;
     for (xml_node entry = protonode.child("entry"); entry; entry = entry.next_sibling("entry"))
     {
@@ -1756,46 +1785,47 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
 
         xml_node motifNode  = tileNode.next_sibling();
         QString  motifType  = motifNode.name();
-        eMotifType type     = Sys::XMLgetMotifType(motifType);
+        if (_debug) qDebug() << "processing motif:" << motifType;
+        Motif::Type type    = Sys::XMLgetMotifType(motifType);
 
         MotifPtr motif;
         switch(type)
         {
-        case MOTIF_TYPE_STAR:
+        case Motif::Type::Star:
             motif = getStar(motifNode,sides);
             motifFound = true;
             break;
 
-        case MOTIF_TYPE_STAR2:
+        case Motif::Type::Star2:
             motif = getStar2(motifNode,sides);
             motifFound = true;
             break;
 
-        case MOTIF_TYPE_ROSETTE:
+        case Motif::Type::Rosette:
             motif =  getRosette(motifNode,sides);
             motifFound = true;
             break;
 
-        case MOTIF_TYPE_ROSETTE2:
+        case Motif::Type::Rosette2:
             motif =  getRosette2(motifNode,sides);
             motifFound = true;
             break;
 
-        case MOTIF_TYPE_EXPLICIT_MAP:
-        case MOTIF_TYPE_INFERRED:
-        case MOTIF_TYPE_IRREGULAR_ROSETTE:
-        case MOTIF_TYPE_HOURGLASS:
-        case MOTIF_TYPE_INTERSECT:
-        case MOTIF_TYPE_GIRIH:
-        case MOTIF_TYPE_IRREGULAR_STAR:
-        case MOTIF_TYPE_EXPLCIT_TILE:
-        case MOTIF_TYPE_IRREGULAR_NO_MAP:
+        case Motif::Type::MapMotif:
+        case Motif::Type::Inferred:
+        case Motif::Type::AdaptiveRosette:
+        case Motif::Type::Hourglass:
+        case Motif::Type::Intersect:
+        case Motif::Type::Girih:
+        case Motif::Type::AdaptiveStar:
+        case Motif::Type::ExplicitTile:
+        case Motif::Type::NoMapMotif:
             motif = getIrregularMotif(motifNode, sides, type);
             motifFound = true;
             break;
 
-        case MOTIF_TYPE_UNDEFINED:
-        case MOTIF_TYPE_RADIAL:
+        case Motif::Type::Undefined:
+        case Motif::Type::Radial:
             _failMessage = "Motif type not found: " + tileName;
             qWarning() << _failMessage;
             throw(_failMessage);
@@ -1828,17 +1858,22 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                     usedTiles.push_back(loadedTile);
                     entryTile = loadedTile;
 
-                    //create the desing element and put into the prototype
+                    //create the TileMotif and put into the prototype
                     if (_debug) qDebug().noquote() << "adding to Proto" << motif->getMotifDesc();
-                    DELPtr  dep = make_shared<DesignElement>(loadedTiling,entryTile, motif);
+                    TileMotifPtr timo = make_shared<TileMotif>(loadedTiling,entryTile, motif);
 
                     if (_version < 27 && motif->isIrregular())
                     {
-                        fixupIrregularTransform(dep);
+                        fixupIrregularTransform(timo);
                     }
 
-                    proto->addDesignElement(dep);
-                    if (_debug) qDebug().noquote() << "design element:" << dep->toString();
+                    if (_version < 37 && motif->isRadial())
+                    {
+                        fixupExtendedBoundary(timo);
+                    }
+
+                    proto->addTileMotif(timo);
+                    if (_debug) qDebug().noquote() << "TileMotif:" << timo->toString();
                     tileFound = true;
                     break;
                 }
@@ -1848,39 +1883,29 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
             {
                 if (!localTiling)
                 {
-                    _failMessage = "Mismatch between Design and Tiling";
-                    qWarning().noquote() << _failMessage;
-                    qWarning().noquote() << "No match for Mosaic tile in tiling";
-
-                    if (!Sys::localCycle)
-                    {
-                        QMessageBox box(Sys::controlPanel);
-                        box.setIcon(QMessageBox::Critical);
-                        box.setText(_failMessage);
-                        QPushButton btn("Try to fix");
-                        box.addButton(&btn,QMessageBox::AcceptRole);
-                        box.addButton(QMessageBox::Cancel);
-                        int rv = box.exec();
-                        if (rv == QMessageBox::Cancel)
-                        {
-                            // this mismatch cannot be handled
-                            throw(_failMessage);
-                        }
-                    }
+                    QString str = "Mismatch between Design and Tiling: no match for Mosaic tile in tiling";
+                    qWarning().noquote() << str;
+                    _warnings << str;
                 }
-                DELPtr  del = make_shared<DesignElement>(loadedTiling,entryTile, motif);
-                proto->addDesignElement(del);
+                TileMotifPtr  del = make_shared<TileMotif>(loadedTiling,entryTile, motif);
+
+                if (_version < 37 && motif->isRadial())
+                {
+                    fixupExtendedBoundary(del);
+                }
+
+                proto->addTileMotif(del);
             }
         }
     }
 
-    QVector<DELPtr> & designElements = proto->getDesignElements();
-    int numDesignElements                      = designElements.size();
+    TileMotifSet & tileMotif = proto->getTileMotifs();
+    int numTileMotifs        = tileMotif.size();
 
-    if (numLoadedTiles >> numDesignElements)
+    if (numLoadedTiles > numTileMotifs)
     {
-        // need to create design elements for the unused tiles
-        qWarning() << "Mosaic does not match tiling. Creating new Design elements. DELs:" << numDesignElements << "Tiles:" << numLoadedTiles;
+        // need to create TileMotifs for the unused tiles
+        qWarning() << "Mosaic does not match tiling. Creating new Tile Motifs:" << numTileMotifs << "Tiles:" << numLoadedTiles;
 
         for (const auto & tile : std::as_const(uniqueLoadedTiles))
         {
@@ -1890,38 +1915,25 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 continue;
             }
             // create new desigin element
-            DELPtr  del = make_shared<DesignElement>(loadedTiling,tile);
-            proto->addDesignElement(del);
+            TileMotifPtr  TIMO = make_shared<TileMotif>(loadedTiling,tile);
+            proto->addTileMotif(TIMO);
         }
-        numDesignElements = designElements.size(); // bumps the count
+        numTileMotifs = tileMotif.size(); // bumps the count
     }
 
-    if (numLoadedTiles && (numLoadedTiles != numDesignElements) && !Sys::localCycle)
+    if (numLoadedTiles && (numLoadedTiles != numTileMotifs))
     {
         QString str1 = "Mosaic does not match tiling.";
         QString str2;
         QDebug  deb(&str2);
-        deb <<  "Unqiue Tiles:" << numLoadedTiles << "Design Elements:" << numDesignElements;
+        deb <<  "Unqiue Tiles:" << numLoadedTiles << "TileMotifs:" << numTileMotifs;
 
         qWarning().noquote() << str1 << str2;
-
-        QMessageBox box(Sys::controlPanel);
-        box.setWindowTitle(_xfile.getVersionedName().get());
-        int len = _xfile.getPathedName().length();
-        box.setIcon(QMessageBox::Critical);
-        int len2 = str1.length();
-        if (len2 < len)
-        {
-            int diff = len-len2;
-            str1.resize(len + (diff*2),' ');
-        }
-        box.setText(str1);
-        box.setInformativeText(str2);
-        box.exec();
+        _warnings << str1 + " " + str2;
     }
 
     // create explicit maps
-    for (auto & del : std::as_const(designElements))
+    for (auto & del : std::as_const(tileMotif))
     {
         MotifPtr motif = del->getMotif();
         TilePtr  tile  = del->getTile();
@@ -1931,76 +1943,80 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
         {
             switch (motif->getMotifType())
             {
-            case MOTIF_TYPE_EXPLICIT_MAP:
+            case Motif::Type::MapMotif:
             {
                 // already has a map
                 auto exp = std::dynamic_pointer_cast<ExplicitMapMotif>(motif);
                 exp->setTile(tile);
             }   break;
 
-            case MOTIF_TYPE_IRREGULAR_NO_MAP:
+            case Motif::Type::NoMapMotif:
             {
                 auto irr = std::dynamic_pointer_cast<IrregularNoMap>(motif);
                 irr->setTile(tile);
             }   break;
 
-            case MOTIF_TYPE_INFERRED:
+            case Motif::Type::Inferred:
             {
-                auto infer = std::dynamic_pointer_cast<InferredMotif>(motif);
+                auto infer = std::dynamic_pointer_cast<AdaptiveInference>(motif);
                 infer->setTile(tile);
                 infer->setupInfer(proto);
             }   break;
 
-            case MOTIF_TYPE_IRREGULAR_ROSETTE:
+            case Motif::Type::AdaptiveRosette:
             {
-                auto rose = std::dynamic_pointer_cast<IrregularRosette>(motif);
+                auto rose = std::dynamic_pointer_cast<AdaptiveRosette>(motif);
                 rose->setTile(tile);
             }   break;
 
-            case MOTIF_TYPE_HOURGLASS:
+            case Motif::Type::Hourglass:
             {
-                auto hour = std::dynamic_pointer_cast<HourglassMotif>(motif);
+                auto hour = std::dynamic_pointer_cast<AdaptiveHourglass>(motif);
                 hour->setTile(tile);
             }   break;
 
-            case MOTIF_TYPE_INTERSECT:
+            case Motif::Type::Intersect:
             {
-                auto expl = std::dynamic_pointer_cast<IntersectMotif>(motif);
+                auto expl = std::dynamic_pointer_cast<AdaptiveIntersect>(motif);
                 expl->setTile(tile);
             }   break;
 
-            case MOTIF_TYPE_IRREGULAR_STAR:
+            case Motif::Type::AdaptiveStar:
             {
-                auto star = std::dynamic_pointer_cast<IrregularStar>(motif);
+                auto star = std::dynamic_pointer_cast<AdaptiveStar>(motif);
                 star->setTile(tile);
             }   break;
 
-            case MOTIF_TYPE_EXPLCIT_TILE:
+            case Motif::Type::ExplicitTile:
             {
-                auto etile = std::dynamic_pointer_cast<TileMotif>(motif);
+                auto etile = std::dynamic_pointer_cast<AdaptiveTile>(motif);
                 etile->setTile(tile);
             }   break;
 
-            case MOTIF_TYPE_GIRIH:
+            case Motif::Type::Girih:
             {
-                auto girih = std::dynamic_pointer_cast<GirihMotif>(motif);
+                auto girih = std::dynamic_pointer_cast<AdaptiveGirih>(motif);
                 girih->setTile(tile);
             }   break;
 
-            case MOTIF_TYPE_UNDEFINED:
-            case MOTIF_TYPE_RADIAL:
-            case MOTIF_TYPE_ROSETTE:
-            case MOTIF_TYPE_ROSETTE2:
-            case MOTIF_TYPE_STAR:
-            case MOTIF_TYPE_STAR2:
-                qWarning() << "Unxpected irregular type" << sMotifType[motif->getMotifType()];
+            case Motif::Type::Undefined:
+            case Motif::Type::Radial:
+            case Motif::Type::Rosette:
+            case Motif::Type::Rosette2:
+            case Motif::Type::Star:
+            case Motif::Type::Star2:
+                qWarning() << "Unxpected irregular type" << sMotifType[(int)motif->getMotifType()];
             }
         }
     }
 
-    if (_debug) qDebug() << "Proto created";
+    // pre-build motif maps for MotifMaker to use
+    // the protoype map is built on demand when mosaic is viewed
+    proto->buildMotifMaps();       // added 31MAY2026
 
     _prototype = proto;
+
+    if (_debug) qDebug() << "Proto created";
     return proto;
 }
 
@@ -2046,6 +2062,8 @@ TilePtr MosaicReader::getTile(TileReader & treader, xml_node & node)
         tile->setRotate(rotation);
         tile->setScale(scale);
         tile->compose();
+        if (_version < 39)
+            tile->convertOriginPivot();
         Q_ASSERT(tile->isCorrect());
         setTileReference(node,tile);
         return tile;
@@ -2063,6 +2081,8 @@ TilePtr MosaicReader::getTile(TileReader & treader, xml_node & node)
         tile->setScale(scale);
         tile->setRotate(rotation);
         tile->compose();
+        if (_version < 39)
+            tile->convertOriginPivot();
         if (((_version == 5) || (_version ==6)) && (!Loose::zero(rotation) || !Loose::equals(scale,1.0)))
         {
             qWarning() << "Decomposing Tile for backwards compatability";
@@ -2097,27 +2117,43 @@ void MosaicReader::getMotifCommon(xml_node & node, MotifPtr motif, int tile_side
         xml_node exnode;
         for (exnode = node.child("Extender"); exnode; exnode = exnode.next_sibling("Extender"))
         {
-            ExtenderPtr ep = motif->addExtender();
+            ExtenderPtr ep = motif->createExtender();
             getExtendedData(exnode,ep);
 
             ExtendedBoundary & eb = ep->getRWExtendedBoundary();
             eb.setSides(tile_sides);    // default
             getExtendedBoundary(exnode,eb);
+
+            if (!ep->isUnity())
+            {
+                motif->addExtender(ep);
+            }
         }
+
         exnode = node.child("Connector");
         if (exnode)
         {
-            motif->addRadialConnector();
+            ExtenderPtr ep = motif->createExtender();
+            ep->setStellate(1);
+            ep->setFitToTile(true);
+            motif->addExtender(ep);
+            RadialMotif * radial = static_cast<RadialMotif*>(motif.get());
+            radial->setOnPoint(true);
         }
     }
     else
     {
-        ExtenderPtr ep = motif->addExtender();
+        ExtenderPtr ep = motif->createExtender();
         getExtendedData(node,ep);
 
         ExtendedBoundary & eb = ep->getRWExtendedBoundary();
         eb.setSides(tile_sides);    // default
         getExtendedBoundary(node,eb);
+
+        if (!ep->isUnity())
+        {
+            motif->addExtender(ep);
+        }
     }
 
     if (motif->isRadial() || _version >= 13)
@@ -2160,7 +2196,7 @@ void MosaicReader::getMotifCommon(xml_node & node, MotifPtr motif, int tile_side
     }
 }
 
-void MosaicReader::fixupIrregularTransform(DELPtr del)
+void MosaicReader::fixupIrregularTransform(TileMotifPtr del)
 {
     // prior to version 27, motifs were unnecessarily transformed
     // by the tile transform, when actually the infer() method
@@ -2183,7 +2219,28 @@ void MosaicReader::fixupIrregularTransform(DELPtr del)
     motif->setMotifRotate(rotate);
 }
 
-IrregularPtr MosaicReader::getIrregularMotif(xml_node & node, int tile_sides, eMotifType type)
+void MosaicReader::fixupExtendedBoundary(TileMotifPtr del)
+{
+    // prior to version 37, radial extended boundaries ignored the tile scale and rotation
+
+    MotifPtr motif = del->getMotif();
+    if (_fixedExtendedBoundaries.contains(motif.get()))
+        return;
+    _fixedExtendedBoundaries.push_back(motif.get());
+
+    TilePtr tile   = del->getTile();
+    qreal tscale   = tile->getScale();
+    qreal trot     = tile->getRotation();
+
+    for (ExtenderPtr & ep : motif->getExtenders())
+    {
+        ExtendedBoundary & eb = ep->getRWExtendedBoundary();
+        eb.setScale(eb.getScale() / tscale);
+        eb.setRotate(eb.getRotate() - trot);
+    }
+}
+
+IrregularPtr MosaicReader::getIrregularMotif(xml_node & node, int tile_sides, Motif::Type type)
 {
     IrregularPtr ep;
 
@@ -2193,34 +2250,34 @@ IrregularPtr MosaicReader::getIrregularMotif(xml_node & node, int tile_sides, eM
         return ep;
     }
 
-    if (_debug) qDebug().noquote() << "getIrregularMotif type:" << sMotifType[type];
+    if (_debug) qDebug().noquote() << "getIrregularMotif type:" << sMotifType[(int)type];
 
-    if (type == MOTIF_TYPE_EXPLICIT_MAP)
+    if (type == Motif::Type::MapMotif)
     {
         // only the old original taprats formats have maps
         _currentMap = getMap(node);
         ep = make_shared<ExplicitMapMotif>(_currentMap);
         getMotifCommon(node,ep,tile_sides);
     }
-    else if (type == MOTIF_TYPE_IRREGULAR_NO_MAP)
+    else if (type == Motif::Type::NoMapMotif)
     {
         ep = make_shared<IrregularNoMap>();
         getMotifCommon(node,ep,tile_sides);
     }
-    else if (type == MOTIF_TYPE_INFERRED)
+    else if (type == Motif::Type::Inferred)
     {
-        ep = make_shared<InferredMotif>();
+        ep = make_shared<AdaptiveInference>();
         getMotifCommon(node,ep,tile_sides);
     }
-    else if (type == MOTIF_TYPE_EXPLCIT_TILE)
+    else if (type == Motif::Type::ExplicitTile)
     {
-        ep = make_shared<TileMotif>();
+        ep = make_shared<AdaptiveTile>();
 
         getMotifCommon(node,ep,tile_sides);
     }
-    else if  (type == MOTIF_TYPE_GIRIH)
+    else if  (type == Motif::Type::Girih)
     {
-        auto exp = make_shared<GirihMotif>();
+        auto exp = make_shared<AdaptiveGirih>();
         getMotifCommon(node,exp,tile_sides);
 
         QString str;
@@ -2238,9 +2295,9 @@ IrregularPtr MosaicReader::getIrregularMotif(xml_node & node, int tile_sides, eM
         exp->init(skip);
         ep = exp;
     }
-    else if (type == MOTIF_TYPE_IRREGULAR_STAR)
+    else if (type == Motif::Type::AdaptiveStar)
     {
-        auto star = make_shared<IrregularStar>();
+        auto star = make_shared<AdaptiveStar>();
         getMotifCommon(node,star,tile_sides);
 
         QString str;
@@ -2254,9 +2311,9 @@ IrregularPtr MosaicReader::getIrregularMotif(xml_node & node, int tile_sides, eM
 
         ep = star;
     }
-    else if (type == MOTIF_TYPE_IRREGULAR_ROSETTE)
+    else if (type == Motif::Type::AdaptiveRosette)
     {
-        auto rose = make_shared<IrregularRosette>();
+        auto rose = make_shared<AdaptiveRosette>();
         getMotifCommon(node,rose,tile_sides);
 
         QString str;
@@ -2273,13 +2330,20 @@ IrregularPtr MosaicReader::getIrregularMotif(xml_node & node, int tile_sides, eM
             r_flexPt = str.toDouble();
         }
 
-        rose->init(q,r_flexPt,s);
+        qreal k = 0.0;
+        if (node.child("k"))
+        {
+            str = node.child_value("k");
+            k = str.toDouble();
+        }
+
+        rose->init(q,r_flexPt,s,k);
 
         ep = rose;
     }
-    else if (type == MOTIF_TYPE_HOURGLASS)
+    else if (type == Motif::Type::Hourglass)
     {
-        auto hour = make_shared<HourglassMotif>();
+        auto hour = make_shared<AdaptiveHourglass>();
         getMotifCommon(node,hour,tile_sides);
 
         QString str;
@@ -2292,9 +2356,9 @@ IrregularPtr MosaicReader::getIrregularMotif(xml_node & node, int tile_sides, eM
         hour->init(d,s);
         ep = hour;
     }
-    else if (type == MOTIF_TYPE_INTERSECT)
+    else if (type == Motif::Type::Intersect)
     {
-        auto isect = make_shared<IntersectMotif>();
+        auto isect = make_shared<AdaptiveIntersect>();
         getMotifCommon(node,isect,tile_sides);
 
         QString str;
@@ -2321,6 +2385,13 @@ IrregularPtr MosaicReader::getIrregularMotif(xml_node & node, int tile_sides, eM
     }
 
     Q_ASSERT(ep);
+
+    if (node.child("cropToTile"))
+    {
+        QString str = node.child_value("cropToTile");
+        ep->cropToTile = (str == "t");
+    }
+
     setExplicitReference(node,ep);
 
     return(ep);
@@ -2341,7 +2412,7 @@ StarPtr MosaicReader::getStar(xml_node & node, int tile_sides)
     if (anode)
     {
         Q_ASSERT(anode);
-        Q_ASSERT(Sys::XMLgetMotifType(anode.attribute("class").value()) == MOTIF_TYPE_STAR);
+        Q_ASSERT(Sys::XMLgetMotifType(anode.attribute("class").value()) == Motif::Type::Star);
         legacy = true;
         snode = anode;
     }
@@ -2370,7 +2441,11 @@ StarPtr MosaicReader::getStar(xml_node & node, int tile_sides)
 
     if (legacy)
     {
-        star->addRadialConnector();
+        ExtenderPtr ep = star->createExtender();
+        ep->setStellate(1);
+        ep->setFitToTile(true);
+        star->setOnPoint(true);
+        star->addExtender(ep);
     }
 
     setStarReference(snode,star);
@@ -2432,7 +2507,7 @@ RosettePtr MosaicReader::getRosette(xml_node & node, int tile_sides)
     if (anode)
     {
         Q_ASSERT(rnode);
-        Q_ASSERT(Sys::XMLgetMotifType(anode.attribute("class").value()) == MOTIF_TYPE_ROSETTE);
+        Q_ASSERT(Sys::XMLgetMotifType(anode.attribute("class").value()) == Motif::Type::Rosette);
         legacy = true;
         rnode  = anode;
     }
@@ -2461,7 +2536,11 @@ RosettePtr MosaicReader::getRosette(xml_node & node, int tile_sides)
 
     if (legacy)
     {
-        rosette->addRadialConnector();
+        ExtenderPtr ep = rosette->createExtender();
+        ep->setStellate(1);
+        ep->setFitToTile(true);
+        rosette->setOnPoint(true);
+        rosette->addExtender(ep);
     }
 
     setRosetteReference(rnode,rosette);
@@ -2479,13 +2558,11 @@ Rosette2Ptr MosaicReader::getRosette2(xml_node & node, int tile_sides)
 
     int n,s;
     qreal x,y,k = 0;
-    uint tipTypes;
-    eTipMode tipMode;
+    QList<TipType> tipTypes;
     bool constrain;
-    getRosette2Common(node,n,x,y,k,s,tipTypes,tipMode,constrain);
+    getRosette2Common(node,n,x,y,k,s,tipTypes,constrain);
 
     Rosette2Ptr rosette = make_shared<Rosette2>(n, x, y, s, k, constrain);
-    rosette->setTipMode(tipMode);
     rosette->setTipTypes(tipTypes);
 
     xml_attribute onpoint = node.attribute("onpoint");
@@ -2535,6 +2612,16 @@ void  MosaicReader::getStar2Common(xml_node & node, int & n, qreal & theta, int 
     s = str.toInt();
 }
 
+void  MosaicReader::getJeweledStarCommon(xml_node & node, int & n, qreal & cuspDepth)
+{
+    QString str;
+    str = node.child_value("n");
+    n = str.toInt();
+
+    str = node.child_value("cuspDepth");
+    cuspDepth = str.toDouble();
+}
+
 void  MosaicReader::getRosetteCommon(xml_node & node, int & n, qreal & q, int & s)
 {
     QString str;
@@ -2557,7 +2644,7 @@ void  MosaicReader::getRosetteCommon(xml_node & node, int & n, qreal & q, int & 
     }
 }
 
-void  MosaicReader::getRosette2Common(xml_node & node, int & n, qreal & x, qreal & y, qreal & k, int & s, uint &tipTypes, eTipMode &tipMode, bool & constrain)
+void  MosaicReader::getRosette2Common(xml_node & node, int & n, qreal & x, qreal & y, qreal & k, int & s, QList<TipType> &tipTypes, bool & constrain)
 {
     QString str;
 
@@ -2579,67 +2666,83 @@ void  MosaicReader::getRosette2Common(xml_node & node, int & n, qreal & x, qreal
     str = node.child_value("s");
     s = str.toInt();
 
-    if (node.child("tip"))
+    // some history here
+    if (node.child("TipTypes"))
     {
-        // older - two tip types
-        tipTypes = TIP_TYPE2_OUTER;
-        tipMode  = TIP_MODE_REGULAR;
-
-        str = node.child_value("tip");
-        if (str == "alt")
+        str = node.child_value("TipTypes");
+        // current - unlimited tip types in any order
+        QStringList qsl = str.split('|');
+        for (QString & s : qsl)
         {
-            tipMode = TIP_MODE_ALTERNATE;
-            tipTypes = TIP_TYPE2_OUTER | TIP_TYPE2_INNER;
+            if (s == "outer")
+            {
+                tipTypes.push_back(TipType::OUTER);
+            }
+            else if (s == "inner")
+            {
+                tipTypes.push_back(TipType::INNER);
+            }
+            else if (s == "flipped")
+            {
+                tipTypes.push_back(TipType::FLIPPED);
+            }
+            else if (s == "outerpoint")
+            {
+                tipTypes.push_back(TipType::OUTER_POINT);
+            }
+            else if (s == "outertoboundary")
+            {
+                tipTypes.push_back(TipType::OUTER_TO_BOUNDARY);
+            }
+            else if (s == "outerpointtoboundary")
+            {
+                tipTypes.push_back(TipType::OUTER_POINT_TO_BOUNDARY);
+            }
         }
-        else if (str == "in")
+    }
+    else if (node.child("tip"))
+    {
+        // original version
+        str = node.child_value("tip");
+        if (str == "in")
         {
-            tipTypes = TIP_TYPE2_INNER;
+            tipTypes.push_back(TipType::INNER);
+        }
+
+        else if (str == "alt")
+        {
+            tipTypes.push_back(TipType::OUTER);
+            tipTypes.push_back(TipType::INNER);
+        }
+        else
+        {
+            tipTypes.push_back(TipType::OUTER);
         }
     }
     else
     {
-
-        tipTypes = 0;
         str = node.child_value("tiptypes");
         if (!str.isEmpty())
         {
-            // current three tip types
+            // second version -  three tip types in this order
             QStringList qsl = str.split('|');
             if (qsl.contains("outer"))
             {
-                tipTypes |= TIP_TYPE2_OUTER;
+                tipTypes.push_back(TipType::OUTER);
             }
             if (qsl.contains("inner"))
             {
-                tipTypes |= TIP_TYPE2_INNER;
+                tipTypes.push_back(TipType::INNER);
             }
             if (qsl.contains("flipped"))
             {
-                tipTypes |= TIP_TYPE2_FLIPPED;
+                tipTypes.push_back(TipType::FLIPPED);
             }
         }
         else
         {
             // original - single tip type
-            tipTypes = TIP_TYPE2_OUTER;
-        }
-
-        str = node.child_value("tipmode");
-        if (!str.isEmpty())
-        {
-            if (str == "regular")
-            {
-                tipMode = TIP_MODE_REGULAR;
-            }
-            else if (str == "alternate")
-            {
-                tipMode = TIP_MODE_ALTERNATE;
-            }
-        }
-        else
-        {
-            // original - single tip type
-            tipMode = TIP_MODE_REGULAR;
+            tipTypes.push_back(TipType::OUTER);
         }
     }
 }
@@ -2885,7 +2988,7 @@ QColor MosaicReader::procBackgroundColor(xml_node & node)
     if (n)
         return processColor(n);
     else
-        return _background;     // default;
+        return _bkgdColor;     // default;
 }
 
 QTransform MosaicReader::getQTransform(QString txt)
@@ -2942,15 +3045,28 @@ void MosaicReader::procFill(xml_node & node, bool isSingle)
     _fillData.set(isSingle,qsl[0].toInt(),qsl[1].toInt(),qsl[2].toInt(),qsl[3].toInt());
 }
 
-void MosaicReader::procBorder(xml_node & node)
+void MosaicReader::procDistort(xml_node & node)
+{
+    // called only when a Distort node is present - absence means off
+    // (the default, already DISTORT_NONE,1.0,1.0) - presence means on
+    qreal scalex = QString(node.child_value("scalex")).toDouble();
+    qreal scaley = QString(node.child_value("scaley")).toDouble();
+    // no type attribute means a pre-DISTORT_TILE file, which only ever meant canvas distortion
+    QString type = node.attribute("type").as_string("canvas");
+    _distortion.set(type == "tile" ? DISTORT_TILE : DISTORT_CANVAS,scalex,scaley);
+}
+
+BorderPtr MosaicReader::procBorder(xml_node & node)
 {
     // this is executed in pass 2
 
     // Note: version 17 uses model units
     // Note: version 23 includes model transform (toolkit.GeoLayer)
 
+    BorderPtr border;
+
     xml_attribute atype = node.attribute("type");
-    if (!atype)  return;
+    if (!atype)  return border;
 
     bool useViewSize = false;
     xml_attribute vsize = node.attribute("useViewSize");
@@ -2974,13 +3090,13 @@ void MosaicReader::procBorder(xml_node & node)
             switch (type)
             {
             case BORDER_PLAIN:
-                procBorderPlain(node);
+                border = procBorderPlain(node);
                 break;
             case BORDER_TWO_COLOR:
-                procBorderTwoColor(node);
+                border = procBorderTwoColor(node);
                 break;
             case BORDER_BLOCKS:
-                procBorderBlocks(node);
+                border = procBorderBlocks(node);
                 break;
             case BORDER_NONE:
                 break;
@@ -2993,32 +3109,41 @@ void MosaicReader::procBorder(xml_node & node)
         Q_ASSERT(_version >= 12);
         QString type = atype.as_string();
         if (type == "Plain")
-            procBorderPlain(node);
+            border = procBorderPlain(node);
         else if (type == "2Color")
-            procBorderTwoColor(node);
+            border = procBorderTwoColor(node);
         else  if (type == "Blocks")
-            procBorderBlocks(node);
+            border = procBorderBlocks(node);
     }
 
-    if (_border)
+    if (border)
     {
         Xform xf;
-        eZLevel zlevel = STANDARD_ZLEVEL;
+        Layer::ZLevel zlevel = Layer::ZLevel::Standard_Z0;
 
         if (_version  >= 23)
         {
+            QPointF unused;
             xml_node n = node.child("toolkit.GeoLayer");
-            procesToolkitGeoLayer(n,xf,zlevel);
-            _border->setModelXform(xf,false,Sys::nextSigid());
-            _border->setZLevel(zlevel);
+            procesToolkitGeoLayer(n,xf,zlevel,unused);
+            border->setModelXform(xf,false,Sys::nextSigid());
+            border->setZLevel(zlevel);
         }
         else
         {
-            _border->setModelXform(_firstStyleXform,false,Sys::nextSigid());
+            border->setModelXform(_firstStyleXform,false,Sys::nextSigid());
+            border->setZLevel(Layer::ZLevel::Border_Z10);   // legacy borders were on top
         }
 
-        _border->setUseViewSize(useViewSize);
+        border->setUseViewSize(useViewSize);
+
+        if (_version < 17)
+        {
+            // convert legacy borders which were built using screen units
+            border->setRequiresConversion(true);
+        }
     }
+    return border;
 }
 
 // the old way of handling crops
@@ -3057,7 +3182,7 @@ CropPtr MosaicReader::processOldCrop(xml_node & node)
     {
         bool embed = false;
         bool apply = false;
-        bool clip  = false;
+
         xml_attribute attr;
         attr = node.attribute("embed");
         if (attr)
@@ -3071,15 +3196,9 @@ CropPtr MosaicReader::processOldCrop(xml_node & node)
             QString val = attr.value();
             apply = (val == "t") ? true : false;
         }
-        attr = node.attribute("clip");
-        if (attr)
-        {
-            QString val = attr.value();
-            clip = (val == "t") ? true : false;
-        }
+
         crop->setEmbed(embed);
         crop->setApply(apply);
-        crop->setClip(clip);
     }
     return crop;
 }
@@ -3091,7 +3210,6 @@ CropPtr MosaicReader::processCrop(xml_node & node)
 
     bool embed = false;
     bool apply = false;
-    bool clip  = false;
     xml_attribute attr;
     attr = node.attribute("embed");
     if (attr)
@@ -3105,15 +3223,9 @@ CropPtr MosaicReader::processCrop(xml_node & node)
         QString val = attr.value();
         apply = (val == "t") ? true : false;
     }
-    attr = node.attribute("clip");
-    if (attr)
-    {
-        QString val = attr.value();
-        clip = (val == "t") ? true : false;
-    }
+
     crop->setEmbed(embed);
     crop->setApply(apply);
-    crop->setClip(clip);
 
     xml_node type = node.child("rect");
     if (type)
@@ -3143,7 +3255,7 @@ CropPtr MosaicReader::processCrop(xml_node & node)
     return crop;
 }
 
-void MosaicReader::procBorderPlain(xml_node & node)
+BorderPtr MosaicReader::procBorderPlain(xml_node & node)
 {
     xml_node cnode = node.child("color");
     QColor col1 = processColor(cnode);
@@ -3161,22 +3273,21 @@ void MosaicReader::procBorderPlain(xml_node & node)
         {
             xml_node rnode = node.child("rect");
             QRectF rect = getRectangle(rnode);
-            _border = make_shared<BorderPlain>(_mosaic.get(),rect, bwidth, col1);
+            return make_shared<BorderPlain>(_mosaic.get(),rect, bwidth, col1);
         }
         else if (shape == "Circle")
         {
             xml_node rnode = node.child("circle");
             auto c = getCircle(rnode);
-            _border = make_shared<BorderPlain>(_mosaic.get(),c, bwidth, col1);
+            return make_shared<BorderPlain>(_mosaic.get(),c, bwidth, col1);
         }
+        BorderPtr border;
+        return border;
     }
-    else
-    {
-        _border = make_shared<BorderPlain>(_mosaic.get(),_viewSize, bwidth, col1);
-    }
+    return make_shared<BorderPlain>(_mosaic.get(),_viewSize, bwidth, col1);
 }
 
-void MosaicReader::procBorderTwoColor(xml_node & node)
+BorderPtr MosaicReader::procBorderTwoColor(xml_node & node)
 {
     xml_node cnode = node.child("color");
     QColor col1 = processColor(cnode);
@@ -3207,10 +3318,10 @@ void MosaicReader::procBorderTwoColor(xml_node & node)
         }
     }
 
-    _border = make_shared<BorderTwoColor>(_mosaic.get(), rect, col1, col2, bwidth, blen);
+    return make_shared<BorderTwoColor>(_mosaic.get(), rect, col1, col2, bwidth, blen);
 }
 
-void MosaicReader::procBorderBlocks(xml_node & node)
+BorderPtr MosaicReader::procBorderBlocks(xml_node & node)
 {
     xml_node cnode = node.child("color");
     QColor col1 = processColor(cnode);
@@ -3249,7 +3360,7 @@ void MosaicReader::procBorderBlocks(xml_node & node)
     if (wnode)
         bwidth = procWidth(wnode);
 
-    _border = make_shared<BorderBlocks>(_mosaic.get(),rect, col1, rows, cols, bwidth);
+    return make_shared<BorderBlocks>(_mosaic.get(),rect, col1, rows, cols, bwidth);
 }
 
 //////////////////////////////////////////////////////////////
@@ -3402,6 +3513,20 @@ void   MosaicReader::setStar2Reference(xml_node & node, Star2Ptr ptr)
     }
 }
 
+void   MosaicReader::setJeweledStarReference(xml_node & node, JeweledStarPtr ptr)
+{
+    xml_attribute id;
+    id = node.attribute("id");
+    if (id)
+    {
+        int i = id.as_int();
+        jstar_ids[i] = ptr;
+#ifdef DEBUG_REFERENCES
+        qDebug() << "set ref star:" << i;
+#endif
+    }
+}
+
 void   MosaicReader::setRosetteReference(xml_node & node, RosettePtr ptr)
 {
     xml_attribute id;
@@ -3546,6 +3671,24 @@ Star2Ptr MosaicReader::getStar2ReferencedPtr(xml_node & node)
         qDebug() << "using reference" << id;
 #endif
         retval = Star2Ptr(star2_ids[id]);
+        if (!retval)
+            fail("reference NOT FOUND:",QString::number(id));
+    }
+    return retval;
+}
+
+JeweledStarPtr MosaicReader::getJeweledStarReferencedPtr(xml_node & node)
+{
+    JeweledStarPtr retval;
+    xml_attribute ref;
+    ref = node.attribute("reference");
+    if (ref)
+    {
+        int id = ref.as_int();
+#ifdef DEBUG_REFERENCES
+        qDebug() << "using reference" << id;
+#endif
+        retval = JeweledStarPtr(jstar_ids[id]);
         if (!retval)
             fail("reference NOT FOUND:",QString::number(id));
     }

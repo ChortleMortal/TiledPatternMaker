@@ -4,40 +4,30 @@
 #include "sys/geometry/vertex.h"
 #include "sys/geometry/geo.h"
 
-static bool debugInfoSelection = false;
-
-PointInfo::PointInfo(ePointInfo type, QPointF pt, QString desc)
+PointInfo::PointInfo(Type type, QPointF pt)
 {
     this->type = type;
     this->pt   = pt;
-    this->desc = desc;
-    if (debugInfoSelection) qDebug() << desc;
 }
 
-PointInfo::PointInfo(ePointInfo type, VertexPtr vert, QString desc)
+PointInfo::PointInfo(Type type, VertexPtr vert)
 {
     this->type = type;
     this->vert = vert;
     this->pt   = vert->pt;
-    this->desc = desc;
-    if (debugInfoSelection) qDebug() << desc;
 }
 
-LineInfo::LineInfo(eLineInfo type, QLineF line, QString desc)
+LineInfo::LineInfo(Type type, QLineF line)
 {
     this->type = type;
     this->line = line;
-    this->desc = desc;
-    if (debugInfoSelection) qDebug() << desc;
 }
 
-LineInfo::LineInfo(eLineInfo type, EdgePtr edge, QString desc)
+LineInfo::LineInfo(Type type, EdgePtr edge)
 {
     this->type = type;
     this->edge = edge;
     this->line = edge->getLine();
-    this->desc = desc;
-    if (debugInfoSelection) qDebug() << desc;
 }
 
 
@@ -49,7 +39,7 @@ LineInfo::LineInfo(eLineInfo type, EdgePtr edge, QString desc)
 
 MapSelection::MapSelection(VertexPtr v)
 {
-    _type = MAP_VERTEX;
+    _type = Type::MAP_VERTEX;
     _vert = v;
     _pt   = v->pt;
     _constructionLine = false;
@@ -57,7 +47,7 @@ MapSelection::MapSelection(VertexPtr v)
 
 MapSelection::MapSelection(EdgePtr e)
 {
-    _type = MAP_EDGE;
+    _type = Type::MAP_EDGE;
     _edge = e;
     _line = e->getLine();
     _constructionLine = false;
@@ -65,21 +55,21 @@ MapSelection::MapSelection(EdgePtr e)
 
 MapSelection::MapSelection(QLineF l, bool constructionLine)
 {
-    _type = MAP_LINE;
+    _type = Type::MAP_LINE;
     _line = l;
     _constructionLine = constructionLine;
 }
 
 MapSelection::MapSelection(QPointF p)
 {
-    _type = MAP_POINT;
+    _type = Type::MAP_POINT;
     _pt   = p;
     _constructionLine = false;
 }
 
 MapSelection::MapSelection(CirclePtr circle, bool constructionLine)
 {
-    _type               = MAP_CIRCLE;
+    _type               = Type::MAP_CIRCLE;
     _circle             = circle;
     _constructionLine   = constructionLine;
     _hasCircleIntersect = false;
@@ -87,7 +77,7 @@ MapSelection::MapSelection(CirclePtr circle, bool constructionLine)
 
 MapSelection::MapSelection(CirclePtr circle, QPointF intersect, bool constructionLine)
 {
-    _type               = MAP_CIRCLE;
+    _type               = Type::MAP_CIRCLE;
     _circle             = circle;
     _pt                 = intersect;
     _constructionLine   = constructionLine;
@@ -99,14 +89,14 @@ QPointF MapSelection::getPoint()
     QPointF apt;
     switch (_type)
     {
-    case MAP_VERTEX:
-    case MAP_POINT:
-    case MAP_CIRCLE:
+    case Type::MAP_VERTEX:
+    case Type::MAP_POINT:
+    case Type::MAP_CIRCLE:
         apt = _pt;
         break;
 
-    case MAP_EDGE:
-    case MAP_LINE:
+    case Type::MAP_EDGE:
+    case Type::MAP_LINE:
         break;
     }
     return apt;
@@ -128,14 +118,14 @@ QLineF MapSelection::getLine()
     QLineF l;
     switch (_type)
     {
-    case  MAP_EDGE:
-    case  MAP_LINE:
+    case  Type::MAP_EDGE:
+    case  Type::MAP_LINE:
         l = _line;
         break;
 
-    case MAP_VERTEX:
-    case MAP_POINT:
-    case MAP_CIRCLE:
+    case Type::MAP_VERTEX:
+    case Type::MAP_POINT:
+    case Type::MAP_CIRCLE:
         break;
     }
     return l;
@@ -144,7 +134,7 @@ QLineF MapSelection::getLine()
 CirclePtr MapSelection::getCircle()
 {
     CirclePtr cp;
-    if (_type == MAP_CIRCLE)
+    if (_type == Type::MAP_CIRCLE)
     {
         cp = _circle;
     }
@@ -153,7 +143,7 @@ CirclePtr MapSelection::getCircle()
 
 QPointF MapSelection::getPointNear(MapSelectionPtr sel, QPointF pt)
 {
-    Q_ASSERT(sel->getType() == MAP_LINE || sel->getType() == MAP_EDGE);
+    Q_ASSERT(sel->getType() == Type::MAP_LINE || sel->getType() == Type::MAP_EDGE);
     QPointF apt = Geo::snapTo(pt,sel->getLine());
     return apt;
 }

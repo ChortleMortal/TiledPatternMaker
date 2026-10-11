@@ -1,6 +1,4 @@
 #pragma once
-#ifndef MOUSEEDITCROP_H
-#define MOUSEEDITCROP_H
 
 #include <QPointF>
 #include <QPainter>
@@ -51,6 +49,3 @@ protected:
 
 private:
 };
-
-
-#endif // MOUSEEDITCROP_H

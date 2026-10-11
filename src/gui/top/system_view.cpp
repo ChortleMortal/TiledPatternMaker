@@ -5,8 +5,7 @@
 #include "gui/panels/shortcuts.h"
 #include "gui/top/controlpanel.h"
 #include "gui/top/system_view.h"
-#include "gui/top/system_view_controller.h"
-#include "gui/viewers/crop_maker_view.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/image_view.h"
 #include "gui/widgets/transparent_widget.h"
 #include "legacy/design_maker.h"
@@ -22,25 +21,27 @@
 #include "sys/sys/load_unit.h"
 #include "sys/tiledpatternmaker.h"
 
-extern class TiledPatternMaker * theApp;
-
 using std::make_shared;
 
 SystemView::SystemView() : QWidget()
 {
-    parent       = nullptr;
-    isShown      = false;
-    dragging     = false;
+    parent                  = nullptr;
+    splasher                = Sys::splash;     // pointer
+    Q_ASSERT(splasher);
+
+    isShown                 = false;
+    dragging                = false;
+    constrained             = false;
+    adjustingAspectRatio    = false;
+
+    awaitingSizeConfirm     = false;
+
+    _suspendPaintApp        = 0;
+    _suspendPaintDebug      = 0;
+    _suspendPaintView       = 0;
 
     setFocusPolicy(Qt::ClickFocus);
     setMouseTracking(true);
-
-    _suspendPaintApp   = 0;
-    _suspendPaintDebug = 0;
-    _suspendPaintView  = 0;
-
-    constrained        = false;
-    requestedSize      = QSize();
 
     // AFAIK this is only used by show original PNGs - but is harmless
     QGridLayout * grid = new QGridLayout();
@@ -49,10 +50,11 @@ SystemView::SystemView() : QWidget()
 
 SystemView::~SystemView()
 {
+    QSettings s = Sys::settings();
+
     if (!Sys::config->integratedScreen)
     {
         QPoint pt = pos();
-        QSettings s;
         s.setValue((QString("viewPos/%1").arg(Sys::appInstance)),pt);
         qInfo() << "SystemView::~SystemView" << "pos" << pt;
     }
@@ -62,7 +64,7 @@ SystemView::~SystemView()
     }
 }
 
-void SystemView::init(SystemViewController *parent)
+void SystemView::init(ViewController *parent)
 {
     this->parent  = parent;
 
@@ -72,14 +74,6 @@ void SystemView::init(SystemViewController *parent)
 
     QSize sz(Sys::DEFAULT_WIDTH, Sys::DEFAULT_HEIGHT);
     setSize(sz);
-    if (Sys::config->integratedScreen)
-    {
-        setFixedSize(sz);
-    }
-    else
-    {
-        setSize(sz);
-    }
 
     setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
 
@@ -89,16 +83,9 @@ void SystemView::init(SystemViewController *parent)
     //qDebug() << "View::init tl =" << _tl << "br =" << _br;
 }
 
-void SystemView::raiseView()
-{
-    setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-    QWidget::raise();
-    activateWindow();
-}
-
 void SystemView::unloadViewers()
 {
-    qDebug() << "SystemView::unloadView";
+    qDebug() << "SystemView::unloadViewers";
     viewSuspendPaint(true);
     clearLayers();
     clearLayout();
@@ -122,19 +109,12 @@ void SystemView::duplicateView()
     tw->show();
 }
 
-void SystemView::setBackgroundColor(QColor color)
+void SystemView::setWidgetBackground(QColor color)
 {
     QPalette pal = palette();
     pal.setColor(QPalette::Window, color);
     //setAutoFillBackground(true);
     setPalette(pal);
-}
-
-QColor SystemView::getBackgroundColor()
-{
-    QPalette pal = palette();
-    QColor c = pal.color(QPalette::Window);
-    return c;
 }
 
 void SystemView::clearLayout()
@@ -187,10 +167,8 @@ void SystemView::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
-    CropPtr painterCrop = getPainterCrop();
-
     // paints the View
-    activeLayers.paint(&painter,painterCrop);
+    activeLayers.paint(&painter);
 
     processLoadState(Sys::designMaker->getLoadUnit());
     processLoadState(Sys::tilingMaker->getLoadUnit());
@@ -200,11 +178,6 @@ void SystemView::paintEvent(QPaintEvent *event)
 bool SystemView::viewCanPaint()
 {
     return (( _suspendPaintView || _suspendPaintApp || _suspendPaintDebug) ? false : true) ;
-}
-
-bool SystemView::splashCanPaint()
-{
-    return ((_suspendPaintApp || _suspendPaintDebug) ? false : true) ;
 }
 
 void SystemView::setPaintDisable(bool disable)
@@ -259,13 +232,13 @@ void SystemView::viewSuspendPaint(bool suspend)
 void SystemView::keyPressEvent(QKeyEvent *k)
 {
     // Image (pixmap) views
-    if (Sys::imageViewer->isLoaded() && parent->isEnabled(VIEW_BMP_IMAGE))
+    if (Sys::imageViewer->isLoaded() && parent->isEnabled(Layer::Type::BMPImage))
     {
         if (Sys::imageEngine->slot_imageKeyPressed(k))
             return;     // handled
     }
 
-    if (parent->isEnabled(VIEW_LEGACY))
+    if (parent->isEnabled(Layer::Type::LegacyDesign))
     {
         if (procLegacyKeyEvent(k))
             return;     // handled
@@ -338,22 +311,19 @@ bool SystemView::procCommonKey(QKeyEvent *k)
     {
     case 'B':
     {
-        auto bip = Sys::getBackgroundImageFromSource();
-        if (bip)
-        {
-            if (k->modifiers() & Qt::ShiftModifier)
-                bip->setZLevel(BKGD_IMG__LIFTED_ZLEVEL);
-            else
-               bip->setZLevel(BKGD_IMG_ZLEVEL);
-        }
-        Sys::controlPanel->delegateView(VIEW_BKGD_IMG,!parent->isEnabled(VIEW_BKGD_IMG));
+        auto bip = Sys::backgroundImage;
+        if (k->modifiers() & Qt::ShiftModifier)
+            bip->setZLevel(Layer::ZLevel::BkgdLifted_Z25);
+        else
+            bip->setZLevel(Layer::ZLevel::Bkgd_minus20);
+        Sys::controlPanel->delegateView(Layer::Type::BkgdImage,!parent->isEnabled(Layer::Type::BkgdImage));
     }   break;
     case 'D':  duplicateView(); break;
     case 'E':  parent->slot_reconstructView(); break;    // just for debug
-    case 'G':  Sys::controlPanel->delegateView(VIEW_GRID,!parent->isEnabled(VIEW_GRID)); break;
-    case 'H':  Sys::config->showCenterDebug = !Sys::config->showCenterDebug; QWidget::update(); break;
+    case 'G':  Sys::controlPanel->delegateView(Layer::Type::Grid,!parent->isEnabled(Layer::Type::Grid)); break;
+    case 'H':  Sys::showCenterDebug = !Sys::showCenterDebug; QWidget::update(); break;
     case 'J':  emit sig_saveMenu(); break;
-    case 'K':  Sys::controlPanel->delegateView(VIEW_DEBUG,!parent->isEnabled(VIEW_DEBUG)); emit sig_rebuildMotif(); break;
+    case 'K':  Sys::controlPanel->delegateView(Layer::Type::DebugLayer,!parent->isEnabled(Layer::Type::DebugLayer)); emit sig_rebuildMotif(); break;
     case 'M':  emit sig_raiseMenu(); break;
     case 'N':  theApp->slot_bringToPrimaryScreen(); break;
     case 'P':  if (SteppingEngine::isRunning())
@@ -384,9 +354,9 @@ bool SystemView::procCommonKey(QKeyEvent *k)
     case 'R':  Sys::dontReplicate = !Sys::dontReplicate; emit sig_rebuildMotif(); break;
     case 'Y':  emit sig_saveSVG(); break;
 
-    case Qt::Key_F1: Shortcuts::popup(VIEW_MOSAIC); break;
+    case Qt::Key_F1: Shortcuts::popup(Layer::Type::Mosaic); break;
     case Qt::Key_F4: Sys::dumpRefs(); break;
-    case Qt::Key_Space: if (SteppingEngine::isRunning()) emit sig_stepperKey(key); break;
+    case Qt::Key_Space: if (SteppingEngine::isRunning()) emit sig_stepperKey(key); else emit sig_cycleLayers(); break;
     default:
         return false;
     }
@@ -409,7 +379,7 @@ bool SystemView::procLegacyKeyEvent(QKeyEvent *k)
     case 'S':  Sys::designMaker->setLegacyKbdMode(LEGACY_MODE_MODE_DES_SEPARATION); break;
 
     case Qt::Key_Return: if (Sys::designMaker->isLegacyKbdMode(LEGACY_MODE_DES_STEP)) Sys::designMaker->setStep(val); val = 0; break; // always val=0
-    case Qt::Key_F1: Shortcuts::popup(VIEW_LEGACY); break;
+    case Qt::Key_F1: Shortcuts::popup(Layer::Type::LegacyDesign); break;
     case '0':
     case '1':
     case '2':
@@ -590,7 +560,7 @@ void SystemView::showEvent(QShowEvent *event)
     if (!isShown)
     {
         // first time only
-        QSettings s;
+        QSettings s = Sys::settings();
         QPoint pt = s.value(QString("viewPos/%1").arg(Sys::appInstance)).toPoint();
         setGeometry(pt.x(),pt.y(),Sys::DEFAULT_WIDTH,Sys::DEFAULT_HEIGHT);
         qDebug() << "View::showEvent moving to:" << pt;
@@ -642,12 +612,36 @@ void SystemView::moveEvent(QMoveEvent *event)
 
 void SystemView::resizeEvent(QResizeEvent *event)
 {
-    if (event->spontaneous() && requestedSize.isValid() && (requestedSize != event->size()))
+    if (!adjustingAspectRatio &&  Sys::lockViewAspectRatio)
     {
-        // this is (unwanted) automatic resizing
-        requestedSize = QSize();
-        qInfo() << "System resizing from" << event->oldSize() << "to" << event->size() << "IGNORED";
-        return;
+        // aspect-ratio enforcement
+        QSize requested = event->size();
+        QSize corrected = enforceAspectRatio(requested);
+
+        if (corrected != requested)
+        {
+            adjustingAspectRatio = true;
+            QWidget::resize(corrected);
+            adjustingAspectRatio = false;
+            return;   // does run existing logic on the wrong size
+        }
+    }
+
+    if (event->spontaneous() && awaitingSizeConfirm)
+    {
+        // this spontaneous event is the window system's one authoritative answer to
+        // our pending request - settle the transaction now, matched or not, so a
+        // later manual drag (also spontaneous) isn't mistaken for another override
+        awaitingSizeConfirm = false;
+
+        QSize target = targetSize(parent->getTaker()->getSize());
+        if (target != event->size())
+        {
+            // the window system overrode our requested size (e.g. screen too small to hold it) -
+            // keep the logical canvas size as requested instead of accepting the smaller one
+            qInfo() << "System resizing from" << event->oldSize() << "to" << event->size() << "IGNORED";
+            return;
+        }
     }
 
     bool dbg = false;
@@ -657,10 +651,17 @@ void SystemView::resizeEvent(QResizeEvent *event)
         qInfo() <<  "    from =" << event->oldSize() << "to = " << event->size() << ((event->spontaneous()) ? "from SYS" : "from APP");
     }
 
-    QSize oldSize = parent->getCanvasViewSize();
-    QSize newSize = size();
+    Canvas * canvas = parent->getCanvas();
+    QSize oldSize    = canvas->getViewSize();
+    QSize newSize    = size();
 
-    parent->getCanvas().setViewSize(newSize);
+    if (newSize != oldSize)
+    {
+        qInfo() << "System resizing from" << oldSize << "to" << newSize << (event->spontaneous() ? "ACCEPTED (from SYS)" : "ACCEPTED (from APP)");
+    }
+
+    canvas->setViewSize(newSize);
+    parent->setTakerViewSize(newSize);   // keep the Taker's size in sync so a later reconstructView() doesn't revert to a stale size
 
     if (newSize == QSize(0,0))
     {
@@ -720,8 +721,8 @@ void SystemView::resizeEvent(QResizeEvent *event)
     if (Sys::config->scaleToView)
     {
         if (dbg) qDebug() << "    old" << oldSize << "new" << newSize << "delta-size-adjusted" << deltaSize;
-        Canvas & canvas = parent->getCanvas();
-        canvas.setDeltaCanvasSize(deltaSize);
+        Canvas * canvas = parent->getCanvas();
+        canvas->setDeltaCanvasSize(deltaSize);
     }
     else
     {
@@ -744,24 +745,15 @@ void SystemView::setWindowTitle(const QString & s)
     QWidget::update();
 }
 
-void SystemView::setFixedSize(QSize sz)
+// the size actually asked of the window system for a given logical (Taker) size -
+// mirrors the constraints setSize() applies, so callers can recompute the same
+// target on demand instead of caching a second copy of it
+QSize SystemView::targetSize(QSize sz) const
 {
-    qInfo() << "SystemView::setFixedSize" << sz;
-    requestedSize = sz;
-    constrained   = true;
-    QWidget::setFixedSize(sz);
-    QLayout::SizeConstraint sc = this->layout()->sizeConstraint();
-    qInfo() << sc;
-    emit sig_testSize();
-}
-
-void SystemView::setSize(QSize sz)
-{
-    if (Sys::config->limitViewSize)
+    if (!Sys::config->integratedScreen && Sys::config->limitViewSize)
     {
         QScreen * pri = QGuiApplication::primaryScreen();
         QSize size = pri->availableSize();
-        //qDebug() << "Available size" << size;
         if (sz.width() > size.width())
         {
             sz.setWidth(size.width());
@@ -771,6 +763,31 @@ void SystemView::setSize(QSize sz)
             sz.setHeight(size.height());
         }
     }
+    return sz;
+}
+
+void SystemView::setFixedSize(QSize sz)
+{
+    qDebug() << "SystemView::setFixedSize" << sz;
+    awaitingSizeConfirm = true;
+    constrained   = true;
+    QWidget::setFixedSize(sz);
+    QLayout::SizeConstraint sc = this->layout()->sizeConstraint();
+    qInfo() << sc;
+    emit sig_testSize();
+}
+
+void SystemView::setSize(QSize sz)
+{
+    qDebug() << "SystemView::setSize" << sz;
+
+    if (Sys::config->integratedScreen)
+    {
+        setFixedSize(sz);
+        return;
+    }
+
+    sz = targetSize(sz);
 
     if (constrained)
     {
@@ -778,8 +795,7 @@ void SystemView::setSize(QSize sz)
         this->layout()->setSizeConstraint(QLayout::SetDefaultConstraint);
     }
 
-    //qDebug() << "SystemView::setSize" << sz;
-    requestedSize = sz;
+    awaitingSizeConfirm = true;
     QWidget::resize(sz);
 
     emit sig_testSize();
@@ -787,54 +803,55 @@ void SystemView::setSize(QSize sz)
 
 void SystemView::testSize()
 {
+    // this is only ever invoked off setSize()/setFixedSize()'s own emit, so it always
+    // concerns a request we just made - independent of awaitingSizeConfirm, which
+    // resizeEvent() owns and disarms as soon as the window system answers
     static bool primed = false;
 
-    if (!requestedSize.isValid())
-        return;
-
+    QSize target = targetSize(parent->getTaker()->getSize());
     QSize sz = size();
-    if (sz == requestedSize)
-    {
-        requestedSize = QSize();
-        //qDebug() << "Size OK";
-    }
-    else if (primed == false)
-    {
-        qDebug() << "setting fixed size to" << requestedSize;
-        primed = true;
-        setFixedSize(requestedSize);
-    }
-    else
+    if (sz == target)
     {
         primed = false;
-        //qDebug() << "size" << sz << "requested" << requestedSize;
-        QString astring;
-        QDebug ts(&astring);
-        ts << "Requested size" << requestedSize << "Actual size" << sz;
+        //qDebug() << "Size OK";
+        return;
+    }
 
-        requestedSize = QSize();
+    if (primed == false)
+    {
+        // give the window system one more event-loop tick to settle before
+        // deciding it can't honor the requested size - don't force setFixedSize()
+        // here, that strips the resize handles and can make some window managers
+        // relocate the window to a screen it thinks can fit it
+        primed = true;
+        emit sig_testSize();
+        return;
+    }
 
-        if (!Sys::config->disableResizeNotify)
-        {
-            emit sig_messageBox("View has been resized",astring);
-        }
+    primed = false;
+    //qDebug() << "size" << sz << "requested" << target;
+    QString astring;
+    QDebug ts(&astring);
+    ts << "Requested size" << target << "Actual size" << sz;
+
+    if (!Sys::config->disableResizeNotify)
+    {
+        emit sig_messageBox("View has been resized",astring,QMessageBox::Information,false);
     }
 }
 
-void SystemView::flash(QColor color)
+QSize SystemView::enforceAspectRatio(QSize s)
 {
-    // flash new color
-    setBackgroundColor(color);
-    QWidget::repaint();
+    double w = s.width();
+    double h = s.height();
 
-    // wait
-    QThread::msleep(350);
+    double targetH = w / Sys::aspectRatio;
+    double targetW = h * Sys::aspectRatio;
 
-    // restore color
-    auto viewControl = Sys::viewController;
-    color = viewControl->getCanvas().getBkgdColor();
-    setBackgroundColor(color);
-    QWidget::repaint();
+    if (targetH <= h)
+        return QSize(int(w), int(targetH));
+    else
+        return QSize(int(targetW), int(h));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -867,12 +884,12 @@ void ActiveLayers::unloadContent()
     }
 }
 
-bool ActiveLayers::contains(eViewType type)
+bool ActiveLayers::contains(Layer::Type type)
 {
     for (const WeakLayerPtr & wlayer : std::as_const(layers))
     {
         auto layer = wlayer.lock();
-        if (layer && layer->viewType() == type)
+        if (layer && layer->type() == type)
         {
             return true;
         }
@@ -880,12 +897,12 @@ bool ActiveLayers::contains(eViewType type)
     return false;
 }
 
-Layer * ActiveLayers::get(eViewType type)
+Layer * ActiveLayers::get(Layer::Type type)
 {
     for (const WeakLayerPtr & wlayer: std::as_const(layers))
     {
         auto layer = wlayer.lock();
-        if (layer && layer->viewType() == type)
+        if (layer && layer->type() == type)
         {
             return layer.get();
         }
@@ -907,12 +924,14 @@ const  QVector<Layer*> ActiveLayers::get()
     return vec;
 }
 
-void ActiveLayers::paint(QPainter * painter, CropPtr painterCrop)
+void ActiveLayers::paint(QPainter * painter)
 {
-    QVector<Layer *> layers2 = get();
-    std::stable_sort(layers2.begin(),layers2.end(),Layer::sortByZlevelP);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
+    QVector<Layer *> layers = get();
+    std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevelP);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
 
-    for (Layer * layer : std::as_const(layers2))
+    auto crop = painterCrop.lock();
+
+    for (Layer * layer : std::as_const(layers))
     {
         if (layer->isVisible())
         {
@@ -921,10 +940,13 @@ void ActiveLayers::paint(QPainter * painter, CropPtr painterCrop)
 
             painter->save();
 
-            if (layer->isClipable() && painterCrop)
+            if (crop && layer->isClipable())
             {
-                painterCrop->clipPainter(painter,layer->getLayerTransform());
+                // only style layers are clipable but borders are not
+                crop->clipPainter(painter,layer->getUndistortedLayerTransform());
             }
+
+            painter->setOpacity(layer->getOpacity());
 
             layer->paint(painter);
 
@@ -932,3 +954,4 @@ void ActiveLayers::paint(QPainter * painter, CropPtr painterCrop)
         }
     }
 }
+

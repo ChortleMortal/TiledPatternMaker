@@ -1,4 +1,5 @@
 #include <QPainter>
+#include "gui/top/view_controller.h"
 #include "gui/viewers/debug_view.h"
 #include "gui/viewers/geo_graphics.h"
 #include "sys/geometry/debug_map.h"
@@ -179,7 +180,9 @@ void DebugMap::paint(QPainter * painter, QTransform & tr)
 
 void DebugMap::insertDebugMark(QPointF m, QString txt, QColor color, bool screenPts)
 {
-    if (!Sys::viewController->isEnabled(VIEW_DEBUG))
+    if (!Sys::isGuiThread())
+        return;
+    if (!Sys::systemViewController->isEnabled(Layer::Type::DebugLayer))
         return;
 
     for (auto & mark : marks)
@@ -200,7 +203,9 @@ void DebugMap::insertDebugMark(QPointF m, QString txt, QColor color, bool screen
 
 void DebugMap::insertDebugPoint(QPointF pt, QColor color)
 {
-    if (!Sys::viewController->isEnabled(VIEW_DEBUG))
+    if (!Sys::isGuiThread())
+        return;
+    if (!Sys::systemViewController->isEnabled(Layer::Type::DebugLayer))
         return;
 
     sDebugPoint sdp;
@@ -216,7 +221,9 @@ void DebugMap::insertDebugLine(QPointF p1, QPointF p2, QColor color, int width)
 
 void DebugMap::insertDebugLine(QLineF l1, QColor color, int width)
 {
-    if (!Sys::viewController->isEnabled(VIEW_DEBUG))
+    if (!Sys::isGuiThread())
+        return;
+    if (!Sys::systemViewController->isEnabled(Layer::Type::DebugLayer))
         return;
 
     sDebugLine sdl;
@@ -228,7 +235,9 @@ void DebugMap::insertDebugLine(QLineF l1, QColor color, int width)
 
 void DebugMap::insertDebugEdge(EdgePtr edge, QColor lineColor, QColor pointColor, bool outer)
 {
-    if (!Sys::viewController->isEnabled(VIEW_DEBUG))
+    if (!Sys::isGuiThread())
+        return;
+    if (!Sys::systemViewController->isEnabled(Layer::Type::DebugLayer))
         return;
 
     if (edge->getType() == EDGETYPE_CURVE)
@@ -257,6 +266,9 @@ void DebugMap::insertDebugEdge(EdgePtr edge, QColor lineColor, QColor pointColor
 
 void DebugMap::insertDebugCircle(QPointF mpt, QColor color, qreal radius)
 {
+    if (!Sys::isGuiThread())
+        return;
+
     cDebugCircle c;
     c.m_pt     = mpt;
     c.color    = color;
@@ -266,6 +278,9 @@ void DebugMap::insertDebugCircle(QPointF mpt, QColor color, qreal radius)
 
 void DebugMap::insertDebugCurve(QPointF mp1, QPointF mp2, eCurveType ctype, QPointF mArcCenter, QColor color, bool outer)
 {
+    if (!Sys::isGuiThread())
+        return;
+
     sDebugCurve c;
     c.color   = color;
     c.pt1     = mp1;
@@ -304,6 +319,9 @@ QList<int> DebugMap::numInfo() const
 
 void DebugMap::wipeout()
 {
+    if (!Sys::isGuiThread())
+        return;
+
     marks.clear();
     circles.clear();
     curves.clear();

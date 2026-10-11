@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Jun 26 2026 21:11:01 -->
+<Tiling version="13">
+	<Name>8-standard</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>0,0</T0>
+	<T1>-2.775557561562891e-16,-2.000000000000001</T1>
+	<T2>2.000000000000001,-4.996003610813204e-16</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>0.4142135623730951</scale>
+			<rot>45.00000000000001</rot>
+			<tranX>1.000000000000001</tranX>
+			<tranY>0.9999999999999997</tranY>
+		</Placement>
+	</Tile>
+	<Desc>Octagons in contact</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

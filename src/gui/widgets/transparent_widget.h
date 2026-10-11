@@ -1,6 +1,4 @@
 #pragma once
-#ifndef TRANSPARENT_WIDGET_H
-#define TRANSPARENT_WIDGET_H
 
 #include "gui/widgets/image_widget.h"
 
@@ -28,5 +26,3 @@ private:
     bool    dragging;
     bool    onTop;
 };
-
-#endif // TRANSPARENTWIDGET_H

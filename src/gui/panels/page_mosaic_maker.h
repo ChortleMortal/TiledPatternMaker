@@ -1,11 +1,13 @@
 #pragma once
-#ifndef PAGE_MOSAIC_MAKER_H
-#define PAGE_MOSAIC_MAKER_H
 
 #include <QItemSelection>
+#include <QCheckBox>
+#include <QGroupBox>
+#include <QPushButton>
 #include "gui/panels/panel_page.h"
 
 class AQTableWidget;
+class AQComboBox;
 class SpinSet;
 class DoubleSpinSet;
 
@@ -24,7 +26,7 @@ class page_mosaic_maker : public panel_page
         STYLE_COL_TILING,
         STYLE_COL_STYLE_TYPE,
         STYLE_COL_LAYER_CONTROL,
-        STYLE_COL_TRANSFORM,
+        STYLE_COL_INFO,
         STYLE_COL_STYLE_ADDR,
         STYLE_COL_NUM_COLS
     };
@@ -48,11 +50,16 @@ private slots:
     void    singleton_changed(bool checked);
 
     void    slot_noaddr(bool checked);
-    void    slot_notrans(bool checked);
     void    slot_nolayer(bool checked);
 
+    void    slot_gotoBackgrounds();
+    void    slot_gotoCropMaker();
+    void    slot_gotoBorderMaker();
+
+    void    slot_showMosaicCrop(bool checked);
+    void    slot_showPainterCrop(bool checked);
+
 protected:
-    QHBoxLayout *createBackgroundInfo();
     QHBoxLayout *buildDistortionsLayout();
 
     void     styleChanged(int row);
@@ -62,21 +69,26 @@ protected:
     void     reEnter();
     void     displayStyles();
     void     displayStyleParams();
+    QPushButton * addInfoRow(int row, QString label, QString info, QString address);
 
     StylePtr getStyleRow(int row);
-    StylePtr getStyleIndex(int index);
+    QString  getRowLabel(int row);
+
+    void     updateStyleButtons(int row);
 
     ProtoPtr getCurrentPrototype();
 
     QHBoxLayout *createFillDataRow();
 
     void     setDistortion();
-    void     enbDistortion(bool checked);
 
 
 private:
     QWidget       * lowerWidget;
     StyleEditor   * currentEditor;
+
+    QGroupBox     * componentsBox;
+    QGroupBox     * styleEditorBox;
 
     AQTableWidget * styleTable;
 
@@ -87,7 +99,6 @@ private:
 
     QCheckBox  * chkSingle;
     QCheckBox  * chk_noaddr;
-    QCheckBox  * chk_notrans;
     QCheckBox  * chk_nolayer;
 
     SpinSet    * xRepMin;
@@ -96,14 +107,16 @@ private:
     SpinSet    * yRepMax;
 
     QPushButton * pbClean;
-    QLabel      * cleanseStatus;
 
-    QPushButton * pbExam;
-
-    QCheckBox     * chkDistort;
+    AQComboBox    * distortCombo;
     DoubleSpinSet * xBox;
     DoubleSpinSet * yBox;
 
-};
+    // set by displayStyles() only when the corresponding info row exists; resynced by onRefresh()
+    // since each also has a twin checkbox elsewhere (Crop Maker page, Backgrounds page / LHS panel)
+    // that can change the same underlying state
+    QCheckBox     * cbShowBkgd        = nullptr;
+    QCheckBox     * cbShowCrop        = nullptr;
+    QCheckBox     * cbShowPainterCrop = nullptr;
 
-#endif
+};

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef ARCDATA_H
-#define ARCDATA_H
 
 #include <QPointF>
 #include <QLineF>
@@ -19,6 +17,7 @@ class ArcData
 public:
     ArcData();
     ArcData(QLineF line, QPointF center, eCurveType ctype);
+    ArcData(const ArcData & other);
 
     ArcData & operator=(const ArcData & other);
 
@@ -65,5 +64,3 @@ private:
     QPointF    _convexCenter;       // inside the polygon
     QPointF    _concaveCenter;      // outside the polygon
 };
-
-#endif // ARCDATA_H

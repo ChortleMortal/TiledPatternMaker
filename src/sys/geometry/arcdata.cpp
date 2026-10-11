@@ -18,6 +18,18 @@ ArcData::ArcData(QLineF line, QPointF center, eCurveType ctype)
     create(center);
 
 }
+
+ArcData::ArcData(const ArcData & other)
+{
+    _line           = other._line;
+    _curveType      = other._curveType;
+    _convexCenter   = other._convexCenter;
+    _concaveCenter  = other._concaveCenter;
+    _magnitude      = other._magnitude;
+
+    create();
+}
+
 ArcData & ArcData::operator=(const ArcData & other)
 {
     _line           = other._line;
@@ -279,7 +291,7 @@ bool ArcData::pointWithinArc(QPointF pt)
         else
         {
             // wraparound condition
-            if (angle > _start && angle <= 300)
+            if (angle > _start && angle <= 360)
             {
                 //qInfo() << "concave wraparound HIT 2" << start << end << angle;
                 return true;

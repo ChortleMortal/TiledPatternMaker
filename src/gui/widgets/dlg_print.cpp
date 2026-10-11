@@ -1,8 +1,8 @@
 #include <QTimer>
 #include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/dlg_print.h"
 #include "sys/sys.h"
-
 
 DlgPrint::DlgPrint(QPrinter * printer, QWidget * widgetToPrint) : QPrintPreviewDialog(printer, widgetToPrint)
 {
@@ -10,7 +10,7 @@ DlgPrint::DlgPrint(QPrinter * printer, QWidget * widgetToPrint) : QPrintPreviewD
     setFixedSize(700,800);
     move(0,0);
 
-    connect(this, &QPrintPreviewDialog::paintRequested,  this, [](QPrinter * printer) {Sys::sysview->render(printer);} );
+    connect(this, &QPrintPreviewDialog::paintRequested, this, [](QPrinter * printer) {Sys::systemViewController->getView()->render(printer);} );
 
     previewWidget = findChild<QPrintPreviewWidget*>();
     if (previewWidget)

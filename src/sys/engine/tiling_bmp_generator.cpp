@@ -4,12 +4,11 @@
 
 #include "sys/engine/tiling_bmp_generator.h"
 #include "model/tilings/tiling.h"
-#include "model/tilings/tiling_manager.h"
 #include "model/tilings/tiling_reader.h"
 #include "model/mosaics/mosaic_reader.h"
 #include "model/tilings/tiling_writer.h"
 #include "sys/sys/fileservices.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 
 /*
  * Thwe Engine runs in its own thread and so must not make any calls
@@ -20,7 +19,7 @@
 TilingBMPGenerator::TilingBMPGenerator()
 {
     // using this local ViewBontroller makes the engine thread-safe
-    bmpViewController = new SystemViewController;
+    bmpViewController = new ViewController;
     bmpViewController->disableAllViews();
 }
 
@@ -36,7 +35,7 @@ bool TilingBMPGenerator::saveBitmap(VersionedName vname, QString pixmapPath)
     TilingPtr tp = loadTiling(vname);
     if (tp)
     {
-        QSize sz = tp->hdr().getCanvasSettings().getViewSize();
+        QSize sz = tp->hdr().getTilingCanvas()->getViewSize();
         QImage image(sz,QImage::Format_RGB32);
         image.fill(Qt::white);
         buildImage(tp,image);
@@ -95,11 +94,7 @@ TilingPtr TilingBMPGenerator::loadTiling(VersionedName name)
     
     tiling->setVName(name);
 
-    // size view to mosaic
-    Canvas  & canvas = bmpViewController->getCanvas();
-    const CanvasSettings & cs  = tiling->hdr().getCanvasSettings();
-    canvas.setCanvasSize(cs.getCanvasSize());
-
+    bmpViewController->setCanvas(tiling->hdr().getTilingCanvas());
     bmpViewController->setSelectedPrimaryLayer(tiling);
 
     return tiling;
@@ -120,7 +115,7 @@ void TilingBMPGenerator::savePixmap(QImage &image, VersionedName name, QString p
 {
     QPixmap pixmap;
     pixmap.convertFromImage(image);
-    QString file   = pixmapPath + "/" + name.get() + ".bmp";
+    QString file   = pixmapPath + "/" + name.get() + ".png";
     qInfo() << "saving" << file;
 
     bool rv = pixmap.save(file);

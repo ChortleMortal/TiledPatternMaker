@@ -1,5 +1,4 @@
-#ifndef TILING_BMP_GENERATOR_H
-#define TILING_BMP_GENERATOR_H
+#pragma once
 
 #include <QImage>
 #include <QList>
@@ -22,7 +21,5 @@ protected:
     void        buildImage(TilingPtr &mp, QImage &image);
 
 private:
-    class SystemViewController * bmpViewController;
+    class ViewController * bmpViewController;
 };
-
-#endif

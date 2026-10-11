@@ -1,19 +1,20 @@
 #pragma once
-#ifndef VIEW_H
-#define VIEW_H
 
+#include <QMessageBox>
 #include <QWidget>
 #include <QElapsedTimer>
 
-#include "sys/enums/eviewtype.h"
+#include "gui/viewers/layer.h"
 #include "sys/geometry/crop.h"
-#include "gui/top/system_view_controller.h"
 
-typedef std::shared_ptr<class Layer> LayerPtr;
-typedef std::weak_ptr<class Layer>   WeakLayerPtr;
-typedef std::weak_ptr<Crop>          WeakCropPtr;
+class Canvas;
+typedef std::shared_ptr<class Layer>  LayerPtr;
+typedef std::weak_ptr<class Layer>    WeakLayerPtr;
+typedef std::weak_ptr<Crop>           WeakCropPtr;
 
-class SystemViewController;
+class ViewController;
+class SystemView;
+class SplashScreen;
 
 #define NO_CHANGE       0x0
 #define TOP_CHANGED     0x1
@@ -24,36 +25,39 @@ class SystemViewController;
 class ActiveLayers
 {
 public:
-    void    paint(QPainter * painter, CropPtr paineterCrop);
+    void    paint(QPainter * painter);
 
     void    add(LayerPtr layer);
     void    clear();
     void    unloadContent();
-    bool    contains(eViewType type);
-    Layer * get(eViewType type);
+    bool    contains(Layer::Type type);
+    Layer * get(Layer::Type type);
     int     size() { return layers.count(); }
 
     const QVector<Layer *> get();
+    void  setPainterCrop(CropPtr crop)   { painterCrop = crop; }
 
 private:
     QVector<WeakLayerPtr> layers;
+    WeakCropPtr           painterCrop;
 };
 
 
 class SystemView : public QWidget
 {
     Q_OBJECT
-    
-    friend SystemViewAccessor;
-    friend SystemViewController;
+
+    friend class ViewAccessor;
+    friend class SplashScreen;
+    friend class Taker;
 
 public:
     SystemView();
     ~SystemView() override;
     
-    void    init(SystemViewController * parent);
+    void init(ViewController * parent);
 
-    void    flash(QColor color); // called by tiling editor (gui thread)
+    static QSize enforceAspectRatio(QSize sz);
 
 signals:
     void sig_close();
@@ -82,6 +86,7 @@ signals:
     void sig_stepperEnd();
     void sig_stepperPause();
     void sig_stepperKey(int key);
+    void sig_cycleLayers();
 
     void sig_saveImage();
     void sig_saveMenu();
@@ -90,40 +95,39 @@ signals:
 
     void sig_loadComplete();
 
-    void sig_messageBox(QString msg, QString msg2);
+    void sig_messageBox(QString msg, QString info, QMessageBox::Icon icon, bool modal);
+
+    void sig_prepare();
+    void sig_enlarge(uint sigid, Xform xf);
+    void sig_restore(uint sigid);
 
 public slots:
     void    testSize();
 
 protected:
-    // called by system controller - these are not threaad safe
+    // setters - called by view accessor - these are not threaad safe
+    void    setSize(QSize sz);
+    void    setPainterCrop(CropPtr crop)    { activeLayers.setPainterCrop(crop); }
+    void    setWindowTitle(const QString & s);
+
     void    addLayer(LayerPtr layer)        { activeLayers.add(layer); }
     void    unloadLayerContent()            { activeLayers.unloadContent(); }
-    bool    isActiveLayer(eViewType type)   { return activeLayers.contains(type); }
-    Layer * getActiveLayer(eViewType type)  { return activeLayers.get(type); }
-    const QVector<Layer*> getActiveLayers() { return activeLayers.get(); }
+    void    unloadViewers();
 
     void    appSuspendPaint(bool suspend);
     void    setPaintDisable(bool disable);  // calls viewSuspendPaint
-    bool    viewCanPaint();
     void    debugSuspendPaint(bool suspend);
-    bool    splashCanPaint();
     void    viewSuspendPaint(bool suspend);
-
-    QColor  getBackgroundColor();
-    void    setBackgroundColor(QColor color);
 
     void    updateView()                            { QWidget::update(); }
     void    repaintView()                           { QWidget::repaint(); }
     void    repaint()                               { qFatal("Dont call repaint() directly - use repaintView()"); }
-    void    unloadViewers();
-    void    raiseView();
+    void    raise()                                 { QWidget::raise(); }
 
-    void    setFixedSize(QSize sz);
-    void    setSize(QSize sz);
-
-    void    setPainterCrop(CropPtr crop)            { _painterCrop = crop; }
-    CropPtr getPainterCrop()                        { return _painterCrop.lock(); }
+    void    move(const QPoint & pt)                 { QWidget::move(pt); }
+    void    setWindowState(Qt::WindowStates ws)     { QWidget::setWindowState(ws); }
+    void    show()                                  { QWidget::show(); }
+    void    activateWindow()                        { QWidget::activateWindow(); }
 
     void    clearLayout(); // only used by cycler for pngs
     void    clearLayout(QLayout* layout, bool deleteWidgets = true);
@@ -131,26 +135,30 @@ protected:
 
     void    processLoadState(class LoadUnit * loadUnit);
 
-    void    setWindowTitle(const QString & s);
-    QPoint  mapToGlobal(const QPoint & pt) const    { return QWidget::mapToGlobal(pt); }
+    void    resize(QSize sz)                        { Q_UNUSED(sz); qFatal("Dont call resize() directly - use setSize()"); }
+    void    duplicateView();
+
+    // geters
+
+    bool    isActiveLayer(Layer::Type type)         { return activeLayers.contains(type); }
+    Layer * getActiveLayer(Layer::Type type)        { return activeLayers.get(type); }
+    const QVector<Layer*> getActiveLayers()         { return activeLayers.get(); }
+
+    bool    viewCanPaint();
+
     QRect   rect()                                  { return QWidget::rect();}
-    void    show()                                  { QWidget::show(); }
-    void    raise()                                 { QWidget::raise(); }
     qreal   width()                                 { return QWidget::width(); }
     qreal   height()                                { return QWidget::height(); }
     QSize   size()                                  { return QWidget::size(); }
-    void    resize(QSize sz)                        { Q_UNUSED(sz); qFatal("Dont call resize() directly - use setSize()"); }
+    QPoint  mapToGlobal(const QPoint & pt) const    { return QWidget::mapToGlobal(pt); }
+    QColor  getWidgetBackground()                   { return palette().color(QPalette::Window); }
 
     QPixmap grab()                                  { return QWidget::grab(); }
     QLayout *  layout()                             { return QWidget::layout(); }
-    void    move(const QPoint & pt)                 { QWidget::move(pt); }
-    void    setWindowState(Qt::WindowStates ws)     { QWidget::setWindowState(ws); }
     Qt::WindowStates windowState()                  { return QWidget::windowState(); }
-    void    activateWindow()                        { QWidget::activateWindow(); }
     QWindow * windowHandle()                        { return QWidget::windowHandle(); }
 
-
-    void    duplicateView();        // FIXME move and better hookup
+    // event handlers
 
     void paintEvent(QPaintEvent *event) override;
     void showEvent(QShowEvent * event) override;
@@ -175,10 +183,14 @@ protected:
     void procKeyUp(   int delta);
 
 private:
-    SystemViewController * parent;
+    void    setFixedSize(QSize sz);
+    void    setWidgetBackground(QColor color);
+    QSize   targetSize(QSize sz) const;
+
+    ViewController * parent;
+    SplashScreen   * splasher;
 
     ActiveLayers    activeLayers;
-    WeakCropPtr     _painterCrop;   // used for painter clipping
 
     uint        _suspendPaintApp;
     uint        _suspendPaintDebug;
@@ -189,9 +201,7 @@ private:
     QPointF     sLast;              // used by pan
     bool        isShown;
     bool        dragging;
-    QColor      backgroundColor;
-    QSize       requestedSize;
+    bool        awaitingSizeConfirm; // waiting for the window system to confirm/reject our last requested size
     bool        constrained;        // constrained to fixed size
+    bool        adjustingAspectRatio;
 };
-
-#endif // VIEW_H

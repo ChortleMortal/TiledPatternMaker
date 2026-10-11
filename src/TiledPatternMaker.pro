@@ -2,7 +2,7 @@ QT += core gui widgets svg concurrent printsupport
 TEMPLATE = app
 CONFIG += c++20
 
-DEFINES += QT_DEPRECATED_WARNINGS
+DEFINES += QT_NO_DEPRECATED_WARNINGS
 
 msvc:QMAKE_LFLAGS_WINDOWS += /ignore:4099
 win32:RC_ICONS += dac1.ico
@@ -13,21 +13,26 @@ win32:QMAKE_LFLAGS += /STACK:32000000
 SOURCES += \
     gui/map_editor/map_editor.cpp \
     gui/map_editor/map_editor_db.cpp \
+    gui/map_editor/map_editor_layer.cpp \
     gui/map_editor/map_editor_map_loader.cpp \
     gui/map_editor/map_editor_map_writer.cpp \
+    gui/map_editor/map_editor_maps.cpp \
     gui/map_editor/map_editor_mouseactions.cpp \
     gui/map_editor/map_editor_selection.cpp \
     gui/map_editor/map_editor_stash.cpp \
     gui/map_editor/map_selection.cpp \
     gui/model_editors/border_edit/mouse_edit_border.cpp \
     gui/model_editors/crop_edit/mouse_edit_crop.cpp \
-    gui/model_editors/motif_edit/design_element_button.cpp \
-    gui/model_editors/motif_edit/design_element_selector.cpp \
-    gui/model_editors/motif_edit/irregular_motif_editors.cpp \
+    gui/model_editors/motif_edit/adaptive_motif_editors.cpp \
+    gui/model_editors/motif_edit/extender_editor.cpp \
+    gui/model_editors/motif_edit/lower_third_editor.cpp \
+    gui/model_editors/motif_edit/motif_editor.cpp \
     gui/model_editors/motif_edit/motif_editor_widget.cpp \
-    gui/model_editors/motif_edit/motif_editors.cpp \
     gui/model_editors/motif_edit/motif_maker_widget.cpp \
-    gui/model_editors/motif_edit/regular_motif_editors.cpp \
+    gui/model_editors/motif_edit/motif_type_selector.cpp \
+    gui/model_editors/motif_edit/radial_motif_editors.cpp \
+    gui/model_editors/motif_edit/tile_motif_button.cpp \
+    gui/model_editors/style_edit/border_editor.cpp \
     gui/model_editors/style_edit/colored_editor.cpp \
     gui/model_editors/style_edit/emboss_editor.cpp \
     gui/model_editors/style_edit/fill_editor.cpp \
@@ -44,16 +49,17 @@ SOURCES += \
     gui/model_editors/tiling_edit/tiling_mouseactions.cpp \
     gui/panels/page_backgrounds.cpp \
     gui/panels/page_borders.cpp \
+    gui/panels/page_canvas_settings.cpp \
     gui/panels/page_crop_maker.cpp \
     gui/panels/page_debug.cpp \
     gui/panels/page_grid.cpp \
     gui/panels/page_image_tools.cpp \
     gui/panels/page_layer_alignmentl.cpp \
     gui/panels/page_layers.cpp \
+    gui/panels/page_layers_tabs.cpp \
     gui/panels/page_loaders.cpp \
     gui/panels/page_log.cpp \
     gui/panels/page_map_editor.cpp \
-    gui/panels/page_modelSettings.cpp \
     gui/panels/page_mosaic_info.cpp \
     gui/panels/page_mosaic_maker.cpp \
     gui/panels/page_motif_maker.cpp \
@@ -73,9 +79,10 @@ SOURCES += \
     gui/top/controlpanel.cpp \
     gui/top/splash_screen.cpp \
     gui/top/split_screen.cpp \
-    gui/top/system_view_accessor.cpp \
     gui/top/system_view.cpp \
-    gui/top/system_view_controller.cpp \
+    gui/top/view_accessor.cpp \
+    gui/top/view_controller.cpp \
+    gui/viewers/construction_lines_view.cpp \
     gui/viewers/crop_maker_view.cpp \
     gui/viewers/debug_view.cpp \
     gui/viewers/geo_graphics.cpp \
@@ -103,7 +110,9 @@ SOURCES += \
     gui/widgets/dlg_print.cpp \
     gui/widgets/dlg_rebase.cpp \
     gui/widgets/dlg_rename.cpp \
+    gui/widgets/dlg_rosette_tips.cpp \
     gui/widgets/dlg_savename.cpp \
+    gui/widgets/dlg_saveversion.cpp \
     gui/widgets/dlg_textedit.cpp \
     gui/widgets/dlg_trim.cpp \
     gui/widgets/dlg_wlist_create.cpp \
@@ -116,10 +125,10 @@ SOURCES += \
     gui/widgets/memory_combo.cpp \
     gui/widgets/mouse_mode_widget.cpp \
     gui/widgets/panel_misc.cpp \
+    gui/widgets/position_widget.cpp \
     gui/widgets/smx_widget.cpp \
     gui/widgets/rounded_polygon.cpp \
     gui/widgets/transparent_widget.cpp \
-    gui/widgets/version_dialog.cpp \
     gui/widgets/versioned_list_widget.cpp \
     gui/widgets/worklist_widget.cpp \
     legacy/design.cpp \
@@ -136,43 +145,44 @@ SOURCES += \
     model/borders/border_plain.cpp \
     model/makers/crop_maker.cpp \
     model/makers/mosaic_maker.cpp \
-    model/makers/prototype_maker.cpp \
-    model/makers/prototype_maker_data.cpp \
+    model/makers/motif_maker.cpp \
+    model/makers/motif_view_data.cpp \
+    model/makers/proto_view_data.cpp \
     model/makers/tiling_maker.cpp \
     model/mosaics/legacy_loader.cpp \
     model/mosaics/mosaic.cpp \
-    model/mosaics/mosaic_manager.cpp \
     model/mosaics/mosaic_reader.cpp \
     model/mosaics/mosaic_writer.cpp \
     model/mosaics/reader_base.cpp \
     model/mosaics/writer_base.cpp \
+    model/motifs/adaptive_extender.cpp \
+    model/motifs/adaptive_girih.cpp \
+    model/motifs/adaptive_girih_branches.cpp \
+    model/motifs/adaptive_hourglass.cpp \
+    model/motifs/adaptive_inference.cpp \
+    model/motifs/adaptive_intersect.cpp \
+    model/motifs/adaptive_motif.cpp \
+    model/motifs/adaptive_rosette.cpp \
+    model/motifs/adaptive_star.cpp \
+    model/motifs/adaptive_star_branches.cpp \
+    model/motifs/adaptive_tile.cpp \
+    model/motifs/adaptive_tools.cpp \
     model/motifs/explicit_map_motif.cpp \
     model/motifs/extended_boundary.cpp \
     model/motifs/extender.cpp \
-    model/motifs/girih_motif.cpp \
-    model/motifs/hourglass_motif.cpp \
-    model/motifs/inferred_motif.cpp \
-    model/motifs/intersect_motif.cpp \
-    model/motifs/irregular_girih_branches.cpp \
-    model/motifs/irregular_motif.cpp \
-    model/motifs/irregular_rosette.cpp \
-    model/motifs/irregular_star.cpp \
-    model/motifs/irregular_star_branches.cpp \
-    model/motifs/irregular_tools.cpp \
     model/motifs/motif.cpp \
-    model/motifs/motif_connector.cpp \
+    model/motifs/radial_extender.cpp \
     model/motifs/radial_motif.cpp \
     model/motifs/radial_ray.cpp \
     model/motifs/rosette.cpp \
     model/motifs/rosette2.cpp \
     model/motifs/star.cpp \
     model/motifs/star2.cpp \
-    model/motifs/tile_motif.cpp \
-    model/prototypes/design_element.cpp \
     model/prototypes/prototype.cpp \
+    model/prototypes/tile_motif.cpp \
     model/settings/canvas.cpp \
-    model/settings/canvas_settings.cpp \
     model/settings/configuration.cpp \
+    model/settings/distortion.cpp \
     model/settings/filldata.cpp \
     model/settings/worklist.cpp \
     model/styles/casing.cpp \
@@ -208,12 +218,12 @@ SOURCES += \
     model/tilings/tile_writer.cpp \
     model/tilings/tiling.cpp \
     model/tilings/tiling_header.cpp \
-    model/tilings/tiling_manager.cpp \
     model/tilings/tiling_reader.cpp \
     model/tilings/tiling_unit.cpp \
     model/tilings/tiling_writer.cpp \
     sys/engine/compare_bmp_engine.cpp \
     sys/engine/compare_bmp_stepper.cpp \
+    sys/engine/convert_bmp_engine.cpp \
     sys/engine/image_engine.cpp \
     sys/engine/mosaic_bmp_generator.cpp \
     sys/engine/mosaic_stepper.cpp \
@@ -224,18 +234,12 @@ SOURCES += \
     sys/engine/tiling_stepper.cpp \
     sys/engine/version_stepper.cpp \
     sys/engine/view_bmp_stepper.cpp \
-    sys/enums/ebkgdimage.cpp \
     sys/enums/eborder.cpp \
     sys/enums/edesign.cpp \
     sys/enums/edgetype.cpp \
     sys/enums/efillmode.cpp \
     sys/enums/efilltype.cpp \
-    sys/enums/emapeditor.cpp \
-    sys/enums/emotiftype.cpp \
     sys/enums/epanelpage.cpp \
-    sys/enums/estatemachineevent.cpp \
-    sys/enums/etilingmaker.cpp \
-    sys/enums/eviewtype.cpp \
     sys/geometry/arcdata.cpp \
     sys/geometry/bounds.cpp \
     sys/geometry/circle.cpp \
@@ -276,21 +280,26 @@ SOURCES += \
 HEADERS += \
     gui/map_editor/map_editor.h \
     gui/map_editor/map_editor_db.h \
+    gui/map_editor/map_editor_layer.h \
     gui/map_editor/map_editor_map_loader.h \
     gui/map_editor/map_editor_map_writer.h \
+    gui/map_editor/map_editor_maps.h \
     gui/map_editor/map_editor_mouseactions.h \
     gui/map_editor/map_editor_selection.h \
     gui/map_editor/map_editor_stash.h \
     gui/map_editor/map_selection.h \
     gui/model_editors/border_edit/mouse_edit_border.h \
     gui/model_editors/crop_edit/mouse_edit_crop.h \
-    gui/model_editors/motif_edit/design_element_button.h \
-    gui/model_editors/motif_edit/design_element_selector.h \
-    gui/model_editors/motif_edit/irregular_motif_editors.h \
+    gui/model_editors/motif_edit/adaptive_motif_editors.h \
+    gui/model_editors/motif_edit/extender_editor.h \
+    gui/model_editors/motif_edit/lower_third_editor.h \
+    gui/model_editors/motif_edit/motif_editor.h \
     gui/model_editors/motif_edit/motif_editor_widget.h \
-    gui/model_editors/motif_edit/motif_editors.h \
     gui/model_editors/motif_edit/motif_maker_widget.h \
-    gui/model_editors/motif_edit/regular_motif_editors.h \
+    gui/model_editors/motif_edit/motif_type_selector.h \
+    gui/model_editors/motif_edit/radial_motif_editors.h \
+    gui/model_editors/motif_edit/tile_motif_button.h \
+    gui/model_editors/style_edit/border_editor.h \
     gui/model_editors/style_edit/colored_editor.h \
     gui/model_editors/style_edit/emboss_editor.h \
     gui/model_editors/style_edit/fill_editor.h \
@@ -307,16 +316,17 @@ HEADERS += \
     gui/model_editors/tiling_edit/tiling_mouseactions.h \
     gui/panels/page_backgrounds.h \
     gui/panels/page_borders.h \
+    gui/panels/page_canvas_settings.h \
     gui/panels/page_crop_maker.h \
     gui/panels/page_debug.h \
     gui/panels/page_grid.h \
     gui/panels/page_image_tools.h \
     gui/panels/page_layer_alignmentl.h \
     gui/panels/page_layers.h \
+    gui/panels/page_layers_tabs.h \
     gui/panels/page_loaders.h \
     gui/panels/page_log.h \
     gui/panels/page_map_editor.h \
-    gui/panels/page_modelSettings.h \
     gui/panels/page_mosaic_info.h \
     gui/panels/page_mosaic_maker.h \
     gui/panels/page_motif_maker.h \
@@ -334,11 +344,12 @@ HEADERS += \
     gui/panels/panel_worker.h \
     gui/panels/shortcuts.h \
     gui/top/controlpanel.h \
-    gui/top/split_screen.h \
     gui/top/splash_screen.h \
-    gui/top/system_view_accessor.h \
+    gui/top/split_screen.h \
     gui/top/system_view.h \
-    gui/top/system_view_controller.h \
+    gui/top/view_accessor.h \
+    gui/top/view_controller.h \
+    gui/viewers/construction_lines_view.h \
     gui/viewers/crop_maker_view.h \
     gui/viewers/debug_view.h \
     gui/viewers/geo_graphics.h \
@@ -366,7 +377,9 @@ HEADERS += \
     gui/widgets/dlg_push_select.h \
     gui/widgets/dlg_rebase.h \
     gui/widgets/dlg_rename.h \
+    gui/widgets/dlg_rosette_tips.h \
     gui/widgets/dlg_savename.h \
+    gui/widgets/dlg_saveversion.h \
     gui/widgets/dlg_textedit.h \
     gui/widgets/dlg_trim.h \
     gui/widgets/dlg_wlist_create.h \
@@ -379,10 +392,10 @@ HEADERS += \
     gui/widgets/memory_combo.h \
     gui/widgets/mouse_mode_widget.h \
     gui/widgets/panel_misc.h \
+    gui/widgets/position_widget.h \
     gui/widgets/rounded_polygon.h \
     gui/widgets/smx_widget.h \
     gui/widgets/transparent_widget.h \
-    gui/widgets/version_dialog.h \
     gui/widgets/versioned_list_widget.h \
     gui/widgets/worklist_widget.h \
     legacy/design.h \
@@ -399,31 +412,33 @@ HEADERS += \
     model/borders/border_plain.h \
     model/makers/crop_maker.h \
     model/makers/mosaic_maker.h \
-    model/makers/prototype_maker.h \
-    model/makers/prototype_maker_data.h \
+    model/makers/motif_maker.h \
+    model/makers/motif_view_data.h \
+    model/makers/proto_view_data.h \
     model/makers/tiling_maker.h \
     model/mosaics/legacy_loader.h \
     model/mosaics/mosaic.h \
-    model/mosaics/mosaic_manager.h \
     model/mosaics/mosaic_reader.h \
     model/mosaics/mosaic_writer.h \
     model/mosaics/reader_base.h \
     model/mosaics/writer_base.h \
+    model/motifs/adaptive_extender.h \
+    model/motifs/adaptive_girih.h \
+    model/motifs/adaptive_girih_branches.h \
+    model/motifs/adaptive_hourglass.h \
+    model/motifs/adaptive_inference.h \
+    model/motifs/adaptive_intersect.h \
+    model/motifs/adaptive_motif.h \
+    model/motifs/adaptive_rosette.h \
+    model/motifs/adaptive_star.h \
+    model/motifs/adaptive_star_branches.h \
+    model/motifs/adaptive_tile.h \
+    model/motifs/adaptive_tools.h \
     model/motifs/explicit_map_motif.h \
     model/motifs/extended_boundary.h \
     model/motifs/extender.h \
-    model/motifs/girih_motif.h \
-    model/motifs/hourglass_motif.h \
-    model/motifs/inferred_motif.h \
-    model/motifs/intersect_motif.h \
-    model/motifs/irregular_girih_branches.h \
-    model/motifs/irregular_motif.h \
-    model/motifs/irregular_rosette.h \
-    model/motifs/irregular_star.h \
-    model/motifs/irregular_star_branches.h \
-    model/motifs/irregular_tools.h \
     model/motifs/motif.h \
-    model/motifs/motif_connector.h \
+    model/motifs/radial_extender.h \
     model/motifs/radial_motif.h \
     model/motifs/radial_ray.h \
     model/motifs/rosette.h \
@@ -431,12 +446,11 @@ HEADERS += \
     model/motifs/star.h \
     model/motifs/star2.h \
     model/motifs/tile_color_defs.h \
-    model/motifs/tile_motif.h \
-    model/prototypes/design_element.h \
     model/prototypes/prototype.h \
+    model/prototypes/tile_motif.h \
     model/settings/canvas.h \
-    model/settings/canvas_settings.h \
     model/settings/configuration.h \
+    model/settings/distortion.h \
     model/settings/filldata.h \
     model/settings/tristate.h \
     model/settings/worklist.h \
@@ -474,12 +488,12 @@ HEADERS += \
     model/tilings/tile_writer.h \
     model/tilings/tiling.h \
     model/tilings/tiling_header.h \
-    model/tilings/tiling_manager.h \
     model/tilings/tiling_reader.h \
     model/tilings/tiling_unit.h \
     model/tilings/tiling_writer.h \
     sys/engine/compare_bmp_engine.h \
     sys/engine/compare_bmp_stepper.h \
+    sys/engine/convert_bmp_engine.h \
     sys/engine/image_engine.h \
     sys/engine/mosaic_bmp_generator.h \
     sys/engine/mosaic_stepper.h \
@@ -490,7 +504,7 @@ HEADERS += \
     sys/engine/tiling_stepper.h \
     sys/engine/version_stepper.h \
     sys/engine/view_bmp_stepper.h \
-    sys/enums/ebkgdimage.h \
+    sys/enums/eactivecanvas.h \
     sys/enums/eborder.h \
     sys/enums/ecyclemode.h \
     sys/enums/edesign.h \
@@ -499,15 +513,11 @@ HEADERS += \
     sys/enums/efillmode.h \
     sys/enums/efilltype.h \
     sys/enums/elogmode.h \
-    sys/enums/emapeditor.h \
-    sys/enums/emotiftype.h \
     sys/enums/emousemode.h \
     sys/enums/epanelpage.h \
     sys/enums/erender.h \
-    sys/enums/estatemachineevent.h \
     sys/enums/estyletype.h \
     sys/enums/etilingmaker.h \
-    sys/enums/eviewtype.h \
     sys/geometry/arcdata.h \
     sys/geometry/bounds.h \
     sys/geometry/circle.h \
@@ -549,10 +559,42 @@ HEADERS += \
     sys/tiledpatternmaker.h \
     sys/version.h
 
+# ---------------------------------------------------------------------------
+# Build timestamp generation (mirrors CMakeLists.txt / sys/gen_version.cmake)
+# version.cpp is generated from version.cpp.in and is not tracked in git.
+# It only regenerates when a real source/header changed (make's own mtime
+# comparison against version_target.depends) -- not on every build.
+# ---------------------------------------------------------------------------
+VERSION_CPP = $$OUT_PWD/version.cpp
+VERSION_IN  = $$PWD/sys/version.cpp.in
+
+win32 {
+    version_target.commands = $$system_path($$PWD/sys/gen_version.bat) $$system_path($$VERSION_IN) $$system_path($$VERSION_CPP)
+} else {
+    version_target.commands = sh $$shell_quote($$PWD/sys/gen_version.sh) $$shell_quote($$VERSION_IN) $$shell_quote($$VERSION_CPP)
+}
+
+DEPEND_SOURCES =
+for(f, SOURCES): DEPEND_SOURCES += $$PWD/$$f
+for(f, HEADERS): DEPEND_SOURCES += $$PWD/$$f
+
+version_target.target = $$VERSION_CPP
+version_target.depends = $$DEPEND_SOURCES $$VERSION_IN
+QMAKE_EXTRA_TARGETS += version_target
+
+PRE_TARGETDEPS += $$VERSION_CPP
+GENERATED_SOURCES += $$VERSION_CPP
 
 FORMS +=
 
 DISTFILES += \
+    ../etc/models/DesignMaker.pdf \
+    ../etc/models/mm.pdf \
+    ../etc/models/mm.png \
+    ../etc/models/mm.svg \
+    ../etc/models/motifmaker.qmodel \
+    ../etc/models/shapes.pdf \
+    ../etc/models/viewers2.qmodel \
     ../etc/windows/aliases.txt \
     ../etc/windows/binfo \
     ../etc/windows/branches \
@@ -582,6 +624,9 @@ DISTFILES += \
     ../etc/models/styles.qmodel \
     ../etc/models/Viewers.qmodel \
     ../release-notes.txt \
+    sys/version.cpp.in \
+    sys/gen_version.bat \
+    sys/gen_version.sh \
     sys/dac1.bmp \
     sys/dac1.ico \
     sys/dac1.png \
@@ -592,3 +637,4 @@ DISTFILES += \
     txt/tilingmaker.txt
 
 RESOURCES += tpm.qrc
+

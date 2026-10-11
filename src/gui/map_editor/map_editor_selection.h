@@ -1,15 +1,12 @@
 #pragma once
-#ifndef MAPEDITORSELCTION_H
-#define MAPEDITORSELCTION_H
 
 #include <QVector>
 #include <QPointF>
 #include "sys/geometry/circle.h"
 #include "gui/map_editor/map_selection.h" // needed
 
-class Configuration;
+class MapEditor;
 class MapEditorDb;
-class MapEditorView;
 
 typedef std::shared_ptr<class MapSelection>     MapSelectionPtr;
 typedef QVector<MapSelectionPtr>                SelectionSet;
@@ -20,22 +17,21 @@ typedef std::shared_ptr<class Circle>           CirclePtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
 typedef std::shared_ptr<class Neighbours>       NeighboursPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class DesignElement>    DELPtr;
+typedef std::shared_ptr<class TileMotif>        TileMotifPtr;
 
 class MapEditorSelection
 {
 public:
-    MapEditorSelection(MapEditorDb *db);
+    MapEditorSelection(MapEditor * me);
     ~MapEditorSelection() {}
 
-    void            buildEditorDB();
-
-    void            setCurrentSelections(SelectionSet set) { currentSelections = set; }
-    SelectionSet    getCurrentSelections() { return currentSelections; }
+    void            setCurrentSelections(SelectionSet set)  { currentSelections = set; }
+    SelectionSet    getCurrentSelections()                  { return currentSelections; }
 
     SelectionSet    findSelectionsUsingDB(const QPointF &spt);
     MapSelectionPtr findAPoint(SelectionSet & set);
     MapSelectionPtr findALine(SelectionSet & set);
+    QPointF         snapPoint(SelectionSet & set, QPointF spt, bool * snapped = nullptr);   // model point: a point, else a point on a line, else spt
     MapSelectionPtr findAnEdge(SelectionSet & set);
 
     // points
@@ -48,18 +44,12 @@ public:
     // circles
     MapSelectionPtr findConstructionCircle(const QPointF &spt);
 
-    void            buildMotifDB(DELPtr delp);
-    bool            insideBoundary(QPointF wpt);
 
-    QVector<LineInfo>  lines;   // generated
-    QVector<PointInfo> points;  // generated
-    QVector<CirclePtr> circles; // generated
+    bool            insideBoundary(QPointF wpt);
 
 private:
     SelectionSet currentSelections;
 
-    Configuration * config;
+    MapEditor     * editor;
     MapEditorDb   * db;
 };
-
-#endif // MAPEDITORSELCTION_H

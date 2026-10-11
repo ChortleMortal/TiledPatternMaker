@@ -1,6 +1,4 @@
 #pragma once
-#ifndef MOTIF_H
-#define MOTIF_H
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -17,44 +15,71 @@
 #include <QPolygonF>
 #include <QGraphicsItem>
 #include <QPainter>
-#include "sys/enums/emotiftype.h"
+
 #include "model/motifs/extender.h"
-#include "model/motifs/motif_connector.h"
-#include "sys/geometry/debug_map.h"
+//#include "sys/geometry/debug_map.h"
+//#include "sys/geometry/map.h"
 
 typedef std::shared_ptr<class Motif>     MotifPtr;
 typedef std::shared_ptr<class Map>       MapPtr;
 
-class Motif : public std::enable_shared_from_this<Motif>
+extern const QString sMotifType[];
+
+class Motif
 {
    friend class ExplicitMapMotif;
 
 public:
+    // these are the types of figure which can be made
+    enum class Type
+    {
+        Undefined,
+        Radial,
+        Rosette,
+        Rosette2,
+
+        Star,
+        Star2,
+
+        MapMotif,
+        Inferred,
+        AdaptiveRosette,
+        Hourglass,
+        Intersect,
+        Girih,
+        AdaptiveStar,
+        ExplicitTile,
+        NoMapMotif,
+
+        MaxMotifType = NoMapMotif
+    };
+
     Motif();
     Motif(const Motif & other);
-    Motif(MotifPtr other);
     virtual ~Motif();
 
-    virtual void    resetMotifMap()         = 0;
-    virtual void    buildMotifMap()         = 0;
+    virtual void    build()                 = 0;
 
     virtual QTransform getMotifTransform()  = 0;
-    virtual QTransform getDELTransform()    = 0;
 
     virtual QString getMotifDesc()          = 0;
-    virtual MapPtr  getMotifMap()           = 0;
-    virtual MapPtr  getExistingMotifMap()           { return motifMap; }
+
+    virtual void    resetMotifMap();
+    virtual MapPtr  getMotifMap();
+    virtual MapPtr  getExistingMotifMap();
+    virtual MapPtr  getValidMotifMap();
+    virtual bool    hasValidMotifMap();
 
     virtual void    setN(int n)                     { _n = n; }
-    int             getN()                          { return _n; }
+    int             getN() const                    { return _n; }
 
     inline void     setTile(TilePtr tile)           { _tile = tile; }
     inline TilePtr  getTile()                       { return _tile; }
 
-    void            setMotifType(eMotifType ft)     { motifType = ft; }
-    eMotifType      getMotifType()  const           { return motifType; }
-    QString         getMotifTypeString()            { return sMotifType[getMotifType()]; }
-    static QString  getTypeString(eMotifType type)  { return sMotifType[type]; }
+    void            setMotifType(Type type)         { motifType = type; }
+    Type            getMotifType()  const           { return motifType; }
+    QString         getMotifTypeString()            { return sMotifType[(int)getMotifType()]; }
+    static QString  getTypeString(Type type)        { return sMotifType[(int)type]; }
 
     virtual void    setMotifScale(qreal scale)      { motifScale = scale; }
     virtual qreal   getMotifScale()                 { return motifScale; }
@@ -64,22 +89,20 @@ public:
     QPolygonF &     getMotifBoundary()              { return _motifBoundary; }
     void            setMotifBoundary(QPolygonF p)   { _motifBoundary = p; }
 
-    void            cleanExtenders();
-    ExtenderPtr     addExtender();
+    virtual ExtenderPtr createExtender()  = 0;
+    void            addExtender(ExtenderPtr ep);
     void            deleteExtender(ExtenderPtr extender);
     ExtenderPtr     getExtender(uint i);
-    const QVector<ExtenderPtr> & getExtenders()     { return _extenders; }
-
-    ConnectPtr      addConnector();
-    ConnectPtr      addRadialConnector()            { connector = std::make_shared<MotifConnector>();  return connector; }
-    ConnectPtr      getRadialConnector() const      { return connector; }
-    void            deleteRadialConnector()         { connector.reset(); }
+    QVector<ExtenderPtr> & getExtenders()           { return _extenders; }
+    QVector<ExtenderPtr> get_extenders()  const     { return _extenders; }
+    int             numExtenders()                  { return _extenders.count(); }
 
     bool            isIrregular() const;
     bool            isRadial() const;
 
-    void            setVersion(int ver)             { version = ver; }
-    int             getVersion()                    { return version; }
+    virtual int     maxVersions() = 0;
+    void            setVersion(int ver)             { _motifVersion = ver; }
+    int             getVersion()                    { return _motifVersion; }
 
     void            setCleanse(uint val)            { cleanseVal = val; }
     void            setCleanseSensitivity(qreal val){ sensitivity = val; }
@@ -90,34 +113,34 @@ public:
     static int      modulo(int i, int sz);
 
     virtual void    dump() = 0;
-    uint            getMotifDebug()                 { return motifDebug; }
+    uint            getMotifDebug()                 { return _motifDebug; }
+    void            setMotifDebug(uint val)         { _motifDebug = val;  }
 
     static int      refs;
 
 protected:
+    void            cleanseMotifMap();
+
     // data
     qreal            motifRotate;       // degrees
     qreal            motifScale;
 
     // specific data
-    eMotifType       motifType;
-
-    // connector
-    ConnectPtr       connector;
+    Type            motifType;
 
     // generated
     MapPtr           motifMap;          // generated - the final scaled and rotated map
     qreal            sensitivity;       // cleanse sensitivity
     uint             cleanseVal;
 
-    uint             motifDebug;            // set as needed
+    QVector<ExtenderPtr> _extenders;
 
 private:
     int                  _n;            // number of sides = number of points
     TilePtr              _tile;
     QPolygonF            _motifBoundary;
-    QVector<ExtenderPtr> _extenders;
-    int                  version;
+    uint                 _motifDebug;   // set as needed
+    int                  _motifVersion;
 };
 
 class Points : public QVector<QPointF>
@@ -143,5 +166,3 @@ private:
             return (sz >= 0 ? sz : -sz) - 1 + (i + 1) % sz;
     }
 };
-
-#endif

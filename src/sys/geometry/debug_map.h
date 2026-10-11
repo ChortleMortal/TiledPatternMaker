@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DEBUG_MAP_H
-#define DEBUG_MAP_H
 
 #include <QColor>
 #include <QPainter>
@@ -101,5 +99,3 @@ private:
     QVector<sDebugPoint>             points;
     QVector<sDebugLine>              lines;
 };
-
-#endif // DEBUG_MAP_H

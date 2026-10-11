@@ -1,6 +1,4 @@
 #pragma once
-#ifndef STYLE_COLOR_FILL_SET_H
-#define STYLE_COLOR_FILL_SET_H
 
 #include "gui/model_editors/style_edit/fill_editor.h"
 #include "gui/model_editors/style_edit/style_editor.h"
@@ -47,7 +45,6 @@ private slots:
     void pasteColor();
     void slot_cellClick(int row, int col);
     void slot_double_click(int row, int col);
-    void btnClicked();
 
 protected:
     void populateRow(const FaceSetPtr & faceSet, int row);
@@ -55,7 +52,6 @@ protected:
 
     void colorChanged(int row);
     void colorVisibilityChanged(int row);
-    QWidget* findCellWidget(QWidget *w, QTableWidget *table);
 
 private:
     AQTableWidget * table;
@@ -64,5 +60,3 @@ private:
 
     New2Coloring  * new2cm;
 };
-
-#endif

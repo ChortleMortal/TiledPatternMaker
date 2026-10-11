@@ -1,6 +1,4 @@
 #pragma once
-#ifndef MOUSEMODEWIDGET_H
-#define MOUSEMODEWIDGET_H
 
 #include <QWidget>
 
@@ -24,8 +22,4 @@ protected:
     QCheckBox * chkPan;
     QCheckBox * chkRot;
     QCheckBox * chkZoom;
-
- private:
 };
-
-#endif

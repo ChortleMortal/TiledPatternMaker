@@ -1,13 +1,13 @@
 #pragma once
-#ifndef LEGACY_LOADER
-#define LEGACY_LOADER
 
 #include <string>
+#include "gui/viewers/layer.h"
 #include "sys/enums/estyletype.h"
-#include "sys/enums/eviewtype.h"
 #include "sys/sys/pugixml.hpp"
 #include "sys/geometry/xform.h"
-#include <QtCore>
+#include <QMap>
+#include <QString>
+#include <QVector>
 
 using std::shared_ptr;
 using std::weak_ptr;
@@ -21,7 +21,7 @@ typedef shared_ptr<class Motif>         FigurePtr;
 typedef shared_ptr<class PlacedTile>    PlacedTliePtr;
 typedef shared_ptr<class Tiling>        TilingPtr;
 
-typedef shared_ptr<class IrregularMotif>ExplicitPtr;
+typedef shared_ptr<class AdaptiveMotif>ExplicitPtr;
 typedef shared_ptr<class Star>          StarPtr;
 typedef shared_ptr<class Rosette>       RosettePtr;
 typedef shared_ptr<class RosetteConnect>RoseConnectPtr;
@@ -60,7 +60,7 @@ protected:
     void processEmboss(xml_node & node);
 
     // styles
-    void    procesToolkitGeoLayer(xml_node & node, Xform & xf, eZLevel &zlevel);
+    void    procesToolkitGeoLayer(xml_node & node, Xform & xf, Layer::ZLevel &zlevel);
     QColor  processStyleColored(xml_node & node);
     void    processsStyleThick(xml_node & node, eDrawOutline &draw_outline, qreal & width);
     void    processsStyleInterlace(xml_node & node, qreal & gap, qreal & shadow);
@@ -150,5 +150,3 @@ class Neighbour
 public:
     Neighbour() {}
 };
-
-#endif

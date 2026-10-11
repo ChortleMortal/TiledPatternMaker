@@ -1,6 +1,4 @@
 #pragma once
-#ifndef FILL_ORIGINAL_H
-#define FILL_ORIGINAL_H
 
 #include "model/styles/fill_color_maker.h"
 #include "model/styles/colorset.h"
@@ -16,6 +14,7 @@ class OriginalColoring : public ColorMaker
 public:
     OriginalColoring(Filled * filled);
     OriginalColoring(const OriginalColoring & other);
+    OriginalColoring& operator=(const OriginalColoring & other);
 
     virtual QString sizeInfo() override;
 
@@ -43,6 +42,4 @@ public:
 private:
     FaceSet     facesToDo;
 };
-
-#endif
 

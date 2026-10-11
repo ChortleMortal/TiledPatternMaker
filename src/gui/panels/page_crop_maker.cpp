@@ -1,13 +1,15 @@
 #include <QRadioButton>
 #include <QMessageBox>
+#include <QGroupBox>
 
+#include "gui/panels/page_borders.h"
 #include "gui/panels/page_crop_maker.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/crop_maker_view.h"
 #include "gui/widgets/crop_widget.h"
 #include "model/makers/mosaic_maker.h"
-#include "model/borders/border.h"
+#include "model/borders/border.h"           // required
 #include "model/mosaics/mosaic.h"
 #include "model/prototypes/prototype.h"
 #include "sys/geometry/crop.h"
@@ -21,7 +23,7 @@ page_crop_maker::page_crop_maker(ControlPanel * apanel)  : panel_page(apanel,PAG
 
     QGroupBox * mosaicGroup = new QGroupBox("Moisaic Crop - mosaic crops are applied to prototype maps");
 
-    mosaicWidget = new CropWidget();
+    mosaicWidget = new CropWidget("Mosaic Crop");
 
     connect(mosaicWidget, &CropWidget::sig_cropModified, this, &page_crop_maker::slot_applyCrop);
     connect(mosaicWidget, &CropWidget::sig_cropChanged,  this, &page_crop_maker::slot_applyCrop );
@@ -35,7 +37,7 @@ page_crop_maker::page_crop_maker(ControlPanel * apanel)  : panel_page(apanel,PAG
 
     QGroupBox * painterGroup = new QGroupBox("Painter Crop - painter crops form a clip region for painting the whole mosaic");
 
-    painterWidget = new CropWidget();
+    painterWidget = new CropWidget("Painter Crop");
 
     connect(painterWidget, &CropWidget::sig_cropModified, this, [this]() { emit sig_updateView(); } );
     connect(painterWidget, &CropWidget::sig_cropChanged,  this, [this]() { emit sig_reconstructView(); } );
@@ -98,14 +100,12 @@ QGridLayout * page_crop_maker::createPainterCropControls()
     QPushButton * pbFetchBorder = new QPushButton("Fetch Border Crop");
     QPushButton * pbFetchMosaic = new QPushButton("Fetch Mosaic Crop");
     chkShowPainter              = new QCheckBox("Show Crop");
-    chkClip                     = new QCheckBox("Painter Clip");
     QLabel      * dummy         = new QLabel;
 
     QGridLayout * gl = new QGridLayout();
 
     int row = 0;
     gl->addWidget(chkShowPainter,row,0);
-    gl->addWidget(chkClip,row,2);
 
     row++;
     gl->addWidget(pbCreate,row,0);
@@ -115,7 +115,6 @@ QGridLayout * page_crop_maker::createPainterCropControls()
     gl->addWidget(pbRemove,row,4);
 
 
-    connect(chkClip,           &QCheckBox::clicked,              this, &page_crop_maker::slot_clip);
     connect(chkShowPainter,    &QCheckBox::toggled,              this, &page_crop_maker::slot_showPainterCrop);
 
     connect(pbCreate,          &QPushButton::clicked,            this, &page_crop_maker::slot_createPainterCrop);
@@ -167,23 +166,11 @@ void page_crop_maker::display()
     mosaicWidget->refresh();
 
     // display painter crop
-
-    bool clip  = false;
-    crop = painterCropMaker.getCrop();
-    if (crop)
-    {
-        if (crop->getClip())
-            clip = true;
-    }
-
-    chkClip->blockSignals(true);
-    chkClip->setChecked(clip);
-    chkClip->blockSignals(false);
-
     chkShowPainter->blockSignals(true);
     chkShowPainter->setChecked(Sys::cropMakerView->getShowCrop(CM_PAINTER));
     chkShowPainter->blockSignals(false);
 
+    crop = painterCropMaker.getCrop();
     painterWidget->setCrop(crop);
     painterWidget->refresh();
 }
@@ -254,15 +241,6 @@ void page_crop_maker::slot_showPainterCrop(bool checked)
     emit sig_reconstructView();
 }
 
-void page_crop_maker::slot_clip(bool checked)
-{
-    bool rv = painterCropMaker.setClip(checked);
-    if (rv)
-    {
-        emit sig_reconstructView();
-    }
-}
-
 void page_crop_maker::slot_applyCrop()
 {
     auto crop = mosaicCropMaker.getCrop();
@@ -289,7 +267,7 @@ void page_crop_maker::slot_removeMosaicCrop()
 
 void page_crop_maker::slot_removePainterCrop()
 {
-    mosaicCropMaker.removePainterCrop();
+    painterCropMaker.removeCrop();
     emit sig_reconstructView();
 }
 
@@ -307,7 +285,10 @@ void page_crop_maker::slot_fetchBorder()
         return;
     }
 
-    BorderPtr border = mosaic->getBorder();
+    BorderPtr border;
+    auto * pb = dynamic_cast<page_borders*>(panel->getPage("Border Maker"));
+    if (pb)
+        border = pb->getCurrentBorder();
     if (!border)
     {
         QMessageBox box(panel);
@@ -320,17 +301,8 @@ void page_crop_maker::slot_fetchBorder()
 
     Crop ocrop   = *(std::dynamic_pointer_cast<Crop>(border).get());
     CropPtr crop = make_shared<Crop>(ocrop);
-    mosaicCropMaker.setCrop(crop);
-    mosaic->setCrop(crop);
+    mosaicCropMaker.setCrop(crop);  // sets crop in mosaic
 
-    // map the crop rect
-    QRectF r;
-    r = crop->getRect();                        // border model units
-    r = border->modelToScreen(r);               // screen units
-    r = Sys::cropMakerView->screenToModel(r);   // mosaic crop model units
-    crop->setRect(r);
-
-    //crop->transform(Sys::cropViewer->getLayerTransform().inverted());
     emit sig_reconstructView();
 
     QMessageBox box(panel);
@@ -353,7 +325,10 @@ void page_crop_maker::slot_fetchBorderForPainter()
         return;
     }
 
-    BorderPtr border = mosaic->getBorder();
+    BorderPtr border;
+    auto * pb = dynamic_cast<page_borders*>(panel->getPage("Border Maker"));
+    if (pb)
+        border = pb->getCurrentBorder();
     if (!border)
     {
         QMessageBox box(panel);
@@ -366,16 +341,8 @@ void page_crop_maker::slot_fetchBorderForPainter()
 
     Crop ocrop   = *(std::dynamic_pointer_cast<Crop>(border).get());
     CropPtr crop = make_shared<Crop>(ocrop);
-    crop->transform(Sys::cropMakerView->getLayerTransform().inverted());
-    painterCropMaker.setCrop(crop);
-    mosaic->setPainterCrop(crop);
+    painterCropMaker.setCrop(crop);  // sets crop in mosaic
 
-    // map the crop rect
-    QRectF r;
-    r = crop->getRect();                        // border model units
-    r = border->modelToScreen(r);               // screen units
-    r = Sys::cropMakerView->screenToModel(r);   // painter crop model units
-    crop->setRect(r);
     emit sig_reconstructView();
 
     QMessageBox box(panel);
@@ -387,10 +354,12 @@ void page_crop_maker::slot_fetchBorderForPainter()
 
 void page_crop_maker::slot_fetchMosaicCrop()
 {
-    CropPtr mosCr  = mosaicCropMaker.getCrop();
-    if (mosCr)
+    // sets painter crop from mosaic crop (not border crop)
+    CropPtr mmosaicCr  = mosaicCropMaker.getCrop();
+    if (mmosaicCr)
     {
-        CropPtr cp = make_shared<Crop>(*mosCr.get());
+        Crop crop = *mmosaicCr;
+        CropPtr cp = make_shared<Crop>(crop);
         mosaicMaker->getMosaic()->setPainterCrop(cp);
         painterCropMaker.setCrop(cp);
         emit sig_reconstructView();

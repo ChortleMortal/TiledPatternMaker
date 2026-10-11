@@ -1,6 +1,4 @@
 ﻿#pragma once
-#ifndef LEGACY_TILE_H
-#define LEGACY_TILE_H
 
 #include "gui/viewers/layer.h"
 
@@ -17,7 +15,7 @@ public:
     int getRow() { return row;}
     int getCol() { return col;}
 
-    void addLayer(LayerPtr layer, eZLevel zlevel = STANDARD_ZLEVEL);
+    void addLayer(LayerPtr layer, ZLevel zlevel = ZLevel::Standard_Z0);
 
     virtual bool doStep(int index);
     virtual void reset() {}
@@ -40,5 +38,3 @@ protected:
 
 private:
 };
-
-#endif // TILE_H

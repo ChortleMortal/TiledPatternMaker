@@ -1,6 +1,4 @@
 #pragma once
-#ifndef XFORM_H
-#define XFORM_H
 
 #include <QTransform>
 
@@ -49,5 +47,3 @@ private:
     qreal       translateX;     // screen units
     qreal       translateY;     // screen units
 };
-
-#endif // XFORM_H

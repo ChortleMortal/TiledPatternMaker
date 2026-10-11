@@ -68,24 +68,6 @@ void MapBase::paint(QPainter * painter, QTransform & tr,bool shoWDirn, bool show
     }
 }
 
-// Applying a motion made up only of uniform scales and translations,
-// Angles don't change.  So we can just transform each vertex.
-void MapBase::transform(const QTransform & T)
-{
-    for (const auto & vert : std::as_const(vertices))
-    {
-        vert->setPt(T.map(vert->pt));
-    }
-    for (const auto & edge : std::as_const(edges))
-    {
-        if (edge->getType() == EDGETYPE_CURVE)
-        {
-            QPointF pt = T.map(edge->getArcCenter());
-            edge->chgangeToCurvedEdge(pt,edge->getCurveType());
-        }
-    }
-}
-
 void MapBase::wipeout()
 {
     // better to remove edges before removing vertices

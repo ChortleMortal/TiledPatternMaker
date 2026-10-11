@@ -1,6 +1,4 @@
 #pragma once
-#ifndef LAYOUT_TRANSFORM_H
-#define LAYOUT_TRANSFORM_H
 
 #include "gui/widgets/layout_sliderset.h"
 #include "sys/geometry/xform.h"
@@ -45,5 +43,3 @@ protected:
     DoubleSpinSet * Y;
     QString         name;
 };
-
-#endif // LAYOUT_TRANSFORM_H

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef OUTLINE_H
-#define OUTLINE_H
 
 #include "model/styles/outline_casing.h"
 #include "model/styles/thick.h"
@@ -46,5 +44,4 @@ public slots:
 protected:
     OutlineCasingSet casings;
 };
-#endif
 

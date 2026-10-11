@@ -1,6 +1,4 @@
 #pragma once
-#ifndef FILLED_H
-#define FILLED_H
 
 #include "sys/enums/efilltype.h"
 #include "model/styles/fill_color_maker.h"
@@ -65,6 +63,4 @@ public:
 };
 
 typedef std::shared_ptr<Filled> FilledPtr;
-
-#endif
 

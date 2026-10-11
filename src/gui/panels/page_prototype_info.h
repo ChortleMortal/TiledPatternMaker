@@ -1,38 +1,36 @@
 #pragma once
-#ifndef PAGE_PROTOS_H
-#define PAGE_PROTOS_H
 
+#include <QGroupBox>
 #include "gui/panels/panel_page.h"
-#include "model/makers/prototype_maker.h"
+#include "model/makers/motif_maker.h"
 #include "model/settings/configuration.h"
-
-class DoubleSpinSet;
 
 class AQTableWidget;
 
-enum eDELCol
-{
-    DEL_COL_PROTO,
-    DEL_COL_TILING,
-    DEL_COL_DEL,
-    DEL_COL_TILE,
-    DEL_COL_MOTIF,
-    DEL_COL_SHOW_DEL
-};
 
-enum eProtoCol
-{
-    PROTO_COL_PROTO,
-    PROTO_COL_TILING,
-    PROTO_COL_SHOW
-};
 
 class page_prototype_info : public panel_page
 {
     Q_OBJECT
 
-public:
+    enum class ProtoCol
+    {
+        Proto = 0,
+        Tiling,
+        Show
+    };
 
+    enum class MotifCol
+    {
+        Proto = 0,
+        Tiling,
+        TileMotif,
+        Tile,
+        Motif,
+        Show
+    };
+
+public:
     page_prototype_info(ControlPanel * cpanel);
 
     void onRefresh()        override;
@@ -46,11 +44,13 @@ private slots:
     void    drawProtoClicked(bool enb);
     void    drawMapClicked(bool enb);
     void    drawMotifClicked(bool enb);
+    void    drawExtBoundaryClicked(bool enb);
     void    drawTileClicked(bool enb);
     void    hiliteMotifClicked(bool enb);
     void    hiliteTileClicked(bool enb);
     void    setDefaultColors();
-    void    populateDelTable();
+    void    setDefaultTUColors();
+    void    populateTileMotifTable();
     void    populateProtoTable();
 
     void    singleClicked(bool enb);
@@ -61,30 +61,25 @@ private slots:
 protected:
     QGroupBox * buildPrototypeLayout();
     QGroupBox * buildTilingUnitLayout();
-    QGroupBox * buildDistortionsLayout();
 
     void    protoChecked(int  row,bool checked);
-    void    DELChecked(int  row,bool checked);
+    void    tileMotifChecked(int  row,bool checked);
 
     void    buildColorGrid();
     void    buildColorGrid2();
+    void    addSwatch(QGridLayout * grid, int row, int col, QColor & color);
+    void    refreshSwatches();
     void    populateTables();
     void    setProtoViewMode(eProtoViewMode mode, bool enb);
     void    pickColor(QColor & color);
 
-    void    enbDistortion(bool checked);
-    void    setDistortion();
-
 private:
-    AQTableWidget       * DELTable;
+    AQTableWidget       * tileMotifTable;
     AQTableWidget       * protoTable;
     QGridLayout         * showSettings;
     QGridLayout         * showSettings2;
-    PrototypeMaker      * protoMaker;
+    MotifMaker          * motifMaker;
 
-    QCheckBox     * chkDistort;
-    DoubleSpinSet * xBox;
-    DoubleSpinSet * yBox;
+    QVector<std::pair<class ClickableLabel*,QColor*>> swatches;
+
 };
-
-#endif

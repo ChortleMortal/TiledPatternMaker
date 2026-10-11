@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLG_EDGE_POLY_EDIT_H
-#define DLG_EDGE_POLY_EDIT_H
 
 #include "gui/widgets/panel_misc.h"
 #include "model/makers/tiling_maker.h"
@@ -51,5 +49,3 @@ private:
 
     bool          finished;
 };
-
-#endif // DLG_EDGE_POLY_EDIT_H

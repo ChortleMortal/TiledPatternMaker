@@ -1,12 +1,12 @@
 #pragma once
-#ifndef PAGE_LOADERS_H
-#define PAGE_LOADERS_H
 
+#include <QComboBox>
+#include <QGroupBox>
 #include "gui/panels/panel_page.h"
 #include "gui/widgets/versioned_list_widget.h"
 #include "legacy/design_maker.h"
+#include "model/makers/tiling_maker.h"
 #include "sys/enums/edesign.h"
-#include "sys/enums/estatemachineevent.h"
 #include "sys/sys/versioning.h"
 
 class page_loaders : public panel_page
@@ -29,11 +29,14 @@ signals:
     void    sig_setTilingUses();
 
 public slots:
+   void     reloadPage();
    void     slot_newTiling();
    void     slot_newMosaic();
 
    void     slot_mosaicLoaded(VersionedFile file);
    void     slot_tilingLoaded(VersionedFile file);
+   void     slot_mosaicWritten(VersionedFile file);
+   void     slot_tilingWritten(VersionedFile file);
    void     slot_loadedDesign(eDesign design);
 
    void     desRightClick(QPoint pos);
@@ -79,7 +82,6 @@ private slots:
 
     void    showTilings();
     void    genMosaicBMP();
-
 
     void    openTiling();
     void    rebaseTiling();
@@ -129,7 +131,7 @@ protected:
     QGroupBox * createMosaicColumn();
     QGroupBox * createTilingColumn();
 
-    void    loadTiling(eTILM_Event event);
+    void    loadTiling(TilingMaker::Event event);
 
     void    putNewTilingNameIntoMosaic(VersionFileList & designs, VersionedName newTilingName);
     bool    putNewTilingNameIntoTiling(VersionedFile tiling, VersionedName newTilingName);
@@ -178,5 +180,3 @@ private:
     QComboBox   * kbdModeCombo;
 
 };
-
-#endif

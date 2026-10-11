@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLG_NAME_H
-#define DLG_NAME_H
 
 class QLineEdit;
 
@@ -13,5 +11,3 @@ public:
 
     QLineEdit * newEdit;
 };
-
-#endif

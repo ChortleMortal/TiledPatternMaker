@@ -1,6 +1,4 @@
 #pragma once
-#ifndef EMBOSS_EDITOR_H
-#define EMBOSS_EDITOR_H
 
 #include "gui/model_editors/style_edit/thick_editor.h"
 
@@ -24,5 +22,3 @@ private:
     weak_ptr<Emboss>    wemboss;
     SliderSet         * angle_slider;
 };
-
-#endif

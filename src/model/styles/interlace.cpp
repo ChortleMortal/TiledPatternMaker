@@ -1,3 +1,4 @@
+#include "gui/top/view_controller.h"
 #include "gui/viewers/geo_graphics.h"
 #include "model/makers/mosaic_maker.h"
 #include "model/styles/casing_neighbours.h"
@@ -241,6 +242,7 @@ void Interlace::resetStyleRepresentation()
     Thick::resetStyleRepresentation();
     casings.reset();
     threads.clear();
+    unwovenVertices = 0;
     styled = false;
 }
 
@@ -365,7 +367,11 @@ void Interlace::createStyleRepresentation()
 
     if (Sys::flags->flagged(DUMP_CASINGS)) casings.dump("aligned");
 
-    casings.weave();
+    unwovenVertices = casings.weave();
+    if (Sys::isGuiThread())
+    {
+        emit Sys::mosaicMaker->sig_interlaceUnwoven();
+    }
 
     if (dbgDump2 & 0x800) casings.dumpWeaveStatus();
 
@@ -387,56 +393,6 @@ void Interlace::createStyleRepresentation()
 
     styled = true;
 }
-
-#if 0 // FIXME - delete unused
-void Interlace::createUnders()
-{
-    Q_ASSERT(Sys::flags->flagged(APPROACH_6));
-
-    for (auto & casing  : casings)
-    {
-        CasingData cd1 = casing->getCasingData();
-
-        InterlaceCasingPtr icp = std::static_pointer_cast<InterlaceCasing>(casing);
-        icp->createUnder();
-
-        if (Interlace::dbgDump2  & 0x80)
-        {
-            CasingData cd2 = casing->getCasingData();
-            if (cd1 != cd2)
-                cd1.dumpDiffs(cd2);
-        }
-
-        if (Sys::flags->flagged(USE_TRIGGER_2) && (casing->edgeIndex == iTrigger))
-            break;
-    }
-}
-#endif
-#if 0 // FIXME - delete unused
-void Interlace::alignCurvedEdges(eDbgFlag flag)
-{
-
-    if (Sys::flags->flagged(NO_ALIGN_CURVES))
-        return;
-
-    Q_UNUSED(flag);
-    for (CasingPtr & casing : casings)
-    {
-        auto edge = casing->getEdge();
-        if (edge && edge->isCurve())
-        {
-            qDebug() << "aligning edge:" << casing->edgeIndex;
-            auto is1 = static_cast<InterlaceSide*>(casing->s1);
-            is1->alignS1Inner(casing);
-            is1->alignS1Outer(casing);
-
-            auto is2 = static_cast<InterlaceSide*>(casing->s2);
-            is2->alignS2Inner(casing);
-            is2->alignS2Outer(casing);
-        }
-    }
-}
-#endif
 
 // Propagate the over-under relation from an edge to its incident vertices.
 void Interlace::buildFrom()
@@ -578,13 +534,13 @@ void Interlace::slot_dbgChanged(eDbgType type)
     switch(type)
     {
     case FLAG_REPAINT:
-        Sys::viewController->slot_updateView();
+        Sys::systemViewController->slot_updateView();
         break;
 
     case FLAG_CREATE_STYLE:
         resetStyleRepresentation();
         createStyleRepresentation();
-        Sys::viewController->slot_updateView();
+        Sys::systemViewController->slot_updateView();
         break;
 
     case FLAG_CREATE_MOTIF:
@@ -634,7 +590,7 @@ void Interlace::slot_styleMapUpdated(MapPtr map)
 
     casings.useMap();
 
-    Sys::viewController->repaintView();
+    Sys::systemViewController->repaintView();
 }
 
 bool Interlace::dbgBreak(InterlaceCasingPtr & casing, QString msg)

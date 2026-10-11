@@ -1,5 +1,4 @@
-#ifndef TILING_STEPPING_ENGINE_H
-#define TILING_STEPPING_ENGINE_H
+#pragma once
 
 #include "sys/engine/stepping_engine.h"
 
@@ -13,7 +12,5 @@ public:
     virtual bool prev()  override;
     virtual bool end()   override;
 };
-
-#endif
 
 

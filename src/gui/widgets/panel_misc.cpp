@@ -2,8 +2,11 @@
 #include <QDebug>
 #include <QScrollBar>
 #include <QHeaderView>
+#include <QTimer>
 
 #include "gui/widgets/panel_misc.h"
+#include "gui/panels/panel_page.h"
+#include "gui/top/controlpanel.h"
 #include "sys/sys.h"
 
 //////////////////////////////////////////////////////////
@@ -70,7 +73,7 @@ void AQLineEdit::leaveEvent(QEvent *event)
 
 void AQLineEdit::setText(QString txt)
 {
-    if  (blocked)
+    if (blocked || hasFocus())
     {
         return;
     }
@@ -194,6 +197,8 @@ namespace panel_misc
 /// AQTableWidget
 ///
 //////////////////////////////////////////////////////////
+#define MIN_PANEL_SPACE_HEIGHT 120
+
 AQTableWidget::AQTableWidget(QWidget * parent) : QTableWidget(parent)
 {}
 
@@ -208,17 +213,73 @@ void AQTableWidget::selectRow(int row)
 
 void AQTableWidget::adjustTableSize(int maxWidth, int maxHeight)
 {
+    lastMaxWidth  = maxWidth;
+    lastMaxHeight = maxHeight;
+
     QEvent ev{QEvent::LayoutRequest};
     QTableWidget::updateGeometries();
     QTableWidget::event(&ev);
 
+    if (capHeightToPanel)
+    {
+        int panelSpace = getPanelSpaceHeight();
+        if (!panelSpace)
+        {
+            return;     // not on a page yet - sized by showEvent
+        }
+        if (!maxHeight || panelSpace < maxHeight)
+        {
+            maxHeight = panelSpace;
+        }
+    }
+
     int w = getTableWidth(maxWidth);
-    int h = getTableHeight(maxHeight);
+    int h = getTableHeight(0);
+    if (maxHeight && h > maxHeight)
+    {
+        h = maxHeight;
+        if (!verticalScrollBar()->isVisible())
+        {
+            w += verticalScrollBar()->sizeHint().width();
+        }
+    }
     QSize size(w,h);
     setFixedSize(size);
     //qDebug() << "adjusted size" << size;
     resize(size);
     updateGeometry();
+}
+
+void AQTableWidget::showEvent(QShowEvent * event)
+{
+    QTableWidget::showEvent(event);
+    if (capHeightToPanel)
+    {
+        QTimer::singleShot(0, this, &AQTableWidget::readjustTableSize);
+    }
+}
+
+void AQTableWidget::readjustTableSize()
+{
+    adjustTableSize(lastMaxWidth, lastMaxHeight);
+}
+
+// panel height left over after everything else on this table's page
+int AQTableWidget::getPanelSpaceHeight()
+{
+    panel_page * page = nullptr;
+    for (QWidget * w = parentWidget(); w && !page; w = w->parentWidget())
+    {
+        page = qobject_cast<panel_page*>(w);
+    }
+
+    if (!page)
+    {
+        return 0;
+    }
+
+    int othersH = page->sizeHint().height() - height();
+    return std::max(PANEL_RHS_HEIGHT - othersH, MIN_PANEL_SPACE_HEIGHT);
 }
 
 void AQTableWidget::adjustTableWidth(int maxWidth)
@@ -277,7 +338,7 @@ int AQTableWidget::getTableHeight(int maxHeight)
     }
 
     QScrollBar * sb = horizontalScrollBar();
-    if (sb->isVisible())
+    if (sb->isVisible() || horizontalScrollBarPolicy() == Qt::ScrollBarAlwaysOn)
     {
         //qDebug() << "scroll" << sb->height();
         h += sb->height();
@@ -316,6 +377,11 @@ BQPushButton::BQPushButton(const QString &text, QWidget * parent) : QPushButton(
     setStyleSheet("QPushButton:pressed{background-color:LightGreen; color:black;}");
 }
 
+CQPushButton::CQPushButton(const QString &text, QWidget * parent) : QPushButton(text,parent)
+{
+    setStyleSheet("QPushButton:hover{background-color:yellow; color:red;}");
+}
+
 //////////////////////////////////////////////////////////
 ///
 /// AQCheckBox
@@ -348,7 +414,9 @@ Separator::Separator()
     frame->setFrameShape(QFrame::VLine);
     frame->setFrameShadow(QFrame::Sunken);
     frame->setLineWidth(1);
-    if (!Sys::isDarkTheme)
+    if (Sys::isDarkTheme)
+        frame->setStyleSheet("QFrame {background-color: #909090;}");
+    else
         frame->setStyleSheet("QFrame {background-color: LightGray;}");
 
     addStretch();

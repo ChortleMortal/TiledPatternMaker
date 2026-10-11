@@ -1,11 +1,24 @@
-#ifndef BACKGROUNDIMAGE_H
-#define BACKGROUNDIMAGE_H
+#pragma once
 
 #include <QString>
 #include <QImage>
 #include <QPixmap>
 #include "model/tilings/backgroundimage_perspective.h"
 #include "gui/viewers/layer_controller.h"
+#include "sys/geometry/xform.h"
+
+// what a tiling or mosaic XML holds about its background image - the image itself lives in Sys
+struct BkgdRecord
+{
+    QString    name;                // empty = no background image
+    Xform      xf;
+    QTransform perspective;         // identity = not keystone adjusted
+    bool       hasLegacyCenter = false;
+    QPointF    legacyCenter;
+
+    bool isEmpty() const { return name.isEmpty(); }
+    void clear()         { *this = BkgdRecord(); }
+};
 
 class BackgroundImage : public LayerController
 {
@@ -15,14 +28,18 @@ public:
 
     void    paint(QPainter *painter) override;
 
-    void    createBackgroundAdjustment(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
-
     QTransform getCanvasTransform() override;
 
-    bool    load(QString imageName);    // loads from existing imported file
+    QPointF    keystoneScreenToModel(QPointF spt);
+    QPointF    keystoneModelToScreen(QPointF mpt);
+
+    bool    load(QString imageName);    // loads from existing imported file, clearing all previous image state
+    bool    load(const BkgdRecord & rec);
+    BkgdRecord toRecord();
     bool    importIfNeeded(QString filename);   // import into media/bkgds
     bool    isLoaded()                              { return loaded; }
     void    unload();
+
     QString getTitle()                              { return bkgdName; };
 
     void    createPixmap();
@@ -40,6 +57,7 @@ public:
     bool    saveCropped(QString newName);
     void    setUseCropped(bool use)                 { bUseCropped = use;}
     bool    useCropped()                            { return bUseCropped; }
+    QPointF getCroppedOffset()                      { return croppedOffset; }
 
     void    correctPerspective(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
 
@@ -77,9 +95,8 @@ private:
     QTransform perspectiveT;    // used by keystone adjust
     QTransform worldT;
     QPointF    pixmapTL;
+    QPointF    pixmapOffset;    // model-space center of the pixmap relative to the layer origin
+    QPointF    croppedOffset;   // model-space center of the cropped image within the full image
 
     bool    loaded;
 };
-
-
-#endif // BACKGROUNDIMAGE_H

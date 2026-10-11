@@ -1,6 +1,4 @@
 #pragma once
-#ifndef WRITERBASE_H
-#define WRITERBASE_H
 
 #include <QString>
 #include <QMap>
@@ -28,5 +26,3 @@ public:
 
     QMap<VertexPtr,int> vertex_ids;
 };
-
-#endif // MOSAICWRITERBASE_H

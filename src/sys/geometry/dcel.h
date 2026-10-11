@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DCEL_H
-#define DCEL_H
 
 /*
 MIT License
@@ -110,5 +108,3 @@ protected:
 
     FaceSet faces;
 };
-
-#endif // DCEL_H

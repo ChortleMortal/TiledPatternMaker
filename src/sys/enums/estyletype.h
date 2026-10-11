@@ -1,6 +1,4 @@
 #pragma once
-#ifndef ESTYLETYPE_H
-#define ESTYLETYPE_H
 
 enum eStyleType
 {
@@ -22,5 +20,3 @@ enum eDrawOutline
     OUTLINE_DEFAULT,    // backwards compatible - color = black, width = 1
     OUTLINE_SET
 };
-
-#endif // ESTYLETYPE_H

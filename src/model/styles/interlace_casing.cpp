@@ -1,6 +1,3 @@
-#ifdef __linux__
-#include <cfloat>
-#endif
 #include <QLineF>
 #include "gui/viewers/debug_view.h"
 #include "gui/viewers/geo_graphics.h"
@@ -9,7 +6,6 @@
 #include "model/styles/interlace_casing.h"
 #include "sys/geometry/arcdata.h"
 #include "sys/geometry/geo.h"
-//#include "sys/geometry/intersect.h"
 #include "sys/geometry/neighbour_map.h"
 #include "sys/geometry/threads.h"
 #include "sys/sys/debugflags.h"
@@ -20,19 +16,27 @@
 ///
 //////////////////////////////////////////////////////////////////////
 
-void InterlaceCasingSet::weave()
+int InterlaceCasingSet::weave()
 {
     static uint max = 0;
     qDebug() << "InterlaceCasingSet::createUnders" << "size" << weavings.size();
 
     Q_ASSERT(!Sys::flags->flagged(APPROACH_6));
 
+    int unwoven = 0;
     for (auto it = weavings.begin(); it!= weavings.end(); it++)
     {
         CNeighboursPtr cnp = it.value();
 
         if (cnp->numNeighbours() < 4)
             continue;
+
+        // only 4-way crossings can be woven
+        if (cnp->numNeighbours() > 4)
+        {
+            unwoven++;
+            continue;
+        }
 
         // do this only once for each intersection of edges
         if (!Sys::flags->flagged(NO_UNDER))
@@ -46,10 +50,16 @@ void InterlaceCasingSet::weave()
         }
 
         if (Sys::flags->flagged(USE_TRIGGER_1) && max >= Interlace::iTrigger)
-            return;
+            return unwoven;
 
         max++;
     }
+
+    if (unwoven)
+    {
+        qWarning().noquote() << "Interlace:" << unwoven << "vertices with more than 4 edges were not woven";
+    }
+    return unwoven;
 }
 
 void InterlaceCasingSet::useMap()
@@ -196,13 +206,13 @@ void InterlaceCasing::setUnder(bool set)
 
     if (set)
     {
-        is1->_under.set(Tristate::True);
-        is2->_under.set(Tristate::False);
+        is1->_under.set(Tristate::eTristate::True);
+        is2->_under.set(Tristate::eTristate::False);
     }
     else
     {
-        is1->_under.set(Tristate::False);
-        is2->_under.set(Tristate::True);
+        is1->_under.set(Tristate::eTristate::False);
+        is2->_under.set(Tristate::eTristate::True);
     }
 }
 
@@ -444,7 +454,7 @@ void InterlaceCasing::useMap()
 QPointF InterlaceCasing::getIsect(QLineF l1, eSide tside, QLineF l2, eSide oside)
 {
 
-    if (Geo::isColinear(l1,l2,Sys::NEAR_TOL))
+    if (Geo::isColinear(l1,l2,Loose::NEAR_TOL))
     {
         QPointF p1 = (tside == SIDE_1) ? l1.p1() :  l1.p2();
         QPointF p2 = (oside == SIDE_1) ? l2.p1() :  l2.p2();
@@ -528,7 +538,11 @@ void InterlaceCasing::setIsectsForOvers(CasingSide *thisSide, CasingSide *otherS
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "inner";
                 otherSide->inner = inner;
             }
-            else if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect inner";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect inner - using fallback point";
+                otherSide->inner = inner;
+            }
 
             oldPt = otherSide->outer;
             if (Geo::getCircleLineIsect(otherCasing->outerCircle, outerLine(), oldPt, outer))
@@ -536,7 +550,11 @@ void InterlaceCasing::setIsectsForOvers(CasingSide *thisSide, CasingSide *otherS
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "outer";
                 otherSide->outer = outer;
             }
-            else if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect outer";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect outer - using fallback point";
+                otherSide->outer = outer;
+            }
         }
         else
         {
@@ -546,7 +564,11 @@ void InterlaceCasing::setIsectsForOvers(CasingSide *thisSide, CasingSide *otherS
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "outer";
                 otherSide->outer = inner;
             }
-            else if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect inner";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect inner - using fallback point";
+                otherSide->outer = inner;
+            }
 
             oldPt = otherSide->outer;
             if (Geo::getCircleLineIsect(otherCasing->innerCircle, outerLine(), oldPt, outer))
@@ -554,7 +576,11 @@ void InterlaceCasing::setIsectsForOvers(CasingSide *thisSide, CasingSide *otherS
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "inner";
                 otherSide->inner = outer;
             }
-            else if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect outer";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect outer - using fallback point";
+                otherSide->inner = outer;
+            }
         }
     }
     else if (otherIsLine)
@@ -570,7 +596,11 @@ void InterlaceCasing::setIsectsForOvers(CasingSide *thisSide, CasingSide *otherS
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "inner";
                 otherSide->inner = inner;
             }
-            else if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect inner";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect inner - using fallback point";
+                otherSide->inner = inner;
+            }
 
             oldPt = otherSide->outer;
             if (Geo::getCircleLineIsect(outerCircle, otherCasing->outerLine(), oldPt, outer))
@@ -578,7 +608,11 @@ void InterlaceCasing::setIsectsForOvers(CasingSide *thisSide, CasingSide *otherS
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "outer";
                 otherSide->outer = outer;
             }
-            else if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect outer";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect outer - using fallback point";
+                otherSide->outer = outer;
+            }
         }
         else
         {
@@ -588,7 +622,11 @@ void InterlaceCasing::setIsectsForOvers(CasingSide *thisSide, CasingSide *otherS
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "outer";
                 otherSide->outer = inner;
             }
-            else qDebug() << "no isect inner";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect inner - using fallback point";
+                otherSide->outer = inner;
+            }
 
             oldPt = otherSide->inner;
             if (Geo::getCircleLineIsect(outerCircle, otherCasing->innerLine(), oldPt, outer))
@@ -596,7 +634,11 @@ void InterlaceCasing::setIsectsForOvers(CasingSide *thisSide, CasingSide *otherS
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "inner";
                 otherSide->inner = outer;
             }
-            else if (Interlace::dbgDump2 & 0x400)  qDebug() << "no isect outer";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect outer - using fallback point";
+                otherSide->inner = outer;
+            }
         }
     }
     else
@@ -605,28 +647,28 @@ void InterlaceCasing::setIsectsForOvers(CasingSide *thisSide, CasingSide *otherS
         Q_ASSERT(!otherIsLine);
         if (Interlace::dbgDump2 & 0x400) qDebug() << "circle - circle";
 
-        if (Loose::Near(thisSide->getParent()->outerCircle.centre,otherSide->getParent()->outerCircle.centre,Sys::TOL))
+        if (Loose::Near(thisSide->getParent()->outerCircle.centre,otherSide->getParent()->outerCircle.centre,Loose::TOL))
         {
             ArcData this_ad_o(QLineF(s1->outer,s2->outer),edge->getArcCenter(),edge->getCurveType());
             //qDebug() << this_ad_o.start << QLineF(edge->getArcCenter(),s1->outer).angle() << this_ad_o.end << QLineF(edge->getArcCenter(),s2->outer).angle();
-            Sys::debugMapCreate->insertDebugMark(s1->outer,"END-S1");
-            Sys::debugMapCreate->insertDebugMark(s2->outer,"START-S2");
+            //Sys::debugMapCreate->insertDebugMark(s1->outer,"END-S1");
+            //Sys::debugMapCreate->insertDebugMark(s2->outer,"START-S2");
 
             ArcData this_ad_i(QLineF(s1->inner,s2->inner),edge->getArcCenter(),edge->getCurveType());
             //qDebug() << this_ad_i.start << QLineF(edge->getArcCenter(),s1->inner).angle() << this_ad_i.end << QLineF(edge->getArcCenter(),s2->inner).angle();
-            Sys::debugMapCreate->insertDebugMark(s1->inner,"START-S1");
-            Sys::debugMapCreate->insertDebugMark(s2->inner,"END-S2");
+            //Sys::debugMapCreate->insertDebugMark(s1->inner,"START-S1");
+            //Sys::debugMapCreate->insertDebugMark(s2->inner,"END-S2");
 
             EdgePtr oedge = otherCasing->getEdge();
             ArcData other_ad_o(QLineF(otherCasing->s1->outer,otherCasing->s2->outer), oedge->getArcCenter(),oedge->getCurveType());
             //qDebug() << other_ad_o.start << QLineF(oedge->getArcCenter(),otherCasing->s1->outer).angle() << other_ad_o.end << QLineF(oedge->getArcCenter(),otherCasing->s2->outer).angle();
-            Sys::debugMapCreate->insertDebugMark(otherCasing->s1->outer,"OEND-S1");
-            Sys::debugMapCreate->insertDebugMark(otherCasing->s2->outer,"OSTART-S2");
+            //Sys::debugMapCreate->insertDebugMark(otherCasing->s1->outer,"OEND-S1");
+            //Sys::debugMapCreate->insertDebugMark(otherCasing->s2->outer,"OSTART-S2");
 
             ArcData other_ad_i(QLineF(otherCasing->s1->inner,otherCasing->s2->inner), oedge->getArcCenter(),oedge->getCurveType());
             //qDebug() << other_ad_i.start << QLineF(oedge->getArcCenter(),otherCasing->s1->inner).angle() << other_ad_i.end << QLineF(edge->getArcCenter(),otherCasing->s2->inner).angle();
-            Sys::debugMapCreate->insertDebugMark(otherCasing->s1->inner,"OSTART-S1");
-            Sys::debugMapCreate->insertDebugMark(otherCasing->s2->inner,"OEND-S2");
+            //Sys::debugMapCreate->insertDebugMark(otherCasing->s1->inner,"OSTART-S1");
+            //Sys::debugMapCreate->insertDebugMark(otherCasing->s2->inner,"OEND-S2");
 
             QPointF pt;
             // tiles are clockwise
@@ -669,14 +711,22 @@ void InterlaceCasing::setIsectsForOvers(CasingSide *thisSide, CasingSide *otherS
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "inner";
                 otherSide->inner = inner;
             }
-            else if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect inner";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect inner - using fallback point";
+                otherSide->inner = inner;
+            }
 
             if (Geo::getCircleCircleIsect(outerCircle, otherCasing->outerCircle, outer, outer))
             {
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "outer";
                 otherSide->outer = outer;
             }
-            else if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect outer ";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect outer - using fallback point";
+                otherSide->outer = outer;
+            }
         }
         else
         {
@@ -686,17 +736,24 @@ void InterlaceCasing::setIsectsForOvers(CasingSide *thisSide, CasingSide *otherS
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "outer";
                 otherSide->outer = inner;
             }
-            else if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect inner";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect inner - using fallback point";
+                otherSide->outer = inner;
+            }
 
             if (Geo::getCircleCircleIsect(outerCircle, otherCasing->innerCircle, outer, outer))
             {
                 if (Interlace::dbgDump2 & 0x400) qDebug() << "also setting edge" << otherCasing->edgeIndex << "side" << oside << "inner";
                 otherSide->inner = outer;
             }
-            else if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect outer ";
+            else
+            {
+                if (Interlace::dbgDump2 & 0x400) qDebug() << "no isect outer - using fallback point";
+                otherSide->inner = outer;
+            }
         }
     }
-
 }
 
 QPointF InterlaceCasing::connectArcs(QPointF center, qreal radius, qreal from, qreal to)

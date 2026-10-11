@@ -1,6 +1,4 @@
 #pragma once
-#ifndef EBORDER_H
-#define EBORDER_H
 
 #include <QString>
 
@@ -38,5 +36,3 @@ enum eBorderType
     BORDER_TWO_COLOR    = 2,
     BORDER_BLOCKS       = 3,
 };
-
-#endif

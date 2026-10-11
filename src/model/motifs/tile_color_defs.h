@@ -1,5 +1,4 @@
-#ifndef TILE_COLOR_DEFS_H
-#define TILE_COLOR_DEFS_H
+#pragma once
 
 const int TileBlue      = 0x39426d;
 const int TileGreen     = 0x34554a;
@@ -12,5 +11,3 @@ const int AlhambraBrown = 0xa35807;
 const int AlhambraBlue  = 0x1840b2;
 const int AlhambraGreen = 0x234b30;
 const int AlhambraGold  = 0xc59c0c;
-
-#endif

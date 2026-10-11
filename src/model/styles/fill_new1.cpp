@@ -23,6 +23,16 @@ New1Coloring::New1Coloring(const New1Coloring & other) : ColorMaker(other.filled
     draw_outside_whites   = other.draw_outside_whites;
 }
 
+New1Coloring& New1Coloring::operator=(const New1Coloring & other)
+{
+    if (this != &other)
+    {
+        draw_inside_blacks  = other.draw_inside_blacks;
+        draw_outside_whites = other.draw_outside_whites;
+    }
+    return *this;
+}
+
 void New1Coloring::initFrom(eFillType old)
 {
     if (initialised)
@@ -151,7 +161,8 @@ void New1Coloring::draw(GeoGraphics * gg)
 
 QString New1Coloring::sizeInfo()
 {
-    QString astring("TODO");
-    return astring;
+    return QString("white:%1 black:%2 wColors:%3 bColors:%4")
+           .arg(whiteFaces.size()).arg(blackFaces.size())
+           .arg(whiteColorSet.size()).arg(blackColorSet.size());
 }
 

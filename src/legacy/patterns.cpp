@@ -6,9 +6,9 @@
 #include "model/borders/border.h"
 #include "model/mosaics/mosaic.h"
 #include "model/motifs/explicit_map_motif.h"
-#include "model/motifs/irregular_motif.h"
+#include "model/motifs/adaptive_motif.h"
 #include "model/motifs/tile_color_defs.h"
-#include "model/prototypes/design_element.h"
+#include "model/prototypes/tile_motif.h"
 #include "model/prototypes/prototype.h"
 #include "model/settings/configuration.h"
 #include "model/styles/thick.h"
@@ -16,7 +16,7 @@
 #include "model/tilings/placed_tile.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
-#include "model/tilings/tiling_manager.h"
+#include "model/makers/tiling_maker.h"
 #include "sys/geometry/geo.h"
 #include "sys/geometry/map.h"
 #include "sys/sys/fileservices.h"
@@ -67,11 +67,11 @@ Pattern::~Pattern()
 Pattern5::Pattern5(qreal Diameter, QBrush Brush)  : Pattern(Diameter, Brush)
 {
     layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);
+    addLayer(layer1,Layer::ZLevel::Z1);
     layer2 = make_shared<LegacyTile>();
-    addLayer(layer2,LEGACY_Z2);
+    addLayer(layer2,Layer::ZLevel::Z2);
     layer3 = make_shared<LegacyTile>();
-    addLayer(layer3,LEGACY_Z3);
+    addLayer(layer3,Layer::ZLevel::Z3);
 }
 
 void Pattern5::build()
@@ -103,9 +103,9 @@ Pattern6::Pattern6(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 
 {
     layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);
+    addLayer(layer1,Layer::ZLevel::Z1);
     layer2 = make_shared<LegacyTile>();
-    addLayer(layer2,LEGACY_Z2);
+    addLayer(layer2,Layer::ZLevel::Z2);
 }
 
 void Pattern6::build()
@@ -135,7 +135,7 @@ void Pattern6::build()
 Pattern7::Pattern7(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 {
     layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);
+    addLayer(layer1,Layer::ZLevel::Z1);
 }
 
 void Pattern7::build()
@@ -191,9 +191,9 @@ PatternHuSymbol::PatternHuSymbol(int gridWidth, QPen GridPen, QPen InnerPen, QCo
     : Pattern(Diameter, Brush)
 {
     layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);
+    addLayer(layer1,Layer::ZLevel::Z1);
     layer3 = make_shared<LegacyTile>();
-    addLayer(layer3,LEGACY_Z3);
+    addLayer(layer3,Layer::ZLevel::Z3);
 
     // 21 rows cols
     width = qreal(gridWidth);
@@ -221,8 +221,8 @@ void PatternHuSymbol::build()
     s->enableAntialiasing(false);
     s3->enableAntialiasing(false);
 
-    qDebug() << "loc =" << getLoc();
-    qDebug() << "sloc=" << s->getLoc();
+    //qDebug() << "loc =" << getLoc();
+    //qDebug() << "sloc=" << s->getLoc();
 
 }
 
@@ -528,13 +528,13 @@ PatternHuInterlace::PatternHuInterlace(int gridWidth, QPen GridPen, QPen InnerPe
     : Pattern(Diameter, Brush)
 {
     layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);
+    addLayer(layer1,Layer::ZLevel::Z1);
     layer2 = make_shared<LegacyTile>();
-    addLayer(layer2,LEGACY_Z2);
+    addLayer(layer2,Layer::ZLevel::Z2);
     layer3 = make_shared<LegacyTile>();
-    addLayer(layer3,LEGACY_Z3);
+    addLayer(layer3,Layer::ZLevel::Z3);
     layer4 = make_shared<LegacyTile>();
-    addLayer(layer4,LEGACY_Z4);
+    addLayer(layer4,Layer::ZLevel::Z4);
 
     // 21 rows cols
     width = qreal(gridWidth);
@@ -908,7 +908,7 @@ bool PatternHuInterlace::doStep(int Index)
 Pattern10::Pattern10(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 {
     layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);
+    addLayer(layer1,Layer::ZLevel::Z1);
 }
 
 void Pattern10::build()
@@ -956,9 +956,9 @@ bool Pattern10::doStep(int Index)
 Pattern11::Pattern11(qreal Diameter, QBrush Brush, qreal rotation, eDirection direction)  : Pattern(Diameter, Brush)
 {
     layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);
+    addLayer(layer1,Layer::ZLevel::Z1);
     layer2 = make_shared<LegacyTile>();
-    addLayer(layer2,LEGACY_Z2);
+    addLayer(layer2,Layer::ZLevel::Z2);
 
     Rotation  = rotation;
     Direction = direction;
@@ -1048,11 +1048,11 @@ void Pattern11::build()
 Pattern12::Pattern12(qreal Diameter, QBrush Brush, qreal rotation, eDirection direction, int Row, int Col) : Pattern(Diameter, Brush, Row, Col)
 {
     layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);
+    addLayer(layer1,Layer::ZLevel::Z1);
     layer2 = make_shared<LegacyTile>();
-    addLayer(layer2,LEGACY_Z2);
+    addLayer(layer2,Layer::ZLevel::Z2);
     layer3 = make_shared<LegacyTile>();
-    addLayer(layer3,LEGACY_Z3);
+    addLayer(layer3,Layer::ZLevel::Z3);
 
     Rotation  = rotation;
     Direction = direction;
@@ -1193,13 +1193,13 @@ void Pattern12::build()
 PatternIncompleteA::PatternIncompleteA(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 {
     layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);
+    addLayer(layer1,Layer::ZLevel::Z1);
     layer2 = make_shared<LegacyTile>();
-    addLayer(layer2,LEGACY_Z2);
+    addLayer(layer2,Layer::ZLevel::Z2);
     layer3 = make_shared<LegacyTile>();
-    addLayer(layer3,LEGACY_Z3);
+    addLayer(layer3,Layer::ZLevel::Z3);
     layer4 = make_shared<LegacyTile>();
-    addLayer(layer4,LEGACY_Z4);
+    addLayer(layer4,Layer::ZLevel::Z4);
 }
 
 void PatternIncompleteA::build()
@@ -1297,22 +1297,6 @@ void PatternIncompleteA::build()
     //Polygon2 * pio = s3->addInscribedOctagon(QPen(QColor(Qt::blue),3,Qt::SolidLine,Qt::FlatCap),nobrush,22.5);
     //pio->identify(&layers[4]);
     //identify(&layers[4],pio);
-
-#if 0 // TODO
-    // the star
-    //DesignViewerPtr m3 = make_shared<DesignViewer>(diameter);
-    //tileLayers[3].addToGroup(m3.get());
-    //layers[2].setFlag(ItemClipsChildrenToShape);
-    MotifPtr fp = make_shared<Star>(8,3.0,2.0);
-    TilePtr nullTile = make_shared<Tile>(8,0);
-    DELPtr dep   = make_shared<DesignElement>(nullTile,fp);
-    Viewer * viewer = new Viewer;
-    FigureView * figView   = viewer->viewFigure(dep, QPointF(0,0),height);
-    figView->setPen(linePen);
-    //figView->setLoc(owner->getStartTile());
-    //figView->setZValue(20);
-    layer3->addToGroup(figView);
-#endif
 }
 
 
@@ -1327,7 +1311,7 @@ Pattern14::Pattern14(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 void Pattern14::build()
 {
     LayerPtr layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);
+    addLayer(layer1,Layer::ZLevel::Z1);
 
     ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
     layer1->addSubLayer(s1);
@@ -1352,7 +1336,7 @@ Pattern15::Pattern15(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 void Pattern15::build()
 {
     LayerPtr layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);
+    addLayer(layer1,Layer::ZLevel::Z1);
 
     ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
     layer1->addSubLayer(s1);
@@ -1372,12 +1356,12 @@ Pattern16::Pattern16(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 void Pattern16::build()
 {
     LayerPtr layer1 = make_shared<LegacyTile>();
-    addLayer(layer1,LEGACY_Z1);;
+    addLayer(layer1,Layer::ZLevel::Z1);;
     ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
     layer1->addSubLayer(s1);
 
     LayerPtr layer4 = make_shared<LegacyTile>();
-    addLayer(layer4,LEGACY_Z4);
+    addLayer(layer4,Layer::ZLevel::Z4);
     ShapeFPtr s4 = make_shared<ShapeFactory>(diameter);
     layer4->addSubLayer(s4);
 
@@ -1412,7 +1396,7 @@ void PatternKumiko1::build()
 
     s2 = make_shared<ShapeFactory>(diameter);
     LayerPtr layer2 = make_shared<LegacyTile>();
-    addLayer(layer2,LEGACY_Z2);;
+    addLayer(layer2,Layer::ZLevel::Z2);;
 
     QPointF a(-radius,-ypos);
     QPointF b( radius,-ypos);
@@ -1428,7 +1412,7 @@ void PatternKumiko1::build()
 
     s3 = make_shared<ShapeFactory>(diameter);
     LayerPtr layer3 = make_shared<LegacyTile>();
-    addLayer(layer3,LEGACY_Z3);;
+    addLayer(layer3,Layer::ZLevel::Z3);;
     layer3->addSubLayer(s3);
 
     QPointF a1(0,ypos);
@@ -1450,7 +1434,7 @@ void PatternKumiko1::build()
 
     s4 = make_shared<ShapeFactory>(diameter);
     LayerPtr layer4 = make_shared<LegacyTile>();
-    addLayer(layer4,LEGACY_Z4);;
+    addLayer(layer4,Layer::ZLevel::Z4);;
     layer4->addSubLayer(s4);
 
     Polygon2 * p1 = s4->addStretchedExternalHexagon(woodPen, nobrush,90.0);
@@ -1458,7 +1442,7 @@ void PatternKumiko1::build()
 
     s5 = make_shared<ShapeFactory>(diameter);
     LayerPtr layer5 = make_shared<LegacyTile>();
-    addLayer(layer5,LEGACY_Z5);;
+    addLayer(layer5,Layer::ZLevel::Z5);;
     layer5->addSubLayer(s5);
 
     Polygon2 * p2 = s5->addStretchedExternalHexagon(woodPen, nobrush,90.0);
@@ -1471,7 +1455,7 @@ void PatternKumiko1::build()
 PatternKumiko2::PatternKumiko2(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 {
     layer2 = make_shared<LegacyTile>();
-    addLayer(layer2,LEGACY_Z2);;
+    addLayer(layer2,Layer::ZLevel::Z2);;
 }
 
 void PatternKumiko2::build()
@@ -1541,14 +1525,13 @@ void PatternKumiko2::build()
     // make an explicit figure and position it
     VersionedName vn("Kumiko2");
     VersionedFile vf = FileServices::getFile(vn,FILE_TILING);
-    TilingManager tm;
-    TilingPtr t = tm.loadTiling(vf,TILM_LOAD_FROM_MOSAIC);
+    QString failMsg;
+    TilingPtr t = Sys::tilingMaker->readTiling(vf,failMsg);
     if (!t)
     {
         t = make_shared<Tiling>();
-        CanvasSettings cs;  // default
-        cs.setFillData(fd);
-        t->hdr().setCanvasSettings(cs);
+        Canvas * cs = t->hdr().getTilingCanvas();// default
+        cs->setFillData(fd);
         TilePtr fp = make_shared<Tile>(4,0.0);
         PlacedTilePtr pfp = make_shared<PlacedTile>(fp,QTransform());
         t->hdr().setTranslationVectors(trans1, trans2, QPointF());
@@ -1556,26 +1539,26 @@ void PatternKumiko2::build()
         t->setVName(vn);
         t->setDescription("Kumiko2 translation vectors");
         t->setAuthor("David A. Casper");
-        TilingManager tm;
-        tm.saveTiling(t,vf,true);
+        Sys::tilingMaker->saveTiling(t,vf);
     }
 
-    const PlacedTiles tilingUnit = t->unit().getIncluded();
-    auto tile = tilingUnit[0]->getTile();
+    const PlacedTileSet tileSet = t->unit().getIncluded();
+    auto tile = tileSet[0]->getTile();
 
     auto motif = make_shared<ExplicitMapMotif>(map);
     motif->setN(10); // default
     motif->setTile(tile);
-    motif->buildMotifMap();
+    motif->build();
 
-    DELPtr dep = make_shared<DesignElement>(t,tilingUnit[0]->getTile(),motif);
+    TileMotifPtr dep = make_shared<TileMotif>(t,tileSet[0]->getTile(),motif);
 
     MosaicPtr mosaic = make_shared<Mosaic>();
-    FillData fd = t->hdr().getCanvasSettings().getFillData();
-    mosaic->getCanvasSettings().setFillData(fd);
+    FillData fd = t->hdr().getTilingCanvas()->getFillData();
+    Canvas * cs = mosaic->getMosaicCanvas();
+    cs->setFillData(fd);
 
     ProtoPtr proto = make_shared<Prototype>(t,mosaic);
-    proto->addDesignElement(dep);
+    proto->addTileMotif(dep);
     proto->getProtoMap();
 
     ThickPtr thick = make_shared<Thick>(proto);

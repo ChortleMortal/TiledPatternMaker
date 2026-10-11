@@ -4,13 +4,10 @@
 #include "gui/map_editor/map_selection.h"
 #include "gui/viewers/map_editor_view.h"
 #include "model/motifs/motif.h"
-#include "model/prototypes/design_element.h"
-#include "model/settings/configuration.h"
+#include "model/prototypes/tile_motif.h"
 #include "model/tilings/tile.h"
 #include "model/tilings/tiling.h"
 #include "sys/geometry/circle.h"
-#include "sys/geometry/crop.h"
-#include "sys/geometry/dcel.h"
 #include "sys/geometry/edge.h"
 #include "sys/geometry/geo.h"
 #include "sys/geometry/loose.h"
@@ -21,374 +18,11 @@
 using std::make_shared;
 
 const bool debugSelection = false;
-MapEditorSelection::MapEditorSelection(MapEditorDb * db)
+
+MapEditorSelection::MapEditorSelection(MapEditor *me)
 {
-    this->db = db;
-    config   = Sys::config;
-}
-
-void MapEditorSelection::buildEditorDB()
-{
-    points.clear();
-    lines.clear();
-    circles.clear();
-
-    if (config->mapEditorMode == MAPED_MODE_MAP)
-    {
-        for (const MapEditorLayer * layer : db->getDrawLayers())
-        {
-            DELPtr delp = layer->getDel();
-            if (delp)
-            {
-                Q_ASSERT(db->isMotif(layer->getLayerMapType()));
-                // add motif
-                buildMotifDB(delp);
-            }
-
-            for (MapPtr & map : db->getDrawMaps())
-	        {
-	            // add points from map vertices
-                for (const VertexPtr & vert : std::as_const(map->getVertices()))
-	            {
-                    PointInfo pi(PT_VERTEX,vert,"vertex");
-	                points.push_back(pi);
-	            }
-
-                for (const EdgePtr & edge : std::as_const(map->getEdges()))
-	            {
-	                // add lines from map edges
-                    LineInfo li(LINE_EDGE,edge,"edge");
-	                lines.push_back(li);
-
-	                // add points from map edges mid-points
-	                QPointF midPt = edge->getLine().pointAt(0.5);
-                    PointInfo pi(PT_VERTEX_MID,midPt,"mid-point edge");
-                    points.push_back(pi);
-	            }
-	        }
-    	}
-    }
-    else
-    {
-        Q_ASSERT(config->mapEditorMode == MAPED_MODE_DCEL);
-        DCELPtr dcel = db->getActiveDCEL();
-        if  (dcel)
-        {
-            // add points from map vertices
-            const QVector<VertexPtr>  & vertices = dcel->getVertices();
-            for (const VertexPtr & v : std::as_const(vertices))
-            {
-                PointInfo pi(PT_VERTEX,v,"vertex");
-                points.push_back(pi);
-            }
-
-            for (const EdgePtr & e : std::as_const(dcel->getEdges()))
-            {
-                // add lines from map edges
-                LineInfo li(LINE_EDGE,e,"edge");
-                lines.push_back(li);
-
-                // add points from map edges mid-points
-                QPointF midPt = e->getLine().pointAt(0.5);
-                PointInfo pi(PT_VERTEX_MID,midPt,"mid-point edge");
-                points.push_back(pi);
-            }
-        }
-    }
-
-    // add construction lines
-    for (const QLineF & line : std::as_const(db->constructionLines))
-    {
-        LineInfo li(LINE_CONSTRUCTION,line,"construction line");
-        lines.push_back(li);
-
-        QPointF a = line.p1();
-        PointInfo pi(PT_LINE,a,"end-point construction line");
-        points.push_back(pi);
-
-        QPointF b = line.p2();
-        PointInfo pi2(PT_LINE,b,"end-point construction line");
-        points.push_back(pi2);
-
-        QPointF midPt = line.pointAt(0.5);
-        PointInfo pi3(PT_LINE_MID,midPt,"mid-point construction line");
-        points.push_back(pi);
-    }
-
-    // add construction circles
-    for (const CirclePtr & circle :std::as_const(db->constructionCircles))
-    {
-        circles.push_back(circle);
-    }
-
-    // add crop circle
-    CropPtr crop = db->getCrop();
-    if (crop && crop->getCropType() == CROP_CIRCLE)
-    {
-        CirclePtr circle = make_shared<Circle>(crop->getCircle());
-        circles.push_back(circle);
-    }
-
-    // build circle-line intersects
-    for (const CirclePtr & c : std::as_const(circles))
-    {
-        for (const LineInfo & linfo : std::as_const(lines))
-        {
-            if (linfo.type == LINE_EDGE && !db->showMap)
-            {
-                continue;
-            }
-
-            QLineF line  = linfo.line;
-
-            // try for circle
-            QPointF a;
-            QPointF b;
-            int count = Geo::findLineCircleIntersections(c->centre, c->radius, line, a, b);
-            if (count == 1)
-            {
-                // this is a tangent line
-                PointInfo pi(PT_CIRCLE,a,"circle tangent");
-                points.push_back(pi);
-            }
-            else if (count == 2)
-            {
-                if (Geo::pointOnLine(line,a))
-                {
-                    PointInfo pi(PT_CIRCLE,a,"circle intersect a");
-                    points.push_back(pi);
-                }
-
-                if (Geo::pointOnLine(line,b))
-                {
-                    PointInfo pi2(PT_CIRCLE,b,"circle intersect b");
-                    points.push_back(pi2);
-                }
-            }
-        }
-    }
-
-    // build circle-circle intersects
-    for (int i=0; i < circles.size(); i++)
-    {
-        CirclePtr c1 = circles[i];
-        for (int j=i+1; j < circles.size(); j++)
-        {
-            CirclePtr c2 = circles[j];
-            QPointF p1;
-            QPointF p2;
-            int count = Geo::circleCircleIntersectionPoints(*c1.get(),*c2.get(),p1,p2);
-            if (count == 1)
-            {
-                //qDebug() << "circle-circle touch point=" << p1;
-                PointInfo pi(PT_CIRCLE_1,p1,"circle touchPoint");
-                points.push_back(pi);
-            }
-            else if (count == 2)
-            {
-                //qDebug() << "circle-circle touch points=" << p1 << p2;
-                PointInfo pi(PT_CIRCLE_1,p1,"circle touchPoint A");
-                PointInfo pi2(PT_CIRCLE_2,p2,"circle touchPoint B");
-                points.push_back(pi);
-                points.push_back(pi2);
-            }
-        }
-    }
-
-    // build construction line intersect points
-    for (const QLineF & cline : std::as_const(db->constructionLines))
-    {
-        for (const LineInfo & linfo : std::as_const(lines))
-        {
-            if (linfo.type == LINE_CONSTRUCTION && cline == linfo.line)
-            {
-                continue;
-            }
-            if (linfo.type == LINE_EDGE && !db->showMap)
-            {
-                continue;
-            }
-            if (linfo.type == LINE_EDGE && linfo.edge->isCurve())
-            {
-                QPointF isect1;
-                QPointF isect2;
-                int count = Geo::findLineCircleIntersections(linfo.edge->getArcCenter(),linfo.edge->getRadius(),cline,isect1,isect2);
-
-                if (count && linfo.edge->pointWithinArc(isect1))
-                {
-                    PointInfo pi(PT_LINE,isect1,"construction line intersect");
-                    points.push_back(pi);
-                }
-
-                if (count == 2 && linfo.edge->pointWithinArc(isect2))
-                {
-                    PointInfo pi(PT_LINE,isect2,"construction line intersect");
-                    points.push_back(pi);
-                }
-            }
-            else
-            {
-                QLineF line  = linfo.line;
-                QPointF intersect;
-                QLineF::IntersectType itype = cline.intersects(line,&intersect);
-                if (itype == QLineF::BoundedIntersection)
-                {
-                    // hapily this does into include intersecting ends (which previously I thought was a Qt bug)
-                    PointInfo pi(PT_LINE,intersect,"construction line intersect");
-                    points.push_back(pi);
-                }
-            }
-        }
-    }
-}
-
-void MapEditorSelection::buildMotifDB(DELPtr delp)
-{
-    Q_ASSERT(delp);
-
-    MotifPtr  motif  = delp->getMotif();
-    TilePtr tile     = delp->getTile();
-    TilingPtr tiling = delp->getTiling();
-    Q_ASSERT(tiling);
-
-    QTransform placement  = tiling->getFirstPlacement(tile);
-    qDebug() << "placement" << Transform::info(placement);
-
-    for (ExtenderPtr ep : motif->getExtenders())
-    {
-        const ExtendedBoundary & eb = ep->getExtendedBoundary();
-        if (db->showBoundaries)
-        {
-            // add points from ext boundary
-            const QPolygonF & rextBoundary = eb.getPoly();
-            QPolygonF extBoundary  = placement.map(rextBoundary);
-
-            if (extBoundary.size())
-            {
-                if (tile)
-                {
-                    QPointF center = tile->getCenter();
-                    QTransform t0  = QTransform::fromTranslate(center.x(),center.y());
-                    extBoundary    = t0.map(extBoundary);
-                }
-
-                for (auto & apt : std::as_const(extBoundary))
-                {
-                    PointInfo pi(PT_LINE,apt,"boundary point");
-                    points.push_back(pi);
-                }
-
-                QVector<QLineF> edges = Geo::polyToLines(extBoundary);
-                for (auto & line : std::as_const(edges))
-                {
-                    // add lines from ext boundary
-                    LineInfo li(LINE_FIXED,line,"boundary line");
-                    lines.push_back(li);
-
-                    // add points from ext bopundary mid-points
-                    QPointF midPt = line.pointAt(0.5);
-                    PointInfo pi(PT_LINE_MID,midPt,"mid-point boundary");
-                    points.push_back(pi);
-                }
-
-                if (!extBoundary.isClosed())
-                {
-                    QLineF line(extBoundary.last(),extBoundary.first());
-                    LineInfo li(LINE_FIXED,line,"boundary line");
-                    lines.push_back(li);
-
-                    QPointF midPt = line.pointAt(0.5);
-                    PointInfo pi(PT_LINE_MID,midPt,"mid-point boundary");
-                    points.push_back(pi);
-                }
-            }
-        }
-
-        // add points from radial motif boundary
-        QPolygonF motifBoundary = motif->getMotifBoundary();
-        motifBoundary            = placement.map(motifBoundary);
-        if (motifBoundary.size())
-        {
-            for (auto & apt : std::as_const(motifBoundary))
-            {
-                PointInfo pi(PT_LINE,apt,"radial motif boundary point");
-                points.push_back(pi);
-            }
-
-            QVector<QLineF> edges = Geo::polyToLines(motifBoundary);
-            for (auto & line : std::as_const(edges))
-            {
-                // add line from radial motif boundary
-                LineInfo li(LINE_FIXED,line,"radial motif boundary line");
-                lines.push_back(li);
-
-                // add point from raidal motif boundary
-                QPointF midPt = line.pointAt(0.5);
-                PointInfo pi(PT_LINE_MID,midPt,"mid-point radial motif boundary");
-                points.push_back(pi);
-            }
-
-            if (!motifBoundary.isClosed())
-            {
-                QLineF line(motifBoundary.last(),motifBoundary.first());
-                LineInfo li(LINE_FIXED,line,"boundary line");
-                lines.push_back(li);
-
-                QPointF midPt = line.pointAt(0.5);
-                PointInfo pi(PT_LINE_MID,midPt,"mid-point boundary");
-                points.push_back(pi);
-            }
-        }
-
-        // add external boundary circle
-        if (eb.isCircle())
-        {
-            CirclePtr c = make_shared<Circle>(QPointF(0,0), eb.getScale());
-            circles.push_back(c);
-        }
-    }
-
-    // add points from tile
-    if (tile)
-    {
-        QPolygonF poly = tile->getPolygon();
-        if (poly.size())
-        {
-            poly = placement.map(poly);
-
-            for (auto & apt : std::as_const(poly))
-            {
-                PointInfo pi(PT_LINE,apt,"tile point");
-                points.push_back(pi);
-            }
-
-            const EdgePoly & edges0 = tile->getEdgePoly();
-            EdgePoly edges          = edges0.map(placement);
-            for (auto & edge : edges.get())
-            {
-                // add lines from tile edges
-                QLineF line = edge->getLine();
-                LineInfo li(LINE_FIXED,line,"tile line");
-                lines.push_back(li);
-
-                // add point from tile edge mid-points
-                QPointF midPt = line.pointAt(0.5);
-                PointInfo pi(PT_LINE_MID,midPt,"mid-point tile");
-                points.push_back(pi);
-            }
-
-            if (!poly.isClosed())
-            {
-                QLineF line(poly.last(),poly.first());
-                LineInfo li(LINE_FIXED,line,"boundary line");
-                lines.push_back(li);
-
-                QPointF midPt = line.pointAt(0.5);
-                PointInfo pi(PT_LINE_MID,midPt,"mid-point boundary");
-                points.push_back(pi);
-            }
-        }
-    }
+    editor = me;
+    db     = editor->getDb();
 }
 
 SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
@@ -397,20 +31,23 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
     MapSelectionPtr sel;
 
     // find point near spt
-    for (auto & pi : std::as_const(points))
+    for (auto & pi : std::as_const(db->getPoints()))
     {
-        if ( (pi.type == PT_VERTEX || pi.type == PT_VERTEX_MID) && !db->showMap)
+        if ( (pi.type == PointInfo::Type::Vertex || pi.type == PointInfo::Type::VertexMid) && !db->showMap)
             continue;
 
-        if ( (pi.type == PT_LINE || pi.type == PT_LINE_MID || pi.type == PT_CIRCLE) && !db->showConstructionLines)
+        if ( (pi.type == PointInfo::Type::Line || pi.type == PointInfo::Type::LineMid || pi.type == PointInfo::Type::Circle) && !db->showConstructionLines)
+            continue;
+
+        if ( (pi.type == PointInfo::Type::Center) && !db->showTileCentre)
             continue;
 
         QPointF    apt = pi.pt;
         QPointF      a = Sys::mapEditorView->viewT.map(apt);
         if (Geo::isNear(spt,a))
         {
-            if (debugSelection) qDebug() << "FOUND point" << apt << pi.desc;
-            if (pi.type == PT_VERTEX)
+            if (debugSelection) qDebug() << "FOUND point" << apt;;
+            if (pi.type == PointInfo::Type::Vertex)
                 set.push_back(make_shared<MapSelection>(pi.vert));
             else
                 set.push_back(make_shared<MapSelection>(apt));
@@ -418,21 +55,21 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
     }
 
     // find line near spt
-    for (auto & linfo : std::as_const(lines))
+    for (auto & linfo : std::as_const(db->getLines()))
     {
-        if (linfo.type == LINE_EDGE && !db->showMap)
+        if (linfo.type == LineInfo::Type::LINE_EDGE && !db->showMap)
             continue;
-        if (linfo.type == LINE_CONSTRUCTION && !db->showConstructionLines)
+        if (linfo.type == LineInfo::Type::LINE_CONSTRUCTION && !db->showConstructionLines)
             continue;
 
         QLineF     line  = linfo.line;
         QLineF wline     = Sys::mapEditorView->viewT.map(line);
         if (Geo::dist2ToLine(spt, wline.p1(), wline.p2()) < 49.0)
         {
-            if (debugSelection) qDebug() << "FOUND line" << line << linfo.desc;
-            if (linfo.type == LINE_EDGE)
+            if (debugSelection) qDebug() << "FOUND line" << line;
+            if (linfo.type == LineInfo::Type::LINE_EDGE)
                 set.push_back(make_shared<MapSelection>(linfo.edge));
-            else if (linfo.type == LINE_CONSTRUCTION)
+            else if (linfo.type == LineInfo::Type::LINE_CONSTRUCTION)
                 set.push_back(make_shared<MapSelection>(line,true));
             else
                 set.push_back(make_shared<MapSelection>(line));
@@ -440,24 +77,23 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
     }
 
     // find point on circle near spt
-    for (const MapEditorLayer * layer : db->getDrawLayers())
+    QVector<TimoMap *> vec = editor-> getDrawTimoMaps();
+    for (TimoMap * tmap : std::as_const(vec))
     {
-        DELPtr delp = layer->getDel();
-        if (delp)
+        TileMotifSet timos = tmap->getTileMotifs();
+        for (auto & timo : timos)
         {
-            Q_ASSERT (db->isMotif(layer->getLayerMapType()));
-            MotifPtr motif = delp->getMotif();
+            MotifPtr motif = timo->getMotif();
             for (ExtenderPtr ep : motif->getExtenders())
             {
                 const ExtendedBoundary & eb = ep->getExtendedBoundary();
                 if (eb.isCircle())
                 {
-                    qreal bscale    = eb.getScale();
+                    qreal bscale    = eb.getRadius();
                     qreal scale     = Transform::scalex(Sys::mapEditorView->viewT) * bscale;
                     qreal radius    = 1.0 * scale;
                     QPointF center  = QPointF(0.0,0.0);
-                    QPointF scenter = Sys::mapEditorView->modelToScreen(center);    // TODO - verify this
-                    scenter         = Sys::mapEditorView->viewT.map(scenter);
+                    QPointF scenter = Sys::mapEditorView->viewT.map(center);
 
                     QPointF a;
                     QPointF b;
@@ -509,11 +145,11 @@ MapSelectionPtr MapEditorSelection::findAPoint(SelectionSet & set)
 {
     for (auto & sel : std::as_const(set))
     {
-        if (sel->getType() == MAP_POINT || sel->getType() == MAP_VERTEX)
+        if (sel->getType() == MapSelection::Type::MAP_POINT || sel->getType() == MapSelection::Type::MAP_VERTEX)
         {
             return sel;
         }
-        else if ( sel->getType() == MAP_CIRCLE && sel->hasCircleIntersect())
+        else if ( sel->getType() == MapSelection::Type::MAP_CIRCLE && sel->hasCircleIntersect())
         {
             return sel;
         }
@@ -522,11 +158,31 @@ MapSelectionPtr MapEditorSelection::findAPoint(SelectionSet & set)
     return msp;
 }
 
+QPointF MapEditorSelection::snapPoint(SelectionSet & set, QPointF spt, bool * snapped)
+{
+    if (snapped) *snapped = true;
+
+    MapSelectionPtr sel = findAPoint(set);
+    if (sel)
+    {
+        return sel->getPoint();
+    }
+
+    sel = findALine(set);
+    if (sel)
+    {
+        return sel->getPointNear(sel,Sys::mapEditorView->viewTinv.map(spt));
+    }
+
+    if (snapped) *snapped = false;
+    return Sys::mapEditorView->viewTinv.map(spt);
+}
+
 MapSelectionPtr MapEditorSelection::findALine(SelectionSet &set)
 {
     for (auto & sel : std::as_const(set))
     {
-        if (sel->getType() == MAP_LINE || sel->getType() == MAP_EDGE)
+        if (sel->getType() == MapSelection::Type::MAP_LINE || sel->getType() == MapSelection::Type::MAP_EDGE)
         {
             return sel;
         }
@@ -539,7 +195,7 @@ MapSelectionPtr MapEditorSelection::findAnEdge(SelectionSet &set)
 {
     for (auto & sel : std::as_const(set))
     {
-        if (sel->getType() == MAP_EDGE)
+        if (sel->getType() == MapSelection::Type::MAP_EDGE)
         {
             return sel;
         }
@@ -552,7 +208,7 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
 {
     MapSelectionPtr sel;
 
-    MapPtr map = db->getEditMap();
+    MapPtr map = editor->getEditMap();
     if (!map)
         return sel;
 
@@ -562,9 +218,7 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
         {
             continue;
         }
-        QPointF pt   = Sys::mapEditorView->modelToScreen(vp->pt);    // TODO - verify
-        QPointF a    = Sys::mapEditorView->viewT.map(pt);
-        //QPointF sa   = worldToScreen(a);
+        QPointF a    = Sys::mapEditorView->viewT.map(vp->pt);
         if (Geo::isNear(spt,a))
         {
             if (debugSelection) qDebug() << "FOUND vertex";
@@ -601,7 +255,7 @@ SelectionSet MapEditorSelection::findEdges(QPointF spt, const NeighboursPtr excl
 {
     SelectionSet set;
 
-    MapPtr map = db->getEditMap();
+    MapPtr map = editor->getEditMap();
     if (!map)
         return set;
 
@@ -637,72 +291,77 @@ SelectionSet MapEditorSelection::findEdges(QPointF spt, const NeighboursPtr excl
 
 bool MapEditorSelection::insideBoundary(QPointF wpt)
 {
-    // TODO - optimize me
-
-    qreal boundary_area = 0;
-    qreal tile_area     = 0;
-    QPolygonF boundary;
-
-    MapEditorLayer & layer = db->getEditLayer();
-    DELPtr delp  = layer.getDel();
-    if (!delp)
+    TileMotifSet timos = editor->getEditTileMotifs();
+    if (timos.isEmpty())
         return true;    // no boundary
 
-    Q_ASSERT(db->isMotif(layer.getLayerMapType()));
+    bool rv = false;
 
-    MotifPtr motif = delp->getMotif();
-    TilePtr tilep  = delp->getTile();
-
-    if (!motif || !tilep)
-        return true;
-
-    QPolygonF tile = tilep->getPolygon();
-    if (tile.size())
+    for (auto & timo : timos)
     {
-        tile_area = Geo::calcArea(tile);
-    }
+        MotifPtr motif = timo->getMotif();
+        TilePtr tilep  = timo->getTile();
 
-    for (ExtenderPtr ep : motif->getExtenders())
-    {
-        const ExtendedBoundary & eb = ep->getExtendedBoundary();
-        if (eb.isCircle())
+        if (!motif || !tilep)
         {
-            qreal radius = eb.getScale();
-            QGraphicsEllipseItem circle(-radius,-radius,radius * 2.0, radius * 2.0);
-            if (circle.contains(wpt))
+            rv = true;
+            continue;
+        }
+
+        qreal boundary_area = 0;
+        qreal tile_area     = 0;
+        QPolygonF boundary;
+
+        QPolygonF tile = tilep->getPolygon();
+        if (tile.size())
+        {
+            tile_area = Geo::calcArea(tile);
+        }
+
+        for (ExtenderPtr ep : motif->getExtenders())
+        {
+            const ExtendedBoundary & eb = ep->getExtendedBoundary();
+            if (eb.isCircle())
             {
-                return true;
+                qreal radius = eb.getRadius();
+                QGraphicsEllipseItem circle(-radius,-radius,radius * 2.0, radius * 2.0);
+                if (circle.contains(wpt))
+                {
+                    rv = true;
+                    continue;
+                }
+            }
+
+            QPolygonF aboundary = eb.getPoly();
+            if (aboundary.size())
+            {
+                QPointF center = tilep->getCenter();
+                QTransform t   = QTransform::fromTranslate(center.x(),center.y());
+                aboundary      = t.map(aboundary);
+                qreal area     = Geo::calcArea(aboundary);
+                if (area > boundary_area)
+                {
+                    boundary_area = area;
+                    boundary      = aboundary;
+                }
             }
         }
 
-        QPolygonF aboundary = eb.getPoly();
-        if (aboundary.size())
+        if (Loose::zero(boundary_area) && Loose::zero(tile_area))
         {
-            QPointF center = tilep->getCenter();
-            QTransform t   = QTransform::fromTranslate(center.x(),center.y());
-            aboundary      = t.map(aboundary);
-            qreal area     = Geo::calcArea(aboundary);
-            if (area > boundary_area)
-            {
-                boundary_area = area;
-                boundary      = aboundary;
-            }
+            rv = true;
+            continue;
+        }
+
+        QPolygonF & poly = (boundary_area > tile_area) ? boundary : tile;
+
+        if (poly.contains(wpt) || poly.containsPoint(wpt, Qt::OddEvenFill))
+        {
+            rv = true;
+            continue;
         }
     }
-
-    if (Loose::zero(boundary_area) && Loose::zero(tile_area))
-    {
-        return true;
-    }
-
-    QPolygonF & poly = (boundary_area > tile_area) ? boundary : tile;
-
-    if (poly.contains(wpt) || poly.containsPoint(wpt, Qt::OddEvenFill))
-    {
-        return true;
-    }
-
-    return false;
+    return rv;
 }
 
 MapSelectionPtr MapEditorSelection::findConstructionCircle(const QPointF & spt)

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DEBUG_VIEW_H
-#define DEBU_VIEW_H
 
 #include "gui/viewers/layer_controller.h"
 #include "sys/geometry/debug_map.h"
@@ -106,5 +104,3 @@ private:
     Layer       * layer;
     QLineF        sPerpLine; // perpendicular line
 };
-
-#endif

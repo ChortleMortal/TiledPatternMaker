@@ -1,4 +1,4 @@
-#include "gui/top/system_view_controller.h"
+#include "gui/top/view_controller.h"
 #include "gui/viewers/geo_graphics.h"
 #include "gui/viewers/grid_view.h"
 #include "model/makers/tiling_maker.h"
@@ -8,19 +8,14 @@
 #include "model/tilings/tiling.h"
 #include "sys/geometry/fill_region.h"
 #include "sys/geometry/geo.h"
-#include "sys/geometry/map.h"
-#include "sys/geometry/map_verifier.h"
-#include "sys/geometry/vertex.h"
 
-using std::make_shared;
-
-typedef std::shared_ptr<class Vertex> VertexPtr;
-
-GridView::GridView() : LayerController(VIEW_GRID,DERIVED,"Grid")
+GridView::GridView() : LayerController(Type::Grid,Model::Derived,Sys::config->gridZLevel,"Grid")
 {
     config  = Sys::config;
-    genMap  = false;
     setZLevel(config->gridZLevel);
+
+    // runs after Layer::initLayer has cleared the lock and breakaway flags
+    connect(viewControl(), &ViewController::sig_resetLayers, this, &GridView::restorePosition);
 }
 
 GridView::~GridView()
@@ -31,570 +26,394 @@ void GridView::paint(QPainter * painter)
     draw(painter);
 }
 
+QTransform GridView::getCanvasTransform()
+{
+    // the grid is not warped by canvas distortion, unlike the design content it overlays
+    return viewControl()->getCanvas()->getUndistortedTransform();
+}
+
+void GridView::setModelXform(const Xform & xf, bool update, uint sigid)
+{
+    LayerController::setModelXform(xf,update,sigid);
+    storeXform();
+}
+
+// user selection for a units row; applied now if that row is active
+void GridView::setPosition(eGridUnits units, eGridPosition pos)
+{
+    eGridPosition * rowPos = positionOf(units);
+    if (!rowPos)
+        return;
+
+    *rowPos = pos;
+    if (units != config->gridUnits)
+        return;
+
+    auto vc = viewControl();
+    if (isSolo())
+        emit vc->sig_solo(this,false);
+
+    switch (pos)
+    {
+    case GRID_POS_CENTERED:
+        if (units == GRID_UNITS_SCREEN)
+        {
+            emit vc->sig_solo(this,true);
+            setModelXform(Xform(),false,Sys::nextSigid());
+            lock(true);
+            emit vc->sig_solo(this,false);
+        }
+        else
+        {
+            lock(false);
+            breakaway(false);
+        }
+        break;
+
+    case GRID_POS_OFFSET:
+        lock(false);
+        breakaway(true);
+        break;
+
+    case GRID_POS_FIXED:
+        lock(true);     // also breaks away
+        break;
+    }
+
+    storeXform();
+    emit sig_updateView();
+}
+
+// solo so only the grid moves; when off the grid stays Offset
+void GridView::setMoving(bool move)
+{
+    if (move)
+    {
+        lock(false);
+        emit viewControl()->sig_solo(this,true);
+    }
+    else
+    {
+        emit viewControl()->sig_solo(this,false);
+    }
+
+    eGridPosition * rowPos = positionOf(config->gridUnits);
+    if (rowPos)
+        *rowPos = GRID_POS_OFFSET;
+
+    storeXform();
+    emit sig_updateView();
+}
+
+// re-applies the saved position and xform of the active units row
+void GridView::restorePosition()
+{
+    lock(false);
+    breakaway(false);
+
+    eGridPosition * rowPos = positionOf(config->gridUnits);
+    bool screen = (config->gridUnits == GRID_UNITS_SCREEN);
+    if (rowPos && (screen || *rowPos != GRID_POS_CENTERED))
+    {
+        Xform xf = (*rowPos == GRID_POS_CENTERED) ? Xform() : *xformOf(config->gridUnits);
+        breakaway(true);
+        setModelXform(xf,false,Sys::nextSigid());
+        if (*rowPos != GRID_POS_OFFSET)
+            lock(true);
+    }
+    emit sig_updateView();
+}
+
+// reads back the position from the layer flags, which other pages may have changed
+void GridView::syncPosition()
+{
+    eGridPosition * rowPos = positionOf(config->gridUnits);
+    if (!rowPos)
+        return;
+
+    bool screen = (config->gridUnits == GRID_UNITS_SCREEN);
+    if (isUserLocked())
+        *rowPos = (screen && getModelXform() == Xform()) ? GRID_POS_CENTERED : GRID_POS_FIXED;
+    else if (isBreakaway() || screen)
+        *rowPos = GRID_POS_OFFSET;
+    else
+        *rowPos = GRID_POS_CENTERED;
+
+    storeXform();
+}
+
+void GridView::storeXform()
+{
+    Xform * rowXf = xformOf(config->gridUnits);
+    if (rowXf && isBreakaway())
+        *rowXf = getModelXform();
+}
+
+eGridPosition * GridView::positionOf(eGridUnits units)
+{
+    if (units == GRID_UNITS_MODEL)  return &config->gridModelPos;
+    if (units == GRID_UNITS_SCREEN) return &config->gridScreenPos;
+    return nullptr;
+}
+
+Xform * GridView::xformOf(eGridUnits units)
+{
+    if (units == GRID_UNITS_MODEL)  return &config->gridModelXform;
+    if (units == GRID_UNITS_SCREEN) return &config->gridScreenXform;
+    return nullptr;
+}
+
 void GridView::draw(QPainter * painter)
 {
-    if (genMap)
-    {
-        gridMap = make_shared<Map>("Grid");
-    }
-
-    switch (config->gridUnits)
-    {
-    case GRID_UNITS_TILE:
-        if (config->gridTilingAlgo == FLOOD)
-            drawFromTilingFlood(painter);
-        else
-            drawFromTilingRegion(painter);
-        break;
-
-    case GRID_UNITS_MODEL:
-        if (config->gridModelCenter)
-            drawModelUnitsCentered(painter);
-        else
-            drawModelUnits(painter);
-        break;
-
-    case GRID_UNITS_SCREEN:
-        if (config->gridScreenCenter)
-            drawScreenUnitsCentered(painter);
-        else
-            drawScreenUnits(painter);
-        break;
-
-    case GRID_UNITS_OFF:
-        break;
-    }
+    if (config->gridUnits == GRID_UNITS_TILE && config->gridTilingAlgo == REGION)
+        drawFromTilingRegion(painter);
+    else if (config->gridUnits != GRID_UNITS_OFF)
+        drawLattice(painter);
 
     drawCenters(painter);
-
-    if (genMap)
-    {
-        MapVerifier mv(gridMap);
-        mv.verify();
-    }
 }
 
 void GridView::drawCenters(QPainter * painter)
 {
     if (config->showGridModelCenter)
     {
-        auto gg = new GeoGraphics(painter,getLayerTransform());
-        corners[0] = QLineF(QPointF(-10,10),QPointF(10,-10));
-        corners[1] = QLineF(QPointF(-10,-10),QPointF(10,10));
-        ggdrawLine(gg,corners[0],QPen(Qt::green,3));
-        ggdrawLine(gg,corners[1],QPen(Qt::green,3));
-        delete gg;
+        GeoGraphics gg(painter,getDesignTransform());
+        QPen pen(Qt::green,3);
+        gg.drawLine(QPointF(-10,10),QPointF(10,-10),pen);
+        gg.drawLine(QPointF(-10,-10),QPointF(10,10),pen);
     }
 
     if (config->showGridViewCenter)
     {
-        auto r = Sys::viewController->viewRect();
-        corners[0] = QLineF(r.topLeft(),r.bottomRight());
-        corners[1] = QLineF(r.bottomLeft(),r.topRight());
-
-        QPen pen(Qt::blue,3);
-        painter->setPen(pen);
-        ppdrawLine(painter,corners[0]);
-        ppdrawLine(painter,corners[1]);
+        QRectF r = Sys::systemViewController->getViewRect();
+        painter->save();
+        painter->setPen(QPen(Qt::blue,3));
+        painter->drawLine(r.topLeft(),r.bottomRight());
+        painter->drawLine(r.bottomLeft(),r.topRight());
+        painter->restore();
     }
 }
 
-void GridView::drawFromTilingFlood(QPainter *painter)
-{
-    qDebug() << "Grid::drawFromTilingFlood()";
-
-    auto r = QRectF(-10,10,20,20);
-    QPen pen(QColor(config->gridColorTiling),config->gridTilingWidth);
-
-    QPointF center = getCenterModelUnits();
-    r.moveCenter(center);
-    //qDebug() << "grid model center" << center;
-
-    auto maker  = Sys::tilingMaker;
-    auto tiling = maker->getSelected();
-    auto header = tiling->hdr();
-
-    const PlacedTiles tilingUnit = maker->getSelected()->unit().getIncluded();
-    if (tilingUnit.size())
-    {
-        auto placedTile = tilingUnit.first();
-        QTransform T    = placedTile->getPlacement();
-        center          = T.map(placedTile->getTile()->getCenter());
-    }
-    QLineF line1(center, header.getTrans1());
-    QLineF line2(center, header.getTrans2());
-    if (line1.isNull() || line2.isNull())
-    {
-        return;
-    }
-    qDebug() << "len1:" << line1.length() << "len2:" << line2.length();
-
-    qreal angle1    = qDegreesToRadians(line1.angle());
-    qreal angle2    = qDegreesToRadians(line2.angle());
-    qreal gridAngle = qAbs(angle1 - angle2);
-    qDebug() << "Line angles:" << angle1 << angle2 << "Grid angle" << gridAngle << "sin" << qAbs(qSin(gridAngle));
-    
-    auto gg = new GeoGraphics(painter,getLayerTransform());
-
-    QLineF l1 = Geo::extendAsRay(line1,5.0);
-    qreal offset = line2.length() * qAbs(qSin(gridAngle));
-    l1 = Geo::shiftParallel(l1,offset * -10.0);
-    for (int i=0; i <20; i++)
-    {
-        l1 = Geo::shiftParallel(l1,offset);
-        ggdrawLine(gg,l1,pen);
-    }
-    
-    QLineF l2 = Geo::extendAsRay(line2,5.0);
-    qreal offset2 = line1.length() * qAbs(qSin(gridAngle));
-    l2 = Geo::shiftParallel(l2,offset2 * -10.0);
-    for (int i=0; i <20; i++)
-    {
-        l2 = Geo::shiftParallel(l2,offset2);
-        ggdrawLine(gg,l2,pen);
-    }
-
-    delete gg;
-}
-
+// one repeat-unit cell (T1 x T2 parallelogram at the first tile's center) per fill placement
 void GridView::drawFromTilingRegion(QPainter *painter)
 {
-    qDebug() << "Grid::drawFromTilingRegion()";
-
-    auto r = QRectF(-10,10,20,20);
-    QPen pen(QColor(config->gridColorTiling),config->gridTilingWidth);
-
-    QPointF center = getCenterModelUnits();
-    r.moveCenter(center);
-    //qDebug() << "grid model center" << center;
-
-    auto maker  = Sys::tilingMaker;
-    auto tiling = maker->getSelected();
-    auto header  = tiling->hdr();
-
-    const PlacedTiles tilingUnit = maker->getSelected()->unit().getIncluded();
-    if (tilingUnit.size())
-    {
-        auto placedTile = tilingUnit.first();
-        QTransform T    = placedTile->getPlacement();
-        center          = T.map(placedTile->getTile()->getCenter());
-    }
-    QLineF lineR(center, header.getTrans1());
-    QLineF lineG(center, header.getTrans2());
-    if (lineR.isNull() || lineG.isNull())
-    {
+    auto tiling = Sys::tilingMaker->getSelectedTiling();
+    if (!tiling)
         return;
-    }
 
-    qDebug() << "lenR:" << lineR.length() << "len:" << lineG.length();
+    QPointF origin = getTilingOrigin(tiling.get());
+    QPointF t1     = tiling->hdr().getTrans1();
+    QPointF t2     = tiling->hdr().getTrans2();
+    if (t1.isNull() || t2.isNull())
+        return;
 
-    qreal angle1    = qDegreesToRadians(lineR.angle());
-    qreal angle2    = qDegreesToRadians(lineG.angle());
-    qreal gridAngle = angle1 - angle2;
+    QPolygonF cell;
+    cell << origin << origin + t1 << origin + t1 + t2 << origin + t2;
 
-    qDebug().noquote()  << "Line angles:"
-                       << angle1    << Circle::getQuadrantString(angle1)
-                       << angle2    << Circle::getQuadrantString(angle2)
-                       <<"Grid angle"
-                       << gridAngle << Circle::getQuadrantString(qAbs(gridAngle))
-                       << "sin" << qAbs(qSin(gridAngle));
+    QPen pen(QColor(config->gridColorTiling),config->gridTilingWidth);
+    GeoGraphics gg(painter,getLayerTransform());
 
-
-    qreal offsetG  = lineG.length() * qAbs(qSin(qAbs(gridAngle)));
-    qreal offsetR  = lineR.length() * qAbs(qSin(qAbs(gridAngle)));
-
-    QLineF lr;
-    QLineF lg;
-    if (gridAngle  >= 0)
-    {
-        lr = Geo::shiftParallel(lineR,offsetR);
-        lg = Geo::shiftParallel(lineG,-offsetG );
-    }
-    else
-    {
-        lr = Geo::shiftParallel(lineR,-offsetR);
-        lg = Geo::shiftParallel(lineG,offsetG );
-    }
-
-    lr.translate(lineG.p2()-lr.p1());
-    lg.translate(lineR.p2()-lg.p1());
-
-#if 0
-    qDebug() << "lineR" << lineR;
-    qDebug() << "lg   " << lg;
-    qDebug() << "lr   " << lr;
-    qDebug() << "lineG" << lineG;
-#endif
-
-    // Use this when sides are correct
-    QPolygonF p;
-    p << lineR.p1();
-    Q_ASSERT(Loose::equalsPt(lineR.p2(),lg.p1()));
-    p << lg.p1();
-    Q_ASSERT(Loose::equalsPt(lg.p2(),lr.p2()));
-    p << lr.p2();
-    Q_ASSERT(Loose::equalsPt(lr.p1(),lineG.p2()));
-    p << lineG.p2();
-    Q_ASSERT(Loose::equalsPt(lineG.p1(),lineR.p1()));
-
-    auto gg = new GeoGraphics(painter,getLayerTransform());
-
-    FillRegion flood(tiling.get(),tiling->hdr().getCanvasSettings().getFillData());
+    FillRegion flood(tiling.get(),tiling->hdr().getTilingCanvas()->getFillData());
     const Placements & placements = flood.getPlacements(config->repeatMode);
     for (const auto & t : std::as_const(placements))
     {
-        auto poly = t.map(p);
-        ggdrawPoly(gg,poly,pen);
+        gg.drawPolygon(t.map(cell),pen);
     }
 
-    static constexpr QColor normal_color = QColor(217,217,255,128);
-    gg->fillPolygon(p,normal_color);
-
-    delete gg;
+    QColor fill = TilingMakerView::tile_color;
+    fill.setAlphaF(0.4);
+    gg.fillPolygon(cell,fill);
 }
 
-// this is relative to model(0,0)
-void GridView::drawModelUnits(QPainter *painter)
+// Lattice points are a*u + b*v mapped by S; lines are drawn along u and v, and if third
+// also along u-v. The view is mapped into (a,b) so lines cover it.
+void GridView::drawLattice(QPainter * painter)
 {
-    qreal step = config->gridModelSpacing;
-
-    QPoint pt(0,0);
-    QRect vrect(pt,Sys::viewController->viewSize());
-    QRect mrect = screenToModel(vrect);
-
-    int x_steps = qCeil(mrect.width()  / step);
-    int y_steps = qCeil(mrect.height() / step);
-
-    auto gg = new GeoGraphics(painter,getLayerTransform());
-    drawModelUnits(gg,mrect,mrect,pt,x_steps,y_steps,step);
-    delete gg;
-}
-
-void GridView::drawModelUnitsCentered(QPainter *painter)
-{
-    qreal step = config->gridModelSpacing;
-
-    QTransform t = getCanvasTransform();     // implies unity model transform
-    QRectF viewRect(Sys::viewController->viewRect());
-    viewRect = t.inverted().mapRect(viewRect);
-    QPointF center = viewRect.center();
-
-    QRectF modelRect(-10,-10,20,20);
-    int x_steps = qCeil(viewRect.width()  / step);
-    int y_steps = qCeil(viewRect.height() / step);
-
-    auto gg = new GeoGraphics(painter,t);
-    drawModelUnits(gg,modelRect,viewRect,center,x_steps,y_steps,step);
-    delete gg;
-}
-
-void GridView::drawModelUnits(GeoGraphics *gg, QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step)
-{
-    QPen pen(QColor(config->gridColorModel),config->gridModelWidth);
-    gg->getPainter()->setPen(pen);
-
-    ggdrawLine(gg,r.topLeft(),r.topRight(),pen);
-    ggdrawLine(gg,r.topRight(),r.bottomRight(),pen);
-    ggdrawLine(gg,r.bottomRight(),r.bottomLeft(),pen);
-    ggdrawLine(gg,r.bottomLeft(),r.topLeft(),pen);
-
-    QVector<QLineF> edges = toEdges(r1);
-
-    eGridType type = config->gridType;
-    if (type == GRID_ORTHOGONAL || type == GRID_ISOMETRIC)
-    {
-        // draw vertical lines
-        qreal x = center.x() - ((x_steps/2) * step);
-        for (int i = 0; i < x_steps; i++)
-        {
-            QLineF l(QPointF(x,r.top()),QPointF(x,r.bottom()));
-            if (intersects(edges,l))
-                ggdrawLine(gg,l,pen);
-            x += step;
-        }
-    }
-
-    // horizontal
-    if (type == GRID_ORTHOGONAL)
-    {
-        // draw horizontal lines
-        qreal y = center.y() - ((y_steps/2) * step);
-        for (int i = 0; i < y_steps; i++)
-        {
-            QLineF l(QPointF(r.left(),y),QPointF(r.right(),y));
-            if (intersects(edges,l))
-                ggdrawLine(gg,l,pen);
-            y += step;
-        }
-    }
-    else if (type == GRID_ISOMETRIC || type == GRID_RHOMBIC)
-    {
-        qreal angle = (type == GRID_ISOMETRIC) ? 30.0 : config->gridAngle;
-        y_steps *=2;
-        qreal y = center.y() - ((y_steps/2) * step);
-        for (int i = 0; i < y_steps; i++)
-        {
-            QLineF line(QPointF(r1.left(),y),QPointF(r1.right(),y));
-            QPointF mid = line.center();
-
-            QTransform t;
-            t.translate(mid.x(),mid.y());
-            t.rotate(angle);
-            t.translate(-mid.x(),-mid.y());
-
-            QLineF line2 = t.map(line);
-            if (intersects(edges,line2))
-                ggdrawLine(gg,line2,pen);
-
-            QTransform t2;
-            t2.translate(mid.x(),mid.y());
-            t2.rotate(-angle);
-            t2.translate(-mid.x(),-mid.y());
-
-            QLineF line3 = t2.map(line);
-            if (intersects(edges,line3))
-                ggdrawLine(gg,line3,pen);
-
-            y += step;
-        }
-    }
-}
-
-void GridView::drawScreenUnitsCentered(QPainter *painter)
-{
-    qreal step     = config->gridScreenSpacing;
-    if (step < 10.0)
-    {
-        qDebug() << "grid step too small" << step;
+    QTransform S;
+    bool       third;
+    if (!getLattice(S,third))
         return;
-    }
 
-    QRectF viewRect  = Sys::viewController->viewRect();
-    QPointF center   = viewRect.center();
+    QPen pen;
+    switch (config->gridUnits)
     {
-        int x_steps = qCeil(viewRect.width()  / step);
-        int y_steps = qCeil(viewRect.height() / step);
-
-        drawScreenUnits(painter,viewRect, viewRect, center, x_steps, y_steps, step);
-    }
-}
-void GridView::drawScreenUnits(QPainter *painter)
-{
-    qreal step     = config->gridScreenSpacing;
-    if (step < 10.0)
-    {
-        qDebug() << "grid step too small" << step;
-        return;
+    case GRID_UNITS_SCREEN: pen = QPen(QColor(config->gridColorScreen),config->gridScreenWidth); break;
+    case GRID_UNITS_MODEL:  pen = QPen(QColor(config->gridColorModel), config->gridModelWidth);  break;
+    default:                pen = QPen(QColor(config->gridColorTiling),config->gridTilingWidth); break;
     }
 
-    QRectF viewRect(Sys::viewController->viewRect());
-    QPointF center = viewRect.center();
-
-    int x_steps = qCeil(viewRect.width()  / step);
-    int y_steps = qCeil(viewRect.height() / step);
-
-    QPointF pt = getModelXform().getTranslate();
-    QTransform t = QTransform::fromTranslate(pt.x(),pt.y());
+    QRectF lr = S.inverted().mapRect(QRectF(Sys::systemViewController->getViewRect()));
+    int a0 = qFloor(lr.left());
+    int a1 = qCeil(lr.right());
+    int b0 = qFloor(lr.top());
+    int b1 = qCeil(lr.bottom());
 
     painter->save();
-    painter->setWorldTransform(t);
-    drawScreenUnits(painter,viewRect, viewRect, center, x_steps, y_steps, step);
+    painter->setPen(pen);
+    auto drawLine = [&](QPointF p1, QPointF p2)
+    {
+        painter->drawLine(S.map(p1),S.map(p2));
+    };
+    for (int a = a0; a <= a1; a++)
+        drawLine(QPointF(a,b0),QPointF(a,b1));
+    for (int b = b0; b <= b1; b++)
+        drawLine(QPointF(a0,b),QPointF(a1,b));
+    if (third)
+    {
+        // lines of constant a+b
+        for (int k = a0 + b0; k <= a1 + b1; k++)
+        {
+            int bs = qMax(b0,k - a1);
+            int be = qMin(b1,k - a0);
+            drawLine(QPointF(k - bs,bs),QPointF(k - be,be));
+        }
+    }
     painter->restore();
 }
 
-void GridView::drawScreenUnits(QPainter * painter, QRectF r, QRectF r1, QPointF center,int x_steps, int y_steps, qreal step)
+// S maps lattice coords (a,b) to screen for the current units
+//   screen: origin at view center, follows the grid layer's xform in pixels (see setPosition)
+//   model:  origin at model (0,0), grid layer transform (see setPosition)
+//   tile:   tiling's T1,T2 through the first tile's center
+bool GridView::getLattice(QTransform & S, bool & third)
 {
-    QPen pen(QColor(config->gridColorScreen),config->gridScreenWidth);
-    painter->setPen(pen);
+    QPointF    origin(0,0);
+    QPointF    u, v;
+    QTransform T;
+    third = false;
 
-    QVector<QLineF> edges = toEdges(r);
-
-    eGridType type = config->gridType;
-    if (type == GRID_ORTHOGONAL || type == GRID_ISOMETRIC)
+    switch (config->gridUnits)
     {
-        // draw vertical lines
-        qreal x = center.x() - ((x_steps/2) * step);
-        for (int i = 0; i < x_steps; i++)
-        {
-            QLineF l(QPointF(x,r.top()),QPointF(x,r.bottom()));
-            if (intersects(edges,l))
-                ppdrawLine(painter,l);
-            x += step;
-        }
+    case GRID_UNITS_SCREEN:
+        if (!getBasis(config->gridScreenSpacing,u,v,third))
+            return false;
+        origin = QRectF(Sys::systemViewController->getViewRect()).center();
+        T      = getModelTransform();
+        break;
+
+    case GRID_UNITS_MODEL:
+        if (!getBasis(config->gridModelSpacing,u,v,third))
+            return false;
+        T      = getLayerTransform();
+        break;
+
+    case GRID_UNITS_TILE:
+    {
+        auto tiling = Sys::tilingMaker->getSelectedTiling();
+        if (!tiling)
+            return false;
+        origin = getTilingOrigin(tiling.get());
+        u      = tiling->hdr().getTrans1();
+        v      = tiling->hdr().getTrans2();
+        T      = getLayerTransform();
+        break;
     }
 
-    if (type == GRID_ORTHOGONAL)
-    {
-        // draw horizontal lines
-        qreal y = center.y() - ((y_steps/2) * step);
-        for (int i = 0; i < y_steps; i++)
-        {
-            QLineF l(QPointF(r.left(),y),QPointF(r.right(),y));
-            if (intersects(edges,l))
-                ppdrawLine(painter,l);
-            y += step;
-        }
-    }
-    else if (type == GRID_ISOMETRIC || type == GRID_RHOMBIC)
-    {
-        qreal angle = (type == GRID_ISOMETRIC) ? 30.0 : config->gridAngle;
-        y_steps *=2;
-        qreal y = center.y() - ((y_steps/2) * step);
-        for (int i = 0; i < y_steps; i++)
-        {
-            QLineF line(QPointF(r1.left(),y),QPointF(r1.right(),y));
-            QPointF mid = line.center();
-
-            QTransform t;
-            t.translate(mid.x(),mid.y());
-            t.rotate(angle);
-            t.translate(-mid.x(),-mid.y());
-
-            QLineF line2 = t.map(line);
-            if (intersects(edges,line2))
-                ppdrawLine(painter,line2);
-
-            QTransform t2;
-            t2.translate(mid.x(),mid.y());
-            t2.rotate(-angle);
-            t2.translate(-mid.x(),-mid.y());
-
-            QLineF line3 = t2.map(line);
-            if (intersects(edges,line3))
-                ppdrawLine(painter,line3);
-
-            y += step;
-        }
-    }
-}
-
-bool GridView::intersects(QVector<QLineF> &edges, QLineF & line)
-{
-    QPointF p1;
-    for (const auto & edge : std::as_const(edges))
-    {
-        QPointF intersect;
-        if (line.intersects(edge,&intersect) != QLineF::NoIntersection && Geo::isOnLine(intersect,edge))
-        {
-            if (p1.isNull())
-                p1 = intersect;
-            else
-            {
-                line.setP1(p1);
-                line.setP2(intersect);
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-QVector<QLineF> GridView::toEdges(const QRectF & r)
-{
-    QVector<QLineF> vec;
-    vec.push_back(QLineF(r.topLeft(),r.topRight()));
-    vec.push_back(QLineF(r.topRight(),r.bottomRight()));
-    vec.push_back(QLineF(r.bottomRight(),r.bottomLeft()));
-    vec.push_back(QLineF(r.bottomLeft(),r.topLeft()));
-    return vec;
-}
-
-// used by tiling maker when creating a polygon
-bool GridView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
-{
-    if (!viewControl()->isEnabled(VIEW_GRID) || !config->tm_snapToGrid)
-    {
+    case GRID_UNITS_OFF:
         return false;
     }
 
-    genMap = true;
-    Sys::viewController->repaintView();  // generates gridMap, used below
-    genMap = false;
+    S = QTransform(u.x(),u.y(),v.x(),v.y(),origin.x(),origin.y()) * T;
+    if (!S.isInvertible())
+        return false;
 
-    for (const VertexPtr & v : std::as_const(gridMap->getVertices()))
+    QPointF s0 = S.map(QPointF(0,0));
+    qreal pixelStep = qMin(QLineF(s0,S.map(QPointF(1,0))).length(),QLineF(s0,S.map(QPointF(0,1))).length());
+    if (pixelStep < 4.0)
     {
-        QPointF a = v->pt;
-        QPointF b = a;
-        if (config->gridUnits == GRID_UNITS_MODEL || config->gridUnits == GRID_UNITS_TILE)
+        qDebug() << "grid step too small" << pixelStep;
+        return false;
+    }
+    return true;
+}
+
+// lattice basis for the grid type; third adds lines along u-v
+//   orthogonal: u,v are horizontal/vertical, spacing step
+//   rhombic:    u,v at +/- angle, lines of each family step apart vertically
+//   isometric:  rhombic at 30 degrees plus vertical lines, equilateral with side step
+bool GridView::getBasis(qreal step, QPointF & u, QPointF & v, bool & third)
+{
+    u     = QPointF(step,0);
+    v     = QPointF(0,step);
+    third = false;
+
+    eGridType type = config->gridType;
+    if (type == GRID_ISOMETRIC || type == GRID_RHOMBIC)
+    {
+        qreal angle = (type == GRID_ISOMETRIC) ? 30.0 : config->gridAngle;
+        qreal rad   = qDegreesToRadians(angle);
+        qreal sin   = qSin(rad);
+        if (qAbs(sin) < 0.01)
+            return false;
+        qreal len = step / (2.0 * sin);
+        u = QPointF(len * qCos(rad),  len * sin);
+        v = QPointF(len * qCos(rad), -len * sin);
+        third = (type == GRID_ISOMETRIC);
+    }
+    return true;
+}
+
+QPointF GridView::getTilingOrigin(Tiling * tiling)
+{
+    const PlacedTileSet tileSet = tiling->unit().getIncluded();
+    if (tileSet.isEmpty())
+        return QPointF(0,0);
+
+    auto placedTile = tileSet.first();
+    return placedTile->getPlacement().map(placedTile->getTile()->getCenter());
+}
+
+QTransform GridView::getDesignTransform()
+{
+    return getCanvasTransform() * modelTransformOf(viewControl()->getSystemModelXform());
+}
+
+// used by tiling maker; returns the nearest grid crossing in tiling maker model units
+bool GridView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
+{
+    if (!viewControl()->isEnabled(Layer::Type::Grid) || !config->tm_snapToGrid)
+    {
+        qDebug() << "SNAP grid: off - grid enabled" << viewControl()->isEnabled(Layer::Type::Grid) << "snapToGrid" << config->tm_snapToGrid;
+        return false;
+    }
+
+    QTransform S;
+    bool       third;
+    if (!getLattice(S,third))
+    {
+        qDebug() << "SNAP grid: no lattice, units" << config->gridUnits;
+        return false;
+    }
+
+    // a crossing near spt is a corner of the lattice cell containing spt
+    QPointF lpt = S.inverted().map(spt);
+    int a = qFloor(lpt.x());
+    int b = qFloor(lpt.y());
+
+    QPointF best;
+    qreal   bestDist = std::numeric_limits<qreal>::max();
+    for (int i = 0; i <= 1; i++)
+    {
+        for (int j = 0; j <= 1; j++)
         {
-            b = modelToScreen(a);
-        }
-        if (Geo::isNear(spt,b))
-        {
-            if (config->gridUnits == GRID_UNITS_MODEL)
+            QPointF pt   = S.map(QPointF(a + i,b + j));
+            qreal   dist = QLineF(spt,pt).length();
+            if (dist < bestDist)
             {
-                foundGridPoint = a;
+                bestDist = dist;
+                best     = pt;
             }
-            else
-            {
-                foundGridPoint = screenToModel(a);
-            }
-            qDebug() << "nearGridPoint - FOUND";
-            return true;
         }
     }
-    return false;
+
+    if (!Geo::isNear(spt,best))
+        return false;
+
+    foundGridPoint = Sys::tilingMakerView->screenToModel(best);
+    qDebug() << "SNAP grid: hit" << spt << "->" << best << "model" << foundGridPoint;
+    return true;
 }
 
-void GridView::ggdrawLine(GeoGraphics * gg, QLineF line, QPen pen)
-{
-    gg->drawLine(line,pen);
-    if (genMap)
-    {
-        VertexPtr v1 = gridMap->insertVertex(line.p1());
-        VertexPtr v2 = gridMap->insertVertex(line.p2());
-        gridMap->insertEdge(v1,v2);
-    }
-}
-
-void GridView::ggdrawLine(GeoGraphics *gg, QPointF p1, QPointF p2, QPen  pen)
-{
-    gg->drawLine(p1, p2, pen);
-    if (genMap)
-    {
-        VertexPtr v1 = gridMap->insertVertex(p1);
-        VertexPtr v2 = gridMap->insertVertex(p2);
-        gridMap->insertEdge(v1,v2);
-    }
-}
-
-void GridView::ggdrawPoly(GeoGraphics *gg, QPolygonF & poly, QPen  pen)
-{
-    gg->drawPolygon(poly,pen);
-    if (genMap)
-    {
-        EdgePoly ep(poly);
-        auto vec = ep.getLines();
-        for (auto & line : std::as_const(vec))
-        {
-            VertexPtr v1 = gridMap->insertVertex(line.p1());
-            VertexPtr v2 = gridMap->insertVertex(line.p2());
-            gridMap->insertEdge(v1,v2);
-        }
-    }
-}
-
-void GridView::ppdrawLine(QPainter * painter, QLineF & line)
-{
-    painter->drawLine(line);
-    if (genMap)
-    {
-        VertexPtr v1 = gridMap->insertVertex(line.p1());
-        VertexPtr v2 = gridMap->insertVertex(line.p2());
-        gridMap->insertEdge(v1,v2);
-    }
-}
-
-void GridView::ppdrawLine(QPainter *painter, QPointF p1, QPointF p2)
-{
-    painter->drawLine(p1,p2);
-    if (genMap)
-    {
-        VertexPtr v1 = gridMap->insertVertex(p1);
-        VertexPtr v2 = gridMap->insertVertex(p2);
-        gridMap->insertEdge(v1,v2);
-    };
-}
 void GridView::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 {
     Q_UNUSED(spt);

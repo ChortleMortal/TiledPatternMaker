@@ -1,6 +1,4 @@
 #pragma once
-#ifndef OUTLINE_CASING_H
-#define OUTLINE_CASING_H
 
 #include "model/styles/casing.h"
 #include "model/styles/casing_set.h"
@@ -26,5 +24,3 @@ public:
     void setPainterPath() override;
     bool validate() override;
 };
-
-#endif

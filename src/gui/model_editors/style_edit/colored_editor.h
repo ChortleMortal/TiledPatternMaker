@@ -1,6 +1,4 @@
 #pragma once
-#ifndef COLORED_EDITOR_H
-#define COLORED_EDITOR_H
 
 #include "gui/model_editors/style_edit/style_editor.h"
 
@@ -34,5 +32,3 @@ private:
     QPushButton     * color_button;
     DoubleSliderSet * opacitySlider;
 };
-
-#endif

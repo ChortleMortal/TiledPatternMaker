@@ -4,11 +4,46 @@
 
 Canvas::Canvas()
 {
-    _defaultSize  = QSize(Sys::DEFAULT_WIDTH,Sys::DEFAULT_HEIGHT);
-    _viewSize     = _defaultSize;
-    _bkgdColor    = Qt::white;
+    init();
+}
 
-    setCanvasSize(_defaultSize);
+void Canvas::init()
+{
+    _viewSize    = QSize(Sys::DEFAULT_WIDTH, Sys::DEFAULT_HEIGHT);   // default
+    _canvasSize  = QSize(Sys::DEFAULT_WIDTH, Sys::DEFAULT_HEIGHT);   // default
+    _deltaCanvasSize   = QSize(0,0);
+    _fillData.init();
+    _distortion.init();
+    computeCanvasTransform();
+}
+
+Canvas::Canvas(const Canvas & other)
+{
+    _viewSize   = other._viewSize;
+    _canvasSize = other._canvasSize;
+    _fillData   = other._fillData;
+    _distortion = other._distortion;
+    _deltaCanvasSize  = other._deltaCanvasSize;
+    computeCanvasTransform();
+}
+
+Canvas & Canvas::operator=(const Canvas & other)
+{
+    _viewSize   = other._viewSize;
+    _canvasSize = other._canvasSize;
+    _fillData   = other._fillData;
+    _distortion = other._distortion;
+    _deltaCanvasSize  = other._deltaCanvasSize;
+    computeCanvasTransform();
+    return *this;
+}
+
+bool Canvas::operator==(const Canvas & other) const
+{
+    return  _viewSize   == other._viewSize &&
+            _canvasSize == other._canvasSize &&
+            _fillData   == other._fillData &&
+            _distortion == other._distortion;
 }
 
 void Canvas::setDefaultSize()
@@ -16,21 +51,21 @@ void Canvas::setDefaultSize()
 #ifdef VARIABLE_BOUNDS
     _bounds     = _defaultBounds;
 #endif
-    setCanvasSize(_defaultSize);
+    _canvasSize  = QSize(Sys::DEFAULT_WIDTH, Sys::DEFAULT_HEIGHT);   // default
 }
 
 void Canvas::setCanvasSize(QSize size)
 {
     //qDebug() << "Canvas::setCanvasSize" << size;
     _canvasSize = size;
-    _deltaSize  = QSize(0,0);
+    _deltaCanvasSize  = QSize(0,0);
     computeCanvasTransform();
 }
 
 void Canvas::setDeltaCanvasSize(QSize size)
 {
     //qDebug() << "Canvas::setDeltaCanvasSize"  << size;
-    _deltaSize += size;
+    _deltaCanvasSize += size;
     computeCanvasTransform();
 }
 
@@ -60,11 +95,12 @@ void Canvas::computeCanvasTransform()
     if (_canvasSize.isNull())
     {
         _canvasTransform.reset();
+        _undistortedTransform.reset();
         return;
     }
 
-    qreal w      = _canvasSize.width()  + _deltaSize.width();
-    qreal h      = _canvasSize.height() + _deltaSize.height();
+    qreal w      = _canvasSize.width()  + _deltaCanvasSize.width();
+    qreal h      = _canvasSize.height() + _deltaCanvasSize.height();
     qreal aspect = w / h;
     qreal height = _bounds.width / aspect;
     qreal scalex = w /_bounds.width;
@@ -72,21 +108,36 @@ void Canvas::computeCanvasTransform()
     QTransform first  = QTransform().translate(-_bounds.left, - (_bounds.top - height));
     QTransform second = QTransform().scale(scalex,scalex);
     QTransform third  = QTransform().translate(0.0,((w -h)/2.0));
-    _canvasTransform  = first * second * third;
+    _undistortedTransform = first * second * third;
+
+    if (_distortion.getMode() == DISTORT_CANVAS)
+    {
+        _canvasTransform  = _distortion.getTransform() * _undistortedTransform;
+    }
+    else
+    {
+        _canvasTransform = _undistortedTransform;
+    }
 
     //qDebug() << "Canvas Transform for" << w << "x" << h << "is" << Transform::info(_canvasTransform);
 }
 
 QPointF Canvas::getCenter()
 {
-    qreal w      = _canvasSize.width()  + _deltaSize.width();
-    qreal h      = _canvasSize.height() + _deltaSize.height();
+    qreal w      = _canvasSize.width()  + _deltaCanvasSize.width();
+    qreal h      = _canvasSize.height() + _deltaCanvasSize.height();
     return QPointF(w/2.0,h/2.0);
 }
 
-void Canvas::dump()
+QPointF Canvas::getViewCenter()
+{
+    QRectF r(QPoint(0,0),_viewSize);
+    return r.center();
+}
+
+void Canvas::dump() const
 {
     qDebug() << "Canvas" << this;
-    qDebug() << "vs" << _viewSize << "cs" << _canvasSize << "del" << _deltaSize << "def" << _defaultSize;
-    qDebug() << Transform::info(_canvasTransform);
+    qDebug() << "View size" << _viewSize << "canvas size" << _canvasSize << "delta canvas" << _deltaCanvasSize;;
+    qDebug() << "Canvas Transform" << Transform::info(_canvasTransform);
 }

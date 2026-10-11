@@ -1,6 +1,4 @@
 #pragma once
-#ifndef CROPMAKER_H
-#define CROPMAKER_H
 
 #include <QObject>
 
@@ -16,6 +14,12 @@ extern QString sCropMaker[];
 
 typedef std::shared_ptr<class Crop>   CropPtr;
 
+////////////////////////////////////////////////////////////////////////////
+//
+//  Crop Maker
+//
+////////////////////////////////////////////////////////////////////////////
+
 class CropMaker
 {
 public:
@@ -29,12 +33,17 @@ public:
 
     bool    setEmbed(bool state);
     bool    setCropOutside(bool state);
-    bool    setClip(bool state);
 
 protected:
     class   MosaicMaker * mosaicMaker;
 
 };
+
+////////////////////////////////////////////////////////////////////////////
+//
+//  Mosaic Crop Maker
+//
+////////////////////////////////////////////////////////////////////////////
 
 class MosaicCropMaker : public CropMaker
 {
@@ -42,8 +51,13 @@ public:
     CropPtr getCrop();
     void    setCrop(CropPtr crop);
     void    removeCrop();
-    void    removePainterCrop();
 };
+
+////////////////////////////////////////////////////////////////////////////
+//
+//  Painter Crop Maker
+//
+////////////////////////////////////////////////////////////////////////////
 
 class PainterCropMaker : public CropMaker
 {
@@ -52,6 +66,3 @@ public:
     void    setCrop(CropPtr crop);
     void    removeCrop();
 };
-
-
-#endif

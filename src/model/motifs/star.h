@@ -1,6 +1,4 @@
 #pragma once
-#ifndef STAR_H
-#define STAR_H
 
 // The classic [n/d]s star construction.  See the paper for moredetails.
 
@@ -14,38 +12,36 @@ class Star : public RadialMotif
 public:
     // n = points, d = sides hops, s = sides intersections
     Star(int n, qreal dd, int ss);
-    Star(const Motif & fig, int n, qreal dd, int ss);
     Star(const Star & other);
+    Star(const Motif & other);
 
-    virtual void buildUnitMap() override;
+    virtual void buildUnitRays() override;
 
     void    setS(int ss);
     void    setD(qreal dd);
-    virtual void setN(int n) override;
 
     int     getS()  {return s;}
     qreal   getD()  {return d;}
 
     bool    equals(const MotifPtr other) override;
 
-    virtual QString getMotifDesc() override { return "Star"; }
-    void    dump()  override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s
-                                << ((getRadialConnector()) ? "has connector" : "no connector")
+    virtual QString getMotifDesc() override { return QString("Star version %1").arg(getVersion()); }
+    virtual void    dump()  override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s
                                 << "extenders" << getExtenders().count() ; }
+    virtual int     maxVersions()   override { return 2; }
 
 protected:
-    void    buildv1();
+    void    buildUnitV1();
     void    buildUnitV2();
 
     qreal   clamp_d(qreal d);
     int     clamp_s(int s);
 
     QLineF  getRay(int side, qreal d, int sign);
+    void    createTileAndMids();
 
 private:
     Points      mids;
     TilePtr     tile;
 };
-
-#endif
 

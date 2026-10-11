@@ -1,10 +1,10 @@
-#include "model/makers/crop_maker.h"
-#include "sys/geometry/crop.h"
-#include "model/makers/mosaic_maker.h"
-#include "sys/sys.h"
-#include "model/mosaics/mosaic.h"
-#include "gui/viewers/crop_maker_view.h"
 #include "gui/top/system_view.h"
+#include "gui/viewers/crop_maker_view.h"
+#include "model/makers/crop_maker.h"
+#include "model/makers/mosaic_maker.h"
+#include "model/mosaics/mosaic.h"
+#include "sys/geometry/crop.h"
+#include "sys/sys.h"
 
 QString sCropMaker[] =
 {
@@ -13,6 +13,12 @@ QString sCropMaker[] =
     "Painter Crop",
     "Map Editor Crop"
 };
+
+////////////////////////////////////////////////////////////////////////////
+//
+//  Crop Maker
+//
+////////////////////////////////////////////////////////////////////////////
 
 CropMaker::CropMaker()
 {
@@ -48,21 +54,10 @@ bool CropMaker::setCropOutside(bool state)
     return true;
 }
 
-bool CropMaker::setClip(bool state)
-{
-    auto crop = getCrop();
-    if (!crop)
-        return false;
-
-    crop->setClip(state);
-
-    return true;
-}
-
 CropPtr CropMaker::createCrop()
 {
     // this sets up a default crop
-    QRectF srect    = Sys::viewController->viewRect();
+    QRectF srect    = Sys::systemViewController->getViewRect();
     QPointF scenter = srect.center();
     QSizeF ssz      = srect.size();
     ssz            *= 0.8;
@@ -91,6 +86,12 @@ CropPtr CropMaker::createCrop()
     return crop;
 }
 
+////////////////////////////////////////////////////////////////////////////
+//
+//  Mosaic Crop Maker
+//
+////////////////////////////////////////////////////////////////////////////
+
 void MosaicCropMaker::setCrop(CropPtr crop)
 {
     auto mosaic = mosaicMaker->getMosaic();
@@ -105,24 +106,18 @@ void MosaicCropMaker::removeCrop()
     mosaic->resetCrop();
 }
 
-void MosaicCropMaker::removePainterCrop()
-{
-    auto mosaic = mosaicMaker->getMosaic();
-    Q_ASSERT(mosaic);
-    mosaic->resetPainterCrop();
-}
-
 CropPtr MosaicCropMaker::getCrop()
 {
     MosaicPtr mosaic = mosaicMaker->getMosaic();
-    CropPtr   crop;
-    if (mosaic)
-    {
-        crop = mosaic->getCrop();
-    }
-
-    return crop;
+    Q_ASSERT(mosaic);
+    return mosaic->getCrop();
 }
+
+////////////////////////////////////////////////////////////////////////////
+//
+//  Painter Crop Maker
+//
+////////////////////////////////////////////////////////////////////////////
 
 void PainterCropMaker::setCrop(CropPtr crop)
 {
@@ -141,11 +136,6 @@ void PainterCropMaker::removeCrop()
 CropPtr PainterCropMaker::getCrop()
 {
     MosaicPtr mosaic = mosaicMaker->getMosaic();
-    CropPtr   crop;
-    if (mosaic)
-    {
-        crop = mosaic->getPainterCrop();
-    }
-
-    return crop;
+    Q_ASSERT(mosaic);
+    return mosaic->getPainterCrop();
 }

@@ -1,5 +1,4 @@
-#ifndef COMPAREBMPENGINE_H
-#define COMPAREBMPENGINE_H
+#pragma once
 
 #include <QString>
 #include <QImage>
@@ -16,5 +15,3 @@ protected:
     bool compareImages(QString name, QImage & imageA, QImage & imageB);
 
 };
-
-#endif // COMPAREBMPENGINE_H

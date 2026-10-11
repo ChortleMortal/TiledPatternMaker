@@ -1,8 +1,7 @@
 #pragma once
-#ifndef CIRCLE_H
-#define CIRCLE_H
 
 #include <QDataStream>
+#include <QRectF>
 
 #include "sys/geometry/loose.h"
 
@@ -70,6 +69,3 @@ public:
     QPointF     centre;
     qreal       tmpDist2;   // variable omly used in selection
 };
-
-
-#endif

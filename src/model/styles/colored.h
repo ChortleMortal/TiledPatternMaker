@@ -1,6 +1,4 @@
 #pragma once
-#ifndef COLORED_H
-#define COLORED_H
 
 #include <QColor>
 
@@ -28,5 +26,4 @@ protected:
 
     ColorSet colors;
 };
-#endif
 

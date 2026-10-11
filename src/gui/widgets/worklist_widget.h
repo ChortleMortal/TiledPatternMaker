@@ -1,6 +1,4 @@
 #pragma once
-#ifndef WORKLIST_WIDGET_H
-#define WORKLIST_WIDGET_H
 
 #include <QListWidget>
 
@@ -17,8 +15,4 @@ protected slots:
      void slot_insertAction();
      void slot_editAction();
      void slot_deleteAction();
-
-private:
 };
-
-#endif

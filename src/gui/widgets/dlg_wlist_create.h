@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLG_WORKLIST_CREATE_H
-#define DLG_WORKLIST_CREATE_H
 
 #include <QDialog>
 
@@ -34,5 +32,3 @@ public:
 
     QLineEdit * text;
 };
-
-#endif

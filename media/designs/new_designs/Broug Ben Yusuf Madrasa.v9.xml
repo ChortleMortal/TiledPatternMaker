@@ -1,0 +1,110 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Jul 18 2026 07:42:13 -->
+<vector id="1" version="33">
+	<design>
+		<size>
+			<width>1157</width>
+			<height>704</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Crop embed="t" apply="t">
+			<rect>
+				<X>-5.0286536</X>
+				<Y>-3.00512826</Y>
+				<width>10.06757331</width>
+				<height>6.00412413</height>
+			</rect>
+		</Crop>
+		<Fill singleton="f">-1,1,-2,2</Fill>
+		<BackgroundImage name="IMG_5503adj.jpeg">
+			<Scale>0.1547461287381633</Scale>
+			<Rot>0</Rot>
+			<X>-1128.620126642641</X>
+			<Y>-1277.561798699342</Y>
+		</BackgroundImage>
+	</design>
+	<style.Plain id="2">
+		<toolkit.GeoLayer>
+			<left__delta>-130.8664867173753</left__delta>
+			<top__delta>-150.4134082675413</top__delta>
+			<width__delta>1.314362495003382</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>regular-4.v9</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,1</Point>
+									<Point id="7">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette2 id="10" constrain="f">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>12</n>
+							<Extender extRays="f" extTips2B="f" extTips2T="f" conRays="9" stellation="0" embedBound="f" embedTile="f" fitToTile="f">
+								<boundarySides>4</boundarySides>
+								<boundaryScale>1</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
+							<x>0.04</x>
+							<y>0.75</y>
+							<k>-0.3</k>
+							<s>3</s>
+							<TipTypes>outer|flipped|flipped</TipTypes>
+						</Rosette2>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+	</style.Plain>
+	<style.Filled id="11">
+		<algorithm>0</algorithm>
+		<toolkit.GeoLayer>
+			<left__delta>-130.8664867173753</left__delta>
+			<top__delta>-150.4134082675413</top__delta>
+			<width__delta>1.314362495003382</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<draw__inside>true</draw__inside>
+		<draw__outside>true</draw__outside>
+		<ColorBlacks>
+			<color hide="f">#ffd07009</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff4b7a6a</color>
+		</ColorWhites>
+	</style.Filled>
+</vector>

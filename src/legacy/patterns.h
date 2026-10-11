@@ -1,6 +1,4 @@
 ﻿#pragma once
-#ifndef TILE_PATTERNS_H
-#define TILE_PATTERNS_H
 
 #include "legacy/legacy_tile.h"
 #include "model/settings/filldata.h"
@@ -15,7 +13,7 @@ enum eDirection
     CCW
 };
 
-class SystemViewController;
+class ViewController;
 
 class Pattern : public LegacyTile
 {
@@ -226,5 +224,3 @@ protected:
 
     LayerPtr layer2;
 };
-
-#endif

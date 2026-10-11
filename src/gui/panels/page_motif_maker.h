@@ -1,8 +1,9 @@
 #pragma once
-#ifndef PAGE_MOTIF_MAKER_H
-#define PAGE_MOTIF_MAKER_H
 
 #include <QScrollArea>
+#include <QComboBox>
+#include <QCheckBox>
+#include <QLabel>
 
 #include "gui/panels/panel_page.h"
 
@@ -30,17 +31,18 @@ private slots:
     void    replicateClicked(bool state);
     void    enlargedClicked();
     void    selectedClicked();
-    void    tiledClicked();
+    void    tileUnitClicked();
     void    slot_combine();
+    void    slot_saveAsTile();
     void    slot_duplicateCurrent();
     void    slot_deleteCurrent();
     void    slot_editCurrent();
-    void    slot_swapTileRegularity();
     void    slot_rebuildMotif();
     void    slot_prototypeSelected(int row);
     void    slot_widthChanged(int val);
 
 protected:
+    bool    protosHaveChanged();
     void    loadProtoCombo();
     void    setPageStatusString();
 
@@ -51,5 +53,3 @@ private:
     QLabel          * protoLabel;
     SMXWidget       * smxWidget;
 };
-
-#endif

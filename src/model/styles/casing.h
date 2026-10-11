@@ -1,6 +1,4 @@
 #pragma once
-#ifndef CASING_H
-#define CASING_H
 
 #include <QDebug>
 #include <QPainterPath>
@@ -54,7 +52,7 @@ public:
     Circle          innerCircle;
     Circle          outerCircle;
     WeakEdgePtr     wedge;
-    uint            edgeIndex;
+    int             edgeIndex;
 
     CasingSide  * s1;
     CasingSide  * s2;
@@ -65,5 +63,3 @@ protected:
 
     CasingSet   * owner;
 };
-
-#endif // CASING_H

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef DLG_LISTSELECT_H
-#define DLG_LISTSELECT_H
 
 class QHBoxLayout;
 
@@ -71,7 +69,3 @@ private:
     AQFrame * frame;
     class SliderSet * magSlider;
 };
-
-
-
-#endif

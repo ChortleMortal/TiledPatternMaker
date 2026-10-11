@@ -1,0 +1,324 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Mar 21 2026 08:15:55 -->
+<vector id="1" version="31">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-2,2,-1,2</Fill>
+	</design>
+	<style.Plain id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>Seville Alcazar 12.8.6</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.4142135623730951</Point>
+									<Point id="7">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="14">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<Connector />
+							<q>-0.359375</q>
+							<s>2</s>
+						</Rosette>
+					</entry>
+					<entry>
+						<Tile id="15">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="16">
+								<Line>
+									<Point id="17">0.9999999999999999,0.2679491924311226</Point>
+									<Point id="18">0.7320508075688773,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">0.2679491924311229,0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">-0.2679491924311225,0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">-0.7320508075688772,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">-0.9999999999999998,0.267949192431123</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">-1,-0.2679491924311223</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">-0.7320508075688776,-0.7320508075688769</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">-0.2679491924311235,-0.9999999999999997</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">0.2679491924311222,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point id="27">0.7320508075688771,-0.7320508075688774</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">0.9999999999999997,-0.2679491924311235</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point reference="17" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="29">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>12</n>
+							<Connector />
+							<q>-0.4140625</q>
+							<s>2</s>
+						</Rosette>
+					</entry>
+					<entry>
+						<Tile id="30">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="31">
+								<Line>
+									<Point id="32">4.5485473884966,-3.56891410075235</Point>
+									<Point id="33">4.548547388496599,-4.723614639131604</Point>
+								</Line>
+								<Line>
+									<Point reference="33" />
+									<Point id="34">5.066185478701644,-5.022473129854292</Point>
+								</Line>
+								<Line>
+									<Point reference="34" />
+									<Point id="35">6.181540550352052,-4.723614639131609</Point>
+								</Line>
+								<Line>
+									<Point reference="35" />
+									<Point id="36">6.181540550352054,-3.56891410075236</Point>
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point id="37">5.066185478701646,-3.270055610029663</Point>
+								</Line>
+								<Line>
+									<Point reference="37" />
+									<Point reference="32" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularInfer id="38" type="Irregular Inferred Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+						</IrregularInfer>
+					</entry>
+					<entry>
+						<Tile id="39">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="40">
+								<Line>
+									<Point id="41">1.816496580927724,-1.39384685011735</Point>
+									<Point id="42">1.816496580927723,-1.991563831562725</Point>
+								</Line>
+								<Line>
+									<Point reference="42" />
+									<Point id="43">2.971197119306975,-1.991563831562725</Point>
+								</Line>
+								<Line>
+									<Point reference="43" />
+									<Point id="44">2.971197119306975,-1.393846850117351</Point>
+								</Line>
+								<Line>
+									<Point reference="44" />
+									<Point reference="41" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularIntersect id="45" type="Irregular Intersect Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<s>1</s>
+							<skip>1</skip>
+							<progressive>f</progressive>
+						</IrregularIntersect>
+					</entry>
+					<entry>
+						<Tile id="46">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="47">
+								<Line>
+									<Point id="48">1,0.5773502691896256</Point>
+									<Point id="49">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="49" />
+									<Point id="50">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="50" />
+									<Point id="51">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="51" />
+									<Point id="52">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="52" />
+									<Point id="53">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="53" />
+									<Point reference="48" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="54">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<Connector />
+							<q>0</q>
+							<s>2</s>
+						</Rosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff855f3a</color>
+		</style.Colored>
+	</style.Plain>
+	<style.Thick id="55">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#fff0d6cb</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.15625</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Filled id="56">
+		<algorithm>0</algorithm>
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<draw__inside>true</draw__inside>
+		<draw__outside>false</draw__outside>
+		<ColorBlacks>
+			<color hide="f">#ff993300</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff993300</color>
+		</ColorWhites>
+	</style.Filled>
+	<style.Filled id="57">
+		<algorithm>0</algorithm>
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<draw__inside>false</draw__inside>
+		<draw__outside>true</draw__outside>
+		<ColorBlacks>
+			<color hide="f">#ffffcccc</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ffffcccc</color>
+		</ColorWhites>
+	</style.Filled>
+</vector>

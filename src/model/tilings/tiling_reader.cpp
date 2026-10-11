@@ -1,5 +1,6 @@
 #include <QFile>
 
+#include "gui/top/view_controller.h"
 #include "model/makers/tiling_maker.h"
 #include "model/mosaics/mosaic_reader.h"
 #include "model/tilings/backgroundimage.h"
@@ -227,7 +228,11 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, ReaderBase * mrbas
     tiling->setVersion(_tilingVersion);
     tiling->hdr().setTranslationVectors(ptt1, ptt2, origin);
 
-	xml_node view = tiling_node.child("View");
+    // deciding whether/which canvas becomes active is the caller's job now
+    // (the state machine, or a headless generator's own load sequence) -
+    // not this reader's
+
+    xml_node view = tiling_node.child("View");
     if (view)
     {
         // only in version 2 tiling
@@ -273,9 +278,22 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, ReaderBase * mrbas
         }
         QString strt0 = t0.child_value();
         FillData fd = getFill(strt0,isSingle);
-        CanvasSettings cs = tiling->hdr().getCanvasSettings();
-        cs.setFillData(fd);
-        tiling->hdr().setCanvasSettings(cs);
+        Canvas * canvas = tiling->hdr().getTilingCanvas();
+        canvas->setFillData(fd);
+    }
+
+    // absence means off (default is already DISTORT_NONE,1.0,1.0) - presence means on
+    xml_node dnode = tiling_node.child("Distort");
+    if (dnode)
+    {
+        qreal scalex = QString(dnode.child_value("scalex")).toDouble();
+        qreal scaley = QString(dnode.child_value("scaley")).toDouble();
+        // no type attribute means a pre-DISTORT_TILE file, which only ever meant canvas distortion
+        QString type = dnode.attribute("type").as_string("canvas");
+        Distortion distortion;
+        distortion.set(type == "tile" ? DISTORT_TILE : DISTORT_CANVAS,scalex,scaley);
+        Canvas * canvas = tiling->hdr().getTilingCanvas();
+        canvas->setDistortion(distortion);
     }
 
     TileReader treader(mrbase);   // must be located here to bw used for all tiles
@@ -289,6 +307,7 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, ReaderBase * mrbas
     for (xml_node tile_node = tiling_node.child(tileName.c_str()); tile_node; tile_node = tile_node.next_sibling(tileName.c_str()))
     {
         TilePtr tile;
+        VersionedName girihName;   // set below when strtype == "girih", propagated to each placement
 
         xml_attribute fatt = tile_node.attribute("type");
         if (!fatt)
@@ -313,7 +332,10 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, ReaderBase * mrbas
             PlacedTilePtr pfp = make_shared<PlacedTile>();
             if (pfp->loadFromGirihShape(vname))
             {
-                tile = pfp->getTile();
+                tile      = pfp->getTile();
+                girihName = vname;
+                tile->setRotate(tile_node.attribute("rotation").as_double(0.0));
+                tile->setScale(tile_node.attribute("scale").as_double(1.0));
             }
         }
         else if (strtype == "regular")
@@ -378,6 +400,8 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, ReaderBase * mrbas
             tile->setRotate(rotation);
             tile->setScale(scale);
             tile->compose();
+            if (_tilingVersion < 18)
+                tile->convertOriginPivot();
         }
 
         Q_ASSERT(tile);
@@ -398,7 +422,21 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, ReaderBase * mrbas
             }
 
             PlacedTilePtr pfp = make_shared<PlacedTile>(tile,T);
+            if (!girihName.isEmpty())
+            {
+                pfp->setGirihShapeName(girihName);
+            }
             tiling->unit().addPlacedTile(pfp);
+
+            if (_tilingVersion >= 14)
+            {
+                xml_node  n = plnode.child("excluded");
+                QString   s = n.child_value();
+                if (s == "t")
+                {
+                    pfp->getState().excluded.set(Tristate::eTristate::True);
+                }
+            }
         }
 
         xml_node bcolor = tile_node.child("BkgdColors");
@@ -422,15 +460,31 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, ReaderBase * mrbas
     xml_node bkImage = tiling_node.child("BackgroundImage");
     if (bkImage)
     {
-        bip = getBackgroundImage(bkImage);
-        if (bip)
+        BkgdRecord rec = getBkgdRecord(bkImage);
+        if (!rec.isEmpty())
         {
             if (_tilingVersion < 13)
             {
-                tiling->correctBackgroundAlignment(bip);
+                tiling->correctBackgroundAlignment(rec);
             }
-            tiling->setBkgdImage(bip);
+            tiling->setBkgdRecord(rec);
         }
+    }
+
+    xml_node clNode = tiling_node.child("ConstructionLines");
+    if (clNode)
+    {
+        QVector<QLineF> clines;
+        for (xml_node lnode = clNode.child("Line"); lnode; lnode = lnode.next_sibling("Line"))
+        {
+            QString txt = lnode.child_value();
+            QStringList parts = txt.split(',');
+            if (parts.size() == 4)
+            {
+                clines.push_back(QLineF(parts[0].toDouble(), parts[1].toDouble(), parts[2].toDouble(), parts[3].toDouble()));
+            }
+        }
+        tiling->setConstructionLines(clines);
     }
 
     tiling->setLegacyModelConverted(legacyCenterConverted);
@@ -438,84 +492,42 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, ReaderBase * mrbas
     return tiling;
 }
 
-BkgdImagePtr TilingReader::getBackgroundImage(xml_node & node)
+BkgdRecord TilingReader::getBkgdRecord(xml_node & node)
 {
-    xml_attribute attr = node.attribute("name");
-    QString name       = attr.value();
-    
-    BkgdImagePtr bip = std::make_shared<BackgroundImage>();
-    bip->load(name);
-    if (bip->isLoaded())
+    BkgdRecord rec;
+    rec.name = node.attribute("name").value();
+
+    xml_node n = node.child("Scale");
+    if (n)
+        rec.xf.setScale(QString(n.child_value()).toDouble());
+
+    n = node.child("Rot");
+    if (n)
+        rec.xf.setRotateRadians(QString(n.child_value()).toDouble());
+
+    n = node.child("X");
+    if (n)
+        rec.xf.setTranslateX(QString(n.child_value()).toDouble());
+
+    n = node.child("Y");
+    if (n)
+        rec.xf.setTranslateY(QString(n.child_value()).toDouble());
+
+    n = node.child("Center");
+    if (n && _tilingVersion < 13)
     {
-        Xform xf;
-
-        xml_node n = node.child("Scale");
-        if (n)
-        {
-            QString str = n.child_value();
-            xf.setScale(str.toDouble());
-        }
-
-        n = node.child("Rot");
-        if (n)
-        {
-            QString str = n.child_value();
-            xf.setRotateRadians(str.toDouble());
-        }
-
-        n = node.child("X");
-        if (n)
-        {
-            QString str= n.child_value();
-            xf.setTranslateX(str.toDouble());
-        }
-
-        n = node.child("Y");
-        if (n)
-        {
-            QString str = n.child_value();
-            xf.setTranslateY(str.toDouble());
-        }
-
-        QPointF legacyCenter;
-        n = node.child("Center");
-        if (n)
-        {
-            QString str = n.child_value();
-            QStringList qsl = str.split(",");
-            qreal x = qsl[0].toDouble();
-            qreal y = qsl[1].toDouble();
-            legacyCenter = QPointF(x,y);
-        }
-
-        bip->setModelXform(xf,false,Sys::nextSigid());
-
-        if (_tilingVersion < 13)
-        {
-            if (bip->correctLegacyLayer(legacyCenter))
-                legacyCenterConverted = true;
-        }
-        
-        if (debug) qDebug().noquote() << "background image xform:" << xf.info();
-
-        n= node.child("Perspective");
-        bool usePerspective = false;
-        if (n)
-        {
-            QString str = n.child_value();
-            QTransform t = getQTransform(str);
-
-            if (!t.isIdentity())
-            {
-                bip->setAdjustedTransform(t);
-                bip->createAdjustedImage();
-                usePerspective = true;
-            }
-        }
-        bip->setUseAdjusted(usePerspective);
-        bip->createPixmap();
+        QStringList qsl = QString(n.child_value()).split(",");
+        rec.legacyCenter    = QPointF(qsl[0].toDouble(),qsl[1].toDouble());
+        rec.hasLegacyCenter = true;
     }
-    return bip;
+
+    if (debug) qDebug().noquote() << "background image xform:" << rec.xf.info();
+
+    n = node.child("Perspective");
+    if (n)
+        rec.perspective = getQTransform(n.child_value());
+
+    return rec;
 }
 
 Xform  TilingReader::getOldView(xml_node & node)
@@ -669,10 +681,10 @@ void TilingReader::getViewSettings(xml_node & node)
         height = str.toInt();
     }
     
-    CanvasSettings cs = tiling->hdr().getCanvasSettings();
+    Canvas * cs = tiling->hdr().getTilingCanvas();
 
     QSize size(width,height);
-    cs.setViewSize(size);
+    cs->setViewSize(size);
     if (debug) qDebug() << "tiling size:" << size;
 
     int zwidth  = width;
@@ -692,10 +704,8 @@ void TilingReader::getViewSettings(xml_node & node)
     }
 
     QSize zsize(zwidth,zheight);
-    cs.setCanvasSize(zsize);
+    cs->setCanvasSize(zsize);
     if (debug) qDebug() << "tiling zoom size:" << zsize;
-
-    tiling->hdr().setCanvasSettings(cs);
 
     Xform xf;
     QString val;
@@ -748,9 +758,7 @@ void TilingReader::getViewSettings(xml_node & node)
 
     if (_tilingVersion < 13)
     {
-        qInfo() << "legacy correction for tiling" << _xfile.getVersionedName().get() << legacyCenter;
-        if (tiling->correctLegacyLayer(legacyCenter))
-            legacyCenterConverted = true;
+        tiling->setLegacyCenter(legacyCenter);
     }
 
     if (debug) qDebug().noquote() << "tiling model xform:" << xf.info();

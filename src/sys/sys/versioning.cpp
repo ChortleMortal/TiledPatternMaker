@@ -282,6 +282,7 @@ void VersionedName::set(QString name)
     name.remove(".xml");
     name.remove(".dat");
     name.remove(".bmp");
+    name.remove(".png");
     this->name = name;
 }
 

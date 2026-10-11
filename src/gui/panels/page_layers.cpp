@@ -2,10 +2,10 @@
 #include <QCheckBox>
 
 #include "gui/panels/page_layers.h"
-#include "gui/widgets/panel_misc.h"
 #include "gui/top/controlpanel.h"
-#include "gui/top/system_view.h"
+#include "gui/top/view_controller.h"
 #include "gui/widgets/layout_sliderset.h"
+#include "gui/widgets/panel_misc.h"
 #include "model/styles/style.h"
 #include "sys/geometry/transform.h"
 #include "sys/sys.h"
@@ -29,15 +29,17 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LAYER
     layerTable->setStyleSheet("QTableWidget::item:selected { background:yellow; color:red; }");
 
     QStringList qslV;
-    qslV << "Select Layer" << "Visible" << "Z-level" << ""
+    qslV << "Select Layer" << "Visible" << "Z-level" << "Opacity %" << ""
          << "Canvas Scale"  << "Canvas Rot"  << "Canvas Left (X)"  << "CanvasTop (Y)" << ""
          << "Model Scale" << "Model Rot" << "Model Left (X)" << "Model Top (Y)"
-         << "Layer Center" << "Layer Scale" << "Layer Rot" << "Layer X" << "Layer Y" << "Sub-layers";
+         << "Layer Center" << "Layer Scale" << "Layer Rot" << "Layer X" << "Layer Y";
 
     layerTable->setVerticalHeaderLabels(qslV);
     layerTable->horizontalHeader()->setVisible(false);
-    layerTable->setMaximumWidth(PANEL_RHS_WIDTH-10);
-    layerTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    layerTable->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+    layerTable->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    layerTable->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    layerTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     layerTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     QHBoxLayout * hbox =  new QHBoxLayout;
@@ -75,7 +77,7 @@ void page_layers::populateLayers()
     layerTable->clearContents();
     //Sys::selectedLayer = nullptr;
 
-    QVector<Layer *> layers = Sys::viewController->getActiveLayers();
+    QVector<Layer *> layers = Sys::systemViewController->getActiveLayers();
     layerTable->setColumnCount(layers.size());
 
     int col = 0;
@@ -91,7 +93,7 @@ void page_layers::populateLayers()
         col++;
     }
 
-    layerTable->adjustTableSize(PANEL_RHS_WIDTH-10);
+    layerTable->adjustTableHeight();
     updateGeometry();
 
     if (selectedCol >= 0)
@@ -127,13 +129,22 @@ void page_layers::populateLayer(Layer * layer, int col)
     connect(cb, &QCheckBox::clicked, this, [this, col] { visibilityChanged(col); });
 
     // z-level
-    eZLevel z = layer->getZLevel();
+    Layer::ZLevel z = layer->getZLevel();
     AQSpinBox * zBox = new AQSpinBox;
     zBox->setRange(-30,30);
-    zBox->setValue(z);
+    zBox->setValue((int)z);
     zBox->setAlignment(Qt::AlignCenter);
     layerTable->setCellWidget(LAYER_Z,col,zBox);
     connect(zBox, static_cast<void (AQSpinBox::*)(int)>(&AQSpinBox::valueChanged), this, [this,zBox,col] { zChanged(zBox,col); });
+
+    // opacity
+    AQSpinBox * oBox = new AQSpinBox;
+    oBox->setRange(0,100);
+    oBox->setSingleStep(5);
+    oBox->setValue(qRound(layer->getOpacity() * 100.0));
+    oBox->setAlignment(Qt::AlignCenter);
+    layerTable->setCellWidget(LAYER_OPACITY,col,oBox);
+    connect(oBox, static_cast<void (AQSpinBox::*)(int)>(&AQSpinBox::valueChanged), this, [this,oBox,col] { opacityChanged(oBox,col); });
 
     // align
     QPushButton * align_btn = new QPushButton("Align-to-Selected");
@@ -178,10 +189,10 @@ void page_layers::populateLayer(Layer * layer, int col)
     dwidth->setRange(-4096.0,4096.0);
     drot->setRange(-360.0,360.0);
 
-    dleft->setDecimals(16);
-    dtop->setDecimals(16);
-    dwidth->setDecimals(16);
-    drot->setDecimals(16);
+    dleft->setDisplayDecimals(16);
+    dtop->setDisplayDecimals(16);
+    dwidth->setDisplayDecimals(16);
+    drot->setDisplayDecimals(16);
 
     dleft->setAlignment(Qt::AlignRight);
     dtop->setAlignment(Qt::AlignRight);
@@ -237,11 +248,6 @@ void page_layers::populateLayer(Layer * layer, int col)
     QPushButton * clearD = new QPushButton("Clear Model");
     layerTable->setCellWidget(MODEL_CLEAR,col,clearD);
     connect(clearD, &QPushButton::clicked, this, [this,col] { clear_deltas(col); });
-
-    item = new QTableWidgetItem(QString::number(layer->numSubLayers()));
-    item->setBackground(bcolor);
-    item->setTextAlignment(Qt::AlignCenter);
-    layerTable->setItem(SUB_LAYERS,col,item);
 }
 
 void page_layers::onRefresh()
@@ -254,7 +260,7 @@ void page_layers::onRefresh()
 
 void page_layers::doRefresh()
 {
-    QVector<Layer*> view_layers = Sys::viewController->getActiveLayers();
+    QVector<Layer*> view_layers = Sys::systemViewController->getActiveLayers();
     if (view_layers.size() != wlayers.size())
     {
         populateLayers();
@@ -284,7 +290,7 @@ void page_layers::doRefresh()
         layerTable->setColumnWidth(col,151);
     }
 
-    layerTable->adjustTableSize(PANEL_RHS_WIDTH-10);
+    layerTable->adjustTableHeight();
     updateGeometry();
 }
 
@@ -323,8 +329,16 @@ void page_layers::refreshLayer(Layer * layer, int col)
     AQSpinBox * zBox = dynamic_cast<AQSpinBox*>(w);
     Q_ASSERT(zBox);
     zBox->blockSignals(true);
-    zBox->setValue(layer->getZLevel());
+    zBox->setValue((int)layer->getZLevel());
     zBox->blockSignals(false);
+
+    // opacity
+    w = layerTable->cellWidget(LAYER_OPACITY,col);
+    AQSpinBox * oBox = dynamic_cast<AQSpinBox*>(w);
+    Q_ASSERT(oBox);
+    oBox->blockSignals(true);
+    oBox->setValue(qRound(layer->getOpacity() * 100.0));
+    oBox->blockSignals(false);
 
     // canvas transform
     QTableWidgetItem * item = layerTable->item(CANVAS_SCALE,col);
@@ -390,9 +404,6 @@ void page_layers::refreshLayer(Layer * layer, int col)
 
     item = layerTable->item(LAYER_Y,col);
     item->setText(QString::number(Transform::transy(layT),'f',16));
-
-    item = layerTable->item(SUB_LAYERS,col);
-    item->setText(QString::number(layer->numSubLayers()));
 }
 
 void page_layers::visibilityChanged(int col)
@@ -420,7 +431,19 @@ void page_layers::zChanged(AQSpinBox * dsp, int col)
     if (!layer) return;
     
     qDebug() << "z-level changed: row=" << col << "layer=" << layer->layerName();
-    layer->setZLevel(eZLevel(z));
+    layer->setZLevel(Layer::ZLevel(z));
+    layer->forceRedraw();
+}
+
+void page_layers::opacityChanged(AQSpinBox * dsp, int col)
+{
+    Q_ASSERT(dsp);
+    int pct = dsp->value();
+
+    auto layer = getLayer(col);
+    if (!layer) return;
+
+    layer->setOpacity(pct / 100.0);
     layer->forceRedraw();
 }
 

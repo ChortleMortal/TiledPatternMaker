@@ -9,7 +9,7 @@
 *.xcf
 #*.xml
 #*.txt
-#*.exe
+*.exe
 *.o
 *.qmake*
 Makefile
@@ -21,11 +21,12 @@ release
 /src/tiledpatternmaker_plugin_import.cpp
 /src/tiledpatternmakerd_plugin_import.cpp
 /src/uic_wrapper.bat
+/src/CMakeFiles/*
 /src/build/*
 /logs/*
 *.vs*
 *autogen*
-*.cmake*
+#*.cmake*
 *src/out*
 #/src/CmakePresets.json
 /src/CmakeUserPresets.json

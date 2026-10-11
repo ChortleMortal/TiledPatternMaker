@@ -1,62 +1,24 @@
 #pragma once
-#include <qdir.h>
-#ifndef MAPEDITORSTASH_H
-#define MAPEDITORSTASH_H
 
-#include <QObject>
-#include <QTimer>
-#include <QLineF>
+#include <QString>
 
-#include "sys/geometry/circle.h"
-
-typedef std::shared_ptr<class Circle>           CirclePtr;
+#include "sys/sys/versioning.h"
 
 class MapEditorDb;
 
-#define MAX_STASH 9
-
+// construction lines/circles: a working set rewritten on every change and restored at startup,
+// plus named templates saved/loaded on request
 class MapEditorStash
 {
-    friend class MapEditor;
-
 public:
+    static bool stash(MapEditorDb * db);
+    static bool restore(MapEditorDb * db);
 
-    MapEditorStash();
-
-protected:
-    void    init() { first = -1; last = -1; current = -1; }
-
-    bool    saveTemplate(VersionedName vname);
-
-    bool    stash(MapEditorDb *db);
-    bool    destash();
-    bool    undoStash();
-    bool    redoStash();
-
-    bool    initStash(VersionedName mosaicname, MapEditorDb *db);
-
-    bool    readStash(VersionedFile & xfile, MapEditorDb *db);
-    bool    animateReadStash(VersionedFile & xfile);
-    void    nextAnimationStep(MapEditorDb *db, QTimer *timer);
-    bool    writeStash(QString name, MapEditorDb *db);
-
-    int     getNext();
-    int     getPrev();
-
-    void    add(int index);
-
-    QString getStashName(int index);
-
-    bool    readStashDat(VersionedFile &xfile, QVector<QLineF> &lines, QVector<CirclePtr> &circs);
-    bool    readStashXML(VersionedFile &xfile, QVector<QLineF> &lines, QVector<CirclePtr> &circs);
+    static bool saveTemplate(VersionedName vname, MapEditorDb * db);
+    static bool loadTemplate(VersionedFile xfile, MapEditorDb * db);
 
 private:
-    int     first;
-    int     last;
-    int     current;
-
-    QVector<QLineF>    localLines;
-    QVector<CirclePtr> localCircs;
+    static QString workingFile();
+    static bool    write(QString name, MapEditorDb * db);
+    static bool    read(QString name, MapEditorDb * db);
 };
-
-#endif // MAPEDITORSTASH_H

@@ -1,7 +1,8 @@
 #include <QDebug>
 #include "model/motifs/radial_ray.h"
-#include "sys/geometry/map.h"
 #include "sys/geometry/debug_map.h"
+#include "sys/geometry/geo.h"
+#include "sys/geometry/map.h"
 
 using std::make_shared;
 
@@ -23,9 +24,24 @@ void RadialRay::clear()
     built = false;
 }
 
-void RadialRay::set(const QVector<QPointF> & vPoints)
+bool RaySet::equals(const RaySet& other) const
 {
-    points = vPoints;
+    const QVector<RadialRay>& a = *this;
+    const QVector<RadialRay>& b = other;
+
+    if (a.size() != b.size())
+        return false;
+
+    for (int i = 0; i < a.size(); ++i)
+        if (!a[i].equals(b[i]))
+            return false;
+
+    return true;
+}
+
+void RadialRay::set(const RadialRay & vPoints)
+{
+    points = vPoints.get();
     built  = false;
 }
 
@@ -42,6 +58,16 @@ void RadialRay::addTip(const QPointF point)
         points.push_front(point);
         built  = false;
     }
+}
+
+bool RadialRay::pointOnLineLessThan(QPointF origin, QPointF p1, QPointF p2)
+{
+    return  Geo::dist2(origin,p1) < Geo::dist2(origin,p2);
+}
+
+void RadialRay::sort(QPointF origin)
+{
+    std::sort(points.begin(), points.end(), [this,origin] (QPointF a, QPointF b) { return pointOnLineLessThan(origin,a, b); });
 }
 
 void RadialRay::transform(QTransform t)
@@ -94,13 +120,13 @@ void RadialRay::addToMap(MapPtr map)
     }
 }
 
-void RadialRay::debug()
+void RadialRay::debug(int idx)
 {
     qInfo().noquote() << info();
-    uint idx = 0;
+    uint idx2 = 0;
     for (QPointF & pt : points)
     {
-        Sys::debugMapCreate->insertDebugMark(pt,QString("pt%1").arg(idx++),Qt::red);
+        Sys::debugMapCreate->insertDebugMark(pt,QString("%1pt%2").arg(idx).arg(idx2++),Qt::red);
     }
 }
 
@@ -116,4 +142,82 @@ QString RadialRay::info()
     }
 
     return str;
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+//  Ray Set
+//
+////////////////////////////////////////////////////////////////////////////
+
+bool RaySet::valid()
+{
+    for (RadialRay & ray : *this)
+    {
+        if (!ray.valid())
+            return false;
+    }
+    return true;
+}
+
+void RaySet::transform(QTransform t)
+{
+    for (RadialRay & ray : *this)
+    {
+        ray.transform(t);
+    }
+}
+
+void RaySet::debug(int type)
+{
+    switch (type)
+    {
+    case 0:
+    {
+        int idx = 0;
+        qDebug() << size() << "rays in set";
+        for (RadialRay & ray : *this)
+        {
+            ray.debug(idx++);
+        }
+    }   break;
+
+    case 1:
+    {
+        QString str;
+        int i=0;
+        for (RadialRay & ray : *this)
+        {
+            str += QString(" %1-%2").arg(i).arg(ray.size());
+            i++;
+        }
+        qDebug().noquote() << str;
+    }   break;
+
+    default:
+        break;
+    }
+}
+
+QPointF RaySet::furthestPointFromOrigin() const
+{
+    QPointF bestPoint;
+    double bestDist2 = -1.0;
+
+    for (const RadialRay& ray : get())
+    {
+        const auto & pts = ray.get();   // adjust to your actual API
+
+        for (const QPointF& p : pts)
+        {
+            double d2 = p.x()*p.x() + p.y()*p.y();
+            if (d2 > bestDist2)
+            {
+                bestDist2 = d2;
+                bestPoint = p;
+            }
+        }
+    }
+
+    return bestPoint;
 }

@@ -1,11 +1,10 @@
 #pragma once
-#ifndef RADIAL_RAY_H
-#define RADIAL_RAY_H
 
 #include <QPointF>
 #include <QLineF>
-#include <QVector>
 #include <QTransform>
+#include <QDebug>
+#include "sys/qt/unique_qvector.h"
 
 typedef std::shared_ptr<class Map>  MapPtr;
 
@@ -16,47 +15,69 @@ class RadialRay
 public:
     RadialRay();
 
+    bool    equals(const RadialRay& other) const { return points == other.points; }
+
     void    clear();
-    void    set(const QVector<QPointF> & vPoints);
+    void    set(const RadialRay &vPoints);
     void    addTail(const QPointF point);
     void    addTip(const QPointF point);
-    void    setPt(int idx, QPointF pt)  { if (idx < points.size()) points[idx] = pt;}
+    void    setPt(int idx, QPointF pt)  { if (idx < points.size()) { points[idx] = pt; built = false; } }
 
     QPointF getTip()    { return points[0]; }
     QPointF getTail()   { return points.last(); }
     QPointF pt(int idx) { if (idx < points.size()) return points[idx]; else return points.last(); }
-    QLineF  getRay()    { return QLineF(points[1],points[0]); }
+    QLineF  getRayTip() { return QLineF(points[1],points[0]); }
 
-    const QVector<QPointF> & get() { return points; }
+    void    sort(QPointF origin);
+
+    const QVector<QPointF> & get() const { return points; }
 
     MapPtr  getMap();
     void    addToMap(MapPtr map);
 
     void    transform(QTransform t);
 
-    bool    valid()   { return (points.count() >= 2); }
+    void    resize(int n)   { points.resize(n);}
+    int     size()          { return points.count(); }
+    bool    valid()         { return (points.count() >= 2); }
 
-    void    debug();
+    void    debug(int i);
     QString info();
 
+protected:
+    bool    pointOnLineLessThan(QPointF origin, QPointF p1, QPointF v2);
+
 private:
-    QVector<QPointF> points;
+    UniqueQVector<QPointF> points;
     bool    built;
     MapPtr  map;
 };
 
-
-class RaySet
+class RaySet : private QVector<RadialRay>
 {
 public:
-    RadialRay ray1;
-    RadialRay ray2;
+    using Base = QVector<RadialRay>;
 
-    bool valid()                    { return (ray1.valid() && ray2.valid()); }
-    void clear()                    { ray1.clear(); ray2.clear(); }
-    void transform(QTransform t)    { ray1.transform(t); ray2.transform(t); }
-    void debug()                    { ray1.debug(); ray2.debug(); }
+    bool equals(const RaySet & other) const;
+
+    void add(const RadialRay & r) { QVector<RadialRay>::push_back(r); }
+    void removeAt(int i)          { QVector<RadialRay>::removeAt(i); }
+
+    RadialRay & operator[](int i)       { return QVector<RadialRay>::operator[](i % size()); }
+    const RadialRay & operator[](int i) const { return QVector<RadialRay>::operator[](i % size()); }
+
+    QVector<RadialRay>       & get()        { return *this; }
+    const QVector<RadialRay> & get() const  { return *this; }
+
+    QPointF furthestPointFromOrigin() const;
+
+    int size() const { return Base::size(); }
+    void clear()     { Base::clear(); }
+
+    bool valid();
+    void transform(QTransform t);
+    void debug(int type);
+
+    int unextendedSize;     // number of rays before extensions are added
+    int cadencePairs;       // number of KR ray pairs (sides) in unit ray
 };
-
-#endif
-
